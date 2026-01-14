@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mentaris: The Arith Belt — Synthwave Math</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="asteroid_blaster.css" />
+</head>
+<body>
+  <div id="wrap" class="noselect">
+    <div id="gameShell">
+      <canvas id="canvas" aria-label="Mentaris: The Arith Belt"></canvas>
+
+      <div id="hud">
+        <div class="hudLeft">
+          <div class="chip"><span>SCORE</span> <b id="scoreText">0</b></div>
+          <div class="chip"><span>STREAK</span> <b id="streakText">0</b></div>
+          <div class="chip"><span>LEVEL</span> <b id="levelText">1</b></div>
+          <div class="chip"><span>LIVES</span> <b id="livesText">3</b></div>
+          <div class="chip"><span>TIMER</span> <b id="timerText">ENDLESS</b></div>
+        </div>
+
+        <div class="hudCenter">
+          <div id="promptChip" class="chip"><span>PROBLEM</span> <b id="promptText">—</b></div>
+        </div>
+
+        <div class="hudRight">
+          <button id="btnPause" class="btn">PAUSE (P)</button>
+          <button id="btnSettings" class="btn">SETTINGS</button>
+          <button id="btnHome" class="btn">HOME</button>
+          <button id="btnRestart" class="btn">RESTART</button>
+        </div>
+      </div>
+
+      <div id="toast"></div>
+      <div id="countdown" class="countdown"></div>
+
+      <!-- START / SETTINGS -->
+      <div id="overlayMenu" class="overlay show">
+        <div class="card">
+          <div class="cardHead synthHead">
+            <div>
+              <h1 class="gameLogo" aria-label="Mentaris: The Arith Belt">
+                <span class="gameLogo__top">MATH ARCADE • SYNTHWAVE EDITION</span>
+                <span class="gameLogo__main">MENTARIS: THE ARITH BELT</span>
+                <span class="gameLogo__tag">LOCK ON • CALCULATE • FIRE</span>
+              </h1>
+              <p class="subtitle">
+                SHOOT ONLY THE ASTEROID WITH THE CORRECT ANSWER.<br/>
+                SYNTHWAVE PRESSURE TEST FOR FAST MULTIPLICATION RECALL.
+              </p>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+              <div class="kbd">MOVE: <b>WASD</b> OR <b>◀/▶/▲/▼</b></div>
+              <div class="kbd">FIRE: <b>Z</b> • SECONDARY: <b>X</b> • SHOCKWAVE: <b>C</b> • DASH: <b>SPACE</b> • PAUSE: <b>P</b> • MENU: <b>M</b></div>
+            </div>
+          </div>
+          <div class="cardBody" style="display:none;">
+            <div class="grid">
+              <input id="aMin" type="number" min="0" max="99" value="2" />
+              <input id="aMax" type="number" min="0" max="99" value="12" />
+              <input id="bMin" type="number" min="0" max="99" value="2" />
+              <input id="bMax" type="number" min="0" max="99" value="12" />
+              <select id="decoys">
+                <option value="2">2 (EASIER)</option>
+                <option value="3" selected>3 (NORMAL)</option>
+                <option value="4">4 (HARD)</option>
+                <option value="5">5 (BRUTAL)</option>
+              </select>
+              <select id="decoyFunction">
+                <option value="units_bias" selected>Units Digit Bias</option>
+                <option value="structured">Structured Decoys</option>
+                <option value="digit_shuffle">Digit Shuffle</option>
+              </select>
+              <select id="speed">
+                <option value="0.5">SLOW</option>
+                <option value="0.7" selected>NORMAL</option>
+                <option value="0.85">FAST</option>
+                <option value="1.0">INSANE</option>
+              </select>
+              <select id="lives">
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+              </select>
+              <input id="volume" type="range" min="0" max="1" step="0.01" value="0.65" />
+              <input id="sfxVolume" type="range" min="0" max="1" step="0.01" value="0.85" />
+              <input id="musicVolume" type="range" min="0" max="1" step="0.01" value="0.6" />
+              <select id="timerMode">
+                <option value="off">OFF (ENDLESS)</option>
+                <option value="q7" selected>7 QUESTIONS</option>
+                <option value="q10">10 QUESTIONS</option>
+                <option value="60">60 SECONDS</option>
+                <option value="90">90 SECONDS</option>
+                <option value="120">120 SECONDS</option>
+              </select>
+              <select id="questionMode">
+                <option value="digits3" selected>DIGIT HUNT (1x3)</option>
+                <option value="digits2">DIGIT HUNT (1x2)</option>
+                <option value="classic">CLASSIC ANSWER</option>
+                <option value="classic2">CLASSIC ANSWER (1x2)</option>
+                <option value="classic3">CLASSIC ANSWER (1x3)</option>
+                <option value="rational_frac">RATIONALS: TARGET FRACTION</option>
+                <option value="rational_dec">RATIONALS: TARGET DECIMAL</option>
+                <option value="square_shoot">PERFECT SQUARES</option>
+                <option value="square_root">SQUARE ROOTS</option>
+                <option value="add_digits2">ADDITION DIGIT HUNT (2x2)</option>
+                <option value="add_digits3">ADDITION DIGIT HUNT (3x3)</option>
+                <option value="add_classic2">ADDITION CLASSIC (2x2)</option>
+                <option value="add_classic3">ADDITION CLASSIC (3x3)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row">
+            <button id="btnFullscreenToggle" class="btn">TOGGLE FULLSCREEN</button>
+            <button id="btnGameplay" class="btn">GAMEPLAY</button>
+            <button id="btnStart" class="btn" style="border-color: rgba(193,216,47,.35); background: rgba(193,216,47,.14);">START MISSION</button>
+            <button id="btnClose" class="btn">CLOSE</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- GAMEPLAY SETTINGS -->
+      <div id="overlayGameplay" class="overlay">
+        <div class="card">
+          <div class="cardHead">
+            <div>
+              <h2 class="title">Gameplay</h2>
+              <p class="subtitle">Choose your ship frame before launch.</p>
+            </div>
+            <button id="btnCloseGameplay" class="btn">Close</button>
+          </div>
+          <div class="cardBody">
+            <div class="panel">
+              <h3>Ship Frame</h3>
+              <div class="grid">
+                <label>
+                  SHIP FRAME
+                  <select id="ship">
+                    <option value="mk7" selected>CRIMSON MK-7</option>
+                    <option value="fizard">AURORA DART</option>
+                    <option value="classic">SCARLET CLASSIC</option>
+                    <option value="ember">RUBY STRIKE</option>
+                    <option value="azure">AZURE LANCER</option>
+                    <option value="spire">VERDANT SPIRE</option>
+                    <option value="am2">AM2 SCOUT</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <button id="btnBackGameplay" class="btn">BACK</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- GAME OVER -->
+      <div id="overlayEnd" class="overlay">
+        <div class="card">
+          <div class="cardHead">
+            <div>
+              <h2 class="title" id="endTitle">MISSION REPORT</h2>
+              <p class="subtitle" id="endSubtitle">—</p>
+              <p class="subtitle" id="endReason">—</p>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+              <div class="kbd">RESTART: <b>R</b> • SETTINGS: <b>M</b> • SECONDARY: <b>X</b> • SHOCKWAVE: <b>C</b> • DASH: <b>SPACE</b></div>
+            </div>
+          </div>
+
+          <div class="cardBody endSequence">
+            <div class="endScoreBlock" id="endScoreBlock">
+              <div class="endScoreLabel">TOTAL SCORE</div>
+              <div class="endScoreValue" id="endScoreValue">0</div>
+            </div>
+
+            <div class="endStatsWrap" id="endStatsWrap">
+              <div class="panel">
+                <h3>Stats</h3>
+                <div class="monoSmall endOutcome" id="endOutcome">—</div>
+                <div class="monoSmall endReasonLine" id="endReasonLine"></div>
+                <div class="list" id="statsList"></div>
+                <div style="margin-top:12px;" class="monoSmall">
+                  ACCURACY
+                  <div class="meter" style="margin-top:6px;"><div id="accBar"></div></div>
+                </div>
+              </div>
+
+              <div class="panel">
+                <h3>Weak Facts</h3>
+                <p class="monoSmall" style="margin:0;">
+                  THESE ARE THE MULTIPLICATION FACTS YOU MISSED MOST.
+                  REPEAT THESE UNTIL THEY FEEL AUTOMATIC.
+                </p>
+                <ul class="list" id="weakList"></ul>
+              </div>
+
+              <div class="panel">
+                <h3>High Scores</h3>
+                <ul class="list" id="highScoresEnd"></ul>
+              </div>
+            </div>
+
+            <div class="panel endNameBlock" id="endNameBlock">
+              <h3>Commander Name</h3>
+              <div class="grid">
+                <label>
+                  NAME
+                  <input id="endNameInput" type="text" placeholder="Enter name to pin score" maxlength="18" />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <button id="btnEndRestart" class="btn" style="border-color: rgba(255,221,0,.35); background: rgba(255,221,0,.14);">PLAY AGAIN</button>
+            <button id="btnEndSettings" class="btn">ADJUST SETTINGS</button>
+            <button id="btnEndNext" class="btn" style="display:none; border-color: rgba(0,229,255,.35); background: rgba(0,229,255,.14);">NEXT MISSION</button>
+            <button id="btnEndHome" class="btn">HOME</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <div id="controlDock" aria-label="Virtual control pad">
+      <div id="controlPad" class="controlPad">
+        <div class="padTitle">MOUSEPAD PILOT</div>
+        <div class="padModeLabel">MODE: <b id="padMode">HYBRID</b></div>
+        <div class="padStatus">STATUS: <b id="padStatus">OFF</b></div>
+        <div id="virtualPad" class="virtualPad" role="application" aria-label="Mousepad area">
+          <div id="virtualKnob" class="padKnob"></div>
+        </div>
+        <div class="padHint">Press <b>B</b> to toggle</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="asteroid_blaster.bundle.js"></script>
+</body>
+</html>

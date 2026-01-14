@@ -1,0 +1,3573 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mentaris: The Arith Belt — Menu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="asteroid_blaster.css" />
+  <style>
+    body{ overflow:auto; }
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      background:#04060d;
+      opacity:0;
+      transition: opacity 0.8s ease;
+      z-index:40;
+      pointer-events:none;
+    }
+    body.launching::before{ opacity:1; }
+
+    .menuWrap{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      position:relative;
+      z-index:2;
+    }
+
+    .menuShell{
+      width:min(1120px, 100%);
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:24px;
+      align-items:center;
+    }
+
+    .heroPanel{
+      background: linear-gradient(140deg, rgba(10,14,28,.85), rgba(6,8,22,.7));
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:28px;
+      padding:28px 32px;
+      box-shadow: 0 30px 80px rgba(0,0,0,.6);
+      backdrop-filter: blur(10px);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .heroPanel::before{
+      content:"";
+      position:absolute;
+      inset:-40% -20% auto -20%;
+      height:65%;
+      background: radial-gradient(circle at 50% 45%, rgba(0,229,255,.18), rgba(0,0,0,0) 70%);
+      opacity:.7;
+      pointer-events:none;
+    }
+
+    .heroPanel::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 1px, rgba(0,0,0,0) 18px);
+      opacity:.5;
+      pointer-events:none;
+    }
+
+    .stepper{
+      margin-top:6px;
+      font-size:11px;
+      letter-spacing:2px;
+      color:var(--muted);
+      text-transform:uppercase;
+    }
+
+    .step{
+      display:none;
+      animation: stepIn .25s ease;
+    }
+
+    .step.active{ display:block; }
+
+    .stepActions{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+    }
+
+    .stepActions .btn{ min-width:120px; }
+
+    @keyframes stepIn{
+      from{ opacity:0; transform: translateY(8px); }
+      to{ opacity:1; transform: translateY(0); }
+    }
+
+    .menuLeft{
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
+
+    .menuBadge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 12px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(0,0,0,.25);
+      letter-spacing:2px;
+      font-size:11px;
+      text-transform:uppercase;
+      width:fit-content;
+    }
+
+    .menuTitle{
+      margin:0;
+      text-transform:uppercase;
+      font-size: clamp(40px, 7vw, 96px);
+      line-height:1;
+      letter-spacing:4px;
+      position:relative;
+      display:block;
+      width:100%;
+      text-align:center;
+      pointer-events:none;
+      background:none;
+      color:#ffffff;
+      text-shadow: 0 6px 20px rgba(0,0,0,.45);
+      animation: none;
+    }
+
+    .menuTitle::after{
+      display:none;
+    }
+    .menuTitleMain{
+      display:block;
+      font-weight:700;
+      letter-spacing:6px;
+      font-size: clamp(48px, 8vw, 104px);
+    }
+    .menuTitleSub{
+      display:block;
+      margin-top:8px;
+      font-size: clamp(18px, 2.8vw, 32px);
+      letter-spacing:3px;
+      text-transform:uppercase;
+      color:rgba(255,255,255,.88);
+    }
+
+    .menuTag{
+      margin:0;
+      color:var(--muted);
+      letter-spacing:1px;
+      text-transform:uppercase;
+      font-size:12px;
+    }
+
+    .menuButtons{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-top:6px;
+    }
+
+    .menuStats{
+      display:grid;
+      gap:12px;
+      margin-top:18px;
+      position:relative;
+      z-index:1;
+    }
+
+    .menuButtons .btn{
+      font-size:14px;
+      padding:12px 16px;
+      border-radius:14px;
+      text-transform:uppercase;
+      letter-spacing:1.2px;
+      position:relative;
+      overflow:hidden;
+      transform: translateY(0);
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .menuButtons .btn.primary{
+      background: linear-gradient(90deg, rgba(0,229,255,.35), rgba(0,229,255,.15));
+      border-color: rgba(0,229,255,.55);
+      box-shadow: 0 10px 30px rgba(0,229,255,.18);
+      font-size:15px;
+      padding:14px 16px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .menuButtons .btn::after,
+    .card .btn::after{
+      content:"";
+      position:absolute;
+      inset:-20% -40%;
+      background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.35) 50%, transparent 70%);
+      transform: translateX(-140%);
+      opacity:0;
+      pointer-events:none;
+      transition: opacity .2s ease;
+    }
+
+    .menuButtons .btn:hover,
+    .card .btn:hover{
+      transform: translateY(-2px);
+      box-shadow: 0 12px 26px rgba(0,0,0,.35);
+    }
+
+    .menuButtons .btn:hover::after,
+    .card .btn:hover::after{
+      opacity:1;
+      animation: buttonSweep 0.9s ease-out;
+    }
+
+    .menuButtons .btn.primary::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.25) 50%, transparent 70%);
+      transform: translateX(-140%);
+      animation: buttonSweep 2.6s ease-in-out infinite;
+      pointer-events:none;
+    }
+
+    .menuButtons .btn.secondaryLabel{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:4px;
+    }
+
+    .menuButtons .btn.secondaryLabel small{
+      font-size:10px;
+      letter-spacing:1px;
+      color:rgba(232,236,255,.6);
+    }
+
+    .shipFloaters{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:0;
+      overflow:hidden;
+    }
+
+    .funnelOverlay{
+      background: var(--bg);
+      backdrop-filter: none;
+    }
+    .funnelOverlay .card{
+      width:min(1200px, 96%);
+    }
+
+    .menuWrap.hidden{
+      opacity:0;
+      pointer-events:none;
+      transform: translateY(-10px);
+      transition: opacity .2s ease, transform .2s ease;
+    }
+
+    .briefingOverlay{
+      background: radial-gradient(1200px 620px at 50% 40%, rgba(0,229,255,.16), rgba(6,8,22,.98));
+      backdrop-filter: none;
+    }
+
+    body.briefingOpen .menuWrap,
+    body.briefingOpen .starDrift,
+    body.briefingOpen .shipFloaters,
+    body.briefingOpen .siteFooter{
+      opacity:0;
+      pointer-events:none;
+    }
+
+    .briefingCard{
+      width:min(760px, 96%);
+      border:1px solid var(--line);
+      border-radius:26px;
+      background: linear-gradient(160deg, rgba(12,16,32,.92), rgba(6,8,20,.86));
+      padding:24px;
+      box-shadow: 0 30px 80px rgba(0,0,0,.6);
+    }
+    .briefingShipRow{
+      display:flex;
+      align-items:center;
+      gap:16px;
+      flex-wrap:wrap;
+    }
+    .briefingShipCard{
+      width:160px;
+      max-width:40%;
+    }
+    .briefingShipCard .shipCard{
+      transform:none;
+    }
+    .briefingShipCard .shipLabel{
+      font-size:11px;
+      letter-spacing:1px;
+    }
+
+    .briefingStatus{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-top:6px;
+      font-size:11px;
+      letter-spacing:1px;
+      text-transform:uppercase;
+      color:var(--muted);
+    }
+
+    .briefingSpinner{
+      width:42px;
+      height:42px;
+      border-radius:50%;
+      border:3px solid rgba(255,255,255,.18);
+      border-top-color: rgba(0,229,255,.75);
+      animation: spin 0.8s linear infinite;
+      position:relative;
+      display:inline-block;
+    }
+
+    .briefingStatus.ready .briefingSpinner{
+      border-color: rgba(28,220,120,.35);
+      border-top-color: rgba(28,220,120,.9);
+      animation:none;
+    }
+
+    .briefingStatus.ready .briefingSpinner::after{
+      content:"";
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:14px;
+      height:24px;
+      border-right:4px solid rgba(28,220,120,.95);
+      border-bottom:4px solid rgba(28,220,120,.95);
+      transform: translate(-50%,-55%) rotate(45deg);
+    }
+
+    @keyframes spin{
+      from{ transform: rotate(0deg); }
+      to{ transform: rotate(360deg); }
+    }
+
+    .briefingGrid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap:14px;
+      margin-top:14px;
+    }
+
+    .briefingStat{
+      border:1px solid var(--line);
+      border-radius:14px;
+      background: rgba(0,0,0,.22);
+      padding:10px 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      font-size:12px;
+    }
+
+    .briefingHints{
+      margin-top:16px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      padding:10px 12px;
+      background: rgba(8,12,22,.65);
+    }
+    .briefingTutorial{
+      margin-top:16px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      padding:10px 12px;
+      background: rgba(8,12,22,.65);
+    }
+    .briefingTutorialTitle{
+      font-size:11px;
+      letter-spacing:2px;
+      color:rgba(0,229,255,.8);
+      text-transform:uppercase;
+      margin-bottom:6px;
+    }
+    .briefingTutorialList{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap:6px 12px;
+      font-size:12px;
+      color:rgba(232,236,255,.85);
+    }
+    .briefingTutorialList b{
+      color:var(--text);
+      letter-spacing:1px;
+    }
+    .briefingHintLabel{
+      font-size:11px;
+      letter-spacing:2px;
+      color:rgba(255,221,0,.8);
+      text-transform:uppercase;
+      margin-bottom:6px;
+    }
+    .briefingHintText{
+      font-size:12px;
+      color:rgba(232,236,255,.88);
+      letter-spacing:0.06em;
+      min-height:18px;
+    }
+
+    @media (max-width: 640px){
+      .briefingGrid{ grid-template-columns: 1fr; }
+    }
+
+    .choiceGrid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap:12px;
+    }
+
+    .choiceCard{
+      border:1px solid var(--line);
+      border-radius:16px;
+      background: rgba(0,0,0,.28);
+      padding:12px 14px;
+      cursor:pointer;
+      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+    .beltChoice{
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .beltChoice::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: linear-gradient(180deg, rgba(0,0,0,.15), rgba(0,0,0,.65));
+      pointer-events:none;
+    }
+    .beltChoice > *{
+      position: relative;
+      z-index: 1;
+      text-shadow: 0 2px 10px rgba(0,0,0,.6);
+    }
+
+    .choiceCard h4{
+      margin:0 0 6px;
+      font-size:13px;
+      letter-spacing:.8px;
+      text-transform:uppercase;
+      color:var(--text);
+    }
+
+    .choiceCard p{
+      margin:0;
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.4;
+    }
+
+    .choiceCard.selected{
+      border-color: rgba(0,229,255,.6);
+      box-shadow: 0 0 0 1px rgba(0,229,255,.25), 0 12px 36px rgba(0,0,0,.45);
+      transform: translateY(-2px);
+    }
+
+    .choiceCard.disabled{
+      opacity:0.45;
+      cursor:not-allowed;
+      pointer-events:none;
+      box-shadow:none;
+      transform:none;
+    }
+
+    .campaignListItem{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+
+    .campaignSetItem{
+      flex-direction:column;
+      align-items:flex-start;
+      justify-content:flex-start;
+    }
+
+    .campaignSetItem .campaignSetRow{
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .campaignSetItem .campaignSetName{
+      font-weight:700;
+      letter-spacing:.6px;
+      text-transform:uppercase;
+      font-size:12px;
+    }
+
+    .campaignSetItem .campaignSetDesc{
+      margin-top:4px;
+      font-size:12px;
+      color:var(--muted);
+      letter-spacing:.2px;
+    }
+
+    .funnelOverlay .title,
+    #campaignOverlay .title,
+    #campaignConfirmOverlay .title,
+    #briefingOverlay .title{
+      font-size:20px;
+    }
+    .funnelOverlay .subtitle,
+    #campaignOverlay .subtitle,
+    #campaignConfirmOverlay .subtitle,
+    #briefingOverlay .subtitle{
+      font-size:14px;
+    }
+    .funnelOverlay .btn,
+    #campaignOverlay .btn,
+    #campaignConfirmOverlay .btn,
+    #briefingOverlay .btn{
+      font-size:14px;
+      padding:10px 16px;
+      border-radius:14px;
+    }
+    .funnelOverlay .panel h3,
+    #campaignOverlay .panel h3,
+    #briefingOverlay .panel h3{
+      font-size:14px;
+    }
+    .funnelOverlay label{
+      font-size:13px;
+    }
+    .funnelOverlay .choiceCard h4{
+      font-size:14px;
+    }
+    .funnelOverlay .choiceCard p{
+      font-size:13px;
+    }
+    #campaignOverlay .campaignSetName,
+    #campaignOverlay .campaignListItem{
+      font-size:13px;
+    }
+
+    .campaignListItem .campaignStatus{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-weight:700;
+      letter-spacing:1px;
+      text-transform:uppercase;
+      font-size:11px;
+      color:var(--muted);
+    }
+
+    .campaignListItem.completed{
+      border-color: rgba(0,229,255,.45);
+      box-shadow: 0 0 0 1px rgba(0,229,255,.15);
+    }
+
+    .campaignListItem.completed .campaignStatus{
+      color:rgba(0,229,255,.85);
+    }
+
+    .campaignListItem:hover{
+      transform: translateY(-3px);
+      box-shadow: 0 10px 24px rgba(0,0,0,.35);
+      border-color: rgba(0,229,255,.35);
+    }
+
+    .campaignListItem.selected{
+      border-color: rgba(0,229,255,.65);
+      box-shadow: 0 0 0 1px rgba(0,229,255,.2), 0 12px 30px rgba(0,0,0,.4);
+    }
+
+    .campaignListItem.current{
+      border-color: rgba(0,229,255,.65);
+      box-shadow: 0 0 0 1px rgba(0,229,255,.2);
+    }
+
+    .campaignListItem.current .campaignStatus{
+      color:rgba(0,229,255,.95);
+    }
+
+    .campaignView{
+      display:none;
+    }
+
+    .campaignView.active{
+      display:grid;
+    }
+
+    .panelGrid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap:14px;
+    }
+
+    .helpToggle{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      margin-bottom:10px;
+    }
+
+    .toggleRow{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:12px;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:1px;
+    }
+
+    .helpText{
+      display:none;
+      margin-top:6px;
+      font-size:11px;
+      color:rgba(232,236,255,.7);
+      letter-spacing:.2px;
+    }
+
+    .showHelp .helpText{ display:block; }
+
+    #campaignOverlay.overlay,
+    #campaignConfirmOverlay.overlay{
+      background: rgba(6,9,16,.96);
+      backdrop-filter: none;
+    }
+
+    #controlsOverlay.overlay{
+      z-index: 40;
+    }
+
+    #controlsOverlay .panel,
+    #controlsOverlay .list,
+    #controlsOverlay .monoSmall{
+      font-size:14px;
+      line-height:1.55;
+    }
+
+    .starDrift{
+      position:fixed;
+      inset:-10%;
+      background:
+        radial-gradient(circle at 10% 20%, rgba(255,255,255,.18), rgba(0,0,0,0) 20%),
+        radial-gradient(circle at 30% 80%, rgba(255,255,255,.16), rgba(0,0,0,0) 18%),
+        radial-gradient(circle at 70% 30%, rgba(255,255,255,.14), rgba(0,0,0,0) 16%),
+        radial-gradient(circle at 85% 70%, rgba(255,255,255,.12), rgba(0,0,0,0) 14%);
+      opacity:.18;
+      animation: starDrift 24s linear infinite;
+      pointer-events:none;
+      z-index:0;
+    }
+
+    .shipFloat{
+      position:absolute;
+      width:min(220px, 28vw);
+      opacity:0;
+      filter: drop-shadow(0 0 18px rgba(0,229,255,.18)) drop-shadow(0 18px 50px rgba(0,0,0,.45));
+      animation: shipDrift 22s ease-in-out infinite, shipFade 10s ease-in-out infinite, shipSpin 38s linear infinite;
+      object-fit: contain;
+      pointer-events:none;
+      user-select:none;
+    }
+
+    .shipFloat--a{ left:6%; top:18%; animation-delay: 0s, 0s; }
+    .shipFloat--b{ right:10%; top:12%; animation-delay: -3s, -2s; }
+    .shipFloat--c{ left:68%; top:55%; animation-delay: -6s, -4s; width:min(200px, 24vw); }
+    .shipFloat--d{ left:14%; top:64%; animation-delay: -9s, -6s; width:min(190px, 22vw); }
+
+    @keyframes shipDrift{
+      0%{ transform: translate3d(0,0,0) rotate(-3deg); }
+      50%{ transform: translate3d(18px,-14px,0) rotate(4deg); }
+      100%{ transform: translate3d(0,0,0) rotate(-3deg); }
+    }
+
+    @keyframes shipFade{
+      0%,10%{ opacity:0; }
+      25%,60%{ opacity:.24; }
+      80%{ opacity:.05; }
+      100%{ opacity:0; }
+    }
+
+    @keyframes shipSpin{
+      0%{ transform: translate3d(0,0,0) rotate(0deg); }
+      50%{ transform: translate3d(0,0,0) rotate(7deg); }
+      100%{ transform: translate3d(0,0,0) rotate(0deg); }
+    }
+
+    @keyframes buttonSweep{
+      0%, 55%{ transform: translateX(-140%); opacity:0; }
+      70%{ opacity:1; }
+      100%{ transform: translateX(140%); opacity:0; }
+    }
+
+    @keyframes starDrift{
+      0%{ transform: translate3d(0,0,0); }
+      50%{ transform: translate3d(-18px, -24px, 0); }
+      100%{ transform: translate3d(0,0,0); }
+    }
+
+    .shipChooser{
+      display:grid;
+      grid-template-columns:minmax(720px,1fr) 300px;
+      gap:24px;
+      align-items:start;
+    }
+    .shipGrid{
+      --ship-card: 200px;
+      --ship-gap: 12px;
+      position:relative;
+      overflow:hidden;
+      padding:12px 0 6px;
+      min-height:240px;
+      min-width:720px;
+    }
+    .launchSpinner{
+      width:26px;
+      height:26px;
+      border:2px solid rgba(255,255,255,.2);
+      border-top-color: rgba(0,229,255,.85);
+      border-radius:50%;
+      animation: spin 0.9s linear infinite;
+    }
+
+    .launchSpinnerTitle{
+      display:inline-block;
+      width:14px;
+      height:14px;
+      margin-left:8px;
+      border:2px solid rgba(255,255,255,.25);
+      border-top-color: rgba(0,229,255,.85);
+      border-radius:50%;
+      animation: spin 0.9s linear infinite;
+      opacity:0;
+      transform: translateY(1px);
+      transition: opacity .2s ease;
+      vertical-align:middle;
+    }
+    .launchSpinnerTitle.isLoading{
+      opacity:1;
+    }
+    .shipTrack{
+      display:flex;
+      gap:var(--ship-gap);
+      transition:transform 220ms ease;
+      will-change:transform;
+      padding-top:12px;
+      position:relative;
+      z-index:1;
+    }
+    .shipOption{
+      flex:0 0 var(--ship-card);
+      opacity:0.7;
+      transform:scale(0.95);
+      transition:transform 220ms ease, opacity 220ms ease;
+    }
+    .shipOption.locked{
+      opacity:0.35;
+      cursor:not-allowed;
+    }
+    .shipOption.locked .shipCard{
+      filter: grayscale(0.85) brightness(0.75);
+      border-color: rgba(255,255,255,.12);
+      box-shadow:none;
+    }
+    .shipOption.locked .shipCard::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: rgba(5,8,16,.55);
+    }
+    .shipLockTag{
+      position:absolute;
+      top:10px;
+      right:12px;
+      font-size:10px;
+      letter-spacing:1.6px;
+      color: rgba(255,221,0,.8);
+      background: rgba(0,0,0,.4);
+      border:1px solid rgba(255,221,0,.35);
+      padding:3px 8px;
+      border-radius:999px;
+      text-transform:uppercase;
+      z-index:2;
+    }
+    .shipOption.selected{
+      opacity:1;
+      transform:scale(1.12);
+    }
+    .shipDetails{
+      background:rgba(8,12,22,.7);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:18px;
+      padding:18px;
+      box-shadow:0 18px 45px rgba(0,0,0,.4);
+      min-height:240px;
+    }
+    .shipDetailsHeader{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      margin-bottom:12px;
+    }
+    .shipDetailsName{
+      font-size:18px;
+      letter-spacing:0.08em;
+    }
+    .shipDetailsStyle{
+      font-size:12px;
+      color:rgba(180,210,255,.8);
+      text-transform:uppercase;
+      letter-spacing:0.2em;
+    }
+    .shipDetailsBody{
+      font-size:13px;
+      line-height:1.5;
+      color:rgba(220,235,255,.82);
+      margin-bottom:16px;
+    }
+    .shipDetailsStats{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0,1fr));
+      gap:10px;
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:0.18em;
+      color:rgba(160,190,230,.8);
+    }
+    .shipDetailsStat{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      padding:10px 12px;
+      border-radius:12px;
+      background:rgba(5,8,16,.65);
+      border:1px solid rgba(255,255,255,.06);
+    }
+    .shipDetailsStat span:last-child{
+      font-size:12px;
+      color:rgba(255,255,255,.85);
+      letter-spacing:0.12em;
+    }
+    @media (max-width: 960px){
+      .shipChooser{
+        grid-template-columns:1fr;
+      }
+      .shipDetails{
+        order:2;
+      }
+    }
+
+    .shipOption{
+      position:relative;
+      cursor:pointer;
+      display:block;
+    }
+
+    .shipOption input{
+      position:absolute;
+      opacity:0;
+      pointer-events:none;
+    }
+
+    .shipCard{
+      border:1px solid var(--line);
+      border-radius:16px;
+      background: rgba(0,0,0,.35);
+      padding:12px;
+      position:relative;
+      min-height:170px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+    .shipOption[data-ship="mk7"] .shipCard{
+      width: 100%;
+      margin: 0;
+    }
+
+    .shipOption.selected .shipCard{
+      border-color: rgba(0,229,255,.6);
+      box-shadow: 0 0 0 1px rgba(0,229,255,.25), 0 12px 36px rgba(0,0,0,.45);
+      transform: translateY(-3px);
+    }
+
+    .shipLabel{
+      position:absolute;
+      bottom:10px;
+      left:12px;
+      font-size:11px;
+      letter-spacing:1.6px;
+      color:rgba(232,236,255,.9);
+      text-transform:uppercase;
+      text-shadow: 0 0 8px rgba(0,0,0,.6);
+    }
+
+    .shipSvg,
+    .shipCanvas{
+      width:min(130px, 62%);
+      filter: drop-shadow(0 0 16px rgba(0,229,255,.3));
+    }
+
+    .menuButtons button[disabled],
+    .menuButtons a[disabled]{
+      opacity:0.45;
+      pointer-events:none;
+      cursor:not-allowed;
+    }
+
+    .shipBody{
+      fill: var(--ship-body, rgba(255,255,255,.2));
+      stroke: rgba(255,255,255,.38);
+      stroke-width: 3;
+    }
+
+    .shipWing{
+      fill: var(--ship-wing, rgba(140,0,0,.5));
+      stroke: rgba(255,255,255,.28);
+      stroke-width: 2.5;
+    }
+
+    .shipCanopy{
+      fill: var(--ship-canopy, rgba(0,229,255,.35));
+      stroke: rgba(0,229,255,.55);
+      stroke-width: 2;
+    }
+
+    .shipAccent{
+      fill: var(--ship-accent, rgba(255,221,0,.35));
+    }
+
+    .shipStripe{
+      fill: var(--ship-highlight, rgba(255,255,255,.75));
+      opacity:.9;
+    }
+
+    .shipHighlight{
+      fill: var(--ship-highlight, rgba(255,255,255,.7));
+      opacity:.8;
+    }
+
+    .siteFooter{
+      position:fixed;
+      left:0;
+      right:0;
+      bottom:14px;
+      text-align:center;
+      font-size:11px;
+      letter-spacing:1px;
+      color:rgba(232,236,255,.45);
+      text-transform:uppercase;
+      z-index:2;
+      pointer-events:none;
+    }
+
+    .shipThruster{
+      fill: var(--ship-thruster, rgba(50,60,80,.8));
+      stroke: rgba(255,255,255,.25);
+      stroke-width: 1.6;
+    }
+
+    .shipFlame{
+      fill: var(--ship-flame, rgba(255,180,60,.75));
+      opacity:.85;
+    }
+
+    .shipIcon{
+      fill: var(--ship-icon, rgba(255,255,255,.8));
+      opacity:.9;
+    }
+
+
+
+
+
+    @media (max-width: 980px){
+      .menuShell{ grid-template-columns: 1fr; }
+      .menuRight{ display:none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="starDrift" aria-hidden="true"></div>
+  <div class="menuWrap noselect" id="menuWrap">
+    <div class="menuShell">
+      <div class="menuLeft heroPanel">
+        <div class="menuBadge">MATH ARCADE • SYNTHWAVE EDITION</div>
+        <h1 class="menuTitle">
+          <span class="menuTitleMain">MENTARIS</span>
+          <span class="menuTitleSub">The Arith Belt</span>
+        </h1>
+        <p class="menuTag">Lock on • Calculate • Fire</p>
+        <div class="menuButtons">
+          <button id="btnStartGame" class="btn primary" type="button">Single Mission</button>
+          <button id="btnCampaign" class="btn secondaryLabel" type="button">Campaign <small>6 mission run</small></button>
+          <button id="btnLeaderboards" class="btn secondaryLabel" type="button">Leaderboards <small>Top runs</small></button>
+          <button id="btnSettingsHome" class="btn secondaryLabel" type="button">Settings <small>Audio levels</small></button>
+          <a id="btnExitHome" class="btn secondaryLabel" href="../../atmc.html">Exit <small>Return to hub</small></a>
+        </div>
+      </div>
+
+      <div class="menuRight"></div>
+    </div>
+  </div>
+
+  <div class="shipFloaters" aria-hidden="true">
+    <img class="shipFloat shipFloat--a" src="images/asteroid1.png" alt="" />
+    <img class="shipFloat shipFloat--b" src="images/asteroid2.png" alt="" />
+    <img class="shipFloat shipFloat--c" src="images/asteroid3.png" alt="" />
+    <img class="shipFloat shipFloat--d" src="images/asteroid2.png" alt="" />
+  </div>
+
+  <footer class="siteFooter">© 2025 Mentaris: The Arith Belt. All rights reserved.</footer>
+
+  <div id="funnelOverlay" class="overlay funnelOverlay">
+    <div class="card">
+      <div class="cardHead">
+        <div>
+          <h2 class="title">Launch Setup <span id="launchSetupSpinner" class="launchSpinnerTitle"></span></h2>
+          <p class="subtitle">Choose operation, mode, and settings before launch.</p>
+          <div id="stepperText" class="stepper">Step 1 of 6 • Operation</div>
+        </div>
+        <button id="btnCloseFunnel" class="btn">Close</button>
+      </div>
+      <form id="homeMenu">
+        <div class="cardBody">
+          <div class="step" data-step="0">
+            <div class="panel">
+              <h3>Operation</h3>
+              <div class="choiceGrid" id="operationChoices">
+                <div class="choiceCard selected" data-op="mul">
+                  <h4>× Multiplication</h4>
+                  <p>Multiply the two numbers.</p>
+                </div>
+                <div class="choiceCard" data-op="add">
+                  <h4>+ Addition</h4>
+                  <p>Add the two numbers together.</p>
+                </div>
+                <div class="choiceCard" data-op="rational">
+                  <h4>Rationals</h4>
+                  <p>Match fractions to decimals.</p>
+                </div>
+                <div class="choiceCard" data-op="square">
+                  <h4>Squares</h4>
+                  <p>Perfect squares and square roots.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step" data-step="1">
+            <div class="panel">
+              <h3>Mode</h3>
+              <input type="hidden" id="questionMode" name="questionMode" value="digits3" />
+              <div class="choiceGrid" id="modeChoices">
+                <div class="choiceCard selected" data-mode="digit">
+                  <h4>Digit Hunt</h4>
+                  <p>Shoot digits right-to-left for rapid hits.</p>
+                </div>
+                <div class="choiceCard" data-mode="classic">
+                  <h4>Classic Answer</h4>
+                  <p>Shoot the full answer to each problem.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step" data-step="2">
+            <div class="panel">
+              <h3>Sub Mode</h3>
+              <div class="choiceGrid" id="submodeChoices">
+                <div class="choiceCard selected" data-sub="2">
+                  <h4>2 by 1</h4>
+                  <p>Two-digit by two-digit problems.</p>
+                </div>
+                <div class="choiceCard" data-sub="3">
+                  <h4>3 by 1</h4>
+                  <p>Three-digit by three-digit problems.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step" data-step="3">
+            <div class="panel" id="shipPanel">
+              <h3>Ship Frame</h3>
+              <div class="shipChooser">
+              <div class="shipGrid" id="shipGrid">
+              <div class="shipTrack" id="shipTrack">
+                <label class="shipOption" data-ship="classic" style="--ship-body: rgba(255,180,60,.92); --ship-wing: rgba(200,120,40,.9); --ship-canopy: rgba(90,240,230,.85); --ship-accent: rgba(255,80,200,.9); --ship-highlight: rgba(255,230,120,.9); --ship-thruster: rgba(22,18,28,.85); --ship-flame: rgba(255,140,90,.85); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="classic" />
+                  <div class="shipCard">
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="98,80 54,110 40,136 58,146 118,130 88,104" />
+                      <polygon class="shipWing" points="122,80 166,110 180,136 162,146 102,130 132,104" />
+                      <polygon class="shipBody" points="110,6 144,50 180,84 172,124 146,146 136,172 84,172 74,146 48,124 40,84 76,50" />
+                      <polygon class="shipBody" points="110,18 126,60 122,150 110,174 98,150 94,60" />
+                      <rect class="shipStripe" x="58" y="92" width="104" height="6" rx="3" />
+                      <rect class="shipStripe" x="72" y="70" width="76" height="5" rx="3" />
+                      <polygon class="shipAccent" points="110,4 126,30 94,30" />
+                      <path class="shipCanopy" d="M96,52 Q110,36 124,52 L128,100 Q110,114 92,100 Z" />
+                      <rect class="shipIcon" x="106" y="120" width="8" height="18" rx="2" />
+                      <polygon class="shipAccent" points="26,104 54,104 46,126 18,126" />
+                      <rect class="shipAccent" x="30" y="82" width="8" height="24" rx="2" />
+                      <polygon class="shipAccent" points="166,104 194,104 202,126 174,126" />
+                      <rect class="shipAccent" x="182" y="82" width="8" height="24" rx="2" />
+                      <rect class="shipThruster" x="86" y="166" width="48" height="10" rx="4" />
+                      <circle class="shipThruster" cx="94" cy="172" r="9" />
+                      <circle class="shipThruster" cx="126" cy="172" r="9" />
+                      <polygon class="shipFlame" points="94,182 102,196 86,196" />
+                      <polygon class="shipFlame" points="126,182 134,196 118,196" />
+                    </svg>
+                    <div class="shipLabel">SCARLET CLASSIC</div>
+                  </div>
+                </label>
+                <label class="shipOption" data-ship="spire" style="--ship-body: rgba(120,90,255,.9); --ship-wing: rgba(80,60,220,.9); --ship-canopy: rgba(90,255,240,.85); --ship-accent: rgba(255,230,90,.95); --ship-highlight: rgba(255,80,200,.9); --ship-thruster: rgba(22,18,32,.85); --ship-flame: rgba(255,180,110,.85); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="spire" />
+                  <div class="shipCard">
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="104,96 66,120 42,144 68,152 116,136 98,116" />
+                      <polygon class="shipWing" points="116,96 154,120 178,144 152,152 104,136 122,116" />
+                      <polygon class="shipBody" points="110,4 130,50 150,88 146,132 122,158 126,176 94,176 98,158 74,132 70,88 90,50" />
+                      <polygon class="shipBody" points="110,18 124,60 120,150 110,170 100,150 96,60" />
+                      <rect class="shipStripe" x="68" y="92" width="84" height="9" rx="4" />
+                      <rect class="shipStripe" x="78" y="70" width="64" height="7" rx="3" />
+                      <path class="shipAccent" d="M102 14 Q110 2 118 14 L124 32 Q110 40 96 32 Z" />
+                      <path class="shipCanopy" d="M98,56 Q110,38 122,56 L128,98 Q110,112 92,98 Z" />
+                      <polygon class="shipIcon" points="110,122 116,134 110,146 104,134" />
+                      <polygon class="shipAccent" points="26,118 56,118 48,142 18,142" />
+                      <rect class="shipAccent" x="34" y="92" width="7" height="26" rx="2" />
+                      <polygon class="shipAccent" points="164,118 194,118 202,142 172,142" />
+                      <rect class="shipAccent" x="178" y="92" width="7" height="26" rx="2" />
+                      <circle class="shipThruster" cx="92" cy="174" r="8" />
+                      <circle class="shipThruster" cx="128" cy="174" r="8" />
+                      <polygon class="shipFlame" points="92,182 98,196 86,196" />
+                      <polygon class="shipFlame" points="128,182 134,196 122,196" />
+                    </svg>
+                    <div class="shipLabel">VERDANT SPIRE</div>
+                  </div>
+                </label>
+                <label class="shipOption" data-ship="am2" style="--ship-body: rgba(235,190,210,.9); --ship-wing: rgba(190,130,170,.9); --ship-canopy: rgba(180,90,200,.9); --ship-accent: rgba(255,110,130,.95); --ship-highlight: rgba(120,90,255,.9); --ship-thruster: rgba(20,24,36,.85); --ship-flame: rgba(120,220,255,.9); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="am2" />
+                  <div class="shipCard">
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="102,88 86,96 66,110 88,124 108,126 96,98" />
+                      <polygon class="shipWing" points="118,88 134,96 154,110 132,124 112,126 124,98" />
+                      <polygon class="shipBody" points="110,6 124,40 138,82 134,130 110,186 86,130 82,82 96,40" />
+                      <polygon class="shipBody" points="110,18 120,54 118,150 110,174 102,150 100,54" />
+                      <polygon class="shipHighlight" points="84,84 68,120 92,136 102,108" />
+                      <polygon class="shipHighlight" points="136,84 152,120 128,136 118,108" />
+                      <rect class="shipStripe" x="98" y="92" width="24" height="8" rx="3" />
+                      <path class="shipAccent" d="M104 10 Q110 2 116 10 L118 26 Q110 30 102 26 Z" />
+                      <path class="shipCanopy" d="M102,52 Q110,36 118,52 L124,98 Q110,112 96,98 Z" />
+                      <rect class="shipIcon" x="108" y="118" width="4" height="18" rx="2" />
+                      <circle class="shipThruster" cx="98" cy="172" r="6" />
+                      <circle class="shipThruster" cx="122" cy="172" r="6" />
+                      <circle class="shipThruster" cx="110" cy="176" r="5" />
+                      <polygon class="shipFlame" points="98,180 104,192 92,192" />
+                      <polygon class="shipFlame" points="122,180 128,192 116,192" />
+                      <polygon class="shipFlame" points="110,184 114,198 106,198" />
+                    </svg>
+                    <div class="shipLabel">AM2 SCOUT</div>
+                  </div>
+                </label>
+                <label class="shipOption locked" data-ship="mk7" data-locked="true" style="--ship-body: rgba(30,200,140,.9); --ship-wing: rgba(12,140,120,.9); --ship-canopy: rgba(40,255,210,.85); --ship-accent: rgba(255,230,120,.95); --ship-highlight: rgba(255,80,200,.9); --ship-thruster: rgba(18,22,32,.85); --ship-flame: rgba(255,190,80,.8); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="mk7" disabled />
+                  <div class="shipCard">
+                    <div class="shipLockTag">Unlocked Lv 7</div>
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="98,78 60,58 42,34 58,26 112,40 92,66" />
+                      <polygon class="shipWing" points="122,78 160,58 178,34 162,26 108,40 128,66" />
+                      <polygon class="shipBody" points="110,18 140,46 170,82 164,124 142,148 132,170 88,170 78,148 56,124 50,82 80,46" />
+                      <polygon class="shipBody" points="110,26 124,62 120,148 110,166 100,148 96,62" />
+                      <rect class="shipStripe" x="58" y="92" width="104" height="6" rx="3" />
+                      <rect class="shipStripe" x="72" y="70" width="76" height="5" rx="3" />
+                      <polygon class="shipAccent" points="110,4 126,30 94,30" />
+                      <path class="shipCanopy" d="M94,52 Q110,34 126,52 L132,102 Q110,120 88,102 Z" />
+                      <circle class="shipIcon" cx="110" cy="136" r="7" />
+                      <polygon class="shipAccent" points="46,104 70,104 62,126 38,126" />
+                      <rect class="shipAccent" x="50" y="82" width="8" height="24" rx="2" />
+                      <polygon class="shipAccent" points="150,104 174,104 182,126 158,126" />
+                      <rect class="shipAccent" x="162" y="82" width="8" height="24" rx="2" />
+                      <rect class="shipThruster" x="86" y="166" width="48" height="10" rx="4" />
+                      <circle class="shipThruster" cx="94" cy="172" r="9" />
+                      <circle class="shipThruster" cx="126" cy="172" r="9" />
+                      <polygon class="shipFlame" points="94,182 102,196 86,196" />
+                      <polygon class="shipFlame" points="126,182 134,196 118,196" />
+                    </svg>
+                    <div class="shipLabel">CRIMSON MK-7</div>
+                  </div>
+                </label>
+                <label class="shipOption locked" data-ship="fizard" data-locked="true" style="--ship-body: rgba(90,180,255,.92); --ship-wing: rgba(45,120,220,.92); --ship-canopy: rgba(120,240,255,.9); --ship-accent: rgba(255,190,100,.95); --ship-highlight: rgba(120,255,220,.9); --ship-thruster: rgba(18,22,32,.85); --ship-flame: rgba(255,200,120,.85); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="fizard" disabled />
+                  <div class="shipCard">
+                    <div class="shipLockTag">Unlocked Lv 8</div>
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="96,86 70,104 52,120 72,126 108,118 90,98" />
+                      <polygon class="shipWing" points="124,86 150,104 168,120 148,126 112,118 130,98" />
+                      <polygon class="shipBody" points="110,4 132,46 150,82 146,120 132,148 124,172 96,172 88,148 74,120 70,82 88,46" />
+                      <polygon class="shipBody" points="110,18 122,56 118,146 110,172 102,146 98,56" />
+                      <rect class="shipStripe" x="70" y="92" width="80" height="6" rx="3" />
+                      <rect class="shipStripe" x="80" y="70" width="60" height="5" rx="3" />
+                      <polygon class="shipAccent" points="110,2 122,26 98,26" />
+                      <path class="shipCanopy" d="M98,50 Q110,34 122,50 L128,96 Q110,110 92,96 Z" />
+                      <polygon class="shipIcon" points="110,120 116,134 110,148 104,134" />
+                      <polygon class="shipAccent" points="36,106 52,106 46,124 30,124" />
+                      <rect class="shipAccent" x="40" y="86" width="7" height="18" rx="2" />
+                      <polygon class="shipAccent" points="168,106 184,106 190,124 174,124" />
+                      <rect class="shipAccent" x="173" y="86" width="7" height="18" rx="2" />
+                      <rect class="shipThruster" x="90" y="166" width="40" height="10" rx="4" />
+                      <circle class="shipThruster" cx="96" cy="172" r="8" />
+                      <circle class="shipThruster" cx="124" cy="172" r="8" />
+                      <polygon class="shipFlame" points="96,182 102,196 90,196" />
+                      <polygon class="shipFlame" points="124,182 130,196 118,196" />
+                    </svg>
+                    <div class="shipLabel">AURORA DART</div>
+                  </div>
+                </label>
+                <label class="shipOption locked" data-ship="ember" data-locked="true" style="--ship-body: rgba(255,80,190,.92); --ship-wing: rgba(160,40,130,.9); --ship-canopy: rgba(120,255,230,.85); --ship-accent: rgba(255,230,90,.95); --ship-highlight: rgba(60,255,230,.85); --ship-thruster: rgba(22,18,28,.85); --ship-flame: rgba(255,200,90,.85); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="ember" disabled />
+                  <div class="shipCard">
+                    <div class="shipLockTag">Unlocked Lv 9</div>
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="98,80 38,110 20,138 44,150 118,130 88,104" />
+                      <polygon class="shipWing" points="122,80 182,110 200,138 176,150 102,130 132,104" />
+                      <polygon class="shipBody" points="110,6 144,50 180,84 172,124 146,146 136,172 84,172 74,146 48,124 40,84 76,50" />
+                      <polygon class="shipBody" points="110,18 126,60 122,150 110,174 98,150 94,60" />
+                      <rect class="shipStripe" x="58" y="92" width="104" height="6" rx="3" />
+                      <rect class="shipStripe" x="70" y="68" width="80" height="5" rx="3" />
+                      <polygon class="shipAccent" points="110,4 126,30 94,30" />
+                      <path class="shipCanopy" d="M92,52 Q110,34 128,52 L134,102 Q110,122 86,102 Z" />
+                      <polygon class="shipIcon" points="110,122 120,140 110,156 100,140" />
+                      <polygon class="shipAccent" points="26,104 54,104 46,126 18,126" />
+                      <rect class="shipAccent" x="30" y="82" width="8" height="24" rx="2" />
+                      <polygon class="shipAccent" points="166,104 194,104 202,126 174,126" />
+                      <rect class="shipAccent" x="182" y="82" width="8" height="24" rx="2" />
+                      <rect class="shipThruster" x="86" y="166" width="48" height="10" rx="4" />
+                      <circle class="shipThruster" cx="94" cy="172" r="9" />
+                      <circle class="shipThruster" cx="126" cy="172" r="9" />
+                      <polygon class="shipFlame" points="94,182 102,196 86,196" />
+                      <polygon class="shipFlame" points="126,182 134,196 118,196" />
+                    </svg>
+                    <div class="shipLabel">RUBY STRIKE</div>
+                  </div>
+                </label>
+                <label class="shipOption locked" data-ship="azure" data-locked="true" style="--ship-body: rgba(70,180,255,.92); --ship-wing: rgba(30,130,200,.92); --ship-canopy: rgba(255,160,70,.9); --ship-accent: rgba(255,240,120,.95); --ship-highlight: rgba(90,255,230,.9); --ship-thruster: rgba(22,26,36,.85); --ship-flame: rgba(255,190,90,.85); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="azure" disabled />
+                  <div class="shipCard">
+                    <div class="shipLockTag">Unlocked Lv 10</div>
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="100,94 46,122 18,162 50,172 118,150 92,118" />
+                      <polygon class="shipWing" points="120,94 174,122 202,162 170,172 100,150 128,118" />
+                      <polygon class="shipBody" points="110,10 140,54 170,90 164,128 140,150 132,172 88,172 80,150 56,128 50,90 80,54" />
+                      <polygon class="shipBody" points="110,20 124,64 120,150 110,170 100,150 96,64" />
+                      <rect class="shipStripe" x="62" y="98" width="96" height="6" rx="3" />
+                      <rect class="shipStripe" x="76" y="76" width="68" height="5" rx="3" />
+                      <polygon class="shipAccent" points="110,8 124,30 96,30" />
+                      <path class="shipCanopy" d="M96,54 Q110,38 124,54 L130,102 Q110,120 90,102 Z" />
+                      <rect class="shipIcon" x="105" y="122" width="10" height="16" rx="2" />
+                      <polygon class="shipAccent" points="22,124 48,124 40,148 14,148" />
+                      <rect class="shipAccent" x="28" y="94" width="8" height="28" rx="2" />
+                      <polygon class="shipAccent" points="172,124 198,124 206,148 180,148" />
+                      <rect class="shipAccent" x="184" y="94" width="8" height="28" rx="2" />
+                      <rect class="shipThruster" x="86" y="168" width="48" height="10" rx="4" />
+                      <circle class="shipThruster" cx="94" cy="174" r="9" />
+                      <circle class="shipThruster" cx="126" cy="174" r="9" />
+                      <polygon class="shipFlame" points="94,184 102,198 86,198" />
+                      <polygon class="shipFlame" points="126,184 134,198 118,198" />
+                    </svg>
+                    <div class="shipLabel">AZURE LANCER</div>
+                  </div>
+                </label>
+              </div>
+              </div>
+              <div class="shipDetails" aria-live="polite">
+                <div class="shipDetailsHeader">
+                  <span class="shipDetailsName" id="shipDetailsName">Crimson MK-7</span>
+                  <span class="shipDetailsStyle" id="shipDetailsStyle">Synthwave Interceptor</span>
+                </div>
+                <div class="shipDetailsBody" id="shipDetailsBody">
+                  Balanced frame with broad wings, medium hull height, and dual midrange cannons.
+                </div>
+                <div class="shipDetailsStats">
+                  <div class="shipDetailsStat">
+                    <span>Flight</span>
+                    <span id="shipStatHull">Medium</span>
+                  </div>
+                  <div class="shipDetailsStat">
+                    <span>Wings</span>
+                    <span id="shipStatWings">Wide</span>
+                  </div>
+                  <div class="shipDetailsStat" id="shipStatSpecialCard">
+                    <span>Special</span>
+                    <span id="shipStatGuns">Twin</span>
+                  </div>
+                  <div class="shipDetailsStat">
+                    <span>Thrusters</span>
+                    <span id="shipStatThrusters">Dual</span>
+                  </div>
+                </div>
+              </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step" data-step="4">
+            <div class="panel">
+              <h3>Belt Selector</h3>
+              <input type="hidden" id="belt" name="belt" value="dusk" />
+              <div class="choiceGrid" id="beltChoices">
+                <div class="choiceCard beltChoice selected" data-belt="dusk" style="background-image:url('images/background8.png');">
+                  <h4>Dusk Belt</h4>
+                  <p>Default training field with deep stars.</p>
+                </div>
+                <div class="choiceCard beltChoice" data-belt="ember" style="background-image:url('images/background1.png');">
+                  <h4>Ember Belt</h4>
+                  <p>Warm glow with scattered dust lanes.</p>
+                </div>
+                <div class="choiceCard beltChoice" data-belt="aurora" style="background-image:url('images/background2.png');">
+                  <h4>Aurora Belt</h4>
+                  <p>Cool nebula haze and icy highlights.</p>
+                </div>
+                <div class="choiceCard beltChoice" data-belt="rift" style="background-image:url('images/background3.png');">
+                  <h4>Rift Belt</h4>
+                  <p>Dense field with higher contrast drift.</p>
+                </div>
+                <div class="choiceCard beltChoice" data-belt="vega" style="background-image:url('images/background7.png');">
+                  <h4>Vega Belt</h4>
+                  <p>Wide galaxy wash with soft flares.</p>
+                </div>
+                <div class="choiceCard beltChoice" data-belt="void" style="background-image:url('images/background9.png');">
+                  <h4>Void Belt</h4>
+                  <p>Deep space with faint starlight.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="step" data-step="5">
+            <div class="panel">
+              <h3>Difficulty</h3>
+              <div class="choiceGrid" id="difficultyChoices">
+                <div class="choiceCard" data-diff="easy">
+                  <h4>Easy</h4>
+                  <p>Slower speed, fewer decoys, more lives.</p>
+                </div>
+                <div class="choiceCard selected" data-diff="normal">
+                  <h4>Normal</h4>
+                  <p>Balanced pace with standard tables.</p>
+                </div>
+                <div class="choiceCard" data-diff="hard">
+                  <h4>Hard</h4>
+                  <p>More decoys, faster asteroids, tighter focus.</p>
+                </div>
+                <div class="choiceCard" data-diff="brutal">
+                  <h4>Brutal</h4>
+                  <p>High speed and pressure for expert runs.</p>
+                </div>
+              </div>
+            </div>
+            <div class="panel">
+              <h3>Options</h3>
+              <div class="helpToggle">
+                <label class="toggleRow">
+                  <input id="helpToggle" type="checkbox" />
+                  Show helper text
+                </label>
+              </div>
+              <div class="grid">
+                <label title="First number range (A). Example: A 2–12 means A can be 2 through 12.">
+                  FIRST NUMBER MIN (A)
+                  <input id="aMin" name="aMin" type="number" min="0" max="99" value="2" />
+                  <span class="helpText">Smallest value for the first multiplier (A). In Squares mode, A is the base and the range is inclusive.</span>
+                </label>
+                <label title="First number range (A). Example: A 2–12 means A can be 2 through 12.">
+                  FIRST NUMBER MAX (A)
+                  <input id="aMax" name="aMax" type="number" min="0" max="99" value="12" />
+                  <span class="helpText">Largest value for the first multiplier (A). In Squares mode, A is the base and the range is inclusive.</span>
+                </label>
+                <label title="Second number range (B). Example: B 2–12 means B can be 2 through 12.">
+                  SECOND NUMBER MIN (B)
+                  <input id="bMin" name="bMin" type="number" min="0" max="99" value="2" />
+                  <span class="helpText">Smallest value for the second multiplier (B).</span>
+                </label>
+                <label title="Second number range (B). Example: B 2–12 means B can be 2 through 12.">
+                  SECOND NUMBER MAX (B)
+                  <input id="bMax" name="bMax" type="number" min="0" max="99" value="12" />
+                  <span class="helpText">Largest value for the second multiplier (B).</span>
+                </label>
+
+                <label>
+                  DECOYS PER PROBLEM
+                  <select id="decoys" name="decoys">
+                    <option value="2">2 (EASY)</option>
+                    <option value="3" selected>3 (NORMAL)</option>
+                    <option value="4">4 (HARD)</option>
+                    <option value="5">5 (BRUTAL)</option>
+                  </select>
+                  <span class="helpText">More decoys means more wrong asteroids to dodge.</span>
+                </label>
+                <label>
+                  DECOYS FUNCTION (CLASSIC)
+                  <select id="decoyFunction" name="decoyFunction">
+                    <option value="units_bias" selected>Units Digit Bias</option>
+                    <option value="structured">Structured Decoys</option>
+                    <option value="digit_shuffle">Digit Shuffle</option>
+                  </select>
+                  <span class="helpText">Used only in Classic Answer modes.</span>
+                </label>
+
+                <label>
+                  ASTEROID SPEED
+                  <select id="speed" name="speed">
+                  <option value="0.5">SLOW</option>
+                  <option value="0.7" selected>NORMAL</option>
+                  <option value="0.85">FAST</option>
+                  <option value="1.0">INSANE</option>
+                </select>
+                  <span class="helpText">How fast asteroids drift toward you.</span>
+              </label>
+
+                <label>
+                  LIVES
+                  <select id="lives" name="lives">
+                    <option value="2">2</option>
+                    <option value="3" selected>3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                  </select>
+                  <span class="helpText">How many ship hits you can take per run.</span>
+                </label>
+
+                <label>
+                  STRIKES (WRONG TARGETS)
+                  <select id="strikes" name="strikes">
+                    <option value="8">8 (EASY)</option>
+                    <option value="5" selected>5 (NORMAL)</option>
+                    <option value="3">3 (HARD)</option>
+                    <option value="0">0 (BRUTAL)</option>
+                  </select>
+                  <span class="helpText">Wrong asteroid hits before mission failure.</span>
+                </label>
+
+                <label>
+                  TARGETED ASTEROIDS
+                  <select id="targetMode" name="targetMode">
+                    <option value="off">OFF (ENDLESS)</option>
+                    <option value="q7">7 TARGETS</option>
+                    <option value="q10" selected>10 TARGETS</option>
+                    <option value="q15">15 TARGETS</option>
+                    <option value="q20">20 TARGETS</option>
+                  </select>
+                  <span class="helpText">End the run after a fixed number of correct hits.</span>
+                </label>
+
+                <label>
+                  TIMER
+                  <select id="timerMode" name="timerMode">
+                    <option value="off">OFF (ENDLESS)</option>
+                    <option value="60">60 SECONDS</option>
+                    <option value="90">90 SECONDS</option>
+                    <option value="120">120 SECONDS</option>
+                    <option value="180">3 MINUTES</option>
+                    <option value="300">5 MINUTES</option>
+                    <option value="600">10 MINUTES</option>
+                  </select>
+                  <span class="helpText">End the run after a fixed number of seconds.</span>
+                </label>
+
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="stepActions">
+            <button id="btnReset" class="btn" type="button">RESET</button>
+            <button id="btnStepBack" class="btn" type="button">Back</button>
+            <button id="btnStepNext" class="btn" type="button">Next</button>
+            <button id="btnSaveFunnel" class="btn" type="submit">Save</button>
+            <button id="btnLaunchGame" class="btn" type="button" style="border-color: rgba(193,216,47,.35); background: rgba(193,216,47,.14);">Launch Game</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div id="controlsOverlay" class="overlay">
+    <div class="card">
+      <div class="cardHead">
+        <div>
+          <h2 class="title">How To Play</h2>
+          <p class="subtitle">Quick start for new pilots.</p>
+        </div>
+        <button id="btnCloseControls" class="btn">Close</button>
+      </div>
+      <div class="cardBody">
+        <div class="panel">
+          <h3>Flight</h3>
+          <ul class="list">
+            <li><span>Move</span><b>W A S D / Arrow Keys</b></li>
+            <li><span>Fire</span><b>Z</b></li>
+            <li><span>Secondary</span><b>X</b></li>
+            <li><span>Shockwave</span><b>C</b></li>
+            <li><span>Dash</span><b>Space</b></li>
+            <li><span>Pause</span><b>P</b></li>
+            <li><span>Mousepad</span><b>B</b></li>
+            <li><span>Restart</span><b>R</b></li>
+            <li><span>Menu</span><b>M</b></li>
+          </ul>
+        </div>
+        <div class="panel">
+          <h3>Tips</h3>
+          <p class="monoSmall" style="margin:0;">Use secondary powerups to control the field when the screen gets crowded.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="settingsOverlay" class="overlay">
+    <div class="card">
+      <div class="cardHead">
+        <div>
+          <h2 class="title">Settings</h2>
+          <p class="subtitle">Tune your audio levels.</p>
+        </div>
+        <button id="btnCloseSettings" class="btn">Close</button>
+      </div>
+      <div class="cardBody">
+        <div class="panel">
+          <h3>Audio</h3>
+          <div class="grid">
+            <label>
+              MASTER VOLUME
+              <input id="volume" name="volume" form="homeMenu" type="range" min="0" max="1" step="0.01" value="0.65" />
+              <span class="helpText">Controls the overall audio level.</span>
+            </label>
+            <label>
+              SFX VOLUME
+              <input id="sfxVolume" name="sfxVolume" form="homeMenu" type="range" min="0" max="1" step="0.01" value="0.85" />
+              <span class="helpText">Controls weapon, impact, and UI sound effects.</span>
+            </label>
+            <label>
+              SOUNDTRACK VOLUME
+              <input id="musicVolume" name="musicVolume" form="homeMenu" type="range" min="0" max="1" step="0.01" value="0.6" />
+              <span class="helpText">Controls the in-game soundtrack volume.</span>
+            </label>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Display</h3>
+          <div class="grid">
+            <div>
+              <button id="btnFullscreenHome" class="btn" type="button">Toggle Fullscreen</button>
+              <div class="helpText" style="display:block;">Switch between fullscreen and windowed mode.</div>
+            </div>
+            <div>
+              <button id="btnHowToPlay" class="btn" type="button">Ship Commands</button>
+              <div class="helpText" style="display:block;">Open the controls tutorial.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <button id="btnCloseSettingsBottom" class="btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="leaderboardsOverlay" class="overlay">
+    <div class="card leaderboardsCard">
+      <div class="cardHead">
+        <div>
+          <h2 class="title">Leaderboards</h2>
+          <p class="subtitle">Top scores across all sessions.</p>
+        </div>
+        <button id="btnCloseLeaderboards" class="btn">Close</button>
+      </div>
+      <div class="cardBody">
+        <div class="leaderboardsMain">
+          <div class="panel">
+            <h3>High Scores</h3>
+            <div class="monoSmall" style="margin:0 0 6px;">TOP 5</div>
+            <ul class="list" id="homeHighScoresTop"></ul>
+            <div class="monoSmall" style="margin:12px 0 6px;">MORE</div>
+            <ul class="list" id="homeHighScoresRest"></ul>
+          </div>
+          <div class="panel">
+            <h3>Lifetime</h3>
+            <ul class="list" id="homeLifetimeStats"></ul>
+          </div>
+        </div>
+        <div class="panel leaderboardDetail" id="homeScoreDetail">
+          <div class="cardHead" style="padding:0 0 10px; border:none;">
+            <div>
+              <h3>Run Details</h3>
+              <p class="monoSmall" id="homeScoreDetailTitle" style="margin:4px 0 0;">—</p>
+            </div>
+            <button id="btnScoreBack" class="btn">Back</button>
+          </div>
+          <ul class="list" id="homeScoreDetailList"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="briefingOverlay" class="overlay briefingOverlay">
+      <div class="briefingCard">
+        <div class="cardHead" style="border:none; padding:0 0 10px;">
+          <div>
+            <h2 class="title">Mission Briefing</h2>
+            <p class="subtitle">Review your loadout before launch.</p>
+            <div class="briefingStatus" id="briefingStatus">
+              <span class="briefingSpinner" aria-hidden="true"></span>
+              <span id="briefingStatusText">Initializing launch sequence...</span>
+            </div>
+          </div>
+          <button id="btnBriefingSkip" class="btn">Launch</button>
+        </div>
+      <div class="panel" style="margin-top:10px;">
+        <div class="briefingShipRow">
+          <div id="briefingShipCard" class="briefingShipCard"></div>
+          <div class="briefingShipMeta">
+            <h3 id="briefingShip">Ship: �?"</h3>
+            <p class="monoSmall" id="briefingMode" style="margin:0;">Mode: �?"</p>
+            <p class="monoSmall" id="briefingDifficulty" style="margin:0;">Difficulty: �?"</p>
+            <p class="monoSmall" id="briefingOperation" style="margin:0;">Operation: �?"</p>
+            <p class="monoSmall" id="briefingSubmode" style="margin:0;">Submode: �?"</p>
+          </div>
+        </div>
+      </div>
+      <div class="briefingGrid">
+        <div class="briefingStat"><span>A Range</span><b id="briefingARange">—</b></div>
+        <div class="briefingStat"><span>B Range</span><b id="briefingBRange">—</b></div>
+        <div class="briefingStat"><span>Decoys</span><b id="briefingDecoys">—</b></div>
+        <div class="briefingStat"><span>Asteroid Speed</span><b id="briefingSpeed">—</b></div>
+        <div class="briefingStat"><span>Lives</span><b id="briefingLives">—</b></div>
+        <div class="briefingStat"><span>Strikes</span><b id="briefingStrikes">—</b></div>
+        <div class="briefingStat"><span>Targeted Asteroids</span><b id="briefingTargeted">—</b></div>
+        <div class="briefingStat"><span>Timer</span><b id="briefingTimer">—</b></div>
+      </div>
+      <div class="briefingTutorial">
+        <div class="briefingTutorialTitle">Operator Tutorial</div>
+        <div class="briefingTutorialList">
+          <div><b>WASD / ARROWS</b> Move ship</div>
+          <div><b>Z</b> Fire primary</div>
+          <div><b>X</b> Secondary ability</div>
+          <div><b>C</b> Ship special</div>
+          <div><b>SPACE</b> Dash</div>
+          <div><b>P</b> Pause / Resume</div>
+          <div><b>B</b> Mousepad toggle</div>
+          <div><b>R</b> Restart</div>
+          <div><b>M</b> Settings</div>
+        </div>
+      </div>
+      <div class="briefingHints">
+        <div class="briefingHintLabel">Command Directive</div>
+        <div class="briefingHintText" id="briefingHintText">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="campaignOverlay" class="overlay">
+    <div class="card">
+      <div class="cardHead">
+        <div>
+          <h2 class="title">Campaign</h2>
+          <p class="subtitle">Complete missions in order. Three failures end the run.</p>
+        </div>
+        <button id="btnCloseCampaign" class="btn">Close</button>
+      </div>
+      <div class="cardBody campaignView active" id="campaignSelectView" style="grid-template-columns: 1fr;">
+        <div class="panel">
+          <h3>Campaigns</h3>
+          <ul class="list" id="campaignSetList"></ul>
+        </div>
+      </div>
+      <div class="cardBody campaignView" id="campaignMissionsView">
+        <div class="panel">
+          <div class="row" style="justify-content:space-between;">
+            <h3 style="margin:0;">Missions</h3>
+            <button id="btnCampaignBack" class="btn">Back</button>
+          </div>
+          <ul class="list" id="campaignList"></ul>
+        </div>
+        <div class="panel">
+          <h3>Details</h3>
+          <div class="monoSmall" id="campaignDetails">Select a mission to view its settings.</div>
+          <p class="monoSmall" id="campaignStatusText" style="margin-top:10px;">Loading campaign status...</p>
+        </div>
+      </div>
+      <div class="row">
+        <button id="btnCampaignStart" class="btn" style="border-color: rgba(0,229,255,.35); background: rgba(0,229,255,.14);">Start Campaign</button>
+        <button id="btnCampaignContinue" class="btn" style="display:none; border-color: rgba(0,229,255,.35); background: rgba(0,229,255,.12);">Continue</button>
+        <button id="btnCampaignReset" class="btn">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="campaignConfirmOverlay" class="overlay">
+    <div class="card" style="max-width:520px;">
+      <div class="cardHead">
+        <div>
+          <h2 class="title">Restart Campaign?</h2>
+          <p class="subtitle">You already have progress. Starting over will reset it.</p>
+        </div>
+        <button id="btnCampaignConfirmCancel" class="btn">Cancel</button>
+      </div>
+      <div class="cardBody" style="grid-template-columns: 1fr;">
+        <div class="panel">
+          <p class="monoSmall" style="margin:0;">Choose to restart from Mission 1 or continue from your current mission.</p>
+        </div>
+      </div>
+      <div class="row">
+        <button id="btnCampaignConfirmStart" class="btn" style="border-color: rgba(255,221,0,.35); background: rgba(255,221,0,.14);">Start Over</button>
+        <button id="btnCampaignConfirmContinue" class="btn" style="border-color: rgba(0,229,255,.35); background: rgba(0,229,255,.12);">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+  <script>
+    function persistSessionConfig(key, data) {
+      try { sessionStorage.setItem(key, JSON.stringify(data)); } catch (err) { console.warn("Persist failed", err); }
+      try { localStorage.setItem(key, JSON.stringify(data)); } catch (err) { /* ignore */ }
+    }
+    function loadSessionConfig(key, fallback) {
+      if (fallback === undefined) fallback = {};
+      try {
+        var raw = null;
+        try { raw = sessionStorage.getItem(key); } catch (err) { raw = null; }
+        if(!raw){
+          try { raw = localStorage.getItem(key); } catch (err) { raw = null; }
+        }
+        return raw ? Object.assign({}, fallback, JSON.parse(raw)) : fallback;
+      } catch (err) {
+        console.warn("Load failed", err);
+        return fallback;
+      }
+    }
+
+    var defaults = {
+      aMin: 2,
+      aMax: 12,
+      bMin: 2,
+      bMax: 12,
+      decoys: 3,
+      decoyFunction: "units_bias",
+      speed: 0.9,
+      lives: 3,
+      difficulty: "normal",
+      volume: 0.65,
+      sfxVolume: 0.85,
+      musicVolume: 0.6,
+      strikes: 5,
+      targetMode: "q7",
+      timerMode: "off",
+      questionMode: "digits3",
+      sound: true,
+      ship: "spire",
+      belt: "dusk",
+    };
+
+    var campaignActiveKey = "mathsteroid.campaign.active";
+    var campaignStateKeyBase = "mathsteroid.campaign.state.";
+    var campaignDataKeyBase = "mathsteroid.campaign.data.";
+    var campaignDataVersion = 4;
+    var campaignMaxFailuresDefault = 3;
+    var campaignDefaultId = "sector_run";
+    var campaignSets = [
+      {
+        id: "sector_run",
+        name: "Sector Run",
+        desc: "Starter training across six sectors.",
+        maxFailures: 3,
+        missions: [
+          {
+            id: "m1",
+            title: "Sector 1: Calibration",
+            desc: "Digit hunt warm-up.",
+            config: { ship: "spire", questionMode: "digits2", difficulty: "easy", targetMode: "q7", timerMode: "off", decoys: 3, speed: 0.7, lives: 3, strikes: 6, aMin: 2, aMax: 9, bMin: 2, bMax: 9 }
+          },
+          {
+            id: "m2",
+            title: "Sector 2: Drift Line",
+            desc: "Faster digit hunt.",
+            config: { ship: "classic", questionMode: "add_digits3", difficulty: "normal", targetMode: "q10", timerMode: "off", decoys: 3, speed: 0.8, lives: 3, strikes: 5, aMin: 2, aMax: 12, bMin: 2, bMax: 9 }
+          },
+          {
+            id: "m3",
+            title: "Sector 3: Classic Sweep",
+            desc: "Classic answers under time.",
+            config: { ship: "am2", questionMode: "classic2", difficulty: "normal", targetMode: "off", timerMode: "60", decoys: 3, decoyFunction: "units_bias", speed: 0.85, lives: 3, strikes: 4, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
+          },
+          {
+            id: "m4",
+            title: "Sector 4: Signal Storm",
+            desc: "Addition digit hunt.",
+            config: { questionMode: "add_digits2", difficulty: "hard", targetMode: "q10", timerMode: "off", decoys: 4, speed: 0.9, lives: 3, strikes: 3, aMin: 10, aMax: 99, bMin: 10, bMax: 99 }
+          },
+          {
+            id: "m5",
+            title: "Sector 5: Deep Belt",
+            desc: "Square memorization.",
+            config: { questionMode: "square_shoot", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "structured", speed: 1.0, lives: 2, strikes: 3, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
+          },
+          {
+            id: "m6",
+            title: "Sector 6: Root Relay",
+            desc: "Square root precision.",
+            config: { questionMode: "square_root", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "structured", speed: 1.0, lives: 2, strikes: 3, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
+          }
+        ]
+      },
+      {
+        id: "rift_assault",
+        name: "Rift Assault",
+        desc: "Higher speeds, tighter margins.",
+        maxFailures: 3,
+        missions: [
+          {
+            id: "r1",
+            title: "Rift 1: Vector Burn",
+            desc: "Rapid digit hunt.",
+            config: { ship: "spire", questionMode: "digits3", difficulty: "normal", targetMode: "q10", timerMode: "off", decoys: 4, speed: 0.9, lives: 3, strikes: 5, aMin: 2, aMax: 9, bMin: 2, bMax: 9 }
+          },
+          {
+            id: "r2",
+            title: "Rift 2: Split Signal",
+            desc: "Dense addition fields.",
+            config: { ship: "classic", questionMode: "add_digits3", difficulty: "hard", targetMode: "q12", timerMode: "off", decoys: 4, speed: 0.95, lives: 3, strikes: 4, aMin: 5, aMax: 15, bMin: 5, bMax: 15 }
+          },
+          {
+            id: "r3",
+            title: "Rift 3: Phase Lock",
+            desc: "Classic answers under pressure.",
+            config: { ship: "am2", questionMode: "classic3", difficulty: "hard", targetMode: "off", timerMode: "75", decoys: 4, decoyFunction: "units_bias", speed: 1.0, lives: 2, strikes: 3, aMin: 3, aMax: 12, bMin: 3, bMax: 12 }
+          },
+          {
+            id: "r4",
+            title: "Rift 4: Echo Surge",
+            desc: "Addition classics at speed.",
+            config: { questionMode: "add_classic2", difficulty: "hard", targetMode: "off", timerMode: "75", decoys: 4, decoyFunction: "units_bias", speed: 1.05, lives: 2, strikes: 3, aMin: 10, aMax: 99, bMin: 10, bMax: 99 }
+          },
+          {
+            id: "r5",
+            title: "Rift 5: Prism Array",
+            desc: "Squares at high tempo.",
+            config: { questionMode: "square_shoot", difficulty: "brutal", targetMode: "off", timerMode: "90", decoys: 5, decoyFunction: "structured", speed: 1.1, lives: 2, strikes: 2, aMin: 4, aMax: 15, bMin: 4, bMax: 15 }
+          },
+          {
+            id: "r6",
+            title: "Rift 6: Root Spiral",
+            desc: "Roots with tight margins.",
+            config: { questionMode: "square_root", difficulty: "brutal", targetMode: "off", timerMode: "90", decoys: 5, decoyFunction: "structured", speed: 1.1, lives: 2, strikes: 2, aMin: 4, aMax: 15, bMin: 4, bMax: 15 }
+          }
+        ]
+      },
+      {
+        id: "void_run",
+        name: "Void Run",
+        desc: "Elite tempo with razor-thin margin.",
+        maxFailures: 3,
+        missions: [
+          {
+            id: "v1",
+            title: "Void 1: Singularity Drift",
+            desc: "High-speed digit hunt.",
+            config: { ship: "spire", questionMode: "digits3", difficulty: "hard", targetMode: "q12", timerMode: "off", decoys: 5, speed: 1.1, lives: 2, strikes: 4, aMin: 3, aMax: 12, bMin: 3, bMax: 12 }
+          },
+          {
+            id: "v2",
+            title: "Void 2: Ion Wake",
+            desc: "Addition under pressure.",
+            config: { ship: "classic", questionMode: "add_digits3", difficulty: "brutal", targetMode: "q12", timerMode: "off", decoys: 5, speed: 1.15, lives: 2, strikes: 3, aMin: 8, aMax: 18, bMin: 8, bMax: 18 }
+          },
+          {
+            id: "v3",
+            title: "Void 3: Razor Current",
+            desc: "Classic answers at max pace.",
+            config: { ship: "am2", questionMode: "classic3", difficulty: "brutal", targetMode: "off", timerMode: "75", decoys: 5, decoyFunction: "units_bias", speed: 1.2, lives: 2, strikes: 2, aMin: 4, aMax: 15, bMin: 4, bMax: 15 }
+          },
+          {
+            id: "v4",
+            title: "Void 4: Nova Cipher",
+            desc: "Addition classics at speed.",
+            config: { questionMode: "add_classic3", difficulty: "brutal", targetMode: "off", timerMode: "75", decoys: 5, decoyFunction: "units_bias", speed: 1.2, lives: 2, strikes: 2, aMin: 20, aMax: 99, bMin: 20, bMax: 99 }
+          },
+          {
+            id: "v5",
+            title: "Void 5: Prism Collapse",
+            desc: "Squares at extreme tempo.",
+            config: { questionMode: "square_shoot", difficulty: "brutal", targetMode: "off", timerMode: "90", decoys: 6, decoyFunction: "structured", speed: 1.25, lives: 2, strikes: 2, aMin: 6, aMax: 20, bMin: 6, bMax: 20 }
+          },
+          {
+            id: "v6",
+            title: "Void 6: Root Singe",
+            desc: "Roots with no slack.",
+            config: { questionMode: "square_root", difficulty: "brutal", targetMode: "off", timerMode: "90", decoys: 6, decoyFunction: "structured", speed: 1.25, lives: 2, strikes: 1, aMin: 6, aMax: 20, bMin: 6, bMax: 20 }
+          }
+        ]
+      }
+    ];
+    var activeCampaignId = null;
+
+    function findCampaignSet(id){
+      for(var i=0; i<campaignSets.length; i++){
+        if(campaignSets[i].id === id) return campaignSets[i];
+      }
+      return null;
+    }
+
+    function getCampaignSet(id){
+      return findCampaignSet(id) || campaignSets[0];
+    }
+
+    function getActiveCampaignId(){
+      if(activeCampaignId) return activeCampaignId;
+      var stored = null;
+      try{ stored = localStorage.getItem(campaignActiveKey); }catch(e){}
+      if(stored && findCampaignSet(stored)) activeCampaignId = stored;
+      if(!activeCampaignId) activeCampaignId = campaignDefaultId;
+      return activeCampaignId;
+    }
+
+    function setActiveCampaignId(id){
+      activeCampaignId = id || campaignDefaultId;
+      try{ localStorage.setItem(campaignActiveKey, activeCampaignId); }catch(e){}
+    }
+
+    function getCampaignStateKey(id){
+      return campaignStateKeyBase + id;
+    }
+
+    function getCampaignDataKey(id){
+      return campaignDataKeyBase + id;
+    }
+
+    function normalizeCampaignState(state, missionCount){
+      var safe = (state && typeof state === "object") ? state : {};
+      var completed = Array.isArray(safe.completed) ? safe.completed.slice(0, missionCount) : [];
+      while(completed.length < missionCount) completed.push(false);
+      var index = Number.isFinite(safe.index) ? safe.index : 0;
+      index = Math.max(0, Math.min(index, missionCount));
+      return {
+        index: index,
+        failures: safe.failures || 0,
+        completed: completed,
+        active: !!safe.active,
+        failed: !!safe.failed
+      };
+    }
+
+    function loadCampaignState(campaignId){
+      var set = getCampaignSet(campaignId);
+      var key = getCampaignStateKey(set.id);
+      var state = null;
+      try{
+        var raw = localStorage.getItem(key);
+        if(raw) state = JSON.parse(raw);
+      }catch(e){}
+      if(!state && set.id === campaignDefaultId){
+        try{
+          var legacy = localStorage.getItem("mathsteroid.campaign.state");
+          if(legacy) state = JSON.parse(legacy);
+        }catch(e){}
+        if(state){
+          try{ localStorage.setItem(key, JSON.stringify(state)); }catch(e){}
+        }
+      }
+      return normalizeCampaignState(state, set.missions.length);
+    }
+
+    function saveCampaignState(state, campaignId){
+      var key = getCampaignStateKey(campaignId || getActiveCampaignId());
+      try{ localStorage.setItem(key, JSON.stringify(state)); }catch(e){}
+    }
+
+    function ensureCampaignData(){
+      campaignSets.forEach(function(set){
+        var key = getCampaignDataKey(set.id);
+        try{
+          var existing = null;
+          var raw = localStorage.getItem(key);
+          if(raw) existing = JSON.parse(raw);
+          if(!existing || existing.version !== campaignDataVersion){
+            localStorage.setItem(key, JSON.stringify({
+              version: campaignDataVersion,
+              id: set.id,
+              name: set.name,
+              missions: set.missions,
+              maxFailures: set.maxFailures || campaignMaxFailuresDefault
+            }));
+          }
+        }catch(e){}
+      });
+    }
+
+    function resetCampaignState(campaignId){
+      var set = getCampaignSet(campaignId);
+      var fresh = {
+        index: 0,
+        failures: 0,
+        completed: new Array(set.missions.length).fill(false),
+        active: false,
+        failed: false
+      };
+      saveCampaignState(fresh, set.id);
+      return fresh;
+    }
+
+    function getActiveCampaign(){
+      return getCampaignSet(getActiveCampaignId());
+    }
+
+    function getCampaignMaxFailures(){
+      var set = getActiveCampaign();
+      return set && set.maxFailures ? set.maxFailures : campaignMaxFailuresDefault;
+    }
+
+    var form = document.getElementById("homeMenu");
+    var resetBtn = document.getElementById("btnReset");
+    var saved = loadSessionConfig("asteroidConfig", defaults);
+    ensureCampaignData();
+    if(saved.timerMode && String(saved.timerMode).charAt(0) === "q"){
+      saved.targetMode = saved.timerMode;
+      saved.timerMode = "off";
+    }
+
+    if (form) {
+      Object.keys(saved).forEach(function(key) {
+        var value = saved[key];
+        var field = form.elements.namedItem(key) || document.getElementById(key);
+        if (!field) return;
+        if (field.type === "checkbox") {
+          field.checked = Boolean(value);
+        } else {
+          field.value = value;
+        }
+      });
+    }
+    var helpToggle = document.getElementById("helpToggle");
+    var helpStorageKey = "mathsteroid.showHelp";
+    function setHelpState(isOn){
+      document.body.classList.toggle("showHelp", !!isOn);
+      if(helpToggle) helpToggle.checked = !!isOn;
+      try{ localStorage.setItem(helpStorageKey, isOn ? "1" : "0"); }catch(e){}
+    }
+    if(helpToggle){
+      var storedHelp = "0";
+      try{ storedHelp = localStorage.getItem(helpStorageKey) || "0"; }catch(e){}
+      setHelpState(storedHelp === "1");
+      helpToggle.addEventListener("change", function(){
+        setHelpState(helpToggle.checked);
+      });
+    }
+
+    var volumeInput = document.getElementById("volume");
+    if(volumeInput){
+      volumeInput.addEventListener("input", function(){
+        if(window.homeDrone){
+          try{ window.homeDrone.volume = 0.22 * getHomeVolume() * getHomeSfxVolume(); }catch(e){}
+        }
+      });
+    }
+    var sfxVolumeInput = document.getElementById("sfxVolume");
+    if(sfxVolumeInput){
+      sfxVolumeInput.addEventListener("input", function(){
+        if(window.homeDrone){
+          try{ window.homeDrone.volume = 0.22 * getHomeVolume() * getHomeSfxVolume(); }catch(e){}
+        }
+      });
+    }
+
+    var shipRadios = Array.prototype.slice.call(document.querySelectorAll('input[name="ship"]'));
+    var shipOptions = Array.prototype.slice.call(document.querySelectorAll('.shipOption'));
+    var shipTrack = document.getElementById("shipTrack");
+    var shipGrid = document.getElementById("shipGrid");
+    var launchSetupSpinner = document.getElementById("launchSetupSpinner");
+    var shipDetailsName = document.getElementById("shipDetailsName");
+    var shipDetailsStyle = document.getElementById("shipDetailsStyle");
+    var shipDetailsBody = document.getElementById("shipDetailsBody");
+    var shipStatHull = document.getElementById("shipStatHull");
+    var shipStatWings = document.getElementById("shipStatWings");
+    var shipStatGuns = document.getElementById("shipStatGuns");
+    var shipStatThrusters = document.getElementById("shipStatThrusters");
+    var shipStatSpecialCard = document.getElementById("shipStatSpecialCard");
+    var shipLoadingStart = 0;
+    var shipPanel = document.getElementById("shipPanel");
+    var shipDetailsMap = {
+      mk7: {
+        name: "Crimson MK-7",
+        style: "Synthwave Interceptor",
+        body: "Balanced frame with broad wings, medium hull height, and dual midrange cannons.",
+        flight: "Smooth",
+        wings: "Wide",
+        special: "Shockwave",
+        thrusters: "Dual"
+      },
+      fizard: {
+        name: "Aurora Dart",
+        style: "Glacier Dart",
+        body: "Compact spear hull with clipped wing tips and nimble pods for quick strikes.",
+        flight: "Responsive",
+        wings: "Compact",
+        special: "Shockwave",
+        thrusters: "Dual"
+      },
+      classic: {
+        name: "Scarlet Classic",
+        style: "Retro Heavy",
+        body: "Thicker nose and tighter wings; built for stability and measured fire.",
+        flight: "Heavy",
+        wings: "Short",
+        special: "Shockwave",
+        thrusters: "Dual"
+      },
+      ember: {
+        name: "Ruby Strike",
+        style: "Neon Striker",
+        body: "Aggressive wedge with broad armor lines and sharp forward profile.",
+        flight: "Heavy",
+        wings: "Wide",
+        special: "Shockwave",
+        thrusters: "Dual"
+      },
+      azure: {
+        name: "Azure Lancer",
+        style: "Aero Spear",
+        body: "Elongated hull with swept wings and long barrel geometry.",
+        flight: "Smooth",
+        wings: "Swept",
+        special: "Shockwave",
+        thrusters: "Dual"
+      },
+      spire: {
+        name: "Verdant Spire",
+        style: "Prism Skimmer",
+        body: "Tall, narrow core with compact wings and high-set accents.",
+        flight: "Smooth",
+        wings: "Compact",
+        special: "Flares",
+        thrusters: "Dual"
+      },
+      am2: {
+        name: "AM2 Scout",
+        style: "Arcade Relic",
+        body: "Classic silhouette with a slim spine, flared wings, and triple thrusters.",
+        flight: "Responsive",
+        wings: "Flared",
+        special: "Teleport",
+        thrusters: "Triple"
+      }
+    };
+    function updateShipCarousel(value){
+      if(!shipTrack) return;
+      var container = shipTrack.parentElement;
+      if(!container) return;
+      var index = shipOptions.findIndex(function(option){ return option.dataset.ship === value; });
+      if(index < 0) index = 0;
+      var styles = getComputedStyle(container);
+      var cardW = parseFloat(styles.getPropertyValue("--ship-card")) || 180;
+      var gap = parseFloat(styles.getPropertyValue("--ship-gap")) || 12;
+      var total = cardW + gap;
+      var center = (container.clientWidth - cardW) / 2;
+      var offset = center - (index * total);
+      shipTrack.style.transform = "translateX(" + offset + "px)";
+    }
+
+    function syncShipSelection(value){
+      shipRadios.forEach(function(radio){ radio.checked = radio.value === value; });
+      shipOptions.forEach(function(option){
+        option.classList.toggle('selected', option.dataset.ship === value);
+      });
+      var details = shipDetailsMap[value] || shipDetailsMap.mk7;
+      if(shipDetailsName) shipDetailsName.textContent = details.name;
+      if(shipDetailsStyle) shipDetailsStyle.textContent = details.style;
+      if(shipDetailsBody) shipDetailsBody.textContent = details.body;
+      if(shipStatHull) shipStatHull.textContent = details.flight;
+      if(shipStatWings) shipStatWings.textContent = details.wings;
+      if(shipStatGuns) shipStatGuns.textContent = details.special;
+      if(shipStatThrusters) shipStatThrusters.textContent = details.thrusters;
+      updateShipCarousel(value);
+    }
+    function scheduleShipCarouselSync(){
+      if(launchSetupSpinner) launchSetupSpinner.classList.add("isLoading");
+      shipLoadingStart = performance.now();
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+          var selected = (document.querySelector('input[name="ship"]:checked') || {}).value || "mk7";
+          updateShipCarousel(selected);
+          if(launchSetupSpinner){
+            var minShowTitle = 220;
+            var elapsedTitle = performance.now() - shipLoadingStart;
+            var waitTitle = Math.max(0, minShowTitle - elapsedTitle);
+            setTimeout(function(){ launchSetupSpinner.classList.remove("isLoading"); }, waitTitle);
+          }
+        });
+      });
+    }
+    syncShipSelection(saved.ship || "spire");
+    shipRadios.forEach(function(radio){
+      radio.addEventListener('change', function(){
+        if(radio.disabled) return;
+        syncShipSelection(radio.value);
+      });
+    });
+    shipOptions.forEach(function(option){
+      option.addEventListener("click", function(){
+        syncShipSelection(option.dataset.ship);
+      });
+    });
+    if(shipStatSpecialCard){
+      shipStatSpecialCard.addEventListener("mouseenter", function(){
+        var selected = (document.querySelector('input[name="ship"]:checked') || {}).value || "mk7";
+        if(window.triggerShipPreviewAbility) window.triggerShipPreviewAbility(selected);
+      });
+      shipStatSpecialCard.addEventListener("touchstart", function(){
+        var selected = (document.querySelector('input[name="ship"]:checked') || {}).value || "mk7";
+        if(window.triggerShipPreviewAbility) window.triggerShipPreviewAbility(selected);
+      }, { passive: true });
+    }
+    window.addEventListener("resize", function(){
+      var selected = (document.querySelector('input[name=\"ship\"]:checked') || {}).value || "mk7";
+      updateShipCarousel(selected);
+    });
+    var startBtn = document.getElementById("btnStartGame");
+    var btnCampaign = document.getElementById("btnCampaign");
+    var funnelOverlay = document.getElementById("funnelOverlay");
+    var menuWrap = document.getElementById("menuWrap");
+    var controlsOverlay = document.getElementById("controlsOverlay");
+    var leaderboardsOverlay = document.getElementById("leaderboardsOverlay");
+    var settingsOverlay = document.getElementById("settingsOverlay");
+    var briefingOverlay = document.getElementById("briefingOverlay");
+    var campaignOverlay = document.getElementById("campaignOverlay");
+    var btnCloseCampaign = document.getElementById("btnCloseCampaign");
+    var btnCampaignStart = document.getElementById("btnCampaignStart");
+    var btnCampaignReset = document.getElementById("btnCampaignReset");
+    var btnCampaignContinue = document.getElementById("btnCampaignContinue");
+    var campaignConfirmOverlay = document.getElementById("campaignConfirmOverlay");
+    var btnCampaignConfirmStart = document.getElementById("btnCampaignConfirmStart");
+    var btnCampaignConfirmCancel = document.getElementById("btnCampaignConfirmCancel");
+    var btnCampaignConfirmContinue = document.getElementById("btnCampaignConfirmContinue");
+    var btnCampaignBack = document.getElementById("btnCampaignBack");
+    var campaignSelectView = document.getElementById("campaignSelectView");
+    var campaignMissionsView = document.getElementById("campaignMissionsView");
+    var campaignSetList = document.getElementById("campaignSetList");
+    var campaignList = document.getElementById("campaignList");
+    var campaignStatusText = document.getElementById("campaignStatusText");
+    var campaignDetails = document.getElementById("campaignDetails");
+    var btnControls = document.getElementById("btnControls");
+    var btnHowToPlay = document.getElementById("btnHowToPlay");
+    var btnLeaderboards = document.getElementById("btnLeaderboards");
+    var btnCloseFunnel = document.getElementById("btnCloseFunnel");
+    var btnCloseControls = document.getElementById("btnCloseControls");
+    var btnCloseLeaderboards = document.getElementById("btnCloseLeaderboards");
+    var btnSettingsHome = document.getElementById("btnSettingsHome");
+    var btnCloseSettings = document.getElementById("btnCloseSettings");
+    var btnCloseSettingsBottom = document.getElementById("btnCloseSettingsBottom");
+    var btnFullscreenHome = document.getElementById("btnFullscreenHome");
+    var btnLaunchGame = document.getElementById("btnLaunchGame");
+    var btnStepBack = document.getElementById("btnStepBack");
+    var btnStepNext = document.getElementById("btnStepNext");
+    var btnSaveFunnel = document.getElementById("btnSaveFunnel");
+    var stepperText = document.getElementById("stepperText");
+    var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+    var stepIndex = 0;
+    var pendingConfig = null;
+    var pendingCampaign = null;
+    var campaignShipSelect = false;
+    var launchPending = false;
+    var modeChoices = Array.prototype.slice.call(document.querySelectorAll("#modeChoices .choiceCard"));
+    var operationChoices = Array.prototype.slice.call(document.querySelectorAll("#operationChoices .choiceCard"));
+    var submodeChoices = Array.prototype.slice.call(document.querySelectorAll("#submodeChoices .choiceCard"));
+    var difficultyChoices = Array.prototype.slice.call(document.querySelectorAll("#difficultyChoices .choiceCard"));
+    var beltChoices = Array.prototype.slice.call(document.querySelectorAll("#beltChoices .choiceCard"));
+    var beltInput = document.getElementById("belt");
+    var questionModeInput = document.getElementById("questionMode");
+    var decoyFunctionInput = document.getElementById("decoyFunction");
+
+    var selectedMode = "digit";
+    var selectedOperation = "mul";
+    var selectedSubmode = "3";
+    var selectedDifficulty = "normal";
+    var selectedBelt = "dusk";
+
+    if(saved.difficulty){
+      selectedDifficulty = saved.difficulty;
+      if(difficultyChoices && difficultyChoices.length){
+        selectChoice(difficultyChoices, selectedDifficulty, "data-diff");
+      }
+    }
+    if(saved.belt){
+      selectedBelt = saved.belt;
+      if(beltChoices && beltChoices.length){
+        selectChoice(beltChoices, selectedBelt, "data-belt");
+      }
+      if(beltInput) beltInput.value = selectedBelt;
+    }
+
+    var difficultyPresets = {
+      easy: { aMin: 1, aMax: 9, bMin: 1, bMax: 9, decoys: 2, speed: 0.5, lives: 5, strikes: 8 },
+      normal: { aMin: 2, aMax: 12, bMin: 2, bMax: 12, decoys: 3, speed: 0.7, lives: 4, strikes: 5 },
+      hard: { aMin: 4, aMax: 14, bMin: 4, bMax: 14, decoys: 4, speed: 0.85, lives: 2, strikes: 3 },
+      brutal: { aMin: 6, aMax: 18, bMin: 6, bMax: 18, decoys: 5, speed: 1.0, lives: 2, strikes: 0 }
+    };
+
+    function selectChoice(list, value, attr){
+      list.forEach(function(card){
+        card.classList.toggle("selected", card.getAttribute(attr) === value);
+      });
+    }
+
+    function setFromQuestionMode(mode){
+      if(!mode) return;
+      if(mode.indexOf("square_") === 0){
+        selectedOperation = "square";
+        selectedMode = "classic";
+        selectedSubmode = (mode === "square_root") ? "3" : "2";
+        return;
+      }
+      if(mode.indexOf("rational_") === 0){
+        selectedOperation = "rational";
+        selectedMode = "classic";
+        selectedSubmode = (mode === "rational_dec") ? "3" : "2";
+        return;
+      }
+      if(mode.indexOf("add_") === 0){
+        selectedOperation = "add";
+      }else{
+        selectedOperation = "mul";
+      }
+      if(mode.indexOf("classic") !== -1){
+        selectedMode = "classic";
+      }else{
+        selectedMode = "digit";
+      }
+      if(mode === "digits2" || mode === "add_digits2" || mode === "add_classic2" || mode === "classic2"){
+        selectedSubmode = "2";
+      }else if(mode === "digits3" || mode === "add_digits3" || mode === "add_classic3" || mode === "classic3"){
+        selectedSubmode = "3";
+      }
+    }
+
+    function updateDecoyFunctionAvailability(){
+      if(!decoyFunctionInput || !questionModeInput) return;
+      var mode = String(questionModeInput.value || "");
+      var isClassic = (mode === "classic" || mode === "classic2" || mode === "classic3"
+        || mode === "add_classic2" || mode === "add_classic3"
+        || mode === "square_shoot" || mode === "square_root"
+        || mode === "rational_frac" || mode === "rational_dec");
+      decoyFunctionInput.disabled = !isClassic;
+    }
+
+    function computeQuestionMode(){
+      if(selectedOperation === "rational"){
+        return selectedSubmode === "3" ? "rational_dec" : "rational_frac";
+      }
+      if(selectedOperation === "square"){
+        return selectedSubmode === "3" ? "square_root" : "square_shoot";
+      }
+      if(selectedOperation === "mul"){
+        if(selectedMode === "classic") return selectedSubmode === "2" ? "classic2" : "classic3";
+        return selectedSubmode === "2" ? "digits2" : "digits3";
+      }
+      if(selectedMode === "classic"){
+        return selectedSubmode === "3" ? "add_classic3" : "add_classic2";
+      }
+      return selectedSubmode === "3" ? "add_digits3" : "add_digits2";
+    }
+
+    function updateSubmodeLabels(){
+      if(!submodeChoices.length) return;
+      submodeChoices.forEach(function(card){
+        var sub = card.getAttribute("data-sub");
+        var title = card.querySelector("h4");
+        var desc = card.querySelector("p");
+        if(selectedOperation === "rational"){
+          if(title) title.textContent = (sub === "3") ? "Target Decimal" : "Target Fraction";
+          if(desc) desc.textContent = (sub === "3")
+            ? "Question shows a fraction. Shoot the decimal."
+            : "Question shows a decimal. Shoot the fraction.";
+          return;
+        }
+        if(selectedOperation === "square"){
+          if(title) title.textContent = (sub === "3") ? "Shoot Roots" : "Shoot Squares";
+          if(desc) desc.textContent = (sub === "3")
+            ? "Question shows \u221An\u00B2. Shoot the root answer."
+            : "Question shows n\u00B2. Shoot the square answer.";
+          return;
+        }
+        if(selectedOperation === "add"){
+          if(title) title.textContent = sub + " + " + sub;
+          if(desc) desc.textContent = (sub === "3")
+            ? "Three-digit plus three-digit problems."
+            : "Two-digit plus two-digit problems.";
+        }else{
+          if(title) title.textContent = sub + " by 1";
+          if(desc) desc.textContent = (sub === "3")
+            ? "One-digit by three-digit problems."
+            : "One-digit by two-digit problems.";
+        }
+      });
+    }
+
+    function syncModeUi(){
+      if(selectedOperation === "square" || selectedOperation === "rational") selectedMode = "classic";
+      var qm = computeQuestionMode();
+      if(questionModeInput) questionModeInput.value = qm;
+      selectChoice(modeChoices, selectedMode, "data-mode");
+      selectChoice(operationChoices, selectedOperation, "data-op");
+      selectChoice(submodeChoices, selectedSubmode, "data-sub");
+      updateSubmodeLabels();
+      updateDecoyFunctionAvailability();
+      if(modeChoices.length){
+        modeChoices.forEach(function(card){
+          var isDigit = card.getAttribute("data-mode") === "digit";
+          card.classList.toggle("disabled", (selectedOperation === "square" || selectedOperation === "rational") && isDigit);
+        });
+      }
+    }
+
+    function isLockedShipSelected(){
+      var selected = (document.querySelector('input[name="ship"]:checked') || {}).value || "";
+      var option = shipOptions.find(function(opt){ return opt.dataset.ship === selected; });
+      return option && option.dataset.locked === "true";
+    }
+
+    function applyPreset(key){
+      var preset = difficultyPresets[key];
+      if(!preset) return;
+      if(selectedOperation === "square"){
+        var squareMap = { easy: 20, normal: 30, hard: 45, brutal: 60 };
+        var maxBase = squareMap[key] || 30;
+        form.aMin.value = 1;
+        form.aMax.value = maxBase;
+      }else{
+        form.aMin.value = preset.aMin;
+        form.aMax.value = preset.aMax;
+        form.bMin.value = preset.bMin;
+        form.bMax.value = preset.bMax;
+      }
+      form.decoys.value = preset.decoys;
+      form.speed.value = String(preset.speed);
+      form.lives.value = preset.lives;
+      if(form.strikes) form.strikes.value = preset.strikes;
+      selectedDifficulty = key;
+      selectChoice(difficultyChoices, key, "data-diff");
+    }
+
+    function setBelt(key){
+      selectedBelt = key || "dusk";
+      if(beltInput) beltInput.value = selectedBelt;
+      selectChoice(beltChoices, selectedBelt, "data-belt");
+    }
+    setFromQuestionMode(saved.questionMode || "digits3");
+    setBelt(selectedBelt);
+    syncModeUi();
+    var btnBriefingSkip = document.getElementById("btnBriefingSkip");
+    var briefingStatus = document.getElementById("briefingStatus");
+    var briefingStatusText = document.getElementById("briefingStatusText");
+    var briefingShipCard = document.getElementById("briefingShipCard");
+    var briefingShip = document.getElementById("briefingShip");
+    var briefingMode = document.getElementById("briefingMode");
+    var briefingDifficulty = document.getElementById("briefingDifficulty");
+    var briefingOperation = document.getElementById("briefingOperation");
+    var briefingSubmode = document.getElementById("briefingSubmode");
+    var briefingARange = document.getElementById("briefingARange");
+    var briefingBRange = document.getElementById("briefingBRange");
+    var briefingDecoys = document.getElementById("briefingDecoys");
+    var briefingSpeed = document.getElementById("briefingSpeed");
+    var briefingLives = document.getElementById("briefingLives");
+    var briefingStrikes = document.getElementById("briefingStrikes");
+    var briefingTargeted = document.getElementById("briefingTargeted");
+    var briefingTimer = document.getElementById("briefingTimer");
+    var briefingHintText = document.getElementById("briefingHintText");
+    var briefingReady = false;
+    var briefingTimerId = null;
+    var briefingHintTimer = null;
+    var briefingHintTypeTimer = null;
+    var briefingHints = [
+      "PRIORITY: LOCK ONTO THE CORRECT VALUE. DECOYS WILL BAIT YOU OFF TARGET.",
+      "KEEP FORMATION. STRAY HITS WASTE TIME AND DRAIN SCORE.",
+      "DASH TO EVADE INCOMING FIRE. SAVE THE BURST FOR TIGHT FORMATIONS.",
+      "SECONDARY SYSTEMS ARE LIMITED. DEPLOY ONLY WHEN THE WINDOW IS CLEAR.",
+      "MAINTAIN HULL INTEGRITY. AVOID UNNECESSARY COLLISIONS."
+    ];
+    var hintCycleMs = 5200;
+    var hintTypeMs = 28;
+
+    function shuffleArray(list){
+      var arr = list.slice();
+      for(var i=arr.length-1; i>0; i--){
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
+      }
+      return arr;
+    }
+
+    function typeHint(text){
+      if(!briefingHintText) return;
+      if(briefingHintTypeTimer) clearInterval(briefingHintTypeTimer);
+      briefingHintText.textContent = "";
+      var i = 0;
+      briefingHintTypeTimer = setInterval(function(){
+        i++;
+        briefingHintText.textContent = text.slice(0, i);
+        if(i >= text.length){
+          clearInterval(briefingHintTypeTimer);
+          briefingHintTypeTimer = null;
+        }
+      }, hintTypeMs);
+    }
+
+    function startHintCycle(){
+      if(!briefingHintText) return;
+      if(briefingHintTimer) clearInterval(briefingHintTimer);
+      if(briefingHintTypeTimer) clearInterval(briefingHintTypeTimer);
+      var hintOrder = shuffleArray(briefingHints);
+      var hintIndex = 0;
+      typeHint(hintOrder[hintIndex]);
+      briefingHintTimer = setInterval(function(){
+        hintIndex += 1;
+        if(hintIndex >= hintOrder.length){
+          hintOrder = shuffleArray(briefingHints);
+          hintIndex = 0;
+        }
+        typeHint(hintOrder[hintIndex]);
+      }, hintCycleMs);
+    }
+
+    function setStep(idx){
+      if(!steps.length) return;
+      var hideModeStep = (selectedOperation === "square" || selectedOperation === "rational") && !campaignShipSelect;
+      stepIndex = Math.max(0, Math.min(idx, steps.length - 1));
+      if(hideModeStep && stepIndex === 1) stepIndex = 2;
+      if(campaignShipSelect) stepIndex = 3;
+      steps.forEach(function(step, i){
+        if(i === 1) step.classList.toggle("hidden", hideModeStep);
+        step.classList.toggle("active", i === stepIndex);
+      });
+      if(stepperText){
+        var label = stepIndex === 0 ? "Operation"
+          : stepIndex === 1 ? "Mode"
+          : stepIndex === 2 ? "Sub Mode"
+          : stepIndex === 3 ? "Ship"
+          : stepIndex === 4 ? "Belt"
+          : "Difficulty";
+        var totalSteps = hideModeStep ? (steps.length - 1) : steps.length;
+        var displayIndex = hideModeStep && stepIndex > 1 ? stepIndex - 1 : stepIndex;
+        stepperText.textContent = campaignShipSelect
+          ? "Campaign Ship Select"
+          : "Step " + (displayIndex + 1) + " of " + totalSteps + " - " + label;
+      }
+      var lastStepIndex = hideModeStep ? (steps.length - 1) : (steps.length - 1);
+      if(btnStepBack) btnStepBack.style.visibility = (stepIndex === 0 || campaignShipSelect) ? "hidden" : "visible";
+      if(btnStepNext) btnStepNext.style.display = (stepIndex === lastStepIndex || campaignShipSelect) ? "none" : "inline-flex";
+      if(btnSaveFunnel) btnSaveFunnel.style.display = (stepIndex === lastStepIndex && !campaignShipSelect) ? "inline-flex" : "none";
+      if(btnLaunchGame) btnLaunchGame.style.display = (stepIndex === lastStepIndex || campaignShipSelect) ? "inline-flex" : "none";
+      if(stepIndex === 3){
+        if(launchSetupSpinner) launchSetupSpinner.classList.add("isLoading");
+        scheduleShipCarouselSync();
+      }
+    }
+
+    function advanceFromChoice(){
+      var hideModeStep = (selectedOperation === "square" || selectedOperation === "rational") && !campaignShipSelect;
+      var lastStepIndex = hideModeStep ? (steps.length - 1) : (steps.length - 1);
+      if(stepIndex >= lastStepIndex || campaignShipSelect) return;
+      if((selectedOperation === "square" || selectedOperation === "rational") && stepIndex === 0){
+        setStep(2);
+        return;
+      }
+      setStep(stepIndex + 1);
+    }
+
+    function getHomeVolume(){
+      var volEl = document.getElementById("volume");
+      if(volEl){
+        var v = parseFloat(volEl.value);
+        if(!Number.isNaN(v)) return Math.max(0, Math.min(1, v));
+      }
+      return (saved && typeof saved.volume === "number") ? saved.volume : 0.65;
+    }
+
+    function getHomeSfxVolume(){
+      var sfxEl = document.getElementById("sfxVolume");
+      if(sfxEl){
+        var v = parseFloat(sfxEl.value);
+        if(!Number.isNaN(v)) return Math.max(0, Math.min(1, v));
+      }
+      return (saved && typeof saved.sfxVolume === "number") ? saved.sfxVolume : 0.85;
+    }
+
+    function playMenuBeep(){
+      try{
+        var beep = new Audio("sfx/menu_beep.mp3");
+        beep.volume = 0.45 * getHomeVolume() * getHomeSfxVolume();
+        beep.play().catch(function(){});
+      }catch(e){
+        // ignore audio failures
+      }
+    }
+
+    var toastTimer = null;
+    function showToast(msg){
+      var toastEl = document.getElementById("toast");
+      if(!toastEl) return;
+      toastEl.textContent = msg;
+      toastEl.classList.add("show", "toastAboveNext");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function(){
+        toastEl.classList.remove("show", "toastAboveNext");
+      }, 1500);
+    }
+
+    if (btnHowToPlay && controlsOverlay) {
+      btnHowToPlay.addEventListener("click", function(){
+        playMenuBeep();
+        if(settingsOverlay) settingsOverlay.classList.remove("show");
+        controlsOverlay.classList.add("show");
+      });
+    }
+    if (btnLeaderboards && leaderboardsOverlay) {
+      btnLeaderboards.addEventListener("click", function(){
+        playMenuBeep();
+        renderHomeStats();
+        leaderboardsOverlay.classList.add("show");
+      });
+    }
+    if (btnSettingsHome && settingsOverlay) {
+      btnSettingsHome.addEventListener("click", function(){
+        playMenuBeep();
+        settingsOverlay.classList.add("show");
+      });
+    }
+    if (btnCampaign && campaignOverlay) {
+      btnCampaign.addEventListener("click", function(){
+        playMenuBeep();
+        ensureCampaignData();
+        renderCampaignSetList();
+        renderCampaignList();
+        updateCampaignStatus();
+        showCampaignSelectView();
+        campaignOverlay.classList.add("show");
+        if(menuWrap) menuWrap.classList.add("hidden");
+      });
+    }
+    if (startBtn && funnelOverlay) {
+      startBtn.addEventListener("click", function(){
+        playMenuBeep();
+        campaignShipSelect = false;
+        funnelOverlay.classList.add("show");
+        setStep(0);
+        if(menuWrap) menuWrap.classList.add("hidden");
+        scheduleShipCarouselSync();
+      });
+    }
+    if (btnCloseControls && controlsOverlay) {
+      btnCloseControls.addEventListener("click", function(){
+        playMenuBeep();
+        controlsOverlay.classList.remove("show");
+      });
+    }
+    if (btnCloseLeaderboards && leaderboardsOverlay) {
+      btnCloseLeaderboards.addEventListener("click", function(){
+        playMenuBeep();
+        leaderboardsOverlay.classList.remove("show");
+      });
+    }
+    if (btnCloseSettings && settingsOverlay) {
+      btnCloseSettings.addEventListener("click", function(){
+        playMenuBeep();
+        settingsOverlay.classList.remove("show");
+      });
+    }
+    if (btnCloseSettingsBottom && settingsOverlay) {
+      btnCloseSettingsBottom.addEventListener("click", function(){
+        playMenuBeep();
+        settingsOverlay.classList.remove("show");
+      });
+    }
+
+    function setFullscreenLabel(btn, isFull){
+      if(!btn) return;
+      btn.textContent = isFull ? "Exit Fullscreen" : "Enter Fullscreen";
+    }
+
+    async function getFullscreenState(){
+      if(window.electronAPI && window.electronAPI.isFullscreen){
+        try{ return await window.electronAPI.isFullscreen(); }catch(e){ return false; }
+      }
+      return !!document.fullscreenElement;
+    }
+
+    async function toggleFullscreen(){
+      if(window.electronAPI && window.electronAPI.toggleFullscreen){
+        try{
+          var state = await window.electronAPI.toggleFullscreen();
+          setFullscreenLabel(btnFullscreenHome, state);
+          return;
+        }catch(e){}
+      }
+      if(document.fullscreenElement){
+        try{ await document.exitFullscreen(); }catch(e){}
+      }else{
+        try{ await document.documentElement.requestFullscreen(); }catch(e){}
+      }
+      setFullscreenLabel(btnFullscreenHome, !!document.fullscreenElement);
+    }
+
+    if(btnFullscreenHome){
+      btnFullscreenHome.addEventListener("click", function(){
+        playMenuBeep();
+        toggleFullscreen();
+      });
+      getFullscreenState().then(function(state){ setFullscreenLabel(btnFullscreenHome, state); });
+    }
+    document.addEventListener("fullscreenchange", function(){
+      setFullscreenLabel(btnFullscreenHome, !!document.fullscreenElement);
+    });
+    if (btnCloseCampaign && campaignOverlay) {
+      btnCloseCampaign.addEventListener("click", function(){
+        playMenuBeep();
+        campaignOverlay.classList.remove("show");
+        if(menuWrap) menuWrap.classList.remove("hidden");
+      });
+    }
+    if (btnCampaignBack) {
+      btnCampaignBack.addEventListener("click", function(){
+        playMenuBeep();
+        showCampaignSelectView();
+      });
+    }
+    if (btnCloseFunnel && funnelOverlay) {
+      btnCloseFunnel.addEventListener("click", function(){
+        playMenuBeep();
+        campaignShipSelect = false;
+        pendingCampaign = null;
+        pendingConfig = null;
+        funnelOverlay.classList.remove("show");
+        if(menuWrap) menuWrap.classList.remove("hidden");
+      });
+    }
+    if (btnCampaignStart) {
+      btnCampaignStart.addEventListener("click", function(){
+        playMenuBeep();
+        var activeId = getActiveCampaignId();
+        var missions = getActiveCampaignMissions();
+        var maxFailures = getCampaignMaxFailures();
+        var state = loadCampaignState(activeId);
+        if(state.failed || state.failures >= maxFailures) return;
+        var hasProgress = (state.index || 0) > 0 || (state.completed || []).some(function(v){ return v; });
+        if(hasProgress && campaignConfirmOverlay){
+          campaignConfirmOverlay.classList.add("show");
+          return;
+        }
+        var idx = state.index || 0;
+        if(idx >= missions.length) return;
+        startCampaignMission(idx, activeId);
+        if(campaignOverlay) campaignOverlay.classList.remove("show");
+        if(menuWrap) menuWrap.classList.remove("hidden");
+      });
+    }
+    if (btnCampaignContinue) {
+      btnCampaignContinue.addEventListener("click", function(){
+        playMenuBeep();
+        var activeId = getActiveCampaignId();
+        var missions = getActiveCampaignMissions();
+        var maxFailures = getCampaignMaxFailures();
+        var state = loadCampaignState(activeId);
+        if(state.failed || state.failures >= maxFailures) return;
+        var idx = state.index || 0;
+        if(idx >= missions.length) return;
+        startCampaignMission(idx, activeId);
+        if(campaignOverlay) campaignOverlay.classList.remove("show");
+        if(menuWrap) menuWrap.classList.remove("hidden");
+      });
+    }
+    if (btnCampaignReset) {
+      btnCampaignReset.addEventListener("click", function(){
+        playMenuBeep();
+        resetCampaignState(getActiveCampaignId());
+        ensureCampaignData();
+        renderCampaignSetList();
+        renderCampaignList();
+        updateCampaignStatus();
+      });
+    }
+    if (btnCampaignConfirmStart && campaignConfirmOverlay) {
+      btnCampaignConfirmStart.addEventListener("click", function(){
+        playMenuBeep();
+        var activeId = getActiveCampaignId();
+        resetCampaignState(activeId);
+        ensureCampaignData();
+        renderCampaignSetList();
+        renderCampaignList();
+        updateCampaignStatus();
+        campaignConfirmOverlay.classList.remove("show");
+        startCampaignMission(0, activeId);
+        if(campaignOverlay) campaignOverlay.classList.remove("show");
+        if(menuWrap) menuWrap.classList.remove("hidden");
+      });
+    }
+    if (btnCampaignConfirmContinue && campaignConfirmOverlay) {
+      btnCampaignConfirmContinue.addEventListener("click", function(){
+        playMenuBeep();
+        var activeId = getActiveCampaignId();
+        var state = loadCampaignState(activeId);
+        var idx = state.index || 0;
+        campaignConfirmOverlay.classList.remove("show");
+        startCampaignMission(idx, activeId);
+        if(campaignOverlay) campaignOverlay.classList.remove("show");
+        if(menuWrap) menuWrap.classList.remove("hidden");
+      });
+    }
+    if (btnCampaignConfirmCancel && campaignConfirmOverlay) {
+      btnCampaignConfirmCancel.addEventListener("click", function(){
+        playMenuBeep();
+        campaignConfirmOverlay.classList.remove("show");
+      });
+    }
+
+    if (controlsOverlay) {
+      controlsOverlay.addEventListener("click", function(e){
+        if (e.target === controlsOverlay) controlsOverlay.classList.remove("show");
+      });
+    }
+    if (leaderboardsOverlay) {
+      leaderboardsOverlay.addEventListener("click", function(e){
+        if (e.target === leaderboardsOverlay) leaderboardsOverlay.classList.remove("show");
+      });
+    }
+    if (settingsOverlay) {
+      settingsOverlay.addEventListener("click", function(e){
+        if (e.target === settingsOverlay) settingsOverlay.classList.remove("show");
+      });
+    }
+    if (campaignOverlay) {
+      campaignOverlay.addEventListener("click", function(e){
+        if (e.target === campaignOverlay){
+          campaignOverlay.classList.remove("show");
+          if(menuWrap) menuWrap.classList.remove("hidden");
+        }
+      });
+    }
+    if (campaignConfirmOverlay) {
+      campaignConfirmOverlay.addEventListener("click", function(e){
+        if (e.target === campaignConfirmOverlay) campaignConfirmOverlay.classList.remove("show");
+      });
+    }
+    if (funnelOverlay) {
+      funnelOverlay.addEventListener("click", function(e){
+        if (e.target === funnelOverlay){
+          campaignShipSelect = false;
+          pendingCampaign = null;
+          pendingConfig = null;
+          funnelOverlay.classList.remove("show");
+          if(menuWrap) menuWrap.classList.remove("hidden");
+        }
+      });
+    }
+
+    (function(){
+      var params = new URLSearchParams(window.location.search || "");
+      if(params.get("campaignPick") !== "1") return;
+      var idx = parseInt(params.get("campaignIndex"), 10);
+      if(Number.isNaN(idx)) return;
+      var campaignId = params.get("campaignId") || getActiveCampaignId();
+      setActiveCampaignId(campaignId);
+      ensureCampaignData();
+      var missions = getActiveCampaignMissions();
+      var m = missions[idx];
+      if(!m) return;
+      var config = Object.assign({}, defaults, m.config);
+      if(config.ship){
+        pendingCampaign = { index: idx, id: campaignId };
+        pendingConfig = config;
+        showBriefing(config);
+      }else{
+        if(menuWrap) menuWrap.classList.add("hidden");
+        openCampaignShipSelect(idx, config, campaignId);
+      }
+    })();
+
+    (function(){
+      var params = new URLSearchParams(window.location.search || "");
+      if(params.get("campaignBrief") !== "1") return;
+      var idx = parseInt(params.get("campaignIndex"), 10);
+      if(Number.isNaN(idx)) return;
+      var campaignId = params.get("campaignId") || getActiveCampaignId();
+      setActiveCampaignId(campaignId);
+      ensureCampaignData();
+      startCampaignMission(idx, campaignId);
+    })();
+
+    if (btnStepBack) btnStepBack.addEventListener("click", function(){
+      playMenuBeep();
+      if((selectedOperation === "square" || selectedOperation === "rational") && stepIndex === 2){
+        setStep(0);
+      }else{
+        setStep(stepIndex - 1);
+      }
+    });
+    if (btnStepNext) btnStepNext.addEventListener("click", function(){
+      playMenuBeep();
+      if(stepIndex === 3 && isLockedShipSelected()){
+        showToast("LEVEL TOO LOW. PILOT ONE OF THE AVAILABLE SHIPS.");
+        return;
+      }
+      if(selectedOperation === "square" && stepIndex === 0){
+        setStep(2);
+      }else{
+        setStep(stepIndex + 1);
+      }
+    });
+    setStep(0);
+
+    modeChoices.forEach(function(card){
+      card.addEventListener("click", function(){
+        playMenuBeep();
+        if(card.classList.contains("disabled")) return;
+        selectedMode = card.getAttribute("data-mode");
+        syncModeUi();
+        advanceFromChoice();
+      });
+    });
+
+    operationChoices.forEach(function(card){
+      card.addEventListener("click", function(){
+        playMenuBeep();
+        selectedOperation = card.getAttribute("data-op");
+        syncModeUi();
+        setStep(stepIndex);
+        advanceFromChoice();
+      });
+    });
+
+    submodeChoices.forEach(function(card){
+      card.addEventListener("click", function(){
+        playMenuBeep();
+        selectedSubmode = card.getAttribute("data-sub");
+        syncModeUi();
+        advanceFromChoice();
+      });
+    });
+
+    difficultyChoices.forEach(function(card){
+      card.addEventListener("click", function(){
+        playMenuBeep();
+        applyPreset(card.getAttribute("data-diff"));
+        advanceFromChoice();
+      });
+    });
+
+    beltChoices.forEach(function(card){
+      card.addEventListener("click", function(){
+        playMenuBeep();
+        setBelt(card.getAttribute("data-belt"));
+        advanceFromChoice();
+      });
+    });
+
+    function getSelectedShipValue(){
+      var selectedShip = saved.ship || "spire";
+      var selectedShipEl = document.querySelector('input[name="ship"]:checked');
+      if(selectedShipEl) selectedShip = selectedShipEl.value;
+      var selectedOption = shipOptions.find(function(option){ return option.dataset.ship === selectedShip; });
+      if(selectedOption && selectedOption.dataset.locked === "true"){
+        var fallback = shipOptions.find(function(option){ return option.dataset.locked !== "true"; });
+        selectedShip = fallback ? fallback.dataset.ship : selectedShip;
+      }
+      return selectedShip;
+    }
+
+    function buildConfigFromForm(){
+      if (!form) return Object.assign({}, defaults, saved);
+      var data = new FormData(form);
+      function getValue(name){
+        var val = data.get(name);
+        return val === null ? "" : val;
+      }
+      var selectedShip = getSelectedShipValue();
+      return {
+        aMin: Number(getValue("aMin")),
+        aMax: Number(getValue("aMax")),
+        bMin: Number(getValue("bMin")),
+        bMax: Number(getValue("bMax")),
+        decoys: Number(getValue("decoys")),
+        speed: Number(getValue("speed")),
+        lives: Number(getValue("lives")),
+        strikes: Number(getValue("strikes")),
+        difficulty: selectedDifficulty,
+        volume: Number(getValue("volume")),
+        sfxVolume: Number(getValue("sfxVolume")),
+        musicVolume: Number(getValue("musicVolume")),
+        targetMode: String(getValue("targetMode")),
+        timerMode: String(getValue("timerMode")),
+        questionMode: String(getValue("questionMode")),
+        decoyFunction: String(getValue("decoyFunction") || "units_bias"),
+        sound: true,
+        ship: selectedShip,
+        belt: String(getValue("belt") || selectedBelt || "dusk"),
+      };
+    }
+
+    function describeWin(config){
+      if(config.targetMode && String(config.targetMode).charAt(0) === "q"){
+        return "Complete " + String(config.targetMode).slice(1) + " targets";
+      }
+      if(config.timerMode && config.timerMode !== "off"){
+        return "Survive " + config.timerMode + "s";
+      }
+      return "Endless";
+    }
+
+    function getActiveCampaignMissions(){
+      var campaign = getActiveCampaign();
+      return (campaign && campaign.missions) ? campaign.missions : [];
+    }
+
+    function showCampaignSelectView(){
+      if(campaignSelectView) campaignSelectView.classList.add("active");
+      if(campaignMissionsView) campaignMissionsView.classList.remove("active");
+    }
+
+    function showCampaignMissionsView(){
+      if(campaignSelectView) campaignSelectView.classList.remove("active");
+      if(campaignMissionsView) campaignMissionsView.classList.add("active");
+    }
+
+    function renderCampaignSetList(){
+      if(!campaignSetList) return;
+      var activeId = getActiveCampaignId();
+      campaignSetList.innerHTML = "";
+      campaignSets.forEach(function(set){
+        var li = document.createElement("li");
+        var isActive = set.id === activeId;
+        li.className = "campaignListItem campaignSetItem" + (isActive ? " selected" : "");
+        li.setAttribute("data-campaign", set.id);
+        li.innerHTML = ""
+          + "<div class=\"campaignSetRow\">"
+          + "<span class=\"campaignSetName\">" + set.name + "</span>"
+          + "<span class=\"campaignStatus\">" + (isActive ? "ACTIVE" : "SELECT") + "</span>"
+          + "</div>"
+          + "<div class=\"campaignSetDesc\">" + set.desc + "</div>";
+        li.addEventListener("click", function(){
+          var id = this.getAttribute("data-campaign");
+          if(!id) return;
+          setActiveCampaignId(id);
+          renderCampaignSetList();
+          renderCampaignList();
+          updateCampaignStatus();
+          showCampaignMissionsView();
+        });
+        campaignSetList.appendChild(li);
+      });
+    }
+
+    function renderCampaignDetails(index){
+      if(!campaignDetails) return;
+      var missions = getActiveCampaignMissions();
+      var m = missions[index];
+      if(!m){
+        campaignDetails.textContent = "Select a mission to view its settings.";
+        return;
+      }
+      var cfg = m.config || {};
+      var modeMap = {
+        digits3: "Digit Hunt 1x3",
+        digits2: "Digit Hunt 1x2",
+        classic: "Classic Answer",
+        classic2: "Classic Answer 1x2",
+        classic3: "Classic Answer 1x3",
+        add_digits2: "Addition Digit Hunt 2x2",
+        add_digits3: "Addition Digit Hunt 3x3",
+        add_classic2: "Addition Classic 2x2",
+        add_classic3: "Addition Classic 3x3",
+        square_shoot: "Perfect Squares",
+        square_root: "Square Roots",
+        rational_frac: "Target Fraction",
+        rational_dec: "Target Decimal"
+      };
+      var shipNameMap = {
+        mk7: "Crimson MK-7",
+        fizard: "Aurora Dart",
+        classic: "Scarlet Classic",
+        ember: "Ruby Strike",
+        azure: "Azure Lancer",
+        spire: "Verdant Spire",
+        am2: "AM2 Scout"
+      };
+      var modeLabel = String(cfg.questionMode || "classic");
+      var isAdd = modeLabel.indexOf("add_") === 0;
+      var isSquare = modeLabel.indexOf("square_") === 0;
+      var isRational = modeLabel.indexOf("rational_") === 0;
+      var subLabel = "";
+      if(isRational){
+        subLabel = (modeLabel === "rational_dec") ? "Target Decimal" : "Target Fraction";
+      }else if(isSquare){
+        subLabel = (modeLabel === "square_root") ? "Shoot Roots" : "Shoot Squares";
+      }else{
+        var sub = (modeLabel.indexOf("3") !== -1) ? "3" : "2";
+        subLabel = isAdd ? (sub + "x" + sub) : ("1x" + sub);
+      }
+      var detailsHtml = ""
+        + "<div><b>Mission:</b> " + m.title + "</div>"
+        + "<div><b>Operation:</b> " + (isRational ? "Rationals" : (isSquare ? "Squares" : (isAdd ? "Addition" : "Multiplication"))) + "</div>"
+        + "<div><b>Mode:</b> " + (modeMap[modeLabel] || modeLabel.toUpperCase()) + "</div>"
+        + "<div><b>Submode:</b> " + subLabel + "</div>"
+        + "<div><b>Difficulty:</b> " + String(cfg.difficulty || "normal").toUpperCase() + "</div>"
+        + "<div><b>Targets:</b> " + (cfg.targetMode === "off" ? "Endless" : String(cfg.targetMode)) + "</div>"
+        + "<div><b>Timer:</b> " + (cfg.timerMode === "off" ? "Endless" : (cfg.timerMode + "s")) + "</div>"
+        + "<div><b>Decoys:</b> " + String(cfg.decoys || 0) + "</div>"
+        + "<div><b>Speed:</b> " + String(cfg.speed || 0) + "</div>"
+        + "<div><b>Lives:</b> " + String(cfg.lives || 0) + "</div>"
+        + "<div><b>Strikes:</b> " + String(cfg.strikes || 0) + "</div>"
+        + "<div><b>Ship:</b> " + (cfg.ship ? (shipNameMap[cfg.ship] || cfg.ship.toUpperCase()) : "Player Choice") + "</div>";
+      campaignDetails.innerHTML = detailsHtml;
+    }
+
+    function renderCampaignList(){
+      if(!campaignList) return;
+      campaignList.innerHTML = "";
+      var missions = getActiveCampaignMissions();
+      var state = loadCampaignState(getActiveCampaignId());
+      for(var i=0; i<missions.length; i++){
+        var m = missions[i];
+        var li = document.createElement("li");
+        var isDone = state.completed && state.completed[i];
+        var isCurrent = i === (state.index || 0);
+        var status = isDone ? "COMPLETED" : (isCurrent ? "CURRENT" : "LOCKED");
+        var win = describeWin(m.config);
+        li.className = "campaignListItem" + (isDone ? " completed" : "") + (isCurrent ? " current" : "");
+        li.setAttribute("data-index", String(i));
+        li.innerHTML = "<span>" + (i + 1) + ". " + m.title + " - " + win + "</span>"
+          + "<span class=\"campaignStatus\">" + (isDone ? "\u2713" : "") + " " + status + "</span>";
+        li.addEventListener("click", function(){
+          var idx = parseInt(this.getAttribute("data-index"), 10);
+          renderCampaignDetails(idx);
+          var items = campaignList.querySelectorAll(".campaignListItem");
+          for(var k=0; k<items.length; k++){
+            items[k].classList.toggle("selected", items[k] === this);
+          }
+        });
+        campaignList.appendChild(li);
+      }
+      var startIndex = (state.index || 0);
+      renderCampaignDetails(startIndex);
+      var items = campaignList.querySelectorAll(".campaignListItem");
+      for(var k=0; k<items.length; k++){
+        var idx = parseInt(items[k].getAttribute("data-index"), 10);
+        items[k].classList.toggle("selected", idx === startIndex);
+      }
+    }
+
+    function updateCampaignStatus(){
+      if(!campaignStatusText) return;
+      var campaign = getActiveCampaign();
+      var missions = getActiveCampaignMissions();
+      var maxFailures = getCampaignMaxFailures();
+      var state = loadCampaignState(campaign.id);
+      var hasProgress = (state.index || 0) > 0 || (state.completed || []).some(function(v){ return v; });
+      if(state.failed || state.failures >= maxFailures){
+        campaignStatusText.textContent = campaign.name + " failed. Reset to try again.";
+        if(btnCampaignStart) btnCampaignStart.disabled = true;
+        if(btnCampaignContinue) btnCampaignContinue.style.display = "none";
+        return;
+      }
+      var idx = state.index || 0;
+      var remaining = maxFailures - (state.failures || 0);
+      if(idx >= missions.length){
+        campaignStatusText.textContent = campaign.name + " complete. Great flying.";
+        if(btnCampaignStart) btnCampaignStart.disabled = true;
+        if(btnCampaignContinue) btnCampaignContinue.style.display = "none";
+        return;
+      }
+      campaignStatusText.textContent = campaign.name + " - Mission " + (idx + 1) + " of " + missions.length + " - Failures left: " + remaining;
+      if(btnCampaignStart) btnCampaignStart.disabled = false;
+      if(btnCampaignContinue) btnCampaignContinue.style.display = hasProgress ? "inline-flex" : "none";
+    }
+
+    function openCampaignShipSelect(index, config, campaignId){
+      pendingCampaign = { index: index, id: campaignId || getActiveCampaignId() };
+      pendingConfig = config;
+      campaignShipSelect = true;
+      if(menuWrap) menuWrap.classList.add("hidden");
+      if(funnelOverlay) funnelOverlay.classList.add("show");
+      setStep(3);
+      scheduleShipCarouselSync();
+    }
+
+    function startCampaignMission(index, campaignId){
+      var activeId = campaignId || getActiveCampaignId();
+      var missions = getCampaignSet(activeId).missions || [];
+      var m = missions[index];
+      if(!m) return;
+      campaignShipSelect = false;
+      var config = Object.assign({}, defaults, m.config);
+      if(config.ship){
+        pendingCampaign = { index: index, id: activeId };
+        pendingConfig = config;
+        showBriefing(config);
+      }else{
+        openCampaignShipSelect(index, config, activeId);
+      }
+    }
+
+    function startGame(){
+      var config = buildConfigFromForm();
+      if(campaignShipSelect && pendingCampaign && pendingConfig){
+        config = Object.assign({}, pendingConfig, { ship: getSelectedShipValue() });
+        pendingConfig = config;
+      }else{
+        persistSessionConfig("asteroidConfig", config);
+        pendingConfig = config;
+        pendingCampaign = null;
+      }
+      campaignShipSelect = false;
+      showBriefing(config);
+    }
+
+    function showBriefing(config){
+      document.body.classList.add("briefingOpen");
+      if(menuWrap) menuWrap.classList.add("hidden");
+      if(funnelOverlay) funnelOverlay.classList.remove("show");
+      if(briefingOverlay) briefingOverlay.classList.add("show");
+      if(window.homeDrone && !window.homeDrone.paused){
+        try{ window.homeDrone.pause(); }catch(e){}
+      }
+      briefingReady = false;
+      if(briefingStatus) briefingStatus.classList.remove("ready");
+      if(briefingTimerId) clearTimeout(briefingTimerId);
+      if(btnBriefingSkip){
+        btnBriefingSkip.disabled = true;
+        btnBriefingSkip.style.opacity = "0.6";
+        btnBriefingSkip.style.pointerEvents = "none";
+      }
+      if(briefingStatusText) briefingStatusText.textContent = "Initializing launch sequence...";
+
+      var shipKey = (config.ship || "mk7");
+      var shipNameMap = {
+        mk7: "Crimson MK-7",
+        fizard: "Aurora Dart",
+        classic: "Scarlet Classic",
+        ember: "Ruby Strike",
+        azure: "Azure Lancer",
+        spire: "Verdant Spire",
+        am2: "AM2 Scout"
+      };
+      if(briefingShip) briefingShip.textContent = "Ship: " + (shipNameMap[shipKey] || shipKey.toUpperCase());
+      if(briefingShipCard){
+        var shipOption = shipOptions ? shipOptions.find(function(opt){ return opt.dataset.ship === shipKey; }) : null;
+        var shipCard = shipOption ? shipOption.querySelector(".shipCard") : null;
+        briefingShipCard.innerHTML = shipCard ? shipCard.outerHTML : "";
+      }
+      var modeLabel = String(config.questionMode || "classic");
+      if(briefingMode){
+        var modeMap = {
+          digits3: "Digit Hunt 1x3",
+          digits2: "Digit Hunt 1x2",
+          classic: "Classic Answer",
+          classic2: "Classic Answer 1x2",
+          classic3: "Classic Answer 1x3",
+          add_digits2: "Addition Digit Hunt 2x2",
+          add_digits3: "Addition Digit Hunt 3x3",
+          add_classic2: "Addition Classic 2x2",
+          add_classic3: "Addition Classic 3x3",
+          square_shoot: "Perfect Squares",
+          square_root: "Square Roots",
+          rational_frac: "Target Fraction",
+          rational_dec: "Target Decimal"
+        };
+        briefingMode.textContent = "Mode: " + (modeMap[modeLabel] || modeLabel.toUpperCase());
+      }
+      if(briefingDifficulty){
+        var diffLabel = String(config.difficulty || "normal");
+        var diffMap = { easy: "Easy", normal: "Normal", hard: "Hard", brutal: "Brutal" };
+        briefingDifficulty.textContent = "Difficulty: " + (diffMap[diffLabel] || diffLabel.toUpperCase());
+      }
+      if(briefingOperation || briefingSubmode){
+        var isAdd = modeLabel.indexOf("add_") === 0;
+        var isSquare = modeLabel.indexOf("square_") === 0;
+        var isRational = modeLabel.indexOf("rational_") === 0;
+        var sub = "2";
+        if(modeLabel.indexOf("3") !== -1) sub = "3";
+        else if(modeLabel.indexOf("2") !== -1) sub = "2";
+        if(briefingOperation){
+          if(isRational) briefingOperation.textContent = "Operation: Rationals";
+          else if(isSquare) briefingOperation.textContent = "Operation: Squares";
+          else briefingOperation.textContent = "Operation: " + (isAdd ? "Addition" : "Multiplication");
+        }
+        if(briefingSubmode){
+          if(isRational){
+            briefingSubmode.textContent = "Submode: " + (modeLabel === "rational_dec" ? "Target Decimal" : "Target Fraction");
+          }else if(isSquare){
+            briefingSubmode.textContent = "Submode: " + (modeLabel === "square_root" ? "Shoot Roots" : "Shoot Squares");
+          }else{
+            briefingSubmode.textContent = "Submode: " + (isAdd ? (sub + "x" + sub) : ("1x" + sub));
+          }
+        }
+      }
+      if(briefingARange) briefingARange.textContent = config.aMin + " - " + config.aMax;
+      if(briefingBRange) briefingBRange.textContent = config.bMin + " - " + config.bMax;
+      if(briefingDecoys) briefingDecoys.textContent = String(config.decoys);
+      if(briefingSpeed) briefingSpeed.textContent = String(config.speed);
+      if(briefingLives) briefingLives.textContent = String(config.lives);
+      if(briefingStrikes) briefingStrikes.textContent = String(config.strikes);
+      if(briefingTargeted){
+        if(config.targetMode === "off"){
+          briefingTargeted.textContent = "Endless";
+        }else if(String(config.targetMode).charAt(0) === "q"){
+          briefingTargeted.textContent = String(config.targetMode).slice(1) + " targets";
+        }else{
+          briefingTargeted.textContent = String(config.targetMode);
+        }
+      }
+      if(briefingTimer){
+        if(config.timerMode === "off"){
+          briefingTimer.textContent = "Endless";
+        }else{
+          briefingTimer.textContent = config.timerMode + "s";
+        }
+      }
+
+      startHintCycle();
+
+      briefingTimerId = setTimeout(function(){
+        briefingReady = true;
+        if(btnBriefingSkip){
+          btnBriefingSkip.disabled = false;
+          btnBriefingSkip.style.opacity = "";
+          btnBriefingSkip.style.pointerEvents = "";
+        }
+        if(briefingStatus) briefingStatus.classList.add("ready");
+        if(briefingStatusText) briefingStatusText.textContent = "Launch ready.";
+      }, 7000);
+    }
+
+    function proceedLaunch(){
+      if(launchPending) return;
+      launchPending = true;
+      if(btnLaunchGame) btnLaunchGame.disabled = true;
+      if(btnBriefingSkip) btnBriefingSkip.disabled = true;
+      document.body.classList.add("launching");
+      document.body.classList.remove("briefingOpen");
+      if(briefingHintTimer) clearInterval(briefingHintTimer);
+      if(briefingHintTypeTimer) clearInterval(briefingHintTypeTimer);
+      var config = pendingConfig || buildConfigFromForm();
+      var params = new URLSearchParams({
+        aMin: String(config.aMin),
+        aMax: String(config.aMax),
+        bMin: String(config.bMin),
+        bMax: String(config.bMax),
+        decoys: String(config.decoys),
+        decoyFunction: String(config.decoyFunction || "units_bias"),
+        speed: String(config.speed),
+        lives: String(config.lives),
+        difficulty: String(config.difficulty || "normal"),
+        volume: String(config.volume),
+        sfxVolume: String(config.sfxVolume),
+        musicVolume: String(config.musicVolume),
+        targetMode: config.targetMode,
+        timerMode: config.timerMode,
+        questionMode: config.questionMode,
+        sound: "1",
+        ship: config.ship,
+        belt: String(config.belt || "dusk"),
+        autoStart: "1",
+      });
+      if(pendingCampaign){
+        ensureCampaignData();
+        var activeId = pendingCampaign.id || getActiveCampaignId();
+        setActiveCampaignId(activeId);
+        var state = loadCampaignState(activeId);
+        state.active = true;
+        state.failed = false;
+        state.index = pendingCampaign.index;
+        saveCampaignState(state, activeId);
+        params.set("campaign", "1");
+        params.set("campaignIndex", String(pendingCampaign.index));
+        params.set("campaignId", activeId);
+      }
+      setTimeout(function(){
+        window.location.href = "asteroid_blaster.html?" + params.toString();
+      }, 1000);
+    }
+
+    if (btnLaunchGame) btnLaunchGame.addEventListener("click", function(){
+      playMenuBeep();
+      startGame();
+    });
+    if (btnBriefingSkip) btnBriefingSkip.addEventListener("click", function(){
+      playMenuBeep();
+      if(!briefingReady) return;
+      proceedLaunch();
+    });
+    if (briefingOverlay) {
+      briefingOverlay.addEventListener("click", function(e){
+        if (e.target === briefingOverlay && briefingReady) proceedLaunch();
+      });
+    }
+
+    if (form) {
+      form.addEventListener("submit", function(evt){
+        evt.preventDefault();
+        var config = buildConfigFromForm();
+        persistSessionConfig("asteroidConfig", config);
+        if (funnelOverlay) funnelOverlay.classList.remove("show");
+      });
+    }
+
+    if (resetBtn && form) {
+      resetBtn.addEventListener("click", function(){
+        persistSessionConfig("asteroidConfig", defaults);
+        Object.keys(defaults).forEach(function(key){
+          var value = defaults[key];
+          var field = form.elements.namedItem(key) || document.getElementById(key);
+          if (!field) return;
+          if (field.type === "checkbox") {
+            field.checked = Boolean(value);
+          } else {
+            field.value = value;
+          }
+        });
+        syncShipSelection(defaults.ship);
+      });
+    }
+
+    function renderHomeStats(){
+      var card = document.querySelector(".leaderboardsCard");
+      var hsTopEl = document.getElementById("homeHighScoresTop");
+      var hsRestEl = document.getElementById("homeHighScoresRest");
+      var ltEl = document.getElementById("homeLifetimeStats");
+      var detailPanel = document.getElementById("homeScoreDetail");
+      var detailTitle = document.getElementById("homeScoreDetailTitle");
+      var detailList = document.getElementById("homeScoreDetailList");
+      if(!hsTopEl || !hsRestEl || !ltEl) return;
+      hsTopEl.innerHTML = "";
+      hsRestEl.innerHTML = "";
+      ltEl.innerHTML = "";
+      if(detailList) detailList.innerHTML = "";
+      if(card) card.classList.remove("showDetail");
+      var stats = null;
+      try{
+        var raw = localStorage.getItem("mathsteroid.stats");
+        if(raw) stats = JSON.parse(raw);
+      }catch(e){
+        stats = null;
+      }
+
+      var hs = stats && stats.highScores ? stats.highScores : [];
+      var top = hs.slice(0,5);
+      var rest = hs.slice(5);
+
+      function buildRow(item, rank){
+        var row = document.createElement("li");
+        var name = item.name ? (" • " + item.name) : "";
+        row.innerHTML = "<span>#" + rank + " • " + item.score + " pts" + name + "</span><b>Lv " + item.level + "</b>";
+        row.dataset.scoreId = item.id || "";
+        row.style.cursor = "pointer";
+        row.addEventListener("click", function(){
+          if(!detailPanel || !detailList || !card) return;
+          detailList.innerHTML = "";
+          var date = item.date ? new Date(item.date) : null;
+          var title = (item.name ? item.name + " • " : "") + item.score + " pts";
+          if(detailTitle) detailTitle.textContent = title;
+          var rows = [
+            ["SCORE", item.score],
+            ["LEVEL", item.level],
+            ["CORRECT", item.correct],
+            ["MODE", item.mode || "—"],
+            ["DATE", date ? date.toLocaleString() : "—"]
+          ];
+          for(var r=0;r<rows.length;r++){
+            var li = document.createElement("li");
+            li.innerHTML = "<span>" + rows[r][0] + "</span><b>" + rows[r][1] + "</b>";
+            detailList.appendChild(li);
+          }
+          card.classList.add("showDetail");
+        });
+        return row;
+      }
+
+      if(!hs.length){
+        var liEmpty = document.createElement("li");
+        liEmpty.innerHTML = "<span>NO SCORES YET</span><b class=\"pillGood\">PLAY</b>";
+        hsTopEl.appendChild(liEmpty);
+      }else{
+        for(var i=0;i<top.length;i++){
+          hsTopEl.appendChild(buildRow(top[i], i + 1));
+        }
+        if(!rest.length){
+          var liRest = document.createElement("li");
+          liRest.innerHTML = "<span>NO MORE SCORES</span><b class=\"pillGood\">—</b>";
+          hsRestEl.appendChild(liRest);
+        }else{
+          for(var j=0;j<rest.length;j++){
+            hsRestEl.appendChild(buildRow(rest[j], j + 6));
+          }
+        }
+      }
+
+      if(!stats){
+        var li2 = document.createElement("li");
+        li2.innerHTML = "<span>SESSIONS</span><b>0</b>";
+        ltEl.appendChild(li2);
+      }else{
+        var rows = [
+          ["SESSIONS", stats.sessions],
+          ["BEST SCORE", stats.bestScore],
+          ["BEST STREAK", stats.bestStreak],
+          ["TOTAL CORRECT", stats.totalCorrect]
+        ];
+        for(var r=0;r<rows.length;r++){
+          var li3 = document.createElement("li");
+          li3.innerHTML = "<span>" + rows[r][0] + "</span><b>" + rows[r][1] + "</b>";
+          ltEl.appendChild(li3);
+        }
+      }
+    }
+
+    var btnScoreBack = document.getElementById("btnScoreBack");
+    if(btnScoreBack){
+      btnScoreBack.addEventListener("click", function(){
+        var card = document.querySelector(".leaderboardsCard");
+        if(card) card.classList.remove("showDetail");
+      });
+    }
+
+    function playHomeDrone(){
+      try{
+        var drone = new Audio("sfx/ship_drone.mp3");
+        drone.loop = true;
+        drone.volume = 0.22 * getHomeVolume() * getHomeSfxVolume();
+        window.homeDrone = drone;
+        var startDrone = function(){
+          drone.play().catch(function(){});
+          window.removeEventListener("keydown", startDrone);
+          window.removeEventListener("pointerdown", startDrone);
+        };
+        window.addEventListener("keydown", startDrone, { once: true });
+        window.addEventListener("pointerdown", startDrone, { once: true });
+      }catch(e){
+        // ignore audio failures
+      }
+    }
+    playHomeDrone();
+
+  </script>
+  <script src="js/ship_preview.js"></script>
+</body>
+</html>
