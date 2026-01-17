@@ -101,6 +101,7 @@ export function createPlayer(){
     gunSide: 1,
     shipType: "mk7",
     blasterMode: "single",
+    blasterHitsRemaining: 0,
     blasterTimer: 0,
     secondaryMode: "none",
     secondaryCharges: 0,
