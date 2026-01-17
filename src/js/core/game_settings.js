@@ -13,7 +13,7 @@ export function createState(){
     bMin:2, bMax:12,
     decoys:3,
     baseSpeed:1,
-    livesStart:3,
+    livesStart:10,
     timerMode:"off",
     targetMode:"off",
     questionLimit:0,
@@ -30,7 +30,7 @@ export function createState(){
     score:0,
     streak:0,
     level:1,
-    lives:3,
+    lives:10,
     correct:0,
     wrong:0,
     missed:0,
@@ -67,6 +67,9 @@ export function createState(){
     slowMoRemaining:0,
     slowMoScale:0.42,
     empTimer:0,
+    empCascade:null,
+    empCascadeTimer:0,
+    empCascadeInterval:0,
     answerDigits:[],
     digitCounts:null,
     digitsLeft:0,
@@ -116,7 +119,11 @@ export function createPlayer(){
     shipShake: 0,
     teleportHide: 0,
     teleportFx: null,
-    hidden: false
+    hidden: false,
+    fadeAlpha: 1,
+    fadeOutActive: false,
+    fadeOutT: 0,
+    fadeOutDur: 0
   };
 }
 

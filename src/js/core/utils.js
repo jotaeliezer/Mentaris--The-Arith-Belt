@@ -15,5 +15,6 @@ export function randi(a, b){
 export function factKey(a, b){
   var x = Math.min(a, b);
   var y = Math.max(a, b);
-  return String(x) + "×" + String(y);
+  return String(x) + "x" + String(y);
 }
+

@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Asteroid Answer Blaster</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: radial-gradient(circle at 12% 18%, rgba(99, 102, 241, 0.25), transparent 38%), radial-gradient(circle at 82% 12%, rgba(168, 85, 247, 0.22), transparent 42%), #050816;
+      --panel: rgba(8, 11, 31, 0.82);
+      --accent: #6366f1;
+      --accent-2: #a855f7;
+      --ink: #e8ecff;
+      --muted: rgba(226, 232, 240, 0.76);
+      --good: #34d399;
+      --warn: #fb7185;
+      --shadow: 0 24px 88px rgba(0, 0, 0, 0.55);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      overflow: hidden;
+    }
+    header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 12px clamp(1rem, 3vw, 1.6rem);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    .hud-card {
+      background: var(--panel);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: 12px;
+      padding: 10px 12px;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      pointer-events: auto;
+    }
+    .prompt {
+      grid-column: span 3;
+      font-family: "Orbitron", "Russo One", sans-serif;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      text-align: center;
+      font-size: clamp(1.2rem, 3vw, 1.6rem);
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .stat {
+      display: grid;
+      gap: 4px;
+    }
+    .stat label { color: var(--muted); font-size: 0.85rem; }
+    .stat strong { font-size: 1.2rem; }
+    #game {
+      position: fixed;
+      inset: 0;
+      background:
+        linear-gradient(rgba(99, 102, 241, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(168, 85, 247, 0.05) 1px, transparent 1px),
+        var(--bg);
+      background-size: 70px 70px, 70px 70px, auto;
+    }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(5, 8, 22, 0.75);
+      backdrop-filter: blur(6px);
+      z-index: 3;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+    .overlay.show {
+      visibility: visible;
+      opacity: 1;
+    }
+    .modal {
+      width: min(480px, 90vw);
+      background: var(--panel);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+      text-align: center;
+    }
+    .modal h2 {
+      margin: 0;
+      font-family: "Orbitron", "Russo One", sans-serif;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .modal .row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    .modal .stat {
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 10px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .actions {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+    .btn {
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      padding: 11px 14px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+    }
+    .primary {
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
+      color: #0b0f25;
+    }
+    .ghost {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--ink);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+    .toast {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 16px;
+      background: rgba(5, 8, 22, 0.82);
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      color: var(--muted);
+      z-index: 4;
+      font-size: 0.95rem;
+      display: none;
+    }
+    @media (max-width: 760px) {
+      header { grid-template-columns: 1fr 1fr; }
+      .prompt { grid-column: span 2; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="hud-card prompt" id="prompt">Loading…</div>
+    <div class="hud-card">
+      <div class="stat">
+        <label>Score</label>
+        <strong id="score">0</strong>
+      </div>
+      <div class="stat">
+        <label>Streak</label>
+        <strong id="streak">0</strong>
+      </div>
+    </div>
+    <div class="hud-card">
+      <div class="stat">
+        <label>Accuracy</label>
+        <strong id="accuracy">0%</strong>
+      </div>
+      <div class="stat">
+        <label>Time</label>
+        <strong id="timer">00:00</strong>
+      </div>
+    </div>
+    <div class="hud-card">
+      <div class="stat">
+        <label>Controls</label>
+        <strong style="font-size:0.98rem">← → / A D + Space</strong>
+      </div>
+      <a class="ghost btn" href="home.html" style="text-decoration:none">Loadout</a>
+    </div>
+  </header>
+  <canvas id="game"></canvas>
+  <div class="overlay" id="results">
+    <div class="modal">
+      <h2>Mission Debrief</h2>
+      <div class="row">
+        <div class="stat"><label>Score</label><strong id="final-score">0</strong></div>
+        <div class="stat"><label>Accuracy</label><strong id="final-acc">0%</strong></div>
+        <div class="stat"><label>Best Streak</label><strong id="final-streak">0</strong></div>
+        <div class="stat"><label>Correct</label><strong id="final-correct">0</strong></div>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" id="play-again">Play Again</button>
+        <a class="btn primary" href="../../atmc.html" style="text-decoration:none">Arcade</a>
+      </div>
+    </div>
+  </div>
+  <div class="toast" id="toast">Hit the correct asteroid!</div>
+
+  <script type="module">
+    // Local helpers so the game runs via file://
+    const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+    const generateMultiplication = (options = {}) => {
+      const { aRange = [2, 12], bRange = [2, 12], allowSquares = true } = options;
+      let a = randomInt(aRange[0], aRange[1]);
+      let b = randomInt(bRange[0], bRange[1]);
+      if (!allowSquares && a === b) b = b === bRange[1] ? b - 1 : b + 1;
+      const answer = a * b;
+      return { prompt: `${a} × ${b}`, answer, factors: [a, b] };
+    };
+    const generateDecoys = (correct, count = 3, strategy = "near") => {
+      const decoys = new Set();
+      while (decoys.size < count) {
+        let candidate = correct;
+        if (strategy === "near") {
+          const offset = randomInt(-10, 10) || 1;
+          candidate = correct + offset;
+        } else if (strategy === "timesTableTrap") {
+          candidate = randomInt(2, 12) * randomInt(2, 12);
+        } else {
+          candidate = randomInt(4, Math.max(25, correct + 20));
+        }
+        if (candidate !== correct && candidate > 0) decoys.add(candidate);
+      }
+      return Array.from(decoys);
+    };
+    const createScoringEngine = (options = {}) => {
+      const { base = 100, streakBonus = 5, timePenalty = 0.02, missPenalty = 30 } = options;
+      let score = 0;
+      let streak = 0;
+      let attempts = 0;
+      let correct = 0;
+      let totalResponseTime = 0;
+      const register = ({ ok, responseTime = 0 }) => {
+        attempts += 1;
+        if (ok) {
+          correct += 1;
+          streak += 1;
+          score += base + streak * streakBonus - responseTime * timePenalty;
+          totalResponseTime += responseTime;
+        } else {
+          streak = 0;
+          score -= missPenalty;
+          if (score < 0) score = 0;
+        }
+      };
+      const stats = () => {
+        const accuracy = attempts === 0 ? 0 : (correct / attempts) * 100;
+        const avgResponse = correct === 0 ? 0 : totalResponseTime / correct;
+        return {
+          score: Math.round(score),
+          streak,
+          attempts,
+          correct,
+          accuracy: Math.round(accuracy),
+          avgResponse,
+        };
+      };
+      return { register, stats };
+    };
+    const formatTime = (ms) => {
+      const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+      const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+      const seconds = String(totalSeconds % 60).padStart(2, "0");
+      return `${minutes}:${seconds}`;
+    };
+    const loadSessionConfig = (key, fallback = {}) => {
+      try {
+        const raw = sessionStorage.getItem(key);
+        return raw ? { ...fallback, ...JSON.parse(raw) } : fallback;
+      } catch (err) {
+        console.warn("Load failed", err);
+        return fallback;
+      }
+    };
+
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+
+    const ui = {
+      prompt: document.getElementById("prompt"),
+      score: document.getElementById("score"),
+      streak: document.getElementById("streak"),
+      accuracy: document.getElementById("accuracy"),
+      timer: document.getElementById("timer"),
+      toast: document.getElementById("toast"),
+      overlay: document.getElementById("results"),
+      final: {
+        score: document.getElementById("final-score"),
+        acc: document.getElementById("final-acc"),
+        streak: document.getElementById("final-streak"),
+        correct: document.getElementById("final-correct"),
+      },
+    };
+
+    const defaults = {
+      minA: 2,
+      maxA: 12,
+      minB: 2,
+      maxB: 12,
+      allowSquares: true,
+      duration: 90,
+      speed: 2,
+      decoys: 3,
+    };
+
+    const params = Object.fromEntries(new URLSearchParams(location.search));
+    const saved = loadSessionConfig("asteroidConfig", defaults);
+    const config = {
+      ...defaults,
+      ...saved,
+      ...Object.fromEntries(
+        Object.entries(params).map(([key, val]) => [
+          key,
+          val === "false" ? false : val === "true" ? true : Number.isNaN(Number(val)) ? val : Number(val),
+        ])
+      ),
+    };
+
+    let width = 0;
+    let height = 0;
+    let running = true;
+    let lastTime = performance.now();
+    let startTime = performance.now();
+    let questionStart = performance.now();
+    let bestStreak = 0;
+
+    const scoring = createScoringEngine({
+      base: 120,
+      streakBonus: 8,
+      missPenalty: 40,
+      timePenalty: 0.015,
+    });
+
+    const ship = {
+      x: 0,
+      y: 0,
+      width: 60,
+      height: 16,
+      speed: 360,
+      move: 0,
+      cooldown: 0,
+    };
+
+    const bullets = [];
+    const asteroids = [];
+    let currentQuestion = null;
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+      ship.x = width / 2;
+      ship.y = height - 80;
+    }
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function generateNextQuestion() {
+      const q = generateMultiplication({
+        aRange: [config.minA, config.maxA],
+        bRange: [config.minB, config.maxB],
+        allowSquares: config.allowSquares,
+      });
+      const decoys = generateDecoys(q.answer, config.decoys, "near");
+      asteroids.length = 0;
+      const values = shuffle([{ value: q.answer, correct: true }, ...decoys.map((d) => ({ value: d, correct: false }))]);
+      values.forEach((item, idx) => {
+        const padding = 60;
+        const laneWidth = (width - padding * 2) / values.length;
+        asteroids.push({
+          ...item,
+          x: padding + laneWidth * idx + laneWidth / 2,
+          y: -randomInt(40, 200),
+          speed: 60 + config.speed * 40 + Math.random() * 30,
+          radius: 32,
+        });
+      });
+      ui.prompt.textContent = q.prompt;
+      questionStart = performance.now();
+      return q;
+    }
+
+    function fire() {
+      const now = performance.now();
+      if (ship.cooldown > now) return;
+      ship.cooldown = now + 220;
+      bullets.push({ x: ship.x, y: ship.y - ship.height / 2, vy: -520 });
+    }
+
+    function update(delta) {
+      const moveAmount = ship.speed * delta * ship.move;
+      ship.x = Math.max(30, Math.min(width - 30, ship.x + moveAmount));
+
+      bullets.forEach((b) => { b.y += b.vy * delta; });
+      for (let i = bullets.length - 1; i >= 0; i -= 1) {
+        if (bullets[i].y < -20) bullets.splice(i, 1);
+      }
+
+      let correctPassed = false;
+
+      asteroids.forEach((a) => { a.y += a.speed * delta * (1 + config.speed * 0.05); });
+
+      for (let i = asteroids.length - 1; i >= 0; i -= 1) {
+        const a = asteroids[i];
+        if (a.y > height + 40) {
+          if (a.correct) correctPassed = true;
+          asteroids.splice(i, 1);
+        }
+      }
+
+      if (correctPassed) {
+        scoring.register({ ok: false });
+        showToast("Missed the correct asteroid");
+        currentQuestion = generateNextQuestion();
+      }
+
+      outer: for (let i = bullets.length - 1; i >= 0; i -= 1) {
+        const b = bullets[i];
+        for (let j = asteroids.length - 1; j >= 0; j -= 1) {
+          const a = asteroids[j];
+          const dx = a.x - b.x;
+          const dy = a.y - b.y;
+          if (Math.hypot(dx, dy) < a.radius) {
+            bullets.splice(i, 1);
+            asteroids.splice(j, 1);
+            if (a.correct) {
+              const elapsed = performance.now() - questionStart;
+              scoring.register({ ok: true, responseTime: elapsed });
+              bestStreak = Math.max(bestStreak, scoring.stats().streak);
+              currentQuestion = generateNextQuestion();
+            } else {
+              scoring.register({ ok: false });
+              showToast("Wrong hit! Streak reset.");
+            }
+            break outer;
+          }
+        }
+      }
+    }
+
+    function drawShip() {
+      ctx.save();
+      ctx.translate(ship.x, ship.y);
+      ctx.fillStyle = "#0ea5e9";
+      ctx.beginPath();
+      ctx.moveTo(0, -18);
+      ctx.lineTo(-18, 12);
+      ctx.lineTo(18, 12);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#22d3ee";
+      ctx.fillRect(-ship.width / 2 + 8, 12, ship.width - 16, ship.height);
+      ctx.restore();
+    }
+
+    function drawBullets() {
+      ctx.fillStyle = "#f59e0b";
+      bullets.forEach((b) => {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawAsteroids() {
+      ctx.font = "16px 'Inter', sans-serif";
+      asteroids.forEach((a) => {
+        const gradient = ctx.createRadialGradient(a.x, a.y, 8, a.x, a.y, a.radius);
+        gradient.addColorStop(0, a.correct ? "rgba(52, 211, 153, 0.95)" : "rgba(250, 204, 21, 0.95)");
+        gradient.addColorStop(1, a.correct ? "rgba(34, 197, 94, 0.25)" : "rgba(234, 179, 8, 0.18)");
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(a.x, a.y, a.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+        ctx.stroke();
+        ctx.fillStyle = "#0b1024";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(String(a.value), a.x, a.y);
+      });
+    }
+
+    function drawBackground() {
+      ctx.fillStyle = "rgba(5, 8, 22, 0.4)";
+      ctx.fillRect(0, 0, width, height);
+      const stripeSpacing = 120;
+      const offset = (performance.now() / 30) % stripeSpacing;
+      ctx.strokeStyle = "rgba(99, 102, 241, 0.08)";
+      for (let x = -offset; x < width; x += stripeSpacing) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x + width * 0.1, height);
+        ctx.stroke();
+      }
+    }
+
+    function loop() {
+      if (!running) return;
+      const now = performance.now();
+      const delta = Math.min(0.05, (now - lastTime) / 1000);
+      lastTime = now;
+
+      const elapsed = now - startTime;
+      const remaining = config.duration * 1000 - elapsed;
+      ui.timer.textContent = formatTime(remaining);
+      if (remaining <= 0) {
+        endRun();
+        return;
+      }
+
+      update(delta);
+      drawBackground();
+      drawAsteroids();
+      drawBullets();
+      drawShip();
+      updateHUD();
+      requestAnimationFrame(loop);
+    }
+
+    function updateHUD() {
+      const stats = scoring.stats();
+      ui.score.textContent = stats.score;
+      ui.streak.textContent = stats.streak;
+      ui.accuracy.textContent = `${stats.accuracy}%`;
+    }
+
+    function showToast(message) {
+      ui.toast.textContent = message;
+      ui.toast.style.display = "block";
+      clearTimeout(showToast.timeout);
+      showToast.timeout = setTimeout(() => {
+        ui.toast.style.display = "none";
+      }, 1200);
+    }
+
+    function endRun() {
+      running = false;
+      const stats = scoring.stats();
+      ui.final.score.textContent = stats.score;
+      ui.final.acc.textContent = `${stats.accuracy}%`;
+      ui.final.streak.textContent = bestStreak;
+      ui.final.correct.textContent = stats.correct;
+      ui.overlay.classList.add("show");
+    }
+
+    function handleKeydown(evt) {
+      if (evt.code === "ArrowLeft" || evt.code === "KeyA") ship.move = -1;
+      if (evt.code === "ArrowRight" || evt.code === "KeyD") ship.move = 1;
+      if (evt.code === "Space") fire();
+    }
+
+    function handleKeyup(evt) {
+      if (["ArrowLeft", "KeyA", "ArrowRight", "KeyD"].includes(evt.code)) ship.move = 0;
+    }
+
+    function start() {
+      resize();
+      startTime = performance.now();
+      lastTime = startTime;
+      currentQuestion = generateNextQuestion();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener("keydown", handleKeydown);
+    window.addEventListener("keyup", handleKeyup);
+    window.addEventListener("resize", resize);
+    document.getElementById("play-again").addEventListener("click", () => {
+      location.href = "home.html";
+    });
+
+    start();
+  </script>
+</body>
+</html>

@@ -2,10 +2,11 @@
 
 import { clamp, rand, randi, factKey } from "./utils.js";
 import { createState, createPlayer, normalizeRanges, applySettingsFromInputs } from "./game_settings.js";
-import { playSfx, setDrone, setSoundtrack, unlockSfx } from "./audio.js";
+import { playSfx, setDrone, setShipAdvance, setShipIdle, setSoundtrack, unlockSfx } from "./audio.js";
+import { createTourGuide } from "./tourguide.js";
 import { createFx } from "../render/animations.js";
 import { createBackground } from "../render/background.js";
-import { aliens, alienBullets, alienConfig, resetAliens, updateAliens, updateAlienBullets, drawAliens, drawAlienBullets } from "../entities/aliens.js";
+import { aliens, alienBullets, alienConfig, resetAliens, spawnAlien, updateAliens, updateAlienBullets, drawAliens, drawAlienBullets } from "../entities/aliens.js";
 import { computeSpawnInterval } from "./levels.js";
 import { PowerupManager } from "../entities/powerups.js";
 
@@ -16,7 +17,43 @@ var view = { w: 0, h: 0, hudH: 0 };
 var gameShell = document.getElementById("gameShell");
 var isElectron = (typeof navigator !== "undefined" && /Electron/i.test(navigator.userAgent || ""));
 
+if(typeof CanvasRenderingContext2D !== "undefined"){
+  if(typeof ctx.roundRect !== "function"){
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r){
+      if(!isFinite(x) || !isFinite(y) || !isFinite(w) || !isFinite(h)) return this;
+      var radius = (typeof r === "number" && isFinite(r)) ? r : 0;
+      if(w < 0){ x += w; w = -w; }
+      if(h < 0){ y += h; h = -h; }
+      if(w === 0 || h === 0) return this;
+      radius = Math.max(0, Math.min(radius, Math.min(w, h) / 2));
+      this.moveTo(x + radius, y);
+      this.arcTo(x + w, y, x + w, y + h, radius);
+      this.arcTo(x + w, y + h, x, y + h, radius);
+      this.arcTo(x, y + h, x, y, radius);
+      this.arcTo(x, y, x + w, y, radius);
+      this.closePath();
+      return this;
+    };
+  }
+  if(typeof ctx.ellipse !== "function"){
+    CanvasRenderingContext2D.prototype.ellipse = function(x, y, rx, ry, rotation, startAngle, endAngle, anticlockwise){
+      if(!isFinite(x) || !isFinite(y) || !isFinite(rx) || !isFinite(ry)) return;
+      if(rx === 0 || ry === 0) return;
+      var useRx = Math.abs(rx);
+      var useRy = Math.abs(ry);
+      var rot = rotation || 0;
+      this.save();
+      this.translate(x, y);
+      this.rotate(rot);
+      this.scale(useRx, useRy);
+      this.arc(0, 0, 1, startAngle, endAngle, !!anticlockwise);
+      this.restore();
+    };
+  }
+}
+
 var promptText = document.getElementById("promptText");
+var promptChip = document.getElementById("promptChip");
 var scoreText  = document.getElementById("scoreText");
 var streakText = document.getElementById("streakText");
 var levelText  = document.getElementById("levelText");
@@ -27,10 +64,14 @@ var timerText  = document.getElementById("timerText");
 var overlayMenu = document.getElementById("overlayMenu");
 var overlayEnd  = document.getElementById("overlayEnd");
 var overlayGameplay = document.getElementById("overlayGameplay");
+var overlayPowerups = document.getElementById("overlayPowerups");
+var overlaySfx = document.getElementById("overlaySfx");
 
 var btnStart    = document.getElementById("btnStart");
 var btnClose    = document.getElementById("btnClose");
 var btnGameplay = document.getElementById("btnGameplay");
+var btnPowerups = document.getElementById("btnPowerups");
+var btnSfx = document.getElementById("btnSfx");
 var btnFullscreenToggle = document.getElementById("btnFullscreenToggle");
 var btnPause    = document.getElementById("btnPause");
 var btnSettings = document.getElementById("btnSettings");
@@ -38,6 +79,10 @@ var btnHome     = document.getElementById("btnHome");
 var btnRestart  = document.getElementById("btnRestart");
 var btnCloseGameplay = document.getElementById("btnCloseGameplay");
 var btnBackGameplay = document.getElementById("btnBackGameplay");
+var btnClosePowerups = document.getElementById("btnClosePowerups");
+var btnBackPowerups = document.getElementById("btnBackPowerups");
+var btnCloseSfx = document.getElementById("btnCloseSfx");
+var btnBackSfx = document.getElementById("btnBackSfx");
 
 var btnEndRestart  = document.getElementById("btnEndRestart");
 var btnEndSettings = document.getElementById("btnEndSettings");
@@ -47,6 +92,11 @@ var btnEndHome = document.getElementById("btnEndHome");
 var toast = document.getElementById("toast");
 var countdownEl = document.getElementById("countdown");
 var warningClip = null;
+
+var powerupsSecondaryList = document.getElementById("powerupsSecondaryList");
+var powerupsDefenseList = document.getElementById("powerupsDefenseList");
+var powerupsOffenseList = document.getElementById("powerupsOffenseList");
+var sfxList = document.getElementById("sfxList");
 
 function setFullscreenLabel(btn, isFull){
   if(!btn) return;
@@ -125,11 +175,13 @@ var asteroids = [];
 var powerups = [];
 var bestStreak = 0;
 var gameOverFx = { active:false, t:0, reason:"", shown:false, x:0, y:0 };
-var missionClearFx = { active:false, phase:"center", t:0, explodeTimer:0, exitSpeed:0, sfxPlayed:false, mode:"cleared" };
+var missionClearFx = { active:false, phase:"center", t:0, explodeTimer:0, exitSpeed:0, sfxPlayed:false, mode:"cleared", sfxClip:null };
 var countdownActive = false;
 var countdownTarget = { x:0, y:0 };
 var countdownStartAt = 0;
 var countdownDurationSec = 0;
+var countdownTimerId = 0;
+var launchHoldTimer = 0;
 var dashGhosts = [];
 var introActive = false;
 var introTimer = 0;
@@ -143,6 +195,24 @@ var campaignStateKeyBase = "mathsteroid.campaign.state.";
 var campaignDataKeyBase = "mathsteroid.campaign.data.";
 var campaignDefaultId = "sector_run";
 var campaignMaxFailures = 3;
+
+var tourGuide = null;
+var tutorialActive = false;
+var tutorialLastPos = { x:0, y:0 };
+var tutorialPowerupSpawned = false;
+var tutorialAlienSpawned = false;
+var tutorialSpawnUnlocked = true;
+var tutorialPowerupUnlocked = true;
+var tutorialAlienUnlocked = true;
+var tutorialStepId = null;
+var tutorialPortalActive = false;
+var tutorialPortalX = 0;
+var tutorialPortalY = 0;
+var tutorialPortalR = 46;
+var tutorialPortalT = 0;
+var tutorialPortalLock = false;
+var tutorialPortalNotifyPending = false;
+var tutorialHideQuestion = false;
 
 // ======= Systems
 var fx = createFx(ctx, state, player, null);
@@ -234,7 +304,228 @@ Object.keys(cooldownIcons).forEach(function(key){
   icon.img.src = icon.src;
 });
 
+var powerupIcons = {
+  repair: { img: new Image(), ready: false, src: "images/powerup_hullrepair.png" },
+  time: { img: new Image(), ready: false, src: "images/powerup_timedelay.png" },
+  magnet: { img: new Image(), ready: false, src: "images/powerup_magnet.png" },
+  shield: { img: new Image(), ready: false, src: "images/powerup_shield.png" },
+  armor: { img: new Image(), ready: false, src: "images/powerup_armor.png" },
+  lock: { img: new Image(), ready: false, src: "images/powerup_targetlock.png" }
+};
+Object.keys(powerupIcons).forEach(function(key){
+  var icon = powerupIcons[key];
+  icon.img.onload = function(){ icon.ready = true; };
+  icon.img.src = icon.src;
+});
+
+var shotIcons = {
+  electric: { img: new Image(), ready: false, src: "images/shot_electric.png" },
+  fire: { img: new Image(), ready: false, src: "images/shot_fre.png" },
+  laser: { img: new Image(), ready: false, src: "images/shot_laser.png" },
+  plasma: { img: new Image(), ready: false, src: "images/shot_plasma.png" },
+  rail: { img: new Image(), ready: false, src: "images/shot_rail.png" }
+};
+Object.keys(shotIcons).forEach(function(key){
+  var icon = shotIcons[key];
+  icon.img.onload = function(){ icon.ready = true; };
+  icon.img.src = icon.src;
+});
+
+var powerupCatalogSecondary = [
+  { id: "repair", label: "Hull Repair", icon: powerupIcons.repair.src, desc: "Instant hull repair (+35%)." },
+  { id: "time", label: "Time Dilation", icon: powerupIcons.time.src, desc: "Grants one Time Dilation charge (press X to slow time)." },
+  { id: "magnet", label: "Magnet Sweep", icon: powerupIcons.magnet.src, desc: "Grants one Magnet Sweep charge (press X to pull the correct asteroid)." },
+  { id: "emp", label: "EMP Burst", icon: null, desc: "Triggers immediately and cascades non-answer asteroids." },
+  { id: "lock", label: "Target Lock", icon: powerupIcons.lock.src, desc: "Grants one Target Lock charge (press X to steer shots to the correct asteroid)." }
+];
+
+var powerupCatalogDefense = [
+  { id: "shield", label: "Shield", icon: powerupIcons.shield.src, desc: "Temporary shield for 10 seconds." },
+  { id: "armor", label: "Armor", icon: powerupIcons.armor.src, desc: "Temporary armor for 12 seconds." }
+];
+
+var powerupCatalogOffense = [
+  { id: "dual", label: "Dual Blaster", icon: null, desc: "Two shots per tap for about 12 seconds." },
+  { id: "laser", label: "Laser Burst", icon: shotIcons.laser ? shotIcons.laser.src : null, desc: "High-speed laser shots for about 12 seconds." },
+  { id: "fire", label: "Fireball", icon: shotIcons.fire ? shotIcons.fire.src : null, desc: "Fireball shots for about 12 seconds." },
+  { id: "ice", label: "Ice Shards", icon: null, desc: "Ice shots for about 12 seconds." },
+  { id: "electric", label: "Electric Bolts", icon: shotIcons.electric ? shotIcons.electric.src : null, desc: "Electric bolts for about 12 seconds." },
+  { id: "pierce", label: "Look Up Shot", icon: null, desc: "Piercing shots for about 12 seconds." },
+  { id: "plasma", label: "Plasma Orb", icon: shotIcons.plasma ? shotIcons.plasma.src : null, desc: "Plasma shots for about 12 seconds." },
+  { id: "rail", label: "Rail Beam", icon: shotIcons.rail ? shotIcons.rail.src : null, desc: "Rail beam shots for about 12 seconds." }
+];
+
+var sfxCatalog = [
+  { id: "menu_beep", label: "Menu Beep", desc: "UI blip.", when: "Menu and overlay buttons.", badge: "SFX", src: "sfx/menu_beep.mp3" },
+  { id: "session_start", label: "Session Start", desc: "Countdown cue.", when: "Countdown before a run.", badge: "SFX", src: "sfx/session_start.mp3" },
+  { id: "mission_cleared1", label: "Mission Cleared", desc: "Clear fanfare.", when: "After wave clear, before the end panel.", badge: "SFX", src: "sfx/mission_cleared1.mp3" },
+  { id: "game_over3", label: "Game Over", desc: "Fail sting.", when: "After ship destruction.", badge: "SFX", src: "sfx/game_over3.mp3" },
+  { id: "explosion", label: "Explosion", desc: "Ship explosion.", when: "Player destroyed.", badge: "SFX", src: "sfx/explosion.mp3" },
+  { id: "ship_drone", label: "Ship Drone", desc: "Engine drone loop.", when: "Active during runs.", badge: "SFX", src: "sfx/ship_drone.mp3" },
+  { id: "ship_idle", label: "Ship Idle", desc: "Idle thruster loop.", when: "Idle or moving left, right, down.", badge: "SFX", src: "sfx/ship_idle.mp3" },
+  { id: "ship_advance", label: "Ship Advance", desc: "Advance thruster loop.", when: "Moving upward.", badge: "SFX", src: "sfx/ship_advance.mp3" },
+  { id: "dash", label: "Dash", desc: "Dash whoosh.", when: "Dashing and intro kick.", badge: "SFX", src: "sfx/dash.mp3" },
+  { id: "gun1", label: "Gun 1", desc: "Primary blaster.", when: "Standard, dual, and fire shots.", badge: "SFX", src: "sfx/gun1.mp3" },
+  { id: "gun2", label: "Gun 2", desc: "Heavy blaster.", when: "Laser and rail shots.", badge: "SFX", src: "sfx/gun2.mp3" },
+  { id: "ice_shot", label: "Ice Shot", desc: "Ice blaster.", when: "Ice shots.", badge: "SFX", src: "sfx/ice_shot.mp3" },
+  { id: "bolt_shot", label: "Bolt Shot", desc: "Electric blaster.", when: "Electric shots.", badge: "SFX", src: "sfx/bolt_shot.mp3" },
+  { id: "impact", label: "Impact", desc: "Collision hit.", when: "Ship hits and alien impacts.", badge: "SFX", src: "sfx/impact.mp3" },
+  { id: "impact_thud", label: "Impact Thud", desc: "Asteroid thud.", when: "Asteroid impacts and EMP cascade hits.", badge: "SFX", src: "sfx/impact_thud.mp3" },
+  { id: "correct", label: "Correct", desc: "Correct hit cue.", when: "Correct answer asteroid destroyed.", badge: "SFX", src: "sfx/correct.mp3" },
+  { id: "wrong_asteroid", label: "Wrong Asteroid", desc: "Wrong hit cue.", when: "Wrong answer asteroid hit.", badge: "SFX", src: "sfx/wrong_asteroid.mp3" },
+  { id: "missed_answer", label: "Missed Answer", desc: "Missed answer cue.", when: "Correct asteroid escapes.", badge: "SFX", src: "sfx/missed_answer.mp3" },
+  { id: "level_up2", label: "Level Up", desc: "Level up cue.", when: "Level increases.", badge: "SFX", src: "sfx/level_up2.mp3" },
+  { id: "alien_kill", label: "Alien Kill", desc: "Alien destroyed.", when: "Alien shot down.", badge: "SFX", src: "sfx/alien_kill.mp3" },
+  { id: "alien_shooting", label: "Alien Shooting", desc: "Alien firing.", when: "Alien fires.", badge: "SFX", src: "sfx/alien_shooting.mp3" },
+  { id: "ship_damaged", label: "Ship Damaged", desc: "Damage alert.", when: "Player takes damage.", badge: "SFX", src: "sfx/ship_damaged.mp3" },
+  { id: "warning", label: "Warning", desc: "Warning alarm.", when: "Correct answer near escape (not in tutorial).", badge: "SFX", src: "sfx/warning.mp3" },
+  { id: "powerup_collected", label: "Powerup Collected", desc: "Pickup chime.", when: "Collect powerups or shot upgrades.", badge: "SFX", src: "sfx/powerup_collected.mp3" },
+  { id: "crash", label: "Crash", desc: "Hard collision.", when: "Ship collision impact.", badge: "SFX", src: "sfx/crash.mp3" }
+];
+
+var previewPlayers = {};
+var activePreview = null;
+
+function formatDuration(sec){
+  if(!isFinite(sec) || sec <= 0) return "--:--";
+  var total = Math.round(sec);
+  var m = Math.floor(total / 60);
+  var s = total % 60;
+  return m + ":" + (s < 10 ? "0" : "") + s;
+}
+
+function stopPreviewAudio(audio){
+  if(!audio) return;
+  try{
+    audio.pause();
+    audio.currentTime = 0;
+  }catch(e){}
+}
+
+function stopAllPreviewAudio(){
+  for(var key in previewPlayers){
+    if(Object.prototype.hasOwnProperty.call(previewPlayers, key)){
+      stopPreviewAudio(previewPlayers[key]);
+    }
+  }
+  activePreview = null;
+}
+
+function renderCatalogList(listEl, items){
+  if(!listEl) return;
+  listEl.innerHTML = "";
+  for(var i=0; i<items.length; i++){
+    var item = items[i];
+    var li = document.createElement("li");
+    li.className = "catalogItem";
+
+    var icon = document.createElement("div");
+    icon.className = "catalogIcon";
+    if(item.icon){
+      var img = document.createElement("img");
+      img.src = item.icon;
+      img.alt = item.label + " icon";
+      icon.appendChild(img);
+    }else{
+      var missing = document.createElement("div");
+      missing.className = "catalogMissing";
+      missing.textContent = item.badge || "NO IMAGE";
+      icon.appendChild(missing);
+    }
+
+    var text = document.createElement("div");
+    text.className = "catalogText";
+    var title = document.createElement("div");
+    title.className = "catalogTitle";
+    title.textContent = item.label;
+    text.appendChild(title);
+
+    if(item.desc){
+      var desc = document.createElement("div");
+      desc.className = "catalogDesc";
+      desc.textContent = item.desc;
+      text.appendChild(desc);
+    }
+
+    if(item.id && item.badge){
+      var file = document.createElement("div");
+      file.className = "catalogMeta";
+      file.textContent = "File: sfx/" + item.id + ".mp3";
+      text.appendChild(file);
+    }
+
+    if(item.when){
+      var when = document.createElement("div");
+      when.className = "catalogWhen";
+      when.textContent = "Plays: " + item.when;
+      text.appendChild(when);
+    }
+
+    if(item.src){
+      var controls = document.createElement("div");
+      controls.className = "catalogControls";
+      var playBtn = document.createElement("button");
+      playBtn.type = "button";
+      playBtn.className = "btn btnTiny";
+      playBtn.textContent = "PLAY";
+      var stopBtn = document.createElement("button");
+      stopBtn.type = "button";
+      stopBtn.className = "btn btnTiny";
+      stopBtn.textContent = "STOP";
+      var duration = document.createElement("div");
+      duration.className = "catalogDuration";
+      duration.textContent = "--:--";
+
+      var audio = new Audio(item.src);
+      audio.preload = "metadata";
+      previewPlayers[item.id] = audio;
+      (function(audioRef, durationEl, playBtnEl, stopBtnEl){
+        audioRef.addEventListener("loadedmetadata", function(){
+          durationEl.textContent = formatDuration(audioRef.duration);
+        });
+        audioRef.addEventListener("ended", function(){
+          if(activePreview === audioRef) activePreview = null;
+        });
+        playBtnEl.addEventListener("click", function(){
+          if(activePreview && activePreview !== audioRef){
+            stopPreviewAudio(activePreview);
+          }
+          activePreview = audioRef;
+          try{
+            audioRef.currentTime = 0;
+            audioRef.play().catch(function(){});
+          }catch(e){}
+        });
+        stopBtnEl.addEventListener("click", function(){
+          stopPreviewAudio(audioRef);
+          if(activePreview === audioRef) activePreview = null;
+        });
+      })(audio, duration, playBtn, stopBtn);
+      try{ audio.load(); }catch(e){}
+
+      controls.appendChild(playBtn);
+      controls.appendChild(stopBtn);
+      controls.appendChild(duration);
+      text.appendChild(controls);
+    }
+
+    li.appendChild(icon);
+    li.appendChild(text);
+    listEl.appendChild(li);
+  }
+}
+
+function renderSettingsCatalogs(){
+  stopAllPreviewAudio();
+  previewPlayers = {};
+  renderCatalogList(powerupsSecondaryList, powerupCatalogSecondary);
+  renderCatalogList(powerupsDefenseList, powerupCatalogDefense);
+  renderCatalogList(powerupsOffenseList, powerupCatalogOffense);
+  renderCatalogList(sfxList, sfxCatalog);
+}
+
 var powerupManager = new PowerupManager(state, player);
+renderSettingsCatalogs();
 
 function configureAliensDifficulty(){
   var diff = String(state.difficulty || "normal").toLowerCase();
@@ -321,7 +612,10 @@ window.addEventListener("keydown", function(e){
   if(k === "0") toggleScreenshot();
   if(k === "r") hardRestart();
   if(k === "m") openSettings();
-  if(k === "z") fire();
+  if(k === "z" && !e.repeat) fire();
+  if((k === "w" || k === "arrowup") && !e.repeat && state.running && !state.paused && !state.over){
+    playSfx(state, "ship_advance");
+  }
   if(k === "x") secondaryFire();
   if(k === "c") shockwave();
   if(k === "b"){
@@ -560,11 +854,11 @@ function getQuestionRawText(){
     return String(state.rationalQuestion || "?") + " = ?";
   }
   if(state.questionMode === "square_shoot"){
-    return String(state.a) + "² = ?";
+    return String(state.a) + "\u00B2 = ?";
   }
   if(state.questionMode === "square_root"){
     var sq = state.squareValue || (state.a * state.a);
-    return "√" + String(sq) + " = ?";
+    return "\u221A" + String(sq) + " = ?";
   }
   var op = isAdditionMode() ? "+" : "x";
   return state.a + " " + op + " " + state.b + " = ?";
@@ -589,6 +883,13 @@ function syncHud(){
   }
   updateTimerHud();
   btnPause.textContent = state.paused ? "RESUME (P)" : "PAUSE (P)";
+}
+
+function setTutorialQuestionHidden(hidden){
+  tutorialHideQuestion = hidden;
+  if(promptChip){
+    promptChip.style.visibility = hidden ? "hidden" : "visible";
+  }
 }
 
 function updateTimerHud(){
@@ -624,9 +925,22 @@ function syncTimerPause(){
 
 var toastTimer = null;
 var toastTypeTimer = null;
-function showToast(msg){
+function inferToastTone(text){
+  var lower = String(text || "").toLowerCase();
+  var badWords = ["wrong", "missed", "escaped", "damaged", "collision", "crash", "error", "failed", "out of lives", "destroyed", "warning"];
+  for(var i=0; i<badWords.length; i++){
+    if(lower.indexOf(badWords[i]) !== -1) return "bad";
+  }
+  return "good";
+}
+
+function showToast(msg, tone){
   var text = String(msg || "");
   toast.textContent = "";
+  toast.classList.remove("toast-good", "toast-bad");
+  var appliedTone = tone || inferToastTone(text);
+  if(appliedTone === "bad") toast.classList.add("toast-bad");
+  else if(appliedTone === "good") toast.classList.add("toast-good");
   toast.classList.add("show");
   clearTimeout(toastTimer);
   if(toastTypeTimer){
@@ -641,7 +955,7 @@ function showToast(msg){
     if(idx >= text.length){
       clearInterval(toastTypeTimer);
       toastTypeTimer = null;
-      toastTimer = setTimeout(function(){ toast.classList.remove("show"); }, 850);
+      toastTimer = setTimeout(function(){ toast.classList.remove("show"); }, 2000);
     }
   }, typeMs);
 }
@@ -952,12 +1266,12 @@ function getAlienQuestion(){
     // Use subtraction for alien when player is in addition mode.
     b = randi(1, 9);
     a = answer + b;
-    op = "−";
+    op = "-";
   }else{
     // Use division for alien when player is in multiplication mode.
     b = randi(2, 9);
     a = answer * b;
-    op = "÷";
+    op = "/";
   }
   return { question: a + " " + op + " " + b, answer: answer };
 }
@@ -1366,22 +1680,22 @@ function applyPowerup(p){
   if(p.group === "offense"){
     player.blasterMode = p.type;
     player.blasterTimer = 12;
-    if(p.type === "dual") showToast("OFFENSE → DUAL BLASTER");
-    else if(p.type === "laser") showToast("OFFENSE → LASER BURST");
-    else if(p.type === "fire") showToast("OFFENSE → FIREBALL");
-    else if(p.type === "ice") showToast("OFFENSE → ICE SHARDS");
-    else if(p.type === "electric") showToast("OFFENSE → ELECTRIC BOLTS");
-    else if(p.type === "pierce") showToast("OFFENSE → LOOK UP SHOT");
-    else if(p.type === "plasma") showToast("OFFENSE → PLASMA ORB");
-    else if(p.type === "rail") showToast("OFFENSE → RAIL BEAM");
+    if(p.type === "dual") showToast("OFFENSE -> DUAL BLASTER");
+    else if(p.type === "laser") showToast("OFFENSE -> LASER BURST");
+    else if(p.type === "fire") showToast("OFFENSE -> FIREBALL");
+    else if(p.type === "ice") showToast("OFFENSE -> ICE SHARDS");
+    else if(p.type === "electric") showToast("OFFENSE -> ELECTRIC BOLTS");
+    else if(p.type === "pierce") showToast("OFFENSE -> LOOK UP SHOT");
+    else if(p.type === "plasma") showToast("OFFENSE -> PLASMA ORB");
+    else if(p.type === "rail") showToast("OFFENSE -> RAIL BEAM");
   }else if(p.group === "defense" && p.type === "shield"){
     player.defenseMode = "shield";
     player.defenseTimer = 10;
-    showToast("DEFENSE → SHIELD");
+    showToast("DEFENSE -> SHIELD");
   }else if(p.group === "defense" && p.type === "armor"){
     player.defenseMode = "armor";
     player.defenseTimer = 12;
-    showToast("DEFENSE → ARMOR");
+    showToast("DEFENSE -> ARMOR");
   }else if(p.group === "secondary"){
     if(p.type === "repair"){
       player.hull = clamp(player.hull + 0.35, 0, 1);
@@ -1391,22 +1705,25 @@ function applyPowerup(p){
     }else if(p.type === "emp"){
       state.empTimer = Math.max(state.empTimer, 2.0);
       spawnRing(player.x, player.y, 24);
-      showToast("SECONDARY → EMP BURST");
-      for(var ai=asteroids.length-1; ai>=0; ai--){
+      showToast("SECONDARY -> EMP BURST");
+      var targets = [];
+      for(var ai=0; ai<asteroids.length; ai++){
         var a = asteroids[ai];
         if(!a.isCorrect || a.waveId !== state.waveId){
-          spawnParticles(a.x, a.y, "spark");
-          spawnParticles(a.x, a.y, "smoke");
-          asteroids.splice(ai, 1);
+          targets.push({ id: a.id, y: a.y });
         }
       }
+      targets.sort(function(a1, a2){ return a2.y - a1.y; });
+      state.empCascade = targets;
+      state.empCascadeTimer = 0;
+      state.empCascadeInterval = 1.0;
     }else{
       player.secondaryMode = p.type;
       player.secondaryCharges = 1;
-      if(p.type === "time") showToast("SECONDARY → TIME DILATION (X)");
-      else if(p.type === "magnet") showToast("SECONDARY → MAGNET SWEEP (X)");
-      else if(p.type === "emp") showToast("SECONDARY → EMP BURST (X)");
-      else if(p.type === "lock") showToast("SECONDARY → TARGET LOCK (X)");
+      if(p.type === "time") showToast("SECONDARY -> TIME DILATION (X)");
+      else if(p.type === "magnet") showToast("SECONDARY -> MAGNET SWEEP (X)");
+      else if(p.type === "emp") showToast("SECONDARY -> EMP BURST (X)");
+      else if(p.type === "lock") showToast("SECONDARY -> TARGET LOCK (X)");
     }
   }
 }
@@ -1424,14 +1741,14 @@ function spawnSplitAsteroids(a){
       baseVy: baseVy,
       r: Math.max(12, a.r * 0.55),
       label: null,
-      isCorrect:false,
+      isCorrect: false,
       waveId: -1,
       spin: rand(-3.4, 3.4),
-      rot: rand(0, Math.PI*2),
-      seed: Math.random()*1000,
-      hit:false,
-      warned:false,
-      ghost:true,
+      rot: rand(0, Math.PI * 2),
+      seed: Math.random() * 1e3,
+      hit: false,
+      warned: false,
+      ghost: true,
       driftAmp: rand(6, 12),
       driftRate: rand(0.6, 1.3),
       driftPhase: rand(0, Math.PI * 2),
@@ -1445,9 +1762,32 @@ function markAsteroidEffect(a, effect, duration){
   a.noDamage = true;
   a.effect = effect;
   a.effectTimer = duration;
+  a.effectDuration = duration;
   a.burning = effect === "burn";
   a.frozen = effect === "freeze";
   a.ghost = true;
+}
+
+function fadeTutorialAsteroids(){
+  tutorialSpawnUnlocked = false;
+  for(var i=0; i<asteroids.length; i++){
+    var a = asteroids[i];
+    if(!a || a.noDamage) continue;
+    markAsteroidEffect(a, "fade", 1.0);
+  }
+}
+
+function startTutorialPortalExit(){
+  if(player.fadeOutActive) return;
+  tutorialPortalLock = true;
+  tutorialPortalNotifyPending = true;
+  player.fadeOutActive = true;
+  player.fadeOutT = 0;
+  player.fadeOutDur = 1.6;
+  player.fadeAlpha = 1;
+  player.hidden = false;
+  setShipAdvance(state, false);
+  setShipIdle(state, false);
 }
 
 function chainDestroy(origin, radius, maxTargets){
@@ -1465,7 +1805,7 @@ function chainDestroy(origin, radius, maxTargets){
   }
   targets.sort(function(p1, p2){ return p1.d - p2.d; });
   if(maxTargets) targets = targets.slice(0, maxTargets);
-  for(var j=0;j<targets.length;j++){
+  for(var j=0; j<targets.length; j++){
     var t = targets[j].a;
     var idx = asteroids.indexOf(t);
     if(idx >= 0){
@@ -1508,6 +1848,16 @@ function applySettings(){
   setSoundtrack(state, state.sound && state.running && !state.over);
 }
 
+function stopMissionClearedSfx(){
+  if(missionClearFx.sfxClip){
+    try{
+      missionClearFx.sfxClip.pause();
+      missionClearFx.sfxClip.currentTime = 0;
+    }catch(e){}
+    missionClearFx.sfxClip = null;
+  }
+}
+
 function beginRun(){
   state.running = true;
   state.paused = false;
@@ -1522,6 +1872,15 @@ function resetSession(){
   if(gameOverSfxTimer){
     clearTimeout(gameOverSfxTimer);
     gameOverSfxTimer = 0;
+  }
+  stopMissionClearedSfx();
+  if(countdownTimerId){
+    clearInterval(countdownTimerId);
+    countdownTimerId = 0;
+  }
+  if(launchHoldTimer){
+    clearTimeout(launchHoldTimer);
+    launchHoldTimer = 0;
   }
   bullets.length = 0;
   asteroids.length = 0;
@@ -1541,6 +1900,7 @@ function resetSession(){
   missionClearFx.explodeTimer = 0;
   missionClearFx.exitSpeed = 0;
   missionClearFx.sfxPlayed = false;
+  missionClearFx.sfxClip = null;
   missionClearFx.mode = "cleared";
   countdownActive = false;
   cam.x = 0; cam.y = 0; cam.t = 0; cam.t0 = 0; cam.amp = 0;
@@ -1588,6 +1948,9 @@ function resetSession(){
   state.timerWarningPlayed = false;
   state.endReasonDetail = "";
   state.redemptionUsed = false;
+  state.empCascade = null;
+  state.empCascadeTimer = 0;
+  state.empCascadeInterval = 0;
 
   player.cooldown = 0;
   player.vx = 0;
@@ -1614,6 +1977,10 @@ function resetSession(){
   player.shipShake = 0;
   player.teleportHide = 0;
   player.hidden = false;
+  player.fadeAlpha = 1;
+  player.fadeOutActive = false;
+  player.fadeOutT = 0;
+  player.fadeOutDur = 0;
 
   resetAliens();
 
@@ -1645,6 +2012,40 @@ function startIntroSequence(done){
 function startCountdown(skipReset){
   if(!countdownEl) return false;
   if(countdownEl.classList.contains("show")) return true;
+  if(introActive) return false;
+  if(tutorialActive){
+    overlayMenu.classList.remove("show");
+    hideEndOverlay();
+    applySettings();
+    state.running = false;
+    state.paused = false;
+    state.over = false;
+    introHudHold = false;
+    syncHud();
+    if(gameOverSfxTimer){
+      clearTimeout(gameOverSfxTimer);
+      gameOverSfxTimer = 0;
+    }
+    if(countdownTimerId){
+      clearInterval(countdownTimerId);
+      countdownTimerId = 0;
+    }
+    if(launchHoldTimer){
+      clearTimeout(launchHoldTimer);
+      launchHoldTimer = 0;
+    }
+    resetSession();
+    showToast("MISSION START");
+    return true;
+  }
+  if(countdownTimerId){
+    clearInterval(countdownTimerId);
+    countdownTimerId = 0;
+  }
+  if(launchHoldTimer){
+    clearTimeout(launchHoldTimer);
+    launchHoldTimer = 0;
+  }
 
   overlayMenu.classList.remove("show");
   hideEndOverlay();
@@ -1691,13 +2092,14 @@ function startCountdown(skipReset){
   playSfx(state, "session_start");
   setSoundtrack(state, true);
 
-  var timer = setInterval(function(){
+  countdownTimerId = setInterval(function(){
     i++;
     if(i < steps.length){
       countdownEl.textContent = steps[i];
       return;
     }
-    clearInterval(timer);
+    clearInterval(countdownTimerId);
+    countdownTimerId = 0;
     countdownEl.classList.remove("show");
     countdownActive = false;
     if(skipReset){
@@ -1730,11 +2132,69 @@ function startIntroThenCountdown(){
   }
 
   startIntroSequence(function(){
-    setTimeout(function(){
+    if(launchHoldTimer){
+      clearTimeout(launchHoldTimer);
+      launchHoldTimer = 0;
+    }
+    launchHoldTimer = setTimeout(function(){
+      launchHoldTimer = 0;
       startCountdown(true);
-    }, 1050);
+    }, 220);
   });
   return true;
+}
+
+function bumpContinueDifficulty(){
+  var options = [];
+  function addOption(label, apply){
+    options.push({ label: label, apply: apply });
+  }
+
+  if(inputs.speed && inputs.speed.options && inputs.speed.options.length){
+    var speedIndex = inputs.speed.selectedIndex;
+    if(speedIndex >= 0 && speedIndex < inputs.speed.options.length - 1){
+      addOption("SPEED", function(){ inputs.speed.selectedIndex = speedIndex + 1; });
+    }
+  }
+  if(inputs.decoys && inputs.decoys.options && inputs.decoys.options.length){
+    var decoyIndex = inputs.decoys.selectedIndex;
+    if(decoyIndex >= 0 && decoyIndex < inputs.decoys.options.length - 1){
+      addOption("DECOYS", function(){ inputs.decoys.selectedIndex = decoyIndex + 1; });
+    }
+  }
+  if(inputs.lives && inputs.lives.options && inputs.lives.options.length){
+    var livesIndex = inputs.lives.selectedIndex;
+    if(livesIndex > 0){
+      addOption("LIVES", function(){ inputs.lives.selectedIndex = livesIndex - 1; });
+    }
+  }
+  if(inputs.strikes && inputs.strikes.options && inputs.strikes.options.length){
+    var strikesIndex = inputs.strikes.selectedIndex;
+    if(strikesIndex > 0){
+      addOption("STRIKES", function(){ inputs.strikes.selectedIndex = strikesIndex - 1; });
+    }
+  }
+  var diffOrder = ["easy", "normal", "hard", "brutal"];
+  var curDiff = String(state.difficulty || "normal").toLowerCase();
+  var diffIndex = diffOrder.indexOf(curDiff);
+  if(diffIndex >= 0 && diffIndex < diffOrder.length - 1){
+    addOption("DIFFICULTY", function(){ state.difficulty = diffOrder[diffIndex + 1]; });
+  }
+
+  if(!options.length) return "";
+  var pick = options[Math.floor(Math.random() * options.length)];
+  pick.apply();
+  return pick.label || "";
+}
+
+function continueSession(){
+  ensureLoop();
+  stopMissionClearedSfx();
+  var bumped = bumpContinueDifficulty();
+  if(bumped){
+    showToast("CONTINUE: +" + bumped);
+  }
+  startIntroThenCountdown();
 }
 
 function hardRestart(){
@@ -1752,11 +2212,18 @@ function openSettings(){
   state.paused = true;
   syncTimerPause();
   syncHud();
+  if(overlayGameplay) overlayGameplay.classList.remove("show");
+  if(overlayPowerups) overlayPowerups.classList.remove("show");
+  if(overlaySfx) overlaySfx.classList.remove("show");
   overlayMenu.classList.add("show");
 }
 
 function closeSettings(){
   overlayMenu.classList.remove("show");
+  if(overlayGameplay) overlayGameplay.classList.remove("show");
+  if(overlayPowerups) overlayPowerups.classList.remove("show");
+  if(overlaySfx) overlaySfx.classList.remove("show");
+  stopAllPreviewAudio();
   if(state.running && !state.over) state.paused = false;
   syncTimerPause();
   syncHud();
@@ -1836,6 +2303,7 @@ function fire(){
   if(mode === "ice") gunSfx = "ice_shot";
   if(mode === "electric") gunSfx = "bolt_shot";
   playSfx(state, gunSfx);
+  if(tourGuide) tourGuide.notify("fire");
 }
 
 function secondaryFire(){
@@ -1850,21 +2318,21 @@ function secondaryFire(){
     player.hull = clamp(player.hull + 0.35, 0, 1);
     spawnRing(player.x, player.y, 18);
     spawnParticles(player.x, player.y, "correct");
-    showToast("SECONDARY → HULL REPAIR");
+    showToast("SECONDARY -> HULL REPAIR");
   }else if(player.secondaryMode === "time"){
     state.slowMoRemaining = Math.max(state.slowMoRemaining, 5.0);
     state.slowMoScale = 0.35;
-    showToast("SECONDARY → TIME DILATION");
+    showToast("SECONDARY -> TIME DILATION");
   }else if(player.secondaryMode === "magnet"){
     player.magnetTimer = 6.0;
-    showToast("SECONDARY → MAGNET SWEEP");
+    showToast("SECONDARY -> MAGNET SWEEP");
   }else if(player.secondaryMode === "emp"){
     state.empTimer = Math.max(state.empTimer, 2.0);
     spawnRing(player.x, player.y, 24);
-    showToast("SECONDARY → EMP BURST");
+    showToast("SECONDARY -> EMP BURST");
   }else if(player.secondaryMode === "lock"){
     player.lockTimer = Math.max(player.lockTimer, 6.0);
-    showToast("SECONDARY → TARGET LOCK");
+    showToast("SECONDARY -> TARGET LOCK");
   }
 
   if(player.secondaryCharges <= 0){
@@ -1946,6 +2414,7 @@ function dash(){
   }
   playSfx(state, "dash");
   showToast("DASH");
+  if(tourGuide) tourGuide.notify("dash");
 }
 
 function shockwave(){
@@ -1989,6 +2458,7 @@ function shockwave(){
     kickShake(12, 0.1);
     playSfx(state, "dash");
     showToast("SIDE FLARES");
+    if(tourGuide) tourGuide.notify("ability");
     return;
   }
 
@@ -2037,6 +2507,7 @@ function shockwave(){
     kickShake(8, 0.08);
     playSfx(state, "dash");
     showToast("TELEPORT");
+    if(tourGuide) tourGuide.notify("ability");
     return;
   }
 
@@ -2059,6 +2530,7 @@ function shockwave(){
   kickShake(14, 0.12);
   playSfx(state, "dash");
   showToast("SHOCKWAVE");
+  if(tourGuide) tourGuide.notify("ability");
 }
 
 function loseLife(reason){
@@ -2231,9 +2703,9 @@ function renderHighScores(lifetime){
   }
   for(var h=0; h<hs.length; h++){
     var item = hs[h];
-    var name = item.name ? (" • " + item.name) : "";
+    var name = item.name ? (" - " + item.name) : "";
     var liHs = document.createElement("li");
-    liHs.innerHTML = "<span>#" + (h+1) + " • " + item.score + " pts" + name + "</span><b>Lv " + item.level + "</b>";
+    liHs.innerHTML = "<span>#" + (h+1) + " - " + item.score + " pts" + name + "</span><b>Lv " + item.level + "</b>";
     highScoresEnd.appendChild(liHs);
   }
 }
@@ -2270,6 +2742,7 @@ function onCorrectHit(label){
   state.hits++;
   state.streak++;
   playSfx(state, "correct");
+  if(tourGuide) tourGuide.notify("correct");
 
   var baseGain = 50 + Math.min(250, state.streak*10);
   var factor = Math.max(state.a, state.b);
@@ -2327,7 +2800,9 @@ function onCorrectHit(label){
     }
     nextProblem();
   }
-  maybeDropPowerup();
+  if(!tutorialActive || tutorialPowerupUnlocked){
+    maybeDropPowerup();
+  }
 }
 
 function onWrongHit(){
@@ -2558,7 +3033,7 @@ function endGame(reason){
       var key = misses[j][0];
       var count = misses[j][1];
       var li = document.createElement("li");
-      li.innerHTML = "<span>" + key + "</span><b class=\"pillWarn\">" + count + "×</b>";
+      li.innerHTML = "<span>" + key + "</span><b class=\"pillWarn\">" + count + "x</b>";
       weakList.appendChild(li);
     }
   }
@@ -2567,6 +3042,9 @@ function endGame(reason){
 
   if(btnEndNext){
     btnEndNext.style.display = campaignResult.hasNext ? "inline-flex" : "none";
+  }
+  if(btnEndSettings){
+    btnEndSettings.style.display = (reason === "questions") ? "inline-flex" : "none";
   }
 
   if(endNameInput){
@@ -2698,7 +3176,7 @@ function tick(t){
     }
   }catch(err){
     console.error(err);
-    showToast("RUNTIME ERROR — CHECK CONSOLE");
+    showToast("RUNTIME ERROR - CHECK CONSOLE");
   }
 
   requestAnimationFrame(tick);
@@ -2709,6 +3187,8 @@ function update(dt){
   var dtSlow = dtReal;
   bg.dt = dt;
   if(state.over){
+    setShipIdle(state, false);
+    setShipAdvance(state, false);
     updateGameOverFx(dtReal);
     return;
   }
@@ -2718,6 +3198,8 @@ function update(dt){
       player.x += (countdownTarget.x - player.x) * settle;
       player.y += (countdownTarget.y - player.y) * settle;
     }
+    setShipIdle(state, false);
+    setShipAdvance(state, false);
     return;
   }
 
@@ -2728,7 +3210,34 @@ function update(dt){
 
   updateCamera(dtReal);
   updateDashGhosts(dtReal);
+  if(tutorialActive){
+    tutorialPortalT += dtReal;
+    if(tutorialPortalActive){
+      var rectP = canvas.getBoundingClientRect();
+      var hudHP = document.getElementById("hud").getBoundingClientRect().height;
+      tutorialPortalX = rectP.width / 2;
+      tutorialPortalY = hudHP + 70;
+      var dxPortal = player.x - tutorialPortalX;
+      var dyPortal = player.y - tutorialPortalY;
+      if(!tutorialPortalLock && Math.hypot(dxPortal, dyPortal) <= tutorialPortalR * 0.7){
+        startTutorialPortalExit();
+      }
+    }
+  }
+  if(tutorialActive && tutorialStepId === "alien" && state.aliensShot === 0 && aliens.length === 0){
+    tutorialAlienUnlocked = true;
+    alienConfig.enabled = true;
+    alienConfig.maxOnScreen = Math.max(alienConfig.maxOnScreen || 0, 1);
+    spawnAlien("scout", "2 / 2", 1, view);
+  }
+  var alienEnabled = alienConfig.enabled;
+  if(tutorialActive && !tutorialAlienUnlocked){
+    alienConfig.enabled = false;
+  }
   var alienReport = updateAliens(dtSlow, state, player, view, getAlienQuestion, asteroids);
+  if(tutorialActive && !tutorialAlienUnlocked){
+    alienConfig.enabled = alienEnabled;
+  }
   if(alienReport.escaped){
     state.aliensEscaped += alienReport.escaped;
     state.streak = 0;
@@ -2741,7 +3250,7 @@ function update(dt){
     var remaining = state.timeLimitSec - elapsed;
     if(remaining <= 4 && !state.timerWarningPlayed){
       state.timerWarningPlayed = true;
-      playSfx(state, "warning");
+      if(!tutorialActive) playSfx(state, "warning");
     }
     if(elapsed >= state.timeLimitSec){
       endGame("time");
@@ -2802,6 +3311,25 @@ function update(dt){
     padCursor.y *= decay;
     updateVirtualFromCursor();
   }
+  if(tutorialActive && tutorialPortalLock){
+    inputX = 0;
+    inputY = 0;
+  }
+  var advanceIntent = up && !down;
+  if(mousepadActive && inputY < -0.2){
+    advanceIntent = true;
+  }
+  if(tutorialActive && tutorialPortalLock){
+    advanceIntent = false;
+    setShipAdvance(state, false);
+    setShipIdle(state, false);
+  }else if(advanceIntent){
+    setShipAdvance(state, true);
+    setShipIdle(state, false);
+  }else{
+    setShipAdvance(state, false);
+    setShipIdle(state, true);
+  }
 
   if(mousepadMode === "hybrid" && mousepadActive && !spinActive){
     var bankLerp = 1 - Math.exp(-10 * dtReal);
@@ -2854,6 +3382,23 @@ function update(dt){
 
   player.x = clamp(player.x, player.w/2 + 10, r.width - player.w/2 - 10);
   player.y = clamp(player.y, topLimit + player.h/2 + 6, bottomLimit - player.h/2);
+  if(tourGuide && tutorialActive){
+    var dxMove = player.x - tutorialLastPos.x;
+    var dyMove = player.y - tutorialLastPos.y;
+    var moveDist = Math.abs(dxMove) + Math.abs(dyMove);
+    if(moveDist > 1.5){
+      if(Math.abs(dxMove) >= Math.abs(dyMove)){
+        if(dxMove > 1.5) tourGuide.notify("move_right");
+        if(dxMove < -1.5) tourGuide.notify("move_left");
+      }else{
+        if(dyMove > 1.5) tourGuide.notify("move_down");
+        if(dyMove < -1.5) tourGuide.notify("move_up");
+      }
+      tourGuide.notify("move");
+      tutorialLastPos.x = player.x;
+      tutorialLastPos.y = player.y;
+    }
+  }
   if(mousepadMode === "hybrid" && mousepadActive && !spinActive && Math.abs(inputX) < 0.05){
     player.bankHold = clamp(player.vx / (player.speed || 1), -1, 1);
   }
@@ -2872,6 +3417,22 @@ function update(dt){
     var fxTotal = Math.max(player.teleportFx.ghostDur || 0, (player.teleportFx.hide || 0) + (player.teleportFx.zoomDur || 0));
     if(player.teleportFx.t >= fxTotal){
       player.teleportFx = null;
+    }
+  }
+  if(player.fadeOutActive){
+    player.fadeOutT += dtReal;
+    var fadeDur = Math.max(0.001, player.fadeOutDur || 0);
+    var fadeP = clamp(player.fadeOutT / fadeDur, 0, 1);
+    var fadeEase = 1 - Math.pow(1 - fadeP, 2.2);
+    player.fadeAlpha = Math.max(0, 1 - fadeEase);
+    if(fadeP >= 1){
+      player.fadeOutActive = false;
+      player.fadeAlpha = 0;
+      player.hidden = true;
+      if(tutorialPortalNotifyPending){
+        tutorialPortalNotifyPending = false;
+        if(tourGuide) tourGuide.notify("portal");
+      }
     }
   }
 
@@ -2898,8 +3459,41 @@ function update(dt){
   if(state.empTimer > 0){
     state.empTimer = Math.max(0, state.empTimer - dtReal);
   }
+  if(state.empCascade && state.empCascade.length){
+    state.empCascadeTimer -= dtReal;
+    if(state.empCascadeTimer <= 0){
+      var removed = false;
+      while(state.empCascade.length){
+        var target = state.empCascade.shift();
+        var hitIndex = -1;
+        for(var ti=asteroids.length-1; ti>=0; ti--){
+          if(asteroids[ti].id === target.id){
+            hitIndex = ti;
+            break;
+          }
+        }
+        if(hitIndex >= 0){
+          var hitAst = asteroids[hitIndex];
+          impactDebris(hitAst.x, hitAst.y);
+          spawnParticles(hitAst.x, hitAst.y, "spark");
+          spawnParticles(hitAst.x, hitAst.y, "smoke");
+          playSfx(state, "impact_thud", 0.4);
+          asteroids.splice(hitIndex, 1);
+          removed = true;
+          break;
+        }
+      }
+      if(removed){
+        var nextInterval = state.empCascadeInterval > 0 ? state.empCascadeInterval : 1.0;
+        state.empCascadeTimer = nextInterval;
+        state.empCascadeInterval = Math.max(0.15, nextInterval * 0.7);
+      }else{
+        state.empCascade = null;
+        state.empCascadeTimer = 0;
+      }
+    }
+  }
 
-  if(keys.has("z")) fire();
   if(keys.has("x")) secondaryFire();
   if(keys.has("c")) shockwave();
   if(player.dashCooldown > 0){
@@ -2910,10 +3504,12 @@ function update(dt){
   }
 
   state.spawnTimer -= dtSlow;
-  if(state.spawnTimer <= 0){
-    spawnOneFromWave();
-  if(state.level >= 7 && Math.random() < 0.18) spawnDecoyOnly();
-    state.spawnTimer = computeSpawnInterval(state);
+  if(!tutorialActive || tutorialSpawnUnlocked){
+    if(state.spawnTimer <= 0){
+      spawnOneFromWave();
+      if(state.level >= 7 && Math.random() < 0.18) spawnDecoyOnly();
+      state.spawnTimer = computeSpawnInterval(state);
+    }
   }
 
   for(var bi=bullets.length-1; bi>=0; bi--){
@@ -2959,7 +3555,9 @@ function update(dt){
     var dyp = p.y - player.y;
     if(Math.hypot(dxp, dyp) < p.r + 18){
       state.powerupsCollected += 1;
+      playSfx(state, "powerup_collected");
       applyPowerup(p);
+      if(tourGuide) tourGuide.notify("powerup");
       powerups.splice(pi,1);
       continue;
     }
@@ -3021,7 +3619,7 @@ function update(dt){
     a.rot = (a.rot || 0) + (a.spin || 0) * dtSlow;
     if(a.isCorrect && a.waveId === state.waveId && !a.warned && a.y > r.height * 0.75){
       a.warned = true;
-      warningClip = playSfx(state, "warning");
+      if(!tutorialActive) warningClip = playSfx(state, "warning");
     }
 
     if(handleShipAsteroidCollision(a, player.x, player.y, false)){
@@ -3217,6 +3815,7 @@ function update(dt){
           state.score += al.score;
           impactDebris(al.x, al.y);
           playSfx(state, "alien_kill", 0.65);
+          if(tourGuide) tourGuide.notify("alien");
           aliens.splice(ai3, 1);
           showToast("ALIEN CLEARED");
           break;
@@ -3405,7 +4004,7 @@ function updateGameOverFx(dt){
           missionClearFx.explodeTimer = 0.12;
         }else{
           if(!missionClearFx.sfxPlayed){
-            playSfx(state, "mission_cleared1");
+            missionClearFx.sfxClip = playSfx(state, "mission_cleared1");
             missionClearFx.sfxPlayed = true;
           }
           missionClearFx.phase = "exit";
@@ -3449,7 +4048,7 @@ function draw(){
   var h = view.h;
 
   ctx.clearRect(0,0,w,h);
-  if(backgroundSprites[backgroundIndex] && backgroundReady[backgroundIndex]){
+  if(!tutorialActive && backgroundSprites[backgroundIndex] && backgroundReady[backgroundIndex]){
     var bgImg = backgroundSprites[backgroundIndex];
     var baseScale = Math.max(w / bgImg.width, h / bgImg.height);
     var scale = baseScale * backgroundScale;
@@ -3465,7 +4064,7 @@ function draw(){
     ctx.globalAlpha = 0.55;
     ctx.drawImage(bgImg, offX, offY, drawW, drawH);
     ctx.restore();
-  }else if(SHOW_STARS){
+  }else if(!tutorialActive && SHOW_STARS){
     drawStars(w,h);
   }
 
@@ -3483,6 +4082,7 @@ function draw(){
   ctx.save();
   ctx.translate(cam.x || 0, cam.y || 0);
 
+  drawTutorialPortal();
   for(var i=0;i<asteroids.length;i++) drawAsteroid(asteroids[i]);
   drawAliens(ctx);
   drawPowerups();
@@ -3569,24 +4169,26 @@ function draw(){
     ctx.shadowBlur = 8;
     var labelStyle = "600 11px Oxanium, sans-serif";
     var labelColor = "rgba(232,236,255,.75)";
-    var op = isAdditionMode() ? "+" : "×";
+    var op = isAdditionMode() ? "+" : "x";
     var questionTop = view.hudH + 14;
     var qRaw = getQuestionRawText();
     var qParsed = parseRepeatingText(qRaw);
     var qDisplay = qParsed.display;
-    ctx.fillText(qDisplay, w/2, questionTop);
-    if(qParsed.repeatStart >= 0 && qParsed.repeatLen > 0){
-      var qWidth = ctx.measureText(qDisplay).width;
-      var qLeft = w/2 - qWidth / 2;
-      var leftW = ctx.measureText(qDisplay.slice(0, qParsed.repeatStart)).width;
-      var repeatW = ctx.measureText(qDisplay.slice(qParsed.repeatStart, qParsed.repeatStart + qParsed.repeatLen)).width;
-      var lineY = questionTop - size * 0.08;
-      ctx.strokeStyle = "rgba(232,236,255,.85)";
-      ctx.lineWidth = Math.max(1, size * 0.06);
-      ctx.beginPath();
-      ctx.moveTo(qLeft + leftW, lineY);
-      ctx.lineTo(qLeft + leftW + repeatW, lineY);
-      ctx.stroke();
+    if(!(tutorialActive && tutorialHideQuestion)){
+      ctx.fillText(qDisplay, w/2, questionTop);
+      if(qParsed.repeatStart >= 0 && qParsed.repeatLen > 0){
+        var qWidth = ctx.measureText(qDisplay).width;
+        var qLeft = w/2 - qWidth / 2;
+        var leftW = ctx.measureText(qDisplay.slice(0, qParsed.repeatStart)).width;
+        var repeatW = ctx.measureText(qDisplay.slice(qParsed.repeatStart, qParsed.repeatStart + qParsed.repeatLen)).width;
+        var lineY = questionTop - size * 0.08;
+        ctx.strokeStyle = "rgba(232,236,255,.85)";
+        ctx.lineWidth = Math.max(1, size * 0.06);
+        ctx.beginPath();
+        ctx.moveTo(qLeft + leftW, lineY);
+        ctx.lineTo(qLeft + leftW + repeatW, lineY);
+        ctx.stroke();
+      }
     }
     ctx.restore();
 
@@ -3699,6 +4301,20 @@ function draw(){
       ctx.globalAlpha = 0.9 * hudFade;
       ctx.drawImage(abilityIcon.img, rightX - iconSize / 2, iconY, iconSize, iconSize);
     }
+    if(player.secondaryMode === "time" && player.secondaryCharges > 0){
+      var badgeSize = Math.max(16, radius * 0.9);
+      var badgeX = (leftX + rightX) / 2;
+      var badgeY = cy + radius + 16;
+      drawTimeDilationBadge(badgeX, badgeY, badgeSize, 0.95 * hudFade);
+      ctx.save();
+      ctx.globalAlpha = 0.85 * hudFade;
+      ctx.fillStyle = "rgba(232,236,255,.85)";
+      ctx.font = "700 10px Oxanium, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText("X", badgeX, badgeY + badgeSize * 0.55);
+      ctx.restore();
+    }
     ctx.restore();
     ctx.restore();
   }
@@ -3724,6 +4340,72 @@ function draw(){
     ctx.fillText("SCREENSHOT MODE (0)", w - 12, h - 10);
     ctx.restore();
   }
+}
+
+function drawTimeDilationBadge(cx, cy, size, alpha){
+  var r = size * 0.5;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(cx, cy);
+  ctx.fillStyle = "rgba(0,229,255,.2)";
+  ctx.strokeStyle = "rgba(255,255,255,.8)";
+  ctx.lineWidth = Math.max(1.4, size * 0.1);
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.strokeStyle = "rgba(255,255,255,.9)";
+  ctx.lineWidth = Math.max(1.2, size * 0.08);
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(0, -r * 0.45);
+  ctx.moveTo(0, 0);
+  ctx.lineTo(r * 0.35, r * 0.18);
+  ctx.stroke();
+  ctx.fillStyle = "rgba(255,255,255,.9)";
+  ctx.beginPath();
+  ctx.arc(0, 0, Math.max(1.2, size * 0.06), 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawTutorialPortal(){
+  if(!tutorialActive || !tutorialPortalActive) return;
+  var x = tutorialPortalX;
+  var y = tutorialPortalY;
+  var r = tutorialPortalR;
+  var pulse = 1 + Math.sin(tutorialPortalT * 4.4) * 0.06;
+  var ringR = r * pulse;
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  var glow = ctx.createRadialGradient(x, y, ringR * 0.2, x, y, ringR * 1.8);
+  glow.addColorStop(0, "rgba(0,229,255,.5)");
+  glow.addColorStop(0.45, "rgba(0,229,255,.18)");
+  glow.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(x, y, ringR * 1.4, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(tutorialPortalT * 0.9);
+  ctx.globalAlpha = 0.9;
+  ctx.strokeStyle = "rgba(0,229,255,.9)";
+  ctx.lineWidth = 2.6;
+  ctx.beginPath();
+  ctx.arc(0, 0, ringR, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.globalAlpha = 0.65;
+  ctx.strokeStyle = "rgba(255,255,255,.8)";
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  ctx.arc(0, 0, ringR * 0.6, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.restore();
+  ctx.globalCompositeOperation = "source-over";
 }
 
 function drawPowerups(){
@@ -3783,15 +4465,71 @@ function drawPowerupIcon(p, color){
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
 
-  if(p.group === "secondary" && (p.type === "repair" || p.type === "magnet" || p.type === "time")){
-    var emoji = p.type === "repair" ? "🛠️" : (p.type === "magnet" ? "🧲" : "⏱️");
+  var icon = powerupIcons[p.type];
+  if(!icon && p.group === "offense"){
+    icon = shotIcons[p.type];
+  }
+  if(icon && icon.ready){
+    var iconSize = Math.max(64, p.r * 4.2);
     ctx.save();
     ctx.globalCompositeOperation = "source-over";
-    var emojiSize = p.type === "time" ? 30 : 26;
-    ctx.font = emojiSize + "px 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(emoji, 0, 0);
+    var iw = icon.img.naturalWidth || icon.img.width || iconSize;
+    var ih = icon.img.naturalHeight || icon.img.height || iconSize;
+    var scale = iconSize / Math.max(1, Math.max(iw, ih));
+    var drawW = iw * scale;
+    var drawH = ih * scale;
+    ctx.drawImage(icon.img, -drawW / 2, -drawH / 2, drawW, drawH);
+    ctx.restore();
+    return;
+  }
+
+  if(p.group === "secondary" && (p.type === "repair" || p.type === "magnet" || p.type === "time")){
+    ctx.save();
+    ctx.globalCompositeOperation = "source-over";
+    if(p.type === "repair"){
+      ctx.beginPath();
+      ctx.arc(0, 0, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(255,255,255,.9)";
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(-5, 0);
+      ctx.lineTo(5, 0);
+      ctx.moveTo(0, -5);
+      ctx.lineTo(0, 5);
+      ctx.stroke();
+    }else if(p.type === "magnet"){
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(-8, -8);
+      ctx.lineTo(-8, 2);
+      ctx.arc(0, 2, 8, Math.PI, 0, false);
+      ctx.lineTo(8, -8);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.rect(-11, -12, 6, 6);
+      ctx.rect(5, -12, 6, 6);
+      ctx.fill();
+      ctx.stroke();
+    }else{
+      ctx.beginPath();
+      ctx.arc(0, 0, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.strokeStyle = "rgba(255,255,255,.9)";
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, -6);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(4, 2);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,.9)";
+      ctx.beginPath();
+      ctx.arc(0, 0, 1.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.restore();
     return;
   }
@@ -3889,48 +4627,6 @@ function drawPowerupIcon(p, color){
     ctx.stroke();
     return;
   }
-
-  if(p.group === "secondary"){
-    if(p.type === "repair"){
-      ctx.strokeStyle = "rgba(255,255,255,.85)";
-      ctx.lineWidth = 2.4;
-      ctx.beginPath();
-      ctx.moveTo(-6, 6);
-      ctx.lineTo(4, -4);
-      ctx.stroke();
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(6, -6, 4.5, 0, Math.PI*2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.rect(-10, 2, 6, 8);
-      ctx.fill();
-      ctx.stroke();
-      return;
-    }
-    if(p.type === "magnet"){
-      ctx.strokeStyle = "rgba(255,255,255,.85)";
-      ctx.lineWidth = 2.6;
-      ctx.beginPath();
-      ctx.moveTo(-8, -8);
-      ctx.lineTo(-8, 6);
-      ctx.arc(0, 6, 8, Math.PI, 0, false);
-      ctx.lineTo(8, -8);
-      ctx.stroke();
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.rect(-10, -12, 4, 5);
-      ctx.rect(6, -12, 4, 5);
-      ctx.fill();
-      ctx.stroke();
-      return;
-    }
-  }
-
-  ctx.beginPath();
-  ctx.arc(0, 0, 8, 0, Math.PI*2);
-  ctx.fill();
 }
 
 function drawBullets(){
@@ -4040,9 +4736,9 @@ function drawBullets(){
     }
 
     if(b.kind === "electric"){
-      drawTrail("rgba(255,221,0,.75)", 28, 4, 0.55);
+      drawTrail("rgba(0,229,255,.75)", 28, 4, 0.55);
       ctx.globalAlpha = 0.9;
-      ctx.strokeStyle = "rgba(255,221,0,.95)";
+      ctx.strokeStyle = "rgba(0,229,255,.95)";
       ctx.lineWidth = 2.4;
       ctx.beginPath();
       ctx.moveTo(b.x - 2, b.y + 10);
@@ -4051,7 +4747,7 @@ function drawBullets(){
       ctx.lineTo(b.x + 2, b.y - 12);
       ctx.stroke();
       ctx.globalAlpha = 0.35;
-      ctx.strokeStyle = "rgba(255,221,0,.45)";
+      ctx.strokeStyle = "rgba(0,229,255,.4)";
       ctx.lineWidth = 5;
       ctx.beginPath();
       ctx.moveTo(b.x - 2, b.y + 10);
@@ -4095,6 +4791,10 @@ function drawAsteroid(a){
   var rot = a.rot || 0;
   var drawX = a.x;
   var drawY = a.y;
+  var fadeAlpha = 1;
+  if(a.effect === "fade" && a.effectDuration){
+    fadeAlpha = clamp(a.effectTimer / a.effectDuration, 0, 1);
+  }
   if(a.shakeTimer != null && a.shakeTimer > 0){
     var shakeDur = a.shakeDur || 0.18;
     var shakeT = Math.max(0, a.shakeTimer / shakeDur);
@@ -4114,10 +4814,11 @@ function drawAsteroid(a){
   var sprite = asteroidSprites[a.spriteIndex];
   if(sprite && asteroidSpriteReady[a.spriteIndex]){
     ctx.save();
-    ctx.globalAlpha = a.ghost ? 0.2 : 0.95;
+    ctx.globalAlpha = (a.ghost ? 0.2 : 0.95) * fadeAlpha;
     ctx.drawImage(sprite, -a.r, -a.r, a.r * 2, a.r * 2);
     ctx.restore();
   }else{
+    ctx.globalAlpha = fadeAlpha;
     ctx.beginPath();
     var points = 10;
     var wob = 0.22;
@@ -4134,14 +4835,14 @@ function drawAsteroid(a){
     ctx.fillStyle = a.ghost ? "rgba(255,255,255,.08)" : "rgba(255,255,255,.12)";
     ctx.fill();
 
-    ctx.globalAlpha = 0.85;
+    ctx.globalAlpha = 0.85 * fadeAlpha;
     ctx.strokeStyle = "rgba(232,236,255,.14)";
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(0, 0, a.r*0.96, -0.3, Math.PI*2 - 0.9);
     ctx.stroke();
 
-    ctx.globalAlpha = 0.65;
+    ctx.globalAlpha = 0.65 * fadeAlpha;
     ctx.fillStyle = "rgba(0,0,0,.22)";
     for(var c=0;c<3;c++){
       var cx = Math.sin(a.seed*3.1 + c*1.7) * a.r*0.42;
@@ -4154,7 +4855,7 @@ function drawAsteroid(a){
   }
 
   if(a.burning){
-    ctx.globalAlpha = 0.85;
+    ctx.globalAlpha = 0.85 * fadeAlpha;
     ctx.fillStyle = "rgba(255,140,60,.55)";
     ctx.beginPath();
     ctx.arc(0, 0, a.r * 0.85, 0, Math.PI*2);
@@ -4173,7 +4874,7 @@ function drawAsteroid(a){
   }
 
   if(a.frozen){
-    ctx.globalAlpha = 0.75;
+    ctx.globalAlpha = 0.75 * fadeAlpha;
     ctx.fillStyle = "rgba(120,220,255,.18)";
     ctx.beginPath();
     ctx.arc(0, 0, a.r * 0.88, 0, Math.PI*2);
@@ -4192,6 +4893,7 @@ function drawAsteroid(a){
 
   if(ring){
     ctx.save();
+    ctx.globalAlpha = fadeAlpha;
     ctx.strokeStyle = "rgba(255,255,255,.18)";
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -4202,6 +4904,7 @@ function drawAsteroid(a){
 
   if(player.lockTimer > 0 && a.id === state.correctAsteroidId && a.waveId === state.waveId){
     ctx.save();
+    ctx.globalAlpha = fadeAlpha;
     ctx.strokeStyle = "rgba(0,229,255,.65)";
     ctx.lineWidth = 2.2;
     ctx.beginPath();
@@ -4212,6 +4915,7 @@ function drawAsteroid(a){
 
   if(a.label !== null){
     ctx.save();
+    ctx.globalAlpha = fadeAlpha;
     var size = Math.max(14, Math.min(22, a.r*0.7));
     ctx.font = "700 " + size + "px Oxanium, sans-serif";
     ctx.textAlign = "center";
@@ -4244,6 +4948,7 @@ function drawAsteroid(a){
 
 function drawShip(){
   if(player.hidden) return;
+  var fadeAlpha = (typeof player.fadeAlpha === "number") ? player.fadeAlpha : 1;
   if(player.teleportFx){
     var fx = player.teleportFx;
     var t = fx.t || 0;
@@ -4252,6 +4957,7 @@ function drawShip(){
       var ghostAlpha = t <= ghostIn
         ? (t / Math.max(0.001, ghostIn)) * 0.55
         : 0.55 * (1 - (t - ghostIn) / Math.max(0.001, fx.ghostDur - ghostIn));
+      ghostAlpha *= fadeAlpha;
       if(ghostAlpha > 0.01){
         renderShip(fx.startX, fx.startY, ghostAlpha, true, 0, 0);
       }
@@ -4260,7 +4966,7 @@ function drawShip(){
       var p = Math.min(1, (t - fx.hide) / Math.max(0.001, fx.zoomDur));
       var ease = 1 - Math.pow(1 - p, 2);
       var scaleMul = 0.2 + 0.8 * ease;
-      var alpha = 0.35 + 0.65 * ease;
+      var alpha = (0.35 + 0.65 * ease) * fadeAlpha;
       renderShip(fx.endX, fx.endY, alpha, false, 0, 0, null, scaleMul);
     }
     if(t < fx.hide + fx.zoomDur) return;
@@ -4271,7 +4977,7 @@ function drawShip(){
   var shake = baseShake + collisionShake;
   var sx = shake ? Math.sin(performance.now() * 0.05) * shake : 0;
   var sy = shake ? Math.cos(performance.now() * 0.045) * shake : 0;
-  renderShip(player.x + sx, player.y + sy, 1, false);
+  renderShip(player.x + sx, player.y + sy, fadeAlpha, false);
 }
 
 function drawDashGhosts(){
@@ -5257,6 +5963,20 @@ if(btnGameplay && overlayGameplay){
     overlayGameplay.classList.add("show");
   });
 }
+if(btnPowerups && overlayPowerups){
+  btnPowerups.addEventListener("click", function(){
+    playSfx(state, "menu_beep");
+    overlayMenu.classList.remove("show");
+    overlayPowerups.classList.add("show");
+  });
+}
+if(btnSfx && overlaySfx){
+  btnSfx.addEventListener("click", function(){
+    playSfx(state, "menu_beep");
+    overlayMenu.classList.remove("show");
+    overlaySfx.classList.add("show");
+  });
+}
 if(btnHome){
   btnHome.addEventListener("click", function(){
     playSfx(state, "menu_beep");
@@ -5268,8 +5988,7 @@ btnEndRestart.addEventListener("click", function(){ hardRestart(); });
 
 btnEndSettings.addEventListener("click", function(){
   playSfx(state, "menu_beep");
-  hideEndOverlay();
-  openSettings();
+  continueSession();
 });
 if(btnFullscreenToggle){
   btnFullscreenToggle.addEventListener("click", function(){
@@ -5320,6 +6039,25 @@ if(overlayGameplay){
     }
   });
 }
+if(overlayPowerups){
+  overlayPowerups.addEventListener("click", function(e){
+    if(e.target === overlayPowerups){
+      playSfx(state, "menu_beep");
+      overlayPowerups.classList.remove("show");
+      overlayMenu.classList.add("show");
+    }
+  });
+}
+if(overlaySfx){
+  overlaySfx.addEventListener("click", function(e){
+    if(e.target === overlaySfx){
+      playSfx(state, "menu_beep");
+      overlaySfx.classList.remove("show");
+      overlayMenu.classList.add("show");
+      stopAllPreviewAudio();
+    }
+  });
+}
 
 if(btnCloseGameplay && overlayGameplay){
   btnCloseGameplay.addEventListener("click", function(){
@@ -5333,6 +6071,36 @@ if(btnBackGameplay && overlayGameplay){
     playSfx(state, "menu_beep");
     overlayGameplay.classList.remove("show");
     overlayMenu.classList.add("show");
+  });
+}
+if(btnClosePowerups && overlayPowerups){
+  btnClosePowerups.addEventListener("click", function(){
+    playSfx(state, "menu_beep");
+    overlayPowerups.classList.remove("show");
+    overlayMenu.classList.add("show");
+  });
+}
+if(btnBackPowerups && overlayPowerups){
+  btnBackPowerups.addEventListener("click", function(){
+    playSfx(state, "menu_beep");
+    overlayPowerups.classList.remove("show");
+    overlayMenu.classList.add("show");
+  });
+}
+if(btnCloseSfx && overlaySfx){
+  btnCloseSfx.addEventListener("click", function(){
+    playSfx(state, "menu_beep");
+    overlaySfx.classList.remove("show");
+    overlayMenu.classList.add("show");
+    stopAllPreviewAudio();
+  });
+}
+if(btnBackSfx && overlaySfx){
+  btnBackSfx.addEventListener("click", function(){
+    playSfx(state, "menu_beep");
+    overlaySfx.classList.remove("show");
+    overlayMenu.classList.add("show");
+    stopAllPreviewAudio();
   });
 }
 
@@ -5369,7 +6137,7 @@ function runSelfTests(){
   player.hull = clamp(3, 0, 1);
   assert(player.hull === 1, "hull clamp upper bound");
 
-  assert(factKey(9,2) === "2×9", "factKey canonical order");
+  assert(factKey(9,2) === "2x9", "factKey canonical order");
 
   var savedA = state.a, savedB = state.b;
   state.a = 7; state.b = 8;
@@ -5512,7 +6280,86 @@ function boot(){
 
   syncHud();
 
+  setTutorialQuestionHidden(false);
+  tutorialPortalLock = false;
+  tutorialPortalNotifyPending = false;
+
   var params = new URLSearchParams(location.search);
+  tutorialActive = params.get("tutorial") === "1" || params.get("tutorial") === "true";
+  if(tutorialActive){
+    try{
+      tutorialPowerupSpawned = false;
+      tutorialAlienSpawned = false;
+      tutorialSpawnUnlocked = false;
+      tutorialPowerupUnlocked = false;
+      tutorialAlienUnlocked = false;
+      tutorialPortalActive = false;
+      tutorialPortalT = 0;
+      tutorialPortalLock = false;
+      tutorialPortalNotifyPending = false;
+      setTutorialQuestionHidden(false);
+      alienConfig.enabled = false;
+      alienConfig.maxOnScreen = 0;
+      if(inputs.ship) inputs.ship.value = "spire";
+      player.shipType = "spire";
+      tourGuide = createTourGuide({
+        gameShell: gameShell,
+        state: state,
+        player: player,
+        onStep: function(stepId){
+          tutorialStepId = stepId;
+          if(stepId === "correct"){
+            tutorialSpawnUnlocked = true;
+          }
+          if(stepId === "portal"){
+            tutorialPortalActive = true;
+            tutorialPortalLock = false;
+            tutorialPortalNotifyPending = false;
+            setTutorialQuestionHidden(true);
+            fadeTutorialAsteroids();
+          }
+          if(stepId === "powerup" && !tutorialPowerupSpawned){
+            tutorialPowerupSpawned = true;
+            tutorialPowerupUnlocked = true;
+            if(!(state.powerupsCollected > 0)){
+              spawnPowerup("shield", "defense");
+            }
+          }
+          if(stepId === "alien" && !tutorialAlienSpawned){
+            tutorialAlienSpawned = true;
+            tutorialAlienUnlocked = true;
+            alienConfig.enabled = true;
+            alienConfig.maxOnScreen = Math.max(alienConfig.maxOnScreen || 0, 1);
+          }
+        },
+        onComplete: function(){
+          try{ localStorage.setItem("mentaris.tutorial.complete", "1"); }catch(e){}
+          tutorialPortalActive = false;
+          tutorialPortalLock = false;
+          tutorialPortalNotifyPending = false;
+          setTutorialQuestionHidden(false);
+          var params = new URLSearchParams({
+            autoStart: "1",
+            ship: "spire",
+            belt: "dusk"
+          });
+          window.location.href = "asteroid_blaster.html?" + params.toString();
+        }
+      });
+      tutorialLastPos.x = player.x;
+      tutorialLastPos.y = player.y;
+      tourGuide.start();
+    }catch(err){
+      console.error(err);
+      tutorialActive = false;
+      tourGuide = null;
+      tutorialSpawnUnlocked = true;
+      tutorialPowerupUnlocked = true;
+      tutorialAlienUnlocked = true;
+      alienConfig.enabled = true;
+      setTutorialQuestionHidden(false);
+    }
+  }
   var autoStart = params.get("autoStart") === "1" || params.get("autoStart") === "true";
   if(!autoStart && (params.has("aMin") || params.has("bMin") || params.has("questionMode") || params.has("ship"))){
     autoStart = true;
@@ -5523,6 +6370,11 @@ function boot(){
     setTimeout(function(){
       startIntroThenCountdown();
     }, 250);
+    setTimeout(function(){
+      if(!state.running && !introActive && !countdownActive){
+        startIntroThenCountdown();
+      }
+    }, 1200);
   }
   if(params.get("test") === "1") runSelfTests();
 
@@ -5530,4 +6382,15 @@ function boot(){
 }
 
 boot();
+
+
+
+
+
+
+
+
+
+
+
 

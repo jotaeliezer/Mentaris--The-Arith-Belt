@@ -28,6 +28,25 @@ export var alienTypes = {
 var spawnTimer = alienConfig.spawnCooldown;
 var alienId = 1;
 var unlocked = false;
+var alienSprites = [
+  { src: "images/alien_ET.png", img: null },
+  { src: "images/alien_brain.png", img: null },
+  { src: "images/alien_golem.png", img: null },
+  { src: "images/alien_galaga.png", img: null },
+  { src: "images/alien_eye.png", img: null },
+  { src: "images/alien_saucer.png", img: null },
+  { src: "images/alien_robot.png", img: null },
+  { src: "images/alien_spider.png", img: null }
+];
+
+function ensureAlienSprites(){
+  if(alienSprites[0].img) return;
+  for(var i=0; i<alienSprites.length; i++){
+    var img = new Image();
+    img.src = alienSprites[i].src;
+    alienSprites[i].img = img;
+  }
+}
 
 export function resetAliens(){
   aliens.length = 0;
@@ -164,11 +183,11 @@ export function updateAlienBullets(dt, view){
 }
 
 export function drawAliens(ctx){
-  var glyphs = ["👽", "👾", "🛸", "🧠", "😈", "👁️"];
+  ensureAlienSprites();
   ctx.save();
   for(var i=0; i<aliens.length; i++){
     var a = aliens[i];
-    var glyph = glyphs[a.uid % glyphs.length];
+    var sprite = alienSprites[a.uid % alienSprites.length];
     var shake = a.hitShake ? a.hitShake * 9 : 0;
     var shakeX = shake ? Math.sin((a.t || 0) * 50) * shake : 0;
     var shakeY = shake ? Math.cos((a.t || 0) * 46) * shake : 0;
@@ -186,10 +205,19 @@ export function drawAliens(ctx){
     ctx.globalAlpha = 0.9;
     ctx.shadowColor = "rgba(80,255,220,.9)";
     ctx.shadowBlur = 26;
-    ctx.font = size + "px 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(glyph, a.x + shakeX, a.y + shakeY);
+    if(sprite && sprite.img && sprite.img.complete && sprite.img.naturalWidth){
+      var iw = sprite.img.naturalWidth || sprite.img.width || size;
+      var ih = sprite.img.naturalHeight || sprite.img.height || size;
+      var scale = size / Math.max(1, Math.max(iw, ih));
+      var drawW = iw * scale;
+      var drawH = ih * scale;
+      ctx.drawImage(sprite.img, a.x + shakeX - drawW / 2, a.y + shakeY - drawH / 2, drawW, drawH);
+    }else{
+      ctx.fillStyle = "rgba(80,255,220,.7)";
+      ctx.beginPath();
+      ctx.arc(a.x + shakeX, a.y + shakeY, size * 0.3, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.restore();
 
     ctx.globalAlpha = 0.8;
@@ -216,3 +244,4 @@ export function drawAlienBullets(ctx){
   }
   ctx.restore();
 }
+

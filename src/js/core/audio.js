@@ -3,6 +3,8 @@
 var audioCtx = null;
 var sfxBank = null;
 var droneLoop = null;
+var shipIdleLoop = null;
+var shipAdvanceLoop = null;
 var sfxUnlocked = false;
 var soundtrackList = null;
 var soundtrackIndex = 0;
@@ -31,8 +33,11 @@ function initSfx(){
     menu_beep: new Audio("sfx/menu_beep.mp3"),
     missed_answer: new Audio("sfx/missed_answer.mp3"),
     session_start: new Audio("sfx/session_start.mp3"),
+    powerup_collected: new Audio("sfx/powerup_collected.mp3"),
+    ship_advance: new Audio("sfx/ship_advance.mp3"),
     ship_damaged: new Audio("sfx/ship_damaged.mp3"),
     ship_drone: new Audio("sfx/ship_drone.mp3"),
+    ship_idle: new Audio("sfx/ship_idle.mp3"),
     game_over3: new Audio("sfx/game_over3.mp3"),
     warning: new Audio("sfx/warning.mp3"),
     wrong_asteroid: new Audio("sfx/wrong_asteroid.mp3")
@@ -55,8 +60,11 @@ function initSfx(){
   sfxBank.menu_beep.volume = 0.45;
   sfxBank.missed_answer.volume = 0.5;
   sfxBank.session_start.volume = 0.6;
+  sfxBank.powerup_collected.volume = 0.55;
+  sfxBank.ship_advance.volume = 0.25;
   sfxBank.ship_damaged.volume = 0.5;
   sfxBank.ship_drone.volume = 0.22;
+  sfxBank.ship_idle.volume = 0.18;
   sfxBank.game_over3.volume = 0.7;
   sfxBank.warning.volume = 0.5;
   sfxBank.wrong_asteroid.volume = 0.5;
@@ -125,6 +133,7 @@ export function playSfx(state, name, vol){
     var base = sfxBank[name];
     if(!base) return;
     var clip = base.cloneNode();
+    clip.loop = false;
     var master = (state && typeof state.volume === "number") ? state.volume : 1;
     var sfxMaster = (state && typeof state.sfxVolume === "number") ? state.sfxVolume : 1;
     var baseVol = (vol != null) ? vol : base.volume;
@@ -180,14 +189,88 @@ export function setDrone(state, on){
   }
 }
 
+export function setShipIdle(state, on){
+  if(!state.sound){
+    if(shipIdleLoop) shipIdleLoop.pause();
+    return;
+  }
+  if(!sfxUnlocked){
+    if(shipIdleLoop) shipIdleLoop.pause();
+    return;
+  }
+  try{
+    initSfx();
+    if(!shipIdleLoop){
+      shipIdleLoop = sfxBank.ship_idle.cloneNode();
+      shipIdleLoop.loop = true;
+    }
+    var master = (state && typeof state.volume === "number") ? state.volume : 1;
+    var sfxMaster = (state && typeof state.sfxVolume === "number") ? state.sfxVolume : 1;
+    shipIdleLoop.volume = Math.max(0, Math.min(1, sfxBank.ship_idle.volume * master * sfxMaster));
+    if(on){
+      if(shipIdleLoop.paused) shipIdleLoop.play();
+    }else{
+      shipIdleLoop.pause();
+    }
+  }catch(e){
+    // ignore audio failures
+  }
+}
+
+export function setShipAdvance(state, on){
+  if(!state.sound){
+    if(shipAdvanceLoop) shipAdvanceLoop.pause();
+    return;
+  }
+  if(!sfxUnlocked){
+    if(shipAdvanceLoop) shipAdvanceLoop.pause();
+    return;
+  }
+  try{
+    initSfx();
+    if(!shipAdvanceLoop){
+      shipAdvanceLoop = sfxBank.ship_advance.cloneNode();
+      shipAdvanceLoop.loop = true;
+    }
+    var master = (state && typeof state.volume === "number") ? state.volume : 1;
+    var sfxMaster = (state && typeof state.sfxVolume === "number") ? state.sfxVolume : 1;
+    shipAdvanceLoop.volume = Math.max(0, Math.min(1, sfxBank.ship_advance.volume * master * sfxMaster));
+    if(on){
+      if(shipAdvanceLoop.paused) shipAdvanceLoop.play();
+    }else{
+      shipAdvanceLoop.pause();
+    }
+  }catch(e){
+    // ignore audio failures
+  }
+}
+
 export function setSoundtrack(state, on){
   soundtrackState = state;
-  soundtrackActive = !!on && !!state.sound;
-  if(!soundtrackActive){
+  var shouldPlay = !!on && !!state.sound;
+  soundtrackActive = shouldPlay;
+  if(!shouldPlay){
     if(soundtrackClip){
       try{ soundtrackClip.pause(); }catch(e){}
     }
     return;
+  }
+  initSoundtracks();
+  if(soundtrackClip){
+    var master = (soundtrackState && typeof soundtrackState.volume === "number") ? soundtrackState.volume : 1;
+    var musicMaster = (soundtrackState && typeof soundtrackState.musicVolume === "number") ? soundtrackState.musicVolume : 1;
+    soundtrackClip.volume = Math.max(0, Math.min(1, 0.22 * master * musicMaster));
+    if(!soundtrackClip.paused) return;
+    try{
+      soundtrackClip.onended = function(){
+        if(!soundtrackActive) return;
+        playSoundtrackAt(soundtrackIndex + 1);
+      };
+      soundtrackClip.play().catch(function(){});
+      return;
+    }catch(e){
+      // ignore audio failures
+    }
   }
   playSoundtrackAt(soundtrackIndex || 0);
 }
