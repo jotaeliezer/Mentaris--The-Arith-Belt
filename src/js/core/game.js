@@ -6364,6 +6364,12 @@ function boot(){
   if(!autoStart && (params.has("aMin") || params.has("bMin") || params.has("questionMode") || params.has("ship"))){
     autoStart = true;
   }
+  if(overlayMenu){
+    overlayMenu.classList.remove("show");
+    if(!tutorialActive && !autoStart){
+      overlayMenu.classList.add("show");
+    }
+  }
   if(autoStart){
     ensureLoop();
     requestFullscreen();
