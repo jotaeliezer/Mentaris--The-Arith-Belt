@@ -224,6 +224,35 @@ var cam = fx.cam;
 var kickShake = fx.kickShake;
 var updateCamera = fx.updateCamera;
 var spawnRing = fx.spawnRing;
+var spawnDirectedSparks = fx.spawnDirectedSparks;
+var pickupFxTimerId = 0;
+
+function spawnPickupFx(x, y){
+  var beams = 6;
+  var baseAngle = -Math.PI / 2;
+  for(var i=0; i<beams; i++){
+    var ang = baseAngle + (i / beams) * Math.PI * 2;
+    var dirX = Math.cos(ang);
+    var dirY = Math.sin(ang);
+    spawnDirectedSparks(x, y, dirX, dirY, 0.18, 12, 260, 520, 0.12, 0.26, "spark");
+    spawnDirectedSparks(x, y, dirX, dirY, 0.18, 7, 220, 420, 0.12, 0.22, "spark_white");
+  }
+  spawnParticles(x, y, "spark");
+  spawnParticles(x, y, "spark_white");
+  if(pickupFxTimerId) clearTimeout(pickupFxTimerId);
+  pickupFxTimerId = setTimeout(function(){
+    for(var j=0; j<beams; j++){
+      var ang2 = baseAngle + (j / beams) * Math.PI * 2 + 0.2;
+      var dx = Math.cos(ang2);
+      var dy = Math.sin(ang2);
+      spawnDirectedSparks(x, y, dx, dy, 0.2, 10, 220, 460, 0.11, 0.24, "spark");
+      spawnDirectedSparks(x, y, dx, dy, 0.2, 6, 200, 380, 0.11, 0.22, "spark_white");
+    }
+    spawnParticles(x, y, "spark");
+    spawnParticles(x, y, "spark_white");
+    pickupFxTimerId = 0;
+  }, 140);
+}
 var updateRings = fx.updateRings;
 var drawRings = fx.drawRings;
 var spawnParticles = fx.spawnParticles;
@@ -3206,9 +3235,44 @@ function getCorrectAsteroidInPlay(){
   return null;
 }
 
+function findNextLookUpTargetId(b, skipId){
+  var bestId = 0;
+  var bestDy = Infinity;
+  var bestDist = Infinity;
+  for(var i=0; i<asteroids.length; i++){
+    var a = asteroids[i];
+    if(!a || a.noDamage || a.ghost) continue;
+    if(skipId && a.id === skipId) continue;
+    var dy = b.y - a.y;
+    if(dy <= 6) continue;
+    var dx = a.x - b.x;
+    var dist = Math.hypot(dx, dy);
+    if(dy < bestDy || (Math.abs(dy - bestDy) < 6 && dist < bestDist)){
+      bestDy = dy;
+      bestDist = dist;
+      bestId = a.id;
+    }
+  }
+  return bestId;
+}
+
 function steerLookUpShot(b){
-  var target = getCorrectAsteroidInPlay();
-  if(!target) return;
+  if(!b.lookUpTargetId){
+    b.lookUp = false;
+    return;
+  }
+  var target = null;
+  for(var i=0; i<asteroids.length; i++){
+    if(asteroids[i].id === b.lookUpTargetId){
+      target = asteroids[i];
+      break;
+    }
+  }
+  if(!target){
+    b.lookUp = false;
+    b.lookUpTargetId = 0;
+    return;
+  }
   var dx = target.x - b.x;
   var dy = target.y - b.y;
   var dist = Math.max(1, Math.hypot(dx, dy));
@@ -3571,6 +3635,12 @@ function update(dt){
 
   for(var bi=bullets.length-1; bi>=0; bi--){
     var b = bullets[bi];
+    if(b.noHitTimer > 0){
+      b.noHitTimer = Math.max(0, b.noHitTimer - dtReal);
+      if(b.noHitTimer === 0){
+        b.noHit = false;
+      }
+    }
     if(b.kind === "pierce" && b.lookUp){
       steerLookUpShot(b);
     }else if(player.lockTimer > 0 && state.correctAsteroidId){
@@ -3613,6 +3683,7 @@ function update(dt){
     if(Math.hypot(dxp, dyp) < p.r + 18){
       state.powerupsCollected += 1;
       playSfx(state, "powerup_collected");
+      spawnPickupFx(player.x, player.y - 6);
       applyPowerup(p);
       if(tourGuide) tourGuide.notify("powerup");
       powerups.splice(pi,1);
@@ -3735,11 +3806,20 @@ function update(dt){
       var ddy = a2.y - bb.y;
       if(ddx*ddx + ddy*ddy <= (a2.r + bb.r) * (a2.r + bb.r)){
         var kind = bb.kind || "single";
+        var lookUpActivated = false;
         if(kind === "pierce"){
-          if(!bb.lookUp){
-            bb.lookUp = true;
-            bb.noHit = true;
-            steerLookUpShot(bb);
+          if(!bb.lookUpUsed){
+            bb.lookUpUsed = true;
+            bb.lookUpTargetId = findNextLookUpTargetId(bb, a2.id);
+            if(bb.lookUpTargetId){
+              bb.lookUp = true;
+              lookUpActivated = true;
+              bb.noHit = true;
+              bb.noHitTimer = 0.06;
+              steerLookUpShot(bb);
+            }else{
+              bb.lookUp = false;
+            }
           }
         }else if(bb.pierce && bb.pierce > 0){
           bb.pierce -= 1;
@@ -3797,6 +3877,10 @@ function update(dt){
           if(thud){
             thud.playbackRate = 1 + Math.min(0.5, doneHits * 0.05);
           }
+          if(kind === "pierce" && bb.lookUp && !lookUpActivated){
+            bb.lookUp = false;
+            bb.lookUpTargetId = 0;
+          }
           break;
         }
 
@@ -3847,6 +3931,10 @@ function update(dt){
         if(clearedWaveId !== null && isDigitMode()){
           clearWaveAsteroids(clearedWaveId);
           clearedWaveId = null;
+        }
+        if(kind === "pierce" && bb.lookUp && !lookUpActivated){
+          bb.lookUp = false;
+          bb.lookUpTargetId = 0;
         }
         break;
       }
@@ -4249,6 +4337,32 @@ function draw(){
         ctx.moveTo(qLeft + leftW, lineY);
         ctx.lineTo(qLeft + leftW + repeatW, lineY);
         ctx.stroke();
+      }
+
+      if(isDigitMode()){
+        var aStr = String(state.a);
+        var totalDigits = aStr.length;
+        var progress = (state.answerDigits && state.answerDigits.length)
+          ? (state.answerDigits.length - Math.max(0, state.digitsLeft))
+          : 0;
+        var digitIndex = Math.min(totalDigits - 1, Math.max(0, progress));
+        var qW = ctx.measureText(qDisplay).width;
+        var qStart = w/2 - qW / 2;
+        var prefixW = ctx.measureText(aStr.slice(0, digitIndex)).width;
+        var digitW = ctx.measureText(aStr.charAt(digitIndex)).width || (size * 0.45);
+        var arrowX = qStart + prefixW + digitW / 2;
+        var arrowY = questionTop + size * 0.9;
+        var arrowW = Math.max(8, size * 0.22);
+        var arrowH = Math.max(6, size * 0.16);
+        ctx.save();
+        ctx.fillStyle = "rgba(255,255,255,.85)";
+        ctx.beginPath();
+        ctx.moveTo(arrowX, arrowY + arrowH);
+        ctx.lineTo(arrowX - arrowW / 2, arrowY);
+        ctx.lineTo(arrowX + arrowW / 2, arrowY);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
       }
     }
     ctx.restore();
@@ -6651,7 +6765,8 @@ function boot(){
           var params = new URLSearchParams({
             autoStart: "1",
             ship: "spire",
-            belt: "dusk"
+            belt: "dusk",
+            questionMode: "classic"
           });
           window.location.href = "asteroid_blaster.html?" + params.toString();
         }

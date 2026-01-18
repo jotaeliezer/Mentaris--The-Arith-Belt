@@ -111,13 +111,14 @@ export function createFx(ctx, state, player, beepFn){
     if(particles.length > 180) particles.splice(0, particles.length - 180);
   }
 
-  function spawnDirectedSparks(x, y, dirX, dirY, spread, count, speedMin, speedMax, lifeMin, lifeMax){
+  function spawnDirectedSparks(x, y, dirX, dirY, spread, count, speedMin, speedMax, lifeMin, lifeMax, kind){
     var baseAng = Math.atan2(dirY, dirX);
     var n = count || 14;
     var spMin = speedMin || 220;
     var spMax = speedMax || 520;
     var lMin = lifeMin || 0.12;
     var lMax = lifeMax || 0.26;
+    var useKind = kind || "spark";
     for(var i=0;i<n;i++){
       var ang = baseAng + rand(-spread, spread);
       var v = rand(spMin, spMax);
@@ -128,7 +129,7 @@ export function createFx(ctx, state, player, beepFn){
         r: rand(1.0, 2.4),
         a: rand(0.6, 0.95),
         life: rand(lMin, lMax),
-        kind: "spark",
+        kind: useKind,
         spin: rand(-6,6)
       });
     }
@@ -189,6 +190,7 @@ export function createFx(ctx, state, player, beepFn){
       if(q.kind === "correct") ctx.fillStyle = "rgba(0,229,255,.9)";
       else if(q.kind === "wrong") ctx.fillStyle = "rgba(255,77,109,.9)";
       else if(q.kind === "spark") ctx.fillStyle = "rgba(255,221,0,.90)";
+      else if(q.kind === "spark_white") ctx.fillStyle = "rgba(255,255,255,.95)";
       else ctx.fillStyle = "rgba(232,236,255,.7)";
 
       ctx.beginPath();
