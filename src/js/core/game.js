@@ -66,6 +66,7 @@ var overlayEnd  = document.getElementById("overlayEnd");
 var overlayGameplay = document.getElementById("overlayGameplay");
 var overlayPowerups = document.getElementById("overlayPowerups");
 var overlaySfx = document.getElementById("overlaySfx");
+var overlayControls = document.getElementById("overlayControls");
 
 var btnStart    = document.getElementById("btnStart");
 var btnClose    = document.getElementById("btnClose");
@@ -83,6 +84,7 @@ var btnClosePowerups = document.getElementById("btnClosePowerups");
 var btnBackPowerups = document.getElementById("btnBackPowerups");
 var btnCloseSfx = document.getElementById("btnCloseSfx");
 var btnBackSfx = document.getElementById("btnBackSfx");
+var btnCloseControls = document.getElementById("btnCloseControls");
 
 var btnEndRestart  = document.getElementById("btnEndRestart");
 var btnEndSettings = document.getElementById("btnEndSettings");
@@ -97,6 +99,64 @@ var powerupsSecondaryList = document.getElementById("powerupsSecondaryList");
 var powerupsDefenseList = document.getElementById("powerupsDefenseList");
 var powerupsOffenseList = document.getElementById("powerupsOffenseList");
 var sfxList = document.getElementById("sfxList");
+var settingsTabButtons = overlayMenu ? overlayMenu.querySelectorAll("[data-settings-tab]") : [];
+var settingsPanels = overlayMenu ? overlayMenu.querySelectorAll("[data-settings-panel]") : [];
+var toggleWideGameplay = document.getElementById("toggleWideGameplay");
+var toggleMousepadAuto = document.getElementById("toggleMousepadAuto");
+var btnResume = document.getElementById("btnResume");
+var btnShipCommands = document.getElementById("btnShipCommands");
+
+var wideGameplayKey = "mentaris.gameplay.wide";
+var mousepadAutoKey = "mentaris.mousepad.autostart";
+var mousepadAutoStart = false;
+
+function setSettingsTab(tabId){
+  if(!settingsTabButtons || !settingsPanels) return;
+  for(var i=0; i<settingsTabButtons.length; i++){
+    var btn = settingsTabButtons[i];
+    var isActive = btn.getAttribute("data-settings-tab") === tabId;
+    btn.classList.toggle("active", isActive);
+  }
+  for(var j=0; j<settingsPanels.length; j++){
+    var panel = settingsPanels[j];
+    var show = panel.getAttribute("data-settings-panel") === tabId;
+    panel.classList.toggle("active", show);
+  }
+}
+
+function setWideGameplay(isWide){
+  document.body.classList.toggle("wideGameplay", !!isWide);
+  try{ localStorage.setItem(wideGameplayKey, isWide ? "1" : "0"); }catch(e){}
+}
+
+function loadWideGameplay(){
+  var stored = null;
+  try{ stored = localStorage.getItem(wideGameplayKey); }catch(e){}
+  var isWide = stored === "1" || stored === "true";
+  setWideGameplay(isWide);
+  if(toggleWideGameplay) toggleWideGameplay.checked = isWide;
+}
+
+function setMousepadAutoStart(isOn){
+  mousepadAutoStart = !!isOn;
+  try{ localStorage.setItem(mousepadAutoKey, mousepadAutoStart ? "1" : "0"); }catch(e){}
+}
+
+function loadMousepadAutoStart(){
+  var stored = null;
+  try{ stored = localStorage.getItem(mousepadAutoKey); }catch(e){}
+  mousepadAutoStart = stored === "1" || stored === "true";
+  if(toggleMousepadAuto) toggleMousepadAuto.checked = mousepadAutoStart;
+}
+
+function applyMousepadAutoStart(){
+  if(mousepadAutoStart){
+    setMousepadActive(true);
+  }else{
+    setMousepadActive(false);
+  }
+  updateCursorVisibility();
+}
 
 function setFullscreenLabel(btn, isFull){
   if(!btn) return;
@@ -160,6 +220,7 @@ var highScoresEnd = document.getElementById("highScoresEnd");
 var endNameInput = document.getElementById("endNameInput");
 var endSequence = document.querySelector(".endSequence");
 var endScoreValue = document.getElementById("endScoreValue");
+var endModeSummary = document.getElementById("endModeSummary");
 var endScoreBlock = document.getElementById("endScoreBlock");
 var endStatsWrap = document.getElementById("endStatsWrap");
 var endNameBlock = document.getElementById("endNameBlock");
@@ -341,6 +402,7 @@ var powerupIcons = {
   magnet: { img: new Image(), ready: false, src: "images/powerup_magnet.png" },
   shield: { img: new Image(), ready: false, src: "images/powerup_shield.png" },
   armor: { img: new Image(), ready: false, src: "images/powerup_armor.png" },
+  emp: { img: new Image(), ready: false, src: "images/powerup_EMP.png" },
   lock: { img: new Image(), ready: false, src: "images/powerup_targetlock.png" }
 };
 Object.keys(powerupIcons).forEach(function(key){
@@ -350,10 +412,13 @@ Object.keys(powerupIcons).forEach(function(key){
 });
 
 var shotIcons = {
+  dual: { img: new Image(), ready: false, src: "images/shot_dualblasters.png" },
   electric: { img: new Image(), ready: false, src: "images/shot_electric.png" },
   fire: { img: new Image(), ready: false, src: "images/shot_fre.png" },
+  ice: { img: new Image(), ready: false, src: "images/shot_ice.png" },
   laser: { img: new Image(), ready: false, src: "images/shot_laser.png" },
   plasma: { img: new Image(), ready: false, src: "images/shot_plasma.png" },
+  pierce: { img: new Image(), ready: false, src: "images/shot_lookup.png" },
   rail: { img: new Image(), ready: false, src: "images/shot_rail.png" }
 };
 Object.keys(shotIcons).forEach(function(key){
@@ -366,7 +431,7 @@ var powerupCatalogSecondary = [
   { id: "repair", label: "Hull Repair", icon: powerupIcons.repair.src, desc: "Instant hull repair (+35%)." },
   { id: "time", label: "Time Dilation", icon: powerupIcons.time.src, desc: "Grants one Time Dilation charge (press X to slow time)." },
   { id: "magnet", label: "Magnet Sweep", icon: powerupIcons.magnet.src, desc: "Grants one Magnet Sweep charge (press X to pull the correct asteroid)." },
-  { id: "emp", label: "EMP Burst", icon: null, desc: "Triggers immediately and cascades non-answer asteroids." },
+  { id: "emp", label: "EMP Burst", icon: powerupIcons.emp.src, desc: "Triggers immediately and cascades non-answer asteroids." },
   { id: "lock", label: "Target Lock", icon: powerupIcons.lock.src, desc: "Grants one Target Lock charge (press X to steer shots to the correct asteroid)." }
 ];
 
@@ -376,12 +441,12 @@ var powerupCatalogDefense = [
 ];
 
 var powerupCatalogOffense = [
-  { id: "dual", label: "Dual Blaster", icon: null, desc: "Two shots per tap for about 12 seconds." },
+  { id: "dual", label: "Dual Blaster", icon: shotIcons.dual ? shotIcons.dual.src : null, desc: "Two shots per tap for about 12 seconds." },
   { id: "laser", label: "Laser Burst", icon: shotIcons.laser ? shotIcons.laser.src : null, desc: "High-speed laser shots for about 12 seconds." },
   { id: "fire", label: "Fireball", icon: shotIcons.fire ? shotIcons.fire.src : null, desc: "Fireball shots for about 12 seconds." },
-  { id: "ice", label: "Ice Shards", icon: null, desc: "Ice shots for about 12 seconds." },
+  { id: "ice", label: "Ice Shards", icon: shotIcons.ice ? shotIcons.ice.src : null, desc: "Ice shots for about 12 seconds." },
   { id: "electric", label: "Electric Bolts", icon: shotIcons.electric ? shotIcons.electric.src : null, desc: "Electric bolts for about 12 seconds." },
-  { id: "pierce", label: "Look Up Shot", icon: null, desc: "Piercing shots for about 12 seconds." },
+  { id: "pierce", label: "Look Up Shot", icon: shotIcons.pierce ? shotIcons.pierce.src : null, desc: "Piercing shots for about 12 seconds." },
   { id: "plasma", label: "Plasma Orb", icon: shotIcons.plasma ? shotIcons.plasma.src : null, desc: "Plasma shots for about 12 seconds." },
   { id: "rail", label: "Rail Beam", icon: shotIcons.rail ? shotIcons.rail.src : null, desc: "Rail beam shots for about 12 seconds." }
 ];
@@ -410,7 +475,12 @@ var sfxCatalog = [
   { id: "alien_shooting", label: "Alien Shooting", desc: "Alien firing.", when: "Alien fires.", badge: "SFX", src: "sfx/alien_shooting.mp3" },
   { id: "ship_damaged", label: "Ship Damaged", desc: "Damage alert.", when: "Player takes damage.", badge: "SFX", src: "sfx/ship_damaged.mp3" },
   { id: "warning", label: "Warning", desc: "Warning alarm.", when: "Correct answer near escape (not in tutorial).", badge: "SFX", src: "sfx/warning.mp3" },
-  { id: "powerup_collected", label: "Powerup Collected", desc: "Pickup chime.", when: "Collect powerups or shot upgrades.", badge: "SFX", src: "sfx/powerup_collected.mp3" },
+  { id: "shot_powerup", label: "Shot Pickup", desc: "Offense pickup.", when: "Collect shot type upgrades.", badge: "SFX", src: "sfx/shot_powerup.mp3" },
+  { id: "hull_repair_pickup", label: "Hull Repair Pickup", desc: "Repair pickup.", when: "Collect hull repair.", badge: "SFX", src: "sfx/hull_repair_pickup.mp3" },
+  { id: "armor_pickup", label: "Armor Pickup", desc: "Armor pickup.", when: "Collect armor powerup.", badge: "SFX", src: "sfx/armor_pickup.mp3" },
+  { id: "shield_pickup", label: "Shield Pickup", desc: "Shield pickup.", when: "Collect shield powerup.", badge: "SFX", src: "sfx/sheld_pickup.mp3" },
+  { id: "time_activate", label: "Time Activate", desc: "Time dilation cue.", when: "Activate time dilation.", badge: "SFX", src: "sfx/time_activate.mp3" },
+  { id: "powerup_collected", label: "Powerup Collected", desc: "Pickup chime.", when: "Collect magnet, EMP, or target lock.", badge: "SFX", src: "sfx/powerup_collected.mp3" },
   { id: "crash", label: "Crash", desc: "Hard collision.", when: "Ship collision impact.", badge: "SFX", src: "sfx/crash.mp3" }
 ];
 
@@ -1132,6 +1202,37 @@ function isClassicModeValue(mode){
     || mode === "square_root"
     || mode === "rational_frac"
     || mode === "rational_dec";
+}
+
+function describeQuestionMode(mode){
+  var modeLabel = String(mode || state.questionMode || "classic");
+  var isAdd = modeLabel.indexOf("add_") === 0;
+  var isSquare = modeLabel.indexOf("square_") === 0;
+  var isRational = modeLabel.indexOf("rational_") === 0;
+  var operation = isRational ? "Rationals" : (isSquare ? "Squares" : (isAdd ? "Addition" : "Multiplication"));
+  var modeName = "Classic Answer";
+  if(isRational){
+    modeName = (modeLabel === "rational_dec") ? "Target Decimal" : "Target Fraction";
+  }else if(isSquare){
+    modeName = (modeLabel === "square_root") ? "Square Roots" : "Perfect Squares";
+  }else{
+    modeName = (modeLabel.indexOf("digits") !== -1) ? "Digit Hunt" : "Classic Answer";
+  }
+  var subLabel = "";
+  if(isRational){
+    subLabel = (modeLabel === "rational_dec") ? "Decimal" : "Fraction";
+  }else if(isSquare){
+    subLabel = (modeLabel === "square_root") ? "Shoot Roots" : "Shoot Squares";
+  }else{
+    var sub = (modeLabel.indexOf("3") !== -1) ? "3" : "2";
+    subLabel = isAdd ? (sub + "x" + sub) : ("1x" + sub);
+  }
+  return {
+    operation: operation,
+    modeLabel: modeName,
+    submode: subLabel,
+    key: operation + "|" + modeName + "|" + subLabel
+  };
 }
 
 function updateDecoyFunctionAvailability(){
@@ -2068,6 +2169,7 @@ function resetSession(){
   syncHud();
   setDrone(state, true);
   setSoundtrack(state, true);
+  applyMousepadAutoStart();
 }
 
 function startIntroSequence(done){
@@ -2297,7 +2399,12 @@ function openSettings(){
   if(overlayGameplay) overlayGameplay.classList.remove("show");
   if(overlayPowerups) overlayPowerups.classList.remove("show");
   if(overlaySfx) overlaySfx.classList.remove("show");
+  if(overlayControls) overlayControls.classList.remove("show");
   overlayMenu.classList.add("show");
+  setSettingsTab("audio");
+  loadWideGameplay();
+  loadMousepadAutoStart();
+  renderSettingsCatalogs();
 }
 
 function closeSettings(){
@@ -2305,6 +2412,7 @@ function closeSettings(){
   if(overlayGameplay) overlayGameplay.classList.remove("show");
   if(overlayPowerups) overlayPowerups.classList.remove("show");
   if(overlaySfx) overlaySfx.classList.remove("show");
+  if(overlayControls) overlayControls.classList.remove("show");
   stopAllPreviewAudio();
   if(state.running && !state.over) state.paused = false;
   syncTimerPause();
@@ -2404,6 +2512,7 @@ function secondaryFire(){
   }else if(player.secondaryMode === "time"){
     state.slowMoRemaining = Math.max(state.slowMoRemaining, 5.0);
     state.slowMoScale = 0.35;
+    playSfx(state, "time_activate");
     showToast("SECONDARY -> TIME DILATION");
   }else if(player.secondaryMode === "magnet"){
     player.magnetTimer = 6.0;
@@ -2745,7 +2854,8 @@ function updateLifetimeStats(session){
     totalMissed: 0,
     bestScore: 0,
     bestStreak: 0,
-    highScores: []
+    highScores: [],
+    highScoresByKey: {}
   };
 
   stats.sessions += 1;
@@ -2756,27 +2866,46 @@ function updateLifetimeStats(session){
   stats.bestScore = Math.max(stats.bestScore, session.score);
   stats.bestStreak = Math.max(stats.bestStreak, session.bestStreak);
 
-  stats.highScores = stats.highScores || [];
-  stats.highScores.push({
+  var modeInfo = describeQuestionMode(session.mode);
+  var entry = {
     id: session.id || String(Date.now()),
     name: session.name || "",
     score: session.score,
     correct: session.correct,
     level: session.level,
     mode: session.mode,
+    operation: session.operation || modeInfo.operation,
+    modeLabel: session.modeLabel || modeInfo.modeLabel,
+    submode: session.submode || modeInfo.submode,
+    modeKey: session.modeKey || modeInfo.key,
     date: Date.now()
-  });
+  };
+
+  stats.highScores = stats.highScores || [];
+  stats.highScores.push(entry);
   stats.highScores.sort(function(a,b){ return b.score - a.score; });
   stats.highScores = stats.highScores.slice(0, 5);
+
+  stats.highScoresByKey = stats.highScoresByKey || {};
+  var key = entry.modeKey || modeInfo.key;
+  var list = stats.highScoresByKey[key] || [];
+  list.push(entry);
+  list.sort(function(a,b){ return b.score - a.score; });
+  stats.highScoresByKey[key] = list.slice(0, 5);
 
   saveLifetimeStats(stats);
   return stats;
 }
 
-function renderHighScores(lifetime){
+function renderHighScores(lifetime, modeKey){
   if(!highScoresEnd) return;
   highScoresEnd.innerHTML = "";
-  var hs = lifetime && lifetime.highScores ? lifetime.highScores : [];
+  var hs = [];
+  if(lifetime && lifetime.highScoresByKey && modeKey && lifetime.highScoresByKey[modeKey]){
+    hs = lifetime.highScoresByKey[modeKey];
+  }else{
+    hs = lifetime && lifetime.highScores ? lifetime.highScores : [];
+  }
   if(!hs.length){
     var hsEmpty = document.createElement("li");
     hsEmpty.innerHTML = '<span style="color: var(--muted);">NO SCORES YET.</span><b class="pillGood">PLAY</b>';
@@ -2798,14 +2927,25 @@ function saveScoreName(name){
   if(!trimmed) return;
   var stats = loadLifetimeStats();
   if(!stats || !stats.highScores) return;
+  var entryKey = "";
   for(var i=0;i<stats.highScores.length;i++){
     if(stats.highScores[i].id === state.lastSessionId){
       stats.highScores[i].name = trimmed;
+      entryKey = stats.highScores[i].modeKey || "";
       break;
     }
   }
+  if(entryKey && stats.highScoresByKey && stats.highScoresByKey[entryKey]){
+    var list = stats.highScoresByKey[entryKey];
+    for(var j=0;j<list.length;j++){
+      if(list[j].id === state.lastSessionId){
+        list[j].name = trimmed;
+        break;
+      }
+    }
+  }
   saveLifetimeStats(stats);
-  renderHighScores(stats);
+  renderHighScores(stats, entryKey);
   try{ localStorage.setItem("mathsteroid.playerName", trimmed); }catch(e){}
   appendLeaderboardCsv({ name: trimmed, score: state.score });
 }
@@ -2975,6 +3115,7 @@ function endGame(reason){
   var storedName = "";
   try{ storedName = localStorage.getItem("mathsteroid.playerName") || ""; }catch(e){}
   var sessionId = String(Date.now()) + "_" + String(Math.floor(Math.random() * 1000000));
+  var modeInfo = describeQuestionMode(state.questionMode || "classic");
   var session = {
     id: sessionId,
     name: storedName,
@@ -2984,7 +3125,11 @@ function endGame(reason){
     missed: state.missed,
     bestStreak: computeMaxStreak(),
     level: state.level,
-    mode: state.questionMode || "classic"
+    mode: state.questionMode || "classic",
+    operation: modeInfo.operation,
+    modeLabel: modeInfo.modeLabel,
+    submode: modeInfo.submode,
+    modeKey: modeInfo.key
   };
   var lifetime = updateLifetimeStats(session);
   state.lastSessionId = sessionId;
@@ -3066,6 +3211,9 @@ function endGame(reason){
 
   if(endOutcome) endOutcome.textContent = endTitle ? endTitle.textContent : "";
   if(endReasonLine) endReasonLine.textContent = endReasonText;
+  if(endModeSummary){
+    endModeSummary.textContent = "Operation: " + modeInfo.operation + " / Mode: " + modeInfo.modeLabel + " / Submode: " + modeInfo.submode;
+  }
 
   statsList.innerHTML = "";
   var stats = [
@@ -3125,7 +3273,7 @@ function endGame(reason){
     }
   }
 
-  renderHighScores(lifetime);
+  renderHighScores(lifetime, modeInfo.key);
 
   if(btnEndNext){
     btnEndNext.style.display = campaignResult.hasNext ? "inline-flex" : "none";
@@ -3682,7 +3830,17 @@ function update(dt){
     var dyp = p.y - player.y;
     if(Math.hypot(dxp, dyp) < p.r + 18){
       state.powerupsCollected += 1;
-      playSfx(state, "powerup_collected");
+      if(p.group === "offense"){
+        playSfx(state, "shot_powerup");
+      }else if(p.type === "repair"){
+        playSfx(state, "hull_repair_pickup");
+      }else if(p.type === "armor"){
+        playSfx(state, "armor_pickup");
+      }else if(p.type === "shield"){
+        playSfx(state, "shield_pickup");
+      }else{
+        playSfx(state, "powerup_collected");
+      }
       spawnPickupFx(player.x, player.y - 6);
       applyPowerup(p);
       if(tourGuide) tourGuide.notify("powerup");
@@ -4345,7 +4503,7 @@ function draw(){
         var progress = (state.answerDigits && state.answerDigits.length)
           ? (state.answerDigits.length - Math.max(0, state.digitsLeft))
           : 0;
-        var digitIndex = Math.min(totalDigits - 1, Math.max(0, progress));
+        var digitIndex = Math.max(0, Math.min(totalDigits - 1, (totalDigits - 1) - progress));
         var qW = ctx.measureText(qDisplay).width;
         var qStart = w/2 - qW / 2;
         var prefixW = ctx.measureText(aStr.slice(0, digitIndex)).width;
@@ -6357,19 +6515,21 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
 }
 
 // ======= Buttons
-btnStart.addEventListener("click", function(){
-  requestFullscreen();
-  ensureLoop();
-  applySettings();
-  unlockSfx(state);
-  playSfx(state, "menu_beep");
-  if(!startIntroThenCountdown()){
-    overlayMenu.classList.remove("show");
-    hideEndOverlay();
-    resetSession();
-    showToast("MISSION START");
-  }
-});
+if(btnStart){
+  btnStart.addEventListener("click", function(){
+    requestFullscreen();
+    ensureLoop();
+    applySettings();
+    unlockSfx(state);
+    playSfx(state, "menu_beep");
+    if(!startIntroThenCountdown()){
+      overlayMenu.classList.remove("show");
+      hideEndOverlay();
+      resetSession();
+      showToast("MISSION START");
+    }
+  });
+}
 
 btnClose.addEventListener("click", function(){
   playSfx(state, "menu_beep");
@@ -6420,6 +6580,41 @@ if(btnFullscreenToggle){
     toggleFullscreen();
   });
   getFullscreenState().then(function(state){ setFullscreenLabel(btnFullscreenToggle, state); });
+}
+if(settingsTabButtons && settingsTabButtons.length){
+  settingsTabButtons.forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var tabId = btn.getAttribute("data-settings-tab") || "audio";
+      playSfx(state, "menu_beep");
+      setSettingsTab(tabId);
+      if(tabId === "catalogs"){ renderSettingsCatalogs(); }
+    });
+  });
+}
+if(toggleWideGameplay){
+  toggleWideGameplay.addEventListener("change", function(){
+    playSfx(state, "menu_beep");
+    setWideGameplay(toggleWideGameplay.checked);
+  });
+}
+if(toggleMousepadAuto){
+  toggleMousepadAuto.addEventListener("change", function(){
+    playSfx(state, "menu_beep");
+    setMousepadAutoStart(toggleMousepadAuto.checked);
+  });
+}
+if(btnResume){
+  btnResume.addEventListener("click", function(){
+    playSfx(state, "menu_beep");
+    closeSettings();
+  });
+}
+if(btnCloseControls && overlayControls){
+  btnCloseControls.addEventListener("click", function(){
+    playSfx(state, "menu_beep");
+    overlayControls.classList.remove("show");
+    overlayMenu.classList.add("show");
+  });
 }
 document.addEventListener("fullscreenchange", function(){
   setFullscreenLabel(btnFullscreenToggle, !!document.fullscreenElement);
@@ -6479,6 +6674,15 @@ if(overlaySfx){
       overlaySfx.classList.remove("show");
       overlayMenu.classList.add("show");
       stopAllPreviewAudio();
+    }
+  });
+}
+if(overlayControls){
+  overlayControls.addEventListener("click", function(e){
+    if(e.target === overlayControls){
+      playSfx(state, "menu_beep");
+      overlayControls.classList.remove("show");
+      overlayMenu.classList.add("show");
     }
   });
 }
@@ -6695,6 +6899,8 @@ function boot(){
   applyStoredConfig();
   applyQueryParams();
   applySettings();
+  loadWideGameplay();
+  loadMousepadAutoStart();
   updateDecoyFunctionAvailability();
   primeFullscreen();
 

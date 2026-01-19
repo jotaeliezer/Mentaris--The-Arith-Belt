@@ -41,24 +41,102 @@
       <!-- START / SETTINGS -->
       <div id="overlayMenu" class="overlay">
         <div class="card">
-          <div class="cardHead synthHead">
-            <div>
-              <h1 class="gameLogo" aria-label="Mentaris: The Arith Belt">
-                <span class="gameLogo__top">MATH ARCADE • SYNTHWAVE EDITION</span>
-                <span class="gameLogo__main">MENTARIS: THE ARITH BELT</span>
-                <span class="gameLogo__tag">LOCK ON • CALCULATE • FIRE</span>
-              </h1>
-              <p class="subtitle">
-                SHOOT ONLY THE ASTEROID WITH THE CORRECT ANSWER.<br/>
-                SYNTHWAVE PRESSURE TEST FOR FAST MULTIPLICATION RECALL.
-              </p>
+          <div class="cardHead settingsHead">
+            <div class="settingsTitleBlock">
+              <div class="settingsTitle">
+                <span class="settingsTitleMain">MENTARIS</span>
+                <span class="settingsTitleSub">The Arith Belt</span>
+              </div>
+              <p class="subtitle">Settings console for active missions.</p>
             </div>
-            <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
-              <div class="kbd">MOVE: <b>WASD</b> OR <b>◀/▶/▲/▼</b></div>
-              <div class="kbd">FIRE: <b>Z</b> • SECONDARY: <b>X</b> • SHOCKWAVE: <b>C</b> • DASH: <b>SPACE</b> • PAUSE: <b>P</b> • MENU: <b>M</b></div>
+            <div class="settingsActions">
+              <button id="btnResume" class="btn">Resume</button>
+              <button id="btnClose" class="btn">Close</button>
             </div>
           </div>
-          <div class="cardBody" style="display:none;">
+
+          <div class="cardBody settingsBody">
+            <div class="settingsTabs">
+              <button type="button" class="btn settingsTabBtn active" data-settings-tab="audio">AUDIO</button>
+              <button type="button" class="btn settingsTabBtn" data-settings-tab="display">DISPLAY</button>
+              <button type="button" class="btn settingsTabBtn" data-settings-tab="controls">CONTROLS</button>
+              <button type="button" class="btn settingsTabBtn" data-settings-tab="catalogs">CATALOGS</button>
+            </div>
+            <div class="settingsPanels">
+              <div class="panel settingsPanel active" data-settings-panel="audio">
+                <h3>Audio</h3>
+                <div class="grid">
+                  <label>
+                    MASTER VOLUME
+                    <input id="volume" type="range" min="0" max="1" step="0.01" value="0.65" />
+                    <span class="helpText" style="display:block;">Controls the overall audio level.</span>
+                  </label>
+                  <label>
+                    SFX VOLUME
+                    <input id="sfxVolume" type="range" min="0" max="1" step="0.01" value="0.85" />
+                    <span class="helpText" style="display:block;">Controls weapon, impact, and UI sound effects.</span>
+                  </label>
+                  <label>
+                    SOUNDTRACK VOLUME
+                    <input id="musicVolume" type="range" min="0" max="1" step="0.01" value="0.6" />
+                    <span class="helpText" style="display:block;">Controls the in-game soundtrack volume.</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="panel settingsPanel" data-settings-panel="display">
+                <h3>Display</h3>
+                <div class="settingsToggleRow">
+                  <button id="btnFullscreenToggle" class="btn">Toggle Fullscreen</button>
+                  <label class="toggleRow">
+                    <span>Widen gameplay area</span>
+                    <input id="toggleWideGameplay" type="checkbox" />
+                  </label>
+                </div>
+                <p class="monoSmall">Switch between fullscreen, commands, and widened layout.</p>
+              </div>
+
+              <div class="panel settingsPanel" data-settings-panel="controls">
+                <h3>Controls</h3>
+                <div class="settingsCommands">
+                  <div class="kbd">MOVE: <b>WASD</b> OR <b>ARROWS</b></div>
+                  <div class="kbd">FIRE: <b>Z</b></div>
+                  <div class="kbd">SECONDARY: <b>X</b></div>
+                  <div class="kbd">SHOCKWAVE: <b>C</b></div>
+                  <div class="kbd">DASH: <b>SPACE</b></div>
+                  <div class="kbd">PAUSE: <b>P</b> <b>|</b> MENU: <b>M</b></div>
+                </div>
+                <label class="toggleRow">
+                  <span>Auto-enable Mousepad (B) on mission start</span>
+                  <input id="toggleMousepadAuto" type="checkbox" />
+                </label>
+                <p class="monoSmall">Note: If you have Steam, you can remap your controller to the keys used in the game and play with a controller.</p>
+              </div>
+
+              <div class="panel settingsPanel" data-settings-panel="catalogs">
+                <h3>Catalogs</h3>
+                <div class="catalogGrid">
+                  <div class="panel">
+                    <h3>Secondary Powerups</h3>
+                    <ul class="list catalogList" id="powerupsSecondaryList"></ul>
+                  </div>
+                  <div class="panel">
+                    <h3>Defense Powerups</h3>
+                    <ul class="list catalogList" id="powerupsDefenseList"></ul>
+                  </div>
+                  <div class="panel">
+                    <h3>Offense Shot Upgrades</h3>
+                    <ul class="list catalogList" id="powerupsOffenseList"></ul>
+                  </div>
+                  <div class="panel">
+                    <h3>Active SFX</h3>
+                    <ul class="list catalogList" id="sfxList"></ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+<div class="cardBody" style="display:none;">
             <div class="grid">
               <input id="aMin" type="number" min="0" max="99" value="2" />
               <input id="aMax" type="number" min="0" max="99" value="12" />
@@ -87,9 +165,6 @@
                 <option value="15">15</option>
                 <option value="20">20</option>
               </select>
-              <input id="volume" type="range" min="0" max="1" step="0.01" value="0.65" />
-              <input id="sfxVolume" type="range" min="0" max="1" step="0.01" value="0.85" />
-              <input id="musicVolume" type="range" min="0" max="1" step="0.01" value="0.6" />
               <select id="timerMode">
                 <option value="off">OFF (ENDLESS)</option>
                 <option value="q7" selected>7 QUESTIONS</option>
@@ -116,18 +191,43 @@
             </div>
           </div>
 
-          <div class="row">
-            <button id="btnFullscreenToggle" class="btn">TOGGLE FULLSCREEN</button>
-            <button id="btnGameplay" class="btn">GAMEPLAY</button>
-            <button id="btnPowerups" class="btn">POWERUPS</button>
-            <button id="btnSfx" class="btn">SFX</button>
-            <button id="btnStart" class="btn" style="border-color: rgba(193,216,47,.35); background: rgba(193,216,47,.14);">START MISSION</button>
-            <button id="btnClose" class="btn">CLOSE</button>
+        </div>
+      </div>
+
+<!-- SHIP COMMANDS -->
+      <div id="overlayControls" class="overlay">
+        <div class="card">
+          <div class="cardHead">
+            <div>
+              <h2 class="title">How To Play</h2>
+              <p class="subtitle">Quick start for new pilots.</p>
+            </div>
+            <button id="btnCloseControls" class="btn">Close</button>
+          </div>
+          <div class="cardBody">
+            <div class="panel">
+              <h3>Flight</h3>
+              <ul class="list">
+                <li><span>Move</span><b>W A S D / Arrow Keys</b></li>
+                <li><span>Fire</span><b>Z</b></li>
+                <li><span>Secondary</span><b>X</b></li>
+                <li><span>Shockwave</span><b>C</b></li>
+                <li><span>Dash</span><b>Space</b></li>
+                <li><span>Pause</span><b>P</b></li>
+                <li><span>Mousepad</span><b>B</b></li>
+                <li><span>Restart</span><b>R</b></li>
+                <li><span>Menu</span><b>M</b></li>
+              </ul>
+            </div>
+            <div class="panel">
+              <h3>Tips</h3>
+              <p class="monoSmall" style="margin:0;">Use secondary powerups to control the field when the screen gets crowded.</p>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- GAMEPLAY SETTINGS -->
+<!-- GAMEPLAY SETTINGS -->
       <div id="overlayGameplay" class="overlay">
         <div class="card">
           <div class="cardHead">
@@ -214,7 +314,10 @@
         </div>
       </div>
 
-      <!-- GAME OVER -->
+      <!-- POWERUPS / SFX CATALOGS MOVED INTO SETTINGS OVERLAY -->
+<!-- POWERUPS / SFX CATALOGS MOVED INTO SETTINGS OVERLAY -->
+
+<!-- GAME OVER -->
       <div id="overlayEnd" class="overlay">
         <div class="card">
           <div class="cardHead">
@@ -232,6 +335,7 @@
             <div class="endScoreBlock" id="endScoreBlock">
               <div class="endScoreLabel">TOTAL SCORE</div>
               <div class="endScoreValue" id="endScoreValue">0</div>
+              <div class="monoSmall" id="endModeSummary">Operation: - / Mode: - / Submode: -</div>
             </div>
 
             <div class="endStatsWrap" id="endStatsWrap">

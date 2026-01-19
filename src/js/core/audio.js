@@ -22,6 +22,11 @@ function initSfx(){
     correct: new Audio("sfx/correct.mp3"),
     crash: new Audio("sfx/crash.mp3"),
     dash: new Audio("sfx/dash.mp3"),
+    armor_pickup: new Audio("sfx/armor_pickup.mp3"),
+    hull_repair_pickup: new Audio("sfx/hull_repair_pickup.mp3"),
+    shield_pickup: new Audio("sfx/sheld_pickup.mp3"),
+    shot_powerup: new Audio("sfx/shot_powerup.mp3"),
+    time_activate: new Audio("sfx/time_activate.mp3"),
     explosion: new Audio("sfx/explosion.mp3"),
     gun1: new Audio("sfx/gun1.mp3"),
     gun2: new Audio("sfx/gun2.mp3"),
@@ -49,6 +54,11 @@ function initSfx(){
   sfxBank.correct.volume = 0.5;
   sfxBank.crash.volume = 0.6;
   sfxBank.dash.volume = 0.55;
+  sfxBank.armor_pickup.volume = 0.55;
+  sfxBank.hull_repair_pickup.volume = 0.55;
+  sfxBank.shield_pickup.volume = 0.55;
+  sfxBank.shot_powerup.volume = 0.55;
+  sfxBank.time_activate.volume = 0.55;
   sfxBank.explosion.volume = 0.6;
   sfxBank.gun1.volume = 0.35;
   sfxBank.gun2.volume = 0.38;

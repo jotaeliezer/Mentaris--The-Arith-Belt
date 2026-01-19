@@ -50,6 +50,7 @@ export function createTourGuide(options){
   var advanceTimer = null;
   var hideTimer = null;
   var typeTimers = [];
+  var typeAudio = null;
   var stepRevealAt = 0;
   var minStepMs = 2000;
   var titleTypeMs = 20;
@@ -88,6 +89,7 @@ export function createTourGuide(options){
       clearInterval(typeTimers[i]);
     }
     typeTimers.length = 0;
+    stopTypeAudio();
   }
 
   function showOverlay(){
@@ -102,6 +104,26 @@ export function createTourGuide(options){
     if(!overlay) return;
     overlay.classList.remove("show");
     if(cardEl) cardEl.classList.add("is-fading");
+    stopTypeAudio();
+  }
+
+  function startTypeAudio(){
+    try{
+      if(!typeAudio){
+        typeAudio = new Audio("sfx/tutorial_messages.mp3");
+        typeAudio.loop = true;
+        typeAudio.volume = 0.4;
+      }
+      if(typeAudio.paused) typeAudio.play().catch(function(){});
+    }catch(e){}
+  }
+
+  function stopTypeAudio(){
+    if(!typeAudio) return;
+    try{
+      typeAudio.pause();
+      typeAudio.currentTime = 0;
+    }catch(e){}
   }
 
   function typeText(el, text, speed, done){
@@ -116,11 +138,13 @@ export function createTourGuide(options){
       if(done) done();
       return;
     }
+    startTypeAudio();
     var timer = setInterval(function(){
       i += 1;
       el.textContent = text.slice(0, i);
       if(i >= text.length){
         clearInterval(timer);
+        stopTypeAudio();
         if(done) done();
       }
     }, safeSpeed);

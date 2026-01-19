@@ -509,6 +509,33 @@
       text-shadow: 0 2px 10px rgba(0,0,0,.6);
     }
 
+    .beltChoice.locked{
+      cursor: not-allowed;
+      opacity: 0.55;
+      border-color: rgba(255,255,255,.2);
+    }
+
+    .beltChoice.locked:hover{
+      transform: none;
+      box-shadow: none;
+      border-color: rgba(255,255,255,.2);
+    }
+
+    .beltChoice .lockTag{
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.2);
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.75);
+      z-index: 2;
+    }
+
     .choiceCard h4{
       margin:0 0 6px;
       font-size:13px;
@@ -1080,8 +1107,8 @@
         </h1>
         <div class="menuButtons">
           <button id="btnLaunchHome" class="btn primary btnLaunch" type="button">Launch</button>
-          <button id="btnStartGame" class="btn secondaryLabel menuExtra" type="button">Single Mission <small>Custom setup</small></button>
           <button id="btnCampaign" class="btn secondaryLabel menuExtra" type="button">Campaign <small>6 mission run</small></button>
+          <button id="btnStartGame" class="btn secondaryLabel menuExtra" type="button">Single Mission <small>Custom setup</small></button>
           <button id="btnTutorial" class="btn secondaryLabel menuExtra" type="button">Tutorial <small>Guided tour</small></button>
           <button id="btnLeaderboards" class="btn secondaryLabel menuExtra" type="button">Leaderboards <small>Top runs</small></button>
           <button id="btnSettingsHome" class="btn secondaryLabel menuExtra" type="button">Settings <small>Audio levels</small></button>
@@ -1406,19 +1433,23 @@
                   <h4>Ember Cluster</h4>
                   <p>Warm glow with scattered dust lanes.</p>
                 </div>
-                <div class="choiceCard beltChoice" data-belt="aurora" style="background-image:url('images/background2.png');">
+                <div class="choiceCard beltChoice locked" data-belt="aurora" data-locked="true" style="background-image:url('images/background2.png');">
+                  <span class="lockTag">LOCKED</span>
                   <h4>Aurora Cluster</h4>
                   <p>Cool nebula haze and icy highlights.</p>
                 </div>
-                <div class="choiceCard beltChoice" data-belt="rift" style="background-image:url('images/background3.png');">
+                <div class="choiceCard beltChoice locked" data-belt="rift" data-locked="true" style="background-image:url('images/background3.png');">
+                  <span class="lockTag">LOCKED</span>
                   <h4>Rift Cluster</h4>
                   <p>Dense field with higher contrast drift.</p>
                 </div>
-                <div class="choiceCard beltChoice" data-belt="vega" style="background-image:url('images/background7.png');">
+                <div class="choiceCard beltChoice locked" data-belt="vega" data-locked="true" style="background-image:url('images/background7.png');">
+                  <span class="lockTag">LOCKED</span>
                   <h4>Vega Cluster</h4>
                   <p>Wide galaxy wash with soft flares.</p>
                 </div>
-                <div class="choiceCard beltChoice" data-belt="void" style="background-image:url('images/background9.png');">
+                <div class="choiceCard beltChoice locked" data-belt="void" data-locked="true" style="background-image:url('images/background9.png');">
+                  <span class="lockTag">LOCKED</span>
                   <h4>Void Cluster</h4>
                   <p>Deep space with faint starlight.</p>
                 </div>
@@ -1606,58 +1637,90 @@
   </div>
   <div id="settingsOverlay" class="overlay">
     <div class="card">
-      <div class="cardHead">
-        <div>
-          <h2 class="title">Settings</h2>
-          <p class="subtitle">Tune your audio levels.</p>
+      <div class="cardHead settingsHead">
+        <div class="settingsTitleBlock">
+          <div class="settingsTitle">
+            <span class="settingsTitleMain">MENTARIS</span>
+            <span class="settingsTitleSub">The Arith Belt</span>
+          </div>
+          <p class="subtitle">Settings console for active missions.</p>
         </div>
         <button id="btnCloseSettings" class="btn">Close</button>
       </div>
-      <div class="cardBody">
-        <div class="panel">
-          <h3>Audio</h3>
-          <div class="grid">
-            <label>
-              MASTER VOLUME
-              <input id="volume" name="volume" form="homeMenu" type="range" min="0" max="1" step="0.01" value="0.65" />
-              <span class="helpText">Controls the overall audio level.</span>
-            </label>
-            <label>
-              SFX VOLUME
-              <input id="sfxVolume" name="sfxVolume" form="homeMenu" type="range" min="0" max="1" step="0.01" value="0.85" />
-              <span class="helpText">Controls weapon, impact, and UI sound effects.</span>
-            </label>
-            <label>
-              SOUNDTRACK VOLUME
-              <input id="musicVolume" name="musicVolume" form="homeMenu" type="range" min="0" max="1" step="0.01" value="0.6" />
-              <span class="helpText">Controls the in-game soundtrack volume.</span>
-            </label>
-          </div>
+      <div class="cardBody settingsBody">
+        <div class="settingsTabs">
+          <button type="button" class="btn settingsTabBtn active" data-settings-tab="audio">AUDIO</button>
+          <button type="button" class="btn settingsTabBtn" data-settings-tab="display">DISPLAY</button>
+          <button type="button" class="btn settingsTabBtn" data-settings-tab="controls">CONTROLS</button>
+          <button type="button" class="btn settingsTabBtn" data-settings-tab="catalogs">CATALOGS</button>
         </div>
-        <div class="panel">
-          <h3>Display</h3>
-          <div class="grid">
-            <div>
+        <div class="settingsPanels">
+          <div class="panel settingsPanel active" data-settings-panel="audio">
+            <h3>Audio</h3>
+            <div class="grid">
+              <label>
+                MASTER VOLUME
+                <input id="volume" name="volume" form="homeMenu" type="range" min="0" max="1" step="0.01" value="0.65" />
+                <span class="helpText" style="display:block;">Controls the overall audio level.</span>
+              </label>
+              <label>
+                SFX VOLUME
+                <input id="sfxVolume" name="sfxVolume" form="homeMenu" type="range" min="0" max="1" step="0.01" value="0.85" />
+                <span class="helpText" style="display:block;">Controls weapon, impact, and UI sound effects.</span>
+              </label>
+              <label>
+                SOUNDTRACK VOLUME
+                <input id="musicVolume" name="musicVolume" form="homeMenu" type="range" min="0" max="1" step="0.01" value="0.6" />
+                <span class="helpText" style="display:block;">Controls the in-game soundtrack volume.</span>
+              </label>
+            </div>
+          </div>
+          <div class="panel settingsPanel" data-settings-panel="display">
+            <h3>Display</h3>
+            <div class="settingsToggleRow">
               <button id="btnFullscreenHome" class="btn" type="button">Toggle Fullscreen</button>
-              <div class="helpText" style="display:block;">Switch between fullscreen and windowed mode.</div>
+              <label class="toggleRow">
+                <span>Widen gameplay area</span>
+                <input id="toggleWideGameplayHome" type="checkbox" />
+              </label>
             </div>
-            <div>
-              <button id="btnHowToPlay" class="btn" type="button">Ship Commands</button>
-              <div class="helpText" style="display:block;">Open the controls tutorial.</div>
-            </div>
+            <p class="monoSmall">Switch between fullscreen, commands, and widened layout.</p>
           </div>
-        </div>
-
-        <div class="panel">
-          <h3>Catalogs</h3>
-          <div class="grid">
-            <div>
-              <button id="btnPowerupsHome" class="btn" type="button">Powerups</button>
-              <div class="helpText" style="display:block;">View powerup and shot icons.</div>
+          <div class="panel settingsPanel" data-settings-panel="controls">
+            <h3>Controls</h3>
+            <div class="settingsCommands">
+              <div class="kbd">MOVE: <b>WASD</b> OR <b>ARROWS</b></div>
+              <div class="kbd">FIRE: <b>Z</b></div>
+              <div class="kbd">SECONDARY: <b>X</b></div>
+              <div class="kbd">SHOCKWAVE: <b>C</b></div>
+              <div class="kbd">DASH: <b>SPACE</b></div>
+              <div class="kbd">PAUSE: <b>P</b> <b>|</b> MENU: <b>M</b></div>
             </div>
-            <div>
-              <button id="btnSfxHome" class="btn" type="button">SFX</button>
-              <div class="helpText" style="display:block;">Preview sound effects in use.</div>
+            <label class="toggleRow">
+              <span>Auto-enable Mousepad (B) on mission start</span>
+              <input id="toggleMousepadAutoHome" type="checkbox" />
+            </label>
+            <p class="monoSmall">Note: If you have Steam, you can remap your controller to the keys used in the game and play with a controller.</p>
+          </div>
+          <div class="panel settingsPanel" data-settings-panel="catalogs">
+            <h3>Catalogs</h3>
+            <div class="catalogGrid">
+              <div class="panel">
+                <h3>Secondary Powerups</h3>
+                <ul class="list catalogList" id="powerupsSecondaryListHome"></ul>
+              </div>
+              <div class="panel">
+                <h3>Defense Powerups</h3>
+                <ul class="list catalogList" id="powerupsDefenseListHome"></ul>
+              </div>
+              <div class="panel">
+                <h3>Offense Shot Upgrades</h3>
+                <ul class="list catalogList" id="powerupsOffenseListHome"></ul>
+              </div>
+              <div class="panel">
+                <h3>Active SFX</h3>
+                <ul class="list catalogList" id="sfxListHome"></ul>
+              </div>
             </div>
           </div>
         </div>
@@ -1668,55 +1731,9 @@
     </div>
   </div>
 
-  <div id="powerupsOverlayHome" class="overlay">
-    <div class="card">
-      <div class="cardHead">
-        <div>
-          <h2 class="title">Powerups</h2>
-          <p class="subtitle">Icon guide for pickups and shot upgrades.</p>
-        </div>
-        <button id="btnClosePowerupsHome" class="btn">Close</button>
-      </div>
-      <div class="cardBody catalogBody">
-        <div class="panel">
-          <h3>Secondary Powerups</h3>
-          <ul class="list catalogList" id="powerupsSecondaryListHome"></ul>
-        </div>
-        <div class="panel">
-          <h3>Defense Powerups</h3>
-          <ul class="list catalogList" id="powerupsDefenseListHome"></ul>
-        </div>
-        <div class="panel">
-          <h3>Offense Shot Upgrades</h3>
-          <ul class="list catalogList" id="powerupsOffenseListHome"></ul>
-        </div>
-      </div>
-      <div class="row">
-        <button id="btnBackPowerupsHome" class="btn">Back</button>
-      </div>
-    </div>
-  </div>
 
-  <div id="sfxOverlayHome" class="overlay">
-    <div class="card">
-      <div class="cardHead">
-        <div>
-          <h2 class="title">Sound Effects</h2>
-          <p class="subtitle">Current audio cues and when they play.</p>
-        </div>
-        <button id="btnCloseSfxHome" class="btn">Close</button>
-      </div>
-      <div class="cardBody catalogBody">
-        <div class="panel">
-          <h3>Active SFX</h3>
-          <ul class="list catalogList" id="sfxListHome"></ul>
-        </div>
-      </div>
-      <div class="row">
-        <button id="btnBackSfxHome" class="btn">Back</button>
-      </div>
-    </div>
-  </div>
+
+  
 
 
   <div id="leaderboardsOverlay" class="overlay">
@@ -1729,6 +1746,23 @@
         <button id="btnCloseLeaderboards" class="btn">Close</button>
       </div>
       <div class="cardBody">
+        <div class="panel" style="margin-bottom:12px;">
+          <h3>Categories</h3>
+          <div class="grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px;">
+            <label>
+              OPERATION
+              <select id="homeLeaderboardOperation"></select>
+            </label>
+            <label>
+              MODE
+              <select id="homeLeaderboardMode"></select>
+            </label>
+            <label>
+              SUBMODE
+              <select id="homeLeaderboardSubmode"></select>
+            </label>
+          </div>
+        </div>
         <div class="leaderboardsMain">
           <div class="panel">
             <h3>High Scores</h3>
@@ -2228,7 +2262,7 @@
       { id: "repair", label: "Hull Repair", icon: "images/powerup_hullrepair.png", desc: "Instant hull repair (+35%)." },
       { id: "time", label: "Time Dilation", icon: "images/powerup_timedelay.png", desc: "Grants one Time Dilation charge (press X to slow time)." },
       { id: "magnet", label: "Magnet Sweep", icon: "images/powerup_magnet.png", desc: "Grants one Magnet Sweep charge (press X to pull the correct asteroid)." },
-      { id: "emp", label: "EMP Burst", icon: null, desc: "Triggers immediately and cascades non-answer asteroids." },
+      { id: "emp", label: "EMP Burst", icon: "images/powerup_EMP.png", desc: "Triggers immediately and cascades non-answer asteroids." },
       { id: "lock", label: "Target Lock", icon: "images/powerup_targetlock.png", desc: "Grants one Target Lock charge (press X to steer shots to the correct asteroid)." }
     ];
 
@@ -2238,12 +2272,12 @@
     ];
 
     var homePowerupCatalogOffense = [
-      { id: "dual", label: "Dual Blaster", icon: null, desc: "Two shots per tap for about 12 seconds." },
+      { id: "dual", label: "Dual Blaster", icon: "images/shot_dualblasters.png", desc: "Two shots per tap for about 12 seconds." },
       { id: "laser", label: "Laser Burst", icon: "images/shot_laser.png", desc: "High-speed laser shots for about 12 seconds." },
       { id: "fire", label: "Fireball", icon: "images/shot_fre.png", desc: "Fireball shots for about 12 seconds." },
-      { id: "ice", label: "Ice Shards", icon: null, desc: "Ice shots for about 12 seconds." },
+      { id: "ice", label: "Ice Shards", icon: "images/shot_ice.png", desc: "Ice shots for about 12 seconds." },
       { id: "electric", label: "Electric Bolts", icon: "images/shot_electric.png", desc: "Electric bolts for about 12 seconds." },
-      { id: "pierce", label: "Look Up Shot", icon: null, desc: "Piercing shots for about 12 seconds." },
+      { id: "pierce", label: "Look Up Shot", icon: "images/shot_lookup.png", desc: "Piercing shots for about 12 seconds." },
       { id: "plasma", label: "Plasma Orb", icon: "images/shot_plasma.png", desc: "Plasma shots for about 12 seconds." },
       { id: "rail", label: "Rail Beam", icon: "images/shot_rail.png", desc: "Rail beam shots for about 12 seconds." }
     ];
@@ -2272,7 +2306,12 @@
       { id: "alien_shooting", label: "Alien Shooting", desc: "Alien firing.", when: "Alien fires.", badge: "SFX", src: "sfx/alien_shooting.mp3" },
       { id: "ship_damaged", label: "Ship Damaged", desc: "Damage alert.", when: "Player takes damage.", badge: "SFX", src: "sfx/ship_damaged.mp3" },
       { id: "warning", label: "Warning", desc: "Warning alarm.", when: "Correct answer near escape (not in tutorial).", badge: "SFX", src: "sfx/warning.mp3" },
-      { id: "powerup_collected", label: "Powerup Collected", desc: "Pickup chime.", when: "Collect powerups or shot upgrades.", badge: "SFX", src: "sfx/powerup_collected.mp3" },
+      { id: "shot_powerup", label: "Shot Pickup", desc: "Offense pickup.", when: "Collect shot type upgrades.", badge: "SFX", src: "sfx/shot_powerup.mp3" },
+      { id: "hull_repair_pickup", label: "Hull Repair Pickup", desc: "Repair pickup.", when: "Collect hull repair.", badge: "SFX", src: "sfx/hull_repair_pickup.mp3" },
+      { id: "armor_pickup", label: "Armor Pickup", desc: "Armor pickup.", when: "Collect armor powerup.", badge: "SFX", src: "sfx/armor_pickup.mp3" },
+      { id: "shield_pickup", label: "Shield Pickup", desc: "Shield pickup.", when: "Collect shield powerup.", badge: "SFX", src: "sfx/sheld_pickup.mp3" },
+      { id: "time_activate", label: "Time Activate", desc: "Time dilation cue.", when: "Activate time dilation.", badge: "SFX", src: "sfx/time_activate.mp3" },
+      { id: "powerup_collected", label: "Powerup Collected", desc: "Pickup chime.", when: "Collect magnet, EMP, or target lock.", badge: "SFX", src: "sfx/powerup_collected.mp3" },
       { id: "crash", label: "Crash", desc: "Hard collision.", when: "Ship collision impact.", badge: "SFX", src: "sfx/crash.mp3" }
     ];
 
@@ -2588,6 +2627,41 @@
     var controlsOverlay = document.getElementById("controlsOverlay");
     var leaderboardsOverlay = document.getElementById("leaderboardsOverlay");
     var settingsOverlay = document.getElementById("settingsOverlay");
+    var settingsTabButtonsHome = settingsOverlay ? settingsOverlay.querySelectorAll("[data-settings-tab]") : [];
+    var settingsPanelsHome = settingsOverlay ? settingsOverlay.querySelectorAll("[data-settings-panel]") : [];
+    var toggleWideGameplayHome = document.getElementById("toggleWideGameplayHome");
+    var toggleMousepadAutoHome = document.getElementById("toggleMousepadAutoHome");
+    var wideGameplayKey = "mentaris.gameplay.wide";
+    var mousepadAutoKey = "mentaris.mousepad.autostart";
+
+    function setSettingsTabHome(tabId){
+      if(!settingsTabButtonsHome || !settingsPanelsHome) return;
+      for(var i=0; i<settingsTabButtonsHome.length; i++){
+        var btn = settingsTabButtonsHome[i];
+        var isActive = btn.getAttribute("data-settings-tab") === tabId;
+        btn.classList.toggle("active", isActive);
+      }
+      for(var j=0; j<settingsPanelsHome.length; j++){
+        var panel = settingsPanelsHome[j];
+        var show = panel.getAttribute("data-settings-panel") === tabId;
+        panel.classList.toggle("active", show);
+      }
+    }
+
+    function loadSettingsTogglesHome(){
+      try{
+        var wideStored = localStorage.getItem(wideGameplayKey);
+        if(toggleWideGameplayHome){
+          toggleWideGameplayHome.checked = wideStored === "1" || wideStored === "true";
+        }
+      }catch(e){}
+      try{
+        var mouseStored = localStorage.getItem(mousepadAutoKey);
+        if(toggleMousepadAutoHome){
+          toggleMousepadAutoHome.checked = mouseStored === "1" || mouseStored === "true";
+        }
+      }catch(e){}
+    }
     var briefingOverlay = document.getElementById("briefingOverlay");
     var campaignOverlay = document.getElementById("campaignOverlay");
     var btnCloseCampaign = document.getElementById("btnCloseCampaign");
@@ -3030,6 +3104,9 @@
       btnSettingsHome.addEventListener("click", function(){
         playMenuBeep();
         settingsOverlay.classList.add("show");
+        setSettingsTabHome("audio");
+        renderHomeCatalogs();
+        loadSettingsTogglesHome();
       });
     }
     if (btnPowerupsHome && powerupsOverlayHome) {
@@ -3110,6 +3187,28 @@
       });
     }
     if (btnCloseSettingsBottom && settingsOverlay) {
+    if(settingsTabButtonsHome && settingsTabButtonsHome.length){
+      settingsTabButtonsHome.forEach(function(btn){
+        btn.addEventListener("click", function(){
+          playMenuBeep();
+          var tabId = btn.getAttribute("data-settings-tab") || "audio";
+          setSettingsTabHome(tabId);
+          if(tabId == "catalogs"){ renderHomeCatalogs(); }
+        });
+      });
+    }
+    if(toggleWideGameplayHome){
+      toggleWideGameplayHome.addEventListener("change", function(){
+        playMenuBeep();
+        try{ localStorage.setItem(wideGameplayKey, toggleWideGameplayHome.checked ? "1" : "0"); }catch(e){}
+      });
+    }
+    if(toggleMousepadAutoHome){
+      toggleMousepadAutoHome.addEventListener("change", function(){
+        playMenuBeep();
+        try{ localStorage.setItem(mousepadAutoKey, toggleMousepadAutoHome.checked ? "1" : "0"); }catch(e){}
+      });
+    }
       btnCloseSettingsBottom.addEventListener("click", function(){
         playMenuBeep();
         settingsOverlay.classList.remove("show");
@@ -3442,6 +3541,10 @@
 
     beltChoices.forEach(function(card){
       card.addEventListener("click", function(){
+        if(card.dataset.locked === "true"){
+          showToast("CLUSTER LOCKED");
+          return;
+        }
         playMenuBeep();
         setBelt(card.getAttribute("data-belt"));
         advanceFromChoice();
@@ -3947,6 +4050,52 @@
       });
     }
 
+    var leaderboardSelection = { operation: "", modeLabel: "", submode: "" };
+
+    function describeLeaderboardMode(modeLabel){
+      var modeStr = String(modeLabel || "classic");
+      var isAdd = modeStr.indexOf("add_") === 0;
+      var isSquare = modeStr.indexOf("square_") === 0;
+      var isRational = modeStr.indexOf("rational_") === 0;
+      var operation = isRational ? "Rationals" : (isSquare ? "Squares" : (isAdd ? "Addition" : "Multiplication"));
+      var modeName = "Classic Answer";
+      if(isRational){
+        modeName = (modeStr == "rational_dec") ? "Target Decimal" : "Target Fraction";
+      }else if(isSquare){
+        modeName = (modeStr == "square_root") ? "Square Roots" : "Perfect Squares";
+      }else{
+        modeName = (modeStr.indexOf("digits") !== -1) ? "Digit Hunt" : "Classic Answer";
+      }
+      var subLabel = "";
+      if(isRational){
+        subLabel = (modeStr == "rational_dec") ? "Decimal" : "Fraction";
+      }else if(isSquare){
+        subLabel = (modeStr == "square_root") ? "Shoot Roots" : "Shoot Squares";
+      }else{
+        var sub = (modeStr.indexOf("3") !== -1) ? "3" : "2";
+        subLabel = isAdd ? (sub + "x" + sub) : ("1x" + sub);
+      }
+      return {
+        operation: operation,
+        modeLabel: modeName,
+        submode: subLabel,
+        key: operation + "|" + modeName + "|" + subLabel
+      };
+    }
+
+    function getLeaderboardCategory(item){
+      if(item && item.operation && item.modeLabel && item.submode){
+        return {
+          operation: item.operation,
+          modeLabel: item.modeLabel,
+          submode: item.submode,
+          key: item.modeKey || (item.operation + "|" + item.modeLabel + "|" + item.submode)
+        };
+      }
+      return describeLeaderboardMode(item && item.mode ? item.mode : "");
+    }
+
+
     function renderHomeStats(){
       var card = document.querySelector(".leaderboardsCard");
       var hsTopEl = document.getElementById("homeHighScoresTop");
@@ -3955,6 +4104,9 @@
       var detailPanel = document.getElementById("homeScoreDetail");
       var detailTitle = document.getElementById("homeScoreDetailTitle");
       var detailList = document.getElementById("homeScoreDetailList");
+      var opSelect = document.getElementById("homeLeaderboardOperation");
+      var modeSelect = document.getElementById("homeLeaderboardMode");
+      var subSelect = document.getElementById("homeLeaderboardSubmode");
       if(!hsTopEl || !hsRestEl || !ltEl) return;
       hsTopEl.innerHTML = "";
       hsRestEl.innerHTML = "";
@@ -3963,34 +4115,167 @@
       if(card) card.classList.remove("showDetail");
       var stats = null;
       try{
-        var raw = localStorage.getItem("mathsteroid.stats");
-        if(raw) stats = JSON.parse(raw);
+        var rawStats = localStorage.getItem("mathsteroid.stats");
+        if(rawStats) stats = JSON.parse(rawStats);
       }catch(e){
         stats = null;
       }
 
-      var hs = stats && stats.highScores ? stats.highScores : [];
+      var categoryMap = {};
+      if(stats && stats.highScoresByKey){
+        var keys = Object.keys(stats.highScoresByKey);
+        for(var k=0; k<keys.length; k++){
+          var key = keys[k];
+          var list = stats.highScoresByKey[key] || [];
+          if(!list.length) continue;
+          var info = getLeaderboardCategory(list[0]);
+          categoryMap[key] = {
+            key: key,
+            operation: info.operation,
+            modeLabel: info.modeLabel,
+            submode: info.submode,
+            scores: list.slice()
+          };
+        }
+      }
+      if(!Object.keys(categoryMap).length && stats && stats.highScores){
+        for(var h=0; h<stats.highScores.length; h++){
+          var item = stats.highScores[h];
+          var info2 = getLeaderboardCategory(item);
+          var key2 = info2.key;
+          if(!categoryMap[key2]){
+            categoryMap[key2] = {
+              key: key2,
+              operation: info2.operation,
+              modeLabel: info2.modeLabel,
+              submode: info2.submode,
+              scores: []
+            };
+          }
+          categoryMap[key2].scores.push(item);
+        }
+      }
+
+      var categories = Object.keys(categoryMap).map(function(key){ return categoryMap[key]; });
+      categories.sort(function(a,b){
+        if(a.operation !== b.operation) return a.operation.localeCompare(b.operation);
+        if(a.modeLabel !== b.modeLabel) return a.modeLabel.localeCompare(b.modeLabel);
+        return a.submode.localeCompare(b.submode);
+      });
+
+      function setSelectOptions(select, options, selectedValue){
+        if(!select) return;
+        select.innerHTML = "";
+        for(var i=0; i<options.length; i++){
+          var opt = document.createElement("option");
+          opt.value = options[i];
+          opt.textContent = options[i];
+          if(options[i] === selectedValue) opt.selected = true;
+          select.appendChild(opt);
+        }
+      }
+
+      if(opSelect && modeSelect && subSelect){
+        if(!categories.length){
+          setSelectOptions(opSelect, ["-"]);
+          setSelectOptions(modeSelect, ["-"]);
+          setSelectOptions(subSelect, ["-"]);
+          opSelect.disabled = true;
+          modeSelect.disabled = true;
+          subSelect.disabled = true;
+        }else{
+          opSelect.disabled = false;
+          modeSelect.disabled = false;
+          subSelect.disabled = false;
+          var ops = [];
+          for(var o=0; o<categories.length; o++){
+            if(ops.indexOf(categories[o].operation) === -1) ops.push(categories[o].operation);
+          }
+          if(ops.indexOf(leaderboardSelection.operation) === -1){
+            leaderboardSelection.operation = ops[0];
+            leaderboardSelection.modeLabel = "";
+            leaderboardSelection.submode = "";
+          }
+          setSelectOptions(opSelect, ops, leaderboardSelection.operation);
+
+          var modes = [];
+          for(var m=0; m<categories.length; m++){
+            if(categories[m].operation !== leaderboardSelection.operation) continue;
+            if(modes.indexOf(categories[m].modeLabel) === -1) modes.push(categories[m].modeLabel);
+          }
+          if(modes.indexOf(leaderboardSelection.modeLabel) === -1){
+            leaderboardSelection.modeLabel = modes[0];
+            leaderboardSelection.submode = "";
+          }
+          setSelectOptions(modeSelect, modes, leaderboardSelection.modeLabel);
+
+          var submodes = [];
+          for(var s=0; s<categories.length; s++){
+            if(categories[s].operation !== leaderboardSelection.operation) continue;
+            if(categories[s].modeLabel !== leaderboardSelection.modeLabel) continue;
+            if(submodes.indexOf(categories[s].submode) === -1) submodes.push(categories[s].submode);
+          }
+          if(submodes.indexOf(leaderboardSelection.submode) === -1){
+            leaderboardSelection.submode = submodes[0];
+          }
+          setSelectOptions(subSelect, submodes, leaderboardSelection.submode);
+
+          opSelect.onchange = function(){
+            leaderboardSelection.operation = opSelect.value;
+            leaderboardSelection.modeLabel = "";
+            leaderboardSelection.submode = "";
+            renderHomeStats();
+          };
+          modeSelect.onchange = function(){
+            leaderboardSelection.modeLabel = modeSelect.value;
+            leaderboardSelection.submode = "";
+            renderHomeStats();
+          };
+          subSelect.onchange = function(){
+            leaderboardSelection.submode = subSelect.value;
+            renderHomeStats();
+          };
+        }
+      }
+
+      var activeCategory = null;
+      if(categories.length){
+        var activeKey = leaderboardSelection.operation + "|" + leaderboardSelection.modeLabel + "|" + leaderboardSelection.submode;
+        activeCategory = categoryMap[activeKey];
+        if(!activeCategory){
+          activeCategory = categories[0];
+          leaderboardSelection.operation = activeCategory.operation;
+          leaderboardSelection.modeLabel = activeCategory.modeLabel;
+          leaderboardSelection.submode = activeCategory.submode;
+        }
+      }
+
+      var hs = activeCategory ? activeCategory.scores.slice() : [];
+      hs.sort(function(a,b){ return b.score - a.score; });
       var top = hs.slice(0,5);
       var rest = hs.slice(5);
 
       function buildRow(item, rank){
         var row = document.createElement("li");
-        var name = item.name ? (" • " + item.name) : "";
-        row.innerHTML = "<span>#" + rank + " • " + item.score + " pts" + name + "</span><b>Lv " + item.level + "</b>";
+        var name = item.name ? ("  - " + item.name) : "";
+        row.innerHTML = "<span>#" + rank + "  - " + item.score + " pts" + name + "</span><b>Lv " + item.level + "</b>";
         row.dataset.scoreId = item.id || "";
         row.style.cursor = "pointer";
         row.addEventListener("click", function(){
           if(!detailPanel || !detailList || !card) return;
           detailList.innerHTML = "";
           var date = item.date ? new Date(item.date) : null;
-          var title = (item.name ? item.name + " • " : "") + item.score + " pts";
+          var title = (item.name ? item.name + "  - " : "") + item.score + " pts";
           if(detailTitle) detailTitle.textContent = title;
+          var info = getLeaderboardCategory(item);
           var rows = [
             ["SCORE", item.score],
             ["LEVEL", item.level],
             ["CORRECT", item.correct],
-            ["MODE", item.mode || "—"],
-            ["DATE", date ? date.toLocaleString() : "—"]
+            ["OPERATION", info.operation || "-"],
+            ["MODE", info.modeLabel || "-"],
+            ["SUBMODE", info.submode || "-"],
+            ["DATE", date ? date.toLocaleString() : "-"]
           ];
           for(var r=0;r<rows.length;r++){
             var li = document.createElement("li");
@@ -4004,7 +4289,7 @@
 
       if(!hs.length){
         var liEmpty = document.createElement("li");
-        liEmpty.innerHTML = "<span>NO SCORES YET</span><b class=\"pillGood\">PLAY</b>";
+        liEmpty.innerHTML = '<span>NO SCORES YET</span><b class="pillGood">PLAY</b>';
         hsTopEl.appendChild(liEmpty);
       }else{
         for(var i=0;i<top.length;i++){
@@ -4012,7 +4297,7 @@
         }
         if(!rest.length){
           var liRest = document.createElement("li");
-          liRest.innerHTML = "<span>NO MORE SCORES</span><b class=\"pillGood\">—</b>";
+          liRest.innerHTML = '<span>NO MORE SCORES</span><b class="pillGood">-</b>';
           hsRestEl.appendChild(liRest);
         }else{
           for(var j=0;j<rest.length;j++){
@@ -4022,6 +4307,9 @@
       }
 
       if(!stats){
+        var li1 = document.createElement("li");
+        li1.innerHTML = "<span>BEST SCORE</span><b>0</b>";
+        ltEl.appendChild(li1);
         var li2 = document.createElement("li");
         li2.innerHTML = "<span>SESSIONS</span><b>0</b>";
         ltEl.appendChild(li2);
