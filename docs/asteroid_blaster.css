@@ -354,6 +354,7 @@ body.launching #menuWrap{
 
 #overlayMenu .card{
   position:relative;
+  width:min(1080px, 100%);
   border-color: rgba(255,255,255,.12);
   border-radius:28px;
   background: linear-gradient(140deg, rgba(10,14,28,.97), rgba(6,8,22,.94));
@@ -699,6 +700,35 @@ input[type="checkbox"]{ transform: translateY(1px); }
   gap:12px;
 }
 
+.catalogEmpty{
+  font-size:12px;
+  color:var(--muted);
+  padding:12px;
+  justify-content:flex-start;
+}
+
+.sfxCategoryRow{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:10px;
+}
+
+.sfxCategoryBtn{
+  font-size:11px;
+  padding:6px 12px;
+  border-radius:999px;
+  text-transform:uppercase;
+  letter-spacing:.6px;
+  background: rgba(255,255,255,.05);
+}
+
+.sfxCategoryBtn.active{
+  border-color: rgba(0,229,255,.5);
+  background: rgba(0,229,255,.16);
+  box-shadow: 0 10px 24px rgba(0,0,0,.35);
+}
+
 .catalogIcon{
   width:52px;
   height:52px;
@@ -765,6 +795,45 @@ input[type="checkbox"]{ transform: translateY(1px); }
   align-items:center;
   gap:8px;
   margin-top:6px;
+}
+
+.catalogToggleBtn{
+  width:100%;
+  justify-content:space-between;
+  text-transform:uppercase;
+  letter-spacing:1px;
+  padding:10px 12px;
+  border-radius:14px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.catalogTogglePanel{
+  display:none;
+  margin-top:10px;
+}
+.catalogTogglePanel.open{ display:block; }
+
+.catalogControlBtn{
+  min-width:30px;
+  height:26px;
+  padding:0 8px;
+  font-size:13px;
+  line-height:1;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  transform: translateY(0);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.catalogControlBtn:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(0,0,0,.35);
+}
+
+.catalogVolume{
+  width:120px;
 }
 
 .catalogDuration{
@@ -911,6 +980,34 @@ input[type="checkbox"]{ transform: translateY(1px); }
   max-height: min(62vh, 560px);
   overflow:auto;
   padding-right:4px;
+}
+
+.audioLayout{
+  display:grid;
+  grid-template-columns: minmax(0, 1fr) minmax(420px, 1.6fr);
+  gap:14px;
+  align-items:start;
+}
+
+.audioSfxPanel{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  max-height: min(52vh, 420px);
+  overflow:auto;
+}
+
+.audioSfxPanel .catalogTogglePanel{
+  max-height: 320px;
+  overflow:auto;
+  overflow-x:hidden;
+  padding-right:4px;
+}
+
+@media (max-width: 980px){
+  .audioLayout{ grid-template-columns: 1fr; }
+  .audioSfxPanel{ max-height: none; }
+  .audioSfxPanel .catalogTogglePanel{ max-height: 260px; }
 }
 
 #overlayMenu .settingsPanel{ display:none; }
@@ -1076,6 +1173,7 @@ input[type="checkbox"]{ transform: translateY(1px); }
 }
 
 #settingsOverlay .card{
+  width:min(1080px, 100%);
   background: linear-gradient(160deg, rgba(10,14,28,.96), rgba(6,8,22,.94));
 }
 

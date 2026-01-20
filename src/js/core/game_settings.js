@@ -75,6 +75,8 @@ export function createState(){
     digitsLeft:0,
     correctDigit:null,
     squareValue:0,
+    missileBuffer:"",
+    missileBufferTimer:0,
     endReasonDetail:"",
     campaignActive:false,
     campaignIndex:-1,

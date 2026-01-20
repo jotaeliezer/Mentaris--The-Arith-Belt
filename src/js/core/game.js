@@ -73,6 +73,7 @@ var btnClose    = document.getElementById("btnClose");
 var btnGameplay = document.getElementById("btnGameplay");
 var btnPowerups = document.getElementById("btnPowerups");
 var btnSfx = document.getElementById("btnSfx");
+var sfxCatalogPanel = document.getElementById("sfxCatalogPanel");
 var btnFullscreenToggle = document.getElementById("btnFullscreenToggle");
 var btnPause    = document.getElementById("btnPause");
 var btnSettings = document.getElementById("btnSettings");
@@ -99,6 +100,8 @@ var powerupsSecondaryList = document.getElementById("powerupsSecondaryList");
 var powerupsDefenseList = document.getElementById("powerupsDefenseList");
 var powerupsOffenseList = document.getElementById("powerupsOffenseList");
 var sfxList = document.getElementById("sfxList");
+var sfxCategoryButtons = overlayMenu ? overlayMenu.querySelectorAll("[data-sfx-category]") : [];
+var activeSfxCategory = "all";
 var settingsTabButtons = overlayMenu ? overlayMenu.querySelectorAll("[data-settings-tab]") : [];
 var settingsPanels = overlayMenu ? overlayMenu.querySelectorAll("[data-settings-panel]") : [];
 var toggleWideGameplay = document.getElementById("toggleWideGameplay");
@@ -122,6 +125,20 @@ function setSettingsTab(tabId){
     var show = panel.getAttribute("data-settings-panel") === tabId;
     panel.classList.toggle("active", show);
   }
+  if(tabId === "catalogs" || tabId === "audio"){
+    renderSettingsCatalogs();
+  }
+}
+
+function setSfxCategory(category){
+  activeSfxCategory = category || "all";
+  if(sfxCategoryButtons && sfxCategoryButtons.length){
+    sfxCategoryButtons.forEach(function(btn){
+      var isActive = (btn.getAttribute("data-sfx-category") || "all") === activeSfxCategory;
+      btn.classList.toggle("active", isActive);
+    });
+  }
+  renderSettingsCatalogs();
 }
 
 function setWideGameplay(isWide){
@@ -251,11 +268,13 @@ var campaignActive = false;
 var campaignIndex = -1;
 var campaignData = null;
 var campaignId = "";
-var campaignActiveKey = "mathsteroid.campaign.active";
+var campaignProfileKey = "mentaris.campaign.profile.active";
+var campaignActiveKeyBase = "mathsteroid.campaign.active.";
 var campaignStateKeyBase = "mathsteroid.campaign.state.";
 var campaignDataKeyBase = "mathsteroid.campaign.data.";
 var campaignDefaultId = "sector_run";
 var campaignMaxFailures = 3;
+var campaignProfileId = "";
 
 var tourGuide = null;
 var tutorialActive = false;
@@ -412,7 +431,7 @@ Object.keys(powerupIcons).forEach(function(key){
 });
 
 var shotIcons = {
-  dual: { img: new Image(), ready: false, src: "images/shot_dualblasters.png" },
+  missile: { img: new Image(), ready: false, src: "images/shot_missile.png" },
   electric: { img: new Image(), ready: false, src: "images/shot_electric.png" },
   fire: { img: new Image(), ready: false, src: "images/shot_fre.png" },
   ice: { img: new Image(), ready: false, src: "images/shot_ice.png" },
@@ -441,7 +460,7 @@ var powerupCatalogDefense = [
 ];
 
 var powerupCatalogOffense = [
-  { id: "dual", label: "Dual Blaster", icon: shotIcons.dual ? shotIcons.dual.src : null, desc: "Two shots per tap for about 12 seconds." },
+  { id: "missile", label: "Missile Shot", icon: shotIcons.missile ? shotIcons.missile.src : null, desc: "Type the correct answer to launch a seeking missile." },
   { id: "laser", label: "Laser Burst", icon: shotIcons.laser ? shotIcons.laser.src : null, desc: "High-speed laser shots for about 12 seconds." },
   { id: "fire", label: "Fireball", icon: shotIcons.fire ? shotIcons.fire.src : null, desc: "Fireball shots for about 12 seconds." },
   { id: "ice", label: "Ice Shards", icon: shotIcons.ice ? shotIcons.ice.src : null, desc: "Ice shots for about 12 seconds." },
@@ -452,40 +471,46 @@ var powerupCatalogOffense = [
 ];
 
 var sfxCatalog = [
-  { id: "menu_beep", label: "Menu Beep", desc: "UI blip.", when: "Menu and overlay buttons.", badge: "SFX", src: "sfx/menu_beep.mp3" },
-  { id: "session_start", label: "Session Start", desc: "Countdown cue.", when: "Countdown before a run.", badge: "SFX", src: "sfx/session_start.mp3" },
-  { id: "mission_cleared1", label: "Mission Cleared", desc: "Clear fanfare.", when: "After wave clear, before the end panel.", badge: "SFX", src: "sfx/mission_cleared1.mp3" },
-  { id: "game_over3", label: "Game Over", desc: "Fail sting.", when: "After ship destruction.", badge: "SFX", src: "sfx/game_over3.mp3" },
-  { id: "explosion", label: "Explosion", desc: "Ship explosion.", when: "Player destroyed.", badge: "SFX", src: "sfx/explosion.mp3" },
-  { id: "ship_drone", label: "Ship Drone", desc: "Engine drone loop.", when: "Active during runs.", badge: "SFX", src: "sfx/ship_drone.mp3" },
-  { id: "ship_idle", label: "Ship Idle", desc: "Idle thruster loop.", when: "Idle or moving left, right, down.", badge: "SFX", src: "sfx/ship_idle.mp3" },
-  { id: "ship_advance", label: "Ship Advance", desc: "Advance thruster loop.", when: "Moving upward.", badge: "SFX", src: "sfx/ship_advance.mp3" },
-  { id: "dash", label: "Dash", desc: "Dash whoosh.", when: "Dashing and intro kick.", badge: "SFX", src: "sfx/dash.mp3" },
-  { id: "gun1", label: "Gun 1", desc: "Primary blaster.", when: "Standard, dual, and fire shots.", badge: "SFX", src: "sfx/gun1.mp3" },
-  { id: "gun2", label: "Gun 2", desc: "Heavy blaster.", when: "Laser and rail shots.", badge: "SFX", src: "sfx/gun2.mp3" },
-  { id: "ice_shot", label: "Ice Shot", desc: "Ice blaster.", when: "Ice shots.", badge: "SFX", src: "sfx/ice_shot.mp3" },
-  { id: "bolt_shot", label: "Bolt Shot", desc: "Electric blaster.", when: "Electric shots.", badge: "SFX", src: "sfx/bolt_shot.mp3" },
-  { id: "impact", label: "Impact", desc: "Collision hit.", when: "Ship hits and alien impacts.", badge: "SFX", src: "sfx/impact.mp3" },
-  { id: "impact_thud", label: "Impact Thud", desc: "Asteroid thud.", when: "Asteroid impacts and EMP cascade hits.", badge: "SFX", src: "sfx/impact_thud.mp3" },
-  { id: "correct", label: "Correct", desc: "Correct hit cue.", when: "Correct answer asteroid destroyed.", badge: "SFX", src: "sfx/correct.mp3" },
-  { id: "wrong_asteroid", label: "Wrong Asteroid", desc: "Wrong hit cue.", when: "Wrong answer asteroid hit.", badge: "SFX", src: "sfx/wrong_asteroid.mp3" },
-  { id: "missed_answer", label: "Missed Answer", desc: "Missed answer cue.", when: "Correct asteroid escapes.", badge: "SFX", src: "sfx/missed_answer.mp3" },
-  { id: "level_up2", label: "Level Up", desc: "Level up cue.", when: "Level increases.", badge: "SFX", src: "sfx/level_up2.mp3" },
-  { id: "alien_kill", label: "Alien Kill", desc: "Alien destroyed.", when: "Alien shot down.", badge: "SFX", src: "sfx/alien_kill.mp3" },
-  { id: "alien_shooting", label: "Alien Shooting", desc: "Alien firing.", when: "Alien fires.", badge: "SFX", src: "sfx/alien_shooting.mp3" },
-  { id: "ship_damaged", label: "Ship Damaged", desc: "Damage alert.", when: "Player takes damage.", badge: "SFX", src: "sfx/ship_damaged.mp3" },
-  { id: "warning", label: "Warning", desc: "Warning alarm.", when: "Correct answer near escape (not in tutorial).", badge: "SFX", src: "sfx/warning.mp3" },
-  { id: "shot_powerup", label: "Shot Pickup", desc: "Offense pickup.", when: "Collect shot type upgrades.", badge: "SFX", src: "sfx/shot_powerup.mp3" },
-  { id: "hull_repair_pickup", label: "Hull Repair Pickup", desc: "Repair pickup.", when: "Collect hull repair.", badge: "SFX", src: "sfx/hull_repair_pickup.mp3" },
-  { id: "armor_pickup", label: "Armor Pickup", desc: "Armor pickup.", when: "Collect armor powerup.", badge: "SFX", src: "sfx/armor_pickup.mp3" },
-  { id: "shield_pickup", label: "Shield Pickup", desc: "Shield pickup.", when: "Collect shield powerup.", badge: "SFX", src: "sfx/sheld_pickup.mp3" },
-  { id: "time_activate", label: "Time Activate", desc: "Time dilation cue.", when: "Activate time dilation.", badge: "SFX", src: "sfx/time_activate.mp3" },
-  { id: "powerup_collected", label: "Powerup Collected", desc: "Pickup chime.", when: "Collect magnet, EMP, or target lock.", badge: "SFX", src: "sfx/powerup_collected.mp3" },
-  { id: "crash", label: "Crash", desc: "Hard collision.", when: "Ship collision impact.", badge: "SFX", src: "sfx/crash.mp3" }
+  { id: "menu_beep", label: "Menu Beep", desc: "UI blip.", when: "Menu and overlay buttons.", badge: "SFX", src: "sfx/menu_beep.mp3", category: "menu" },
+  { id: "session_start", label: "Session Start", desc: "Countdown cue.", when: "Countdown before a run.", badge: "SFX", src: "sfx/session_start.mp3", category: "progress" },
+  { id: "mission_cleared1", label: "Mission Cleared", desc: "Clear fanfare.", when: "After wave clear, before the end panel.", badge: "SFX", src: "sfx/mission_cleared1.mp3", category: "progress" },
+  { id: "game_over3", label: "Game Over", desc: "Fail sting.", when: "After ship destruction.", badge: "SFX", src: "sfx/game_over3.mp3", category: "progress" },
+  { id: "explosion", label: "Explosion", desc: "Ship explosion.", when: "Player destroyed.", badge: "SFX", src: "sfx/explosion.mp3", category: "ship" },
+  { id: "ship_drone", label: "Ship Drone", desc: "Engine drone loop.", when: "Active during runs.", badge: "SFX", src: "sfx/ship_drone.mp3", category: "ship" },
+  { id: "ship_idle", label: "Ship Idle", desc: "Idle thruster loop.", when: "Idle or moving left, right, down.", badge: "SFX", src: "sfx/ship_idle.mp3", category: "ship" },
+  { id: "ship_advance", label: "Ship Advance", desc: "Advance thruster loop.", when: "Moving upward.", badge: "SFX", src: "sfx/ship_advance.mp3", category: "ship" },
+  { id: "dash", label: "Dash", desc: "Dash whoosh.", when: "Dashing and intro kick.", badge: "SFX", src: "sfx/dash.mp3", category: "ship" },
+  { id: "gun1", label: "Gun 1", desc: "Primary blaster.", when: "Standard, missile, and fire shots.", badge: "SFX", src: "sfx/gun1.mp3", category: "shots" },
+  { id: "gun2", label: "Gun 2", desc: "Heavy blaster.", when: "Laser and rail shots.", badge: "SFX", src: "sfx/gun2.mp3", category: "shots" },
+  { id: "ice_shot", label: "Ice Shot", desc: "Ice blaster.", when: "Ice shots.", badge: "SFX", src: "sfx/ice_shot.mp3", category: "shots" },
+  { id: "bolt_shot", label: "Bolt Shot", desc: "Electric blaster.", when: "Electric shots.", badge: "SFX", src: "sfx/bolt_shot.mp3", category: "shots" },
+  { id: "shot_missile", label: "Missile Shot", desc: "Missile launch.", when: "Typing the correct answer with missile shot.", badge: "SFX", src: "sfx/shot_missile.mp3", category: "shots" },
+  { id: "shot_orb", label: "Plasma Orb", desc: "Plasma orb shot.", when: "Plasma shots.", badge: "SFX", src: "sfx/shot_orb.mp3", category: "shots" },
+  { id: "impact", label: "Impact", desc: "Collision hit.", when: "Ship hits and alien impacts.", badge: "SFX", src: "sfx/impact.mp3", category: "gameplay" },
+  { id: "impact_thud", label: "Impact Thud", desc: "Asteroid thud.", when: "Asteroid impacts and EMP cascade hits.", badge: "SFX", src: "sfx/impact_thud.mp3", category: "gameplay" },
+  { id: "correct", label: "Correct", desc: "Correct hit cue.", when: "Correct answer asteroid destroyed.", badge: "SFX", src: "sfx/correct.mp3", category: "gameplay" },
+  { id: "wrong_asteroid", label: "Wrong Asteroid", desc: "Wrong hit cue.", when: "Wrong answer asteroid hit.", badge: "SFX", src: "sfx/wrong_asteroid.mp3", category: "gameplay" },
+  { id: "missed_answer", label: "Missed Answer", desc: "Missed answer cue.", when: "Correct asteroid escapes.", badge: "SFX", src: "sfx/missed_answer.mp3", category: "gameplay" },
+  { id: "level_up2", label: "Level Up", desc: "Level up cue.", when: "Level increases.", badge: "SFX", src: "sfx/level_up2.mp3", category: "progress" },
+  { id: "alien_kill", label: "Alien Kill", desc: "Alien destroyed.", when: "Alien shot down.", badge: "SFX", src: "sfx/alien_kill.mp3", category: "alien" },
+  { id: "alien_shooting", label: "Alien Shooting", desc: "Alien firing.", when: "Alien fires.", badge: "SFX", src: "sfx/alien_shooting.mp3", category: "alien" },
+  { id: "ship_damaged", label: "Ship Damaged", desc: "Damage alert.", when: "Player takes damage.", badge: "SFX", src: "sfx/ship_damaged.mp3", category: "ship" },
+  { id: "warning", label: "Warning", desc: "Warning alarm.", when: "Correct answer near escape (not in tutorial).", badge: "SFX", src: "sfx/warning.mp3", category: "alerts" },
+  { id: "shot_powerup", label: "Shot Pickup", desc: "Offense pickup.", when: "Collect shot type upgrades.", badge: "SFX", src: "sfx/shot_powerup.mp3", category: "powerups" },
+  { id: "hull_repair_pickup", label: "Hull Repair Pickup", desc: "Repair pickup.", when: "Collect hull repair.", badge: "SFX", src: "sfx/hull_repair_pickup.mp3", category: "powerups" },
+  { id: "armor_pickup", label: "Armor Pickup", desc: "Armor pickup.", when: "Collect armor powerup.", badge: "SFX", src: "sfx/armor_pickup.mp3", category: "powerups" },
+  { id: "shield_pickup", label: "Shield Pickup", desc: "Shield pickup.", when: "Collect shield powerup.", badge: "SFX", src: "sfx/sheld_pickup.mp3", category: "powerups" },
+  { id: "time_activate", label: "Time Activate", desc: "Time dilation cue.", when: "Activate time dilation.", badge: "SFX", src: "sfx/time_activate.mp3", category: "powerups" },
+  { id: "powerup_collected", label: "Powerup Collected", desc: "Pickup chime.", when: "Collect magnet, EMP, or target lock.", badge: "SFX", src: "sfx/powerup_collected.mp3", category: "powerups" },
+  { id: "crash", label: "Crash", desc: "Hard collision.", when: "Ship collision impact.", badge: "SFX", src: "sfx/crash.mp3", category: "ship" },
+  { id: "soundtrack1", label: "Soundtrack 1", desc: "Ambient drive.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtrack1.mp3", category: "soundtracks" },
+  { id: "soundtrack2_toohottosleep", label: "Soundtrack 2", desc: "Too Hot To Sleep.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtrack2_toohottosleep.mp3", category: "soundtracks" },
+  { id: "soundtrack3", label: "Soundtrack 3", desc: "Synthwave drift.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtrack3.mp3", category: "soundtracks" }
 ];
 
 var previewPlayers = {};
 var activePreview = null;
+var previewVolumeKey = "mentaris.preview.sfx.";
 
 function formatDuration(sec){
   if(!isFinite(sec) || sec <= 0) return "--:--";
@@ -493,6 +518,32 @@ function formatDuration(sec){
   var m = Math.floor(total / 60);
   var s = total % 60;
   return m + ":" + (s < 10 ? "0" : "") + s;
+}
+
+function getPreviewBaseVolume(){
+  var master = (state && typeof state.volume === "number") ? state.volume : 1;
+  var sfx = (state && typeof state.sfxVolume === "number") ? state.sfxVolume : 1;
+  if(!isFinite(master)) master = 1;
+  if(!isFinite(sfx)) sfx = 1;
+  return Math.max(0, Math.min(1, master * sfx));
+}
+
+function getPreviewItemVolume(id){
+  if(!id) return 1;
+  try{
+    var raw = localStorage.getItem(previewVolumeKey + id);
+    if(raw != null){
+      var val = parseFloat(raw);
+      if(isFinite(val)) return clamp(val, 0, 1);
+    }
+  }catch(e){}
+  return 1;
+}
+
+function setPreviewItemVolume(id, value){
+  if(!id) return;
+  var safe = clamp(value, 0, 1);
+  try{ localStorage.setItem(previewVolumeKey + id, String(safe)); }catch(e){}
 }
 
 function stopPreviewAudio(audio){
@@ -512,11 +563,22 @@ function stopAllPreviewAudio(){
   activePreview = null;
 }
 
-function renderCatalogList(listEl, items){
+function renderCatalogList(listEl, items, filter){
   if(!listEl) return;
   listEl.innerHTML = "";
-  for(var i=0; i<items.length; i++){
-    var item = items[i];
+  var list = items || [];
+  if(filter){
+    list = list.filter(filter);
+  }
+  if(!list.length){
+    var empty = document.createElement("li");
+    empty.className = "catalogEmpty";
+    empty.textContent = "No audio in this category yet.";
+    listEl.appendChild(empty);
+    return;
+  }
+  for(var i=0; i<list.length; i++){
+    var item = list[i];
     var li = document.createElement("li");
     li.className = "catalogItem";
 
@@ -567,20 +629,33 @@ function renderCatalogList(listEl, items){
       controls.className = "catalogControls";
       var playBtn = document.createElement("button");
       playBtn.type = "button";
-      playBtn.className = "btn btnTiny";
-      playBtn.textContent = "PLAY";
+      playBtn.className = "btn catalogControlBtn";
+      playBtn.innerHTML = "&#9654;";
+      playBtn.setAttribute("aria-label", "Play");
+      playBtn.title = "Play";
       var stopBtn = document.createElement("button");
       stopBtn.type = "button";
-      stopBtn.className = "btn btnTiny";
-      stopBtn.textContent = "STOP";
+      stopBtn.className = "btn catalogControlBtn";
+      stopBtn.innerHTML = "&#9632;";
+      stopBtn.setAttribute("aria-label", "Stop");
+      stopBtn.title = "Stop";
+      var volume = document.createElement("input");
+      volume.type = "range";
+      volume.className = "catalogVolume";
+      volume.min = "0";
+      volume.max = "100";
+      volume.step = "1";
+      var initialVolume = getPreviewItemVolume(item.id);
+      volume.value = String(Math.round(initialVolume * 100));
       var duration = document.createElement("div");
       duration.className = "catalogDuration";
       duration.textContent = "--:--";
 
       var audio = new Audio(item.src);
       audio.preload = "metadata";
+      audio.volume = getPreviewBaseVolume() * initialVolume;
       previewPlayers[item.id] = audio;
-      (function(audioRef, durationEl, playBtnEl, stopBtnEl){
+      (function(audioRef, durationEl, playBtnEl, stopBtnEl, volumeEl, itemId){
         audioRef.addEventListener("loadedmetadata", function(){
           durationEl.textContent = formatDuration(audioRef.duration);
         });
@@ -593,6 +668,8 @@ function renderCatalogList(listEl, items){
           }
           activePreview = audioRef;
           try{
+            var itemVol = getPreviewItemVolume(itemId);
+            audioRef.volume = getPreviewBaseVolume() * itemVol;
             audioRef.currentTime = 0;
             audioRef.play().catch(function(){});
           }catch(e){}
@@ -601,11 +678,18 @@ function renderCatalogList(listEl, items){
           stopPreviewAudio(audioRef);
           if(activePreview === audioRef) activePreview = null;
         });
-      })(audio, duration, playBtn, stopBtn);
+        volumeEl.addEventListener("input", function(){
+          var val = parseFloat(volumeEl.value);
+          var scaled = isFinite(val) ? (val / 100) : 1;
+          setPreviewItemVolume(itemId, scaled);
+          audioRef.volume = getPreviewBaseVolume() * getPreviewItemVolume(itemId);
+        });
+      })(audio, duration, playBtn, stopBtn, volume, item.id);
       try{ audio.load(); }catch(e){}
 
       controls.appendChild(playBtn);
       controls.appendChild(stopBtn);
+      controls.appendChild(volume);
       controls.appendChild(duration);
       text.appendChild(controls);
     }
@@ -622,7 +706,10 @@ function renderSettingsCatalogs(){
   renderCatalogList(powerupsSecondaryList, powerupCatalogSecondary);
   renderCatalogList(powerupsDefenseList, powerupCatalogDefense);
   renderCatalogList(powerupsOffenseList, powerupCatalogOffense);
-  renderCatalogList(sfxList, sfxCatalog);
+  renderCatalogList(sfxList, sfxCatalog, function(item){
+    if(!activeSfxCategory || activeSfxCategory === "all") return true;
+    return item.category === activeSfxCategory;
+  });
 }
 
 var powerupManager = new PowerupManager(state, player);
@@ -709,6 +796,8 @@ window.addEventListener("keydown", function(e){
     unlockSfx(state);
     audioPrimed = true;
   }
+  var isDigitKey = (k.length === 1 && k >= "0" && k <= "9");
+  if(isDigitKey && handleMissileInput(k)) return;
   if(k === "p") togglePause();
   if(k === "0") toggleScreenshot();
   if(k === "r") hardRestart();
@@ -1061,8 +1150,31 @@ function showToast(msg, tone){
   }, typeMs);
 }
 
+function getActiveProfileId(){
+  if(campaignProfileId) return campaignProfileId;
+  var stored = null;
+  try{ stored = localStorage.getItem(campaignProfileKey); }catch(e){ stored = null; }
+  campaignProfileId = stored || "profile1";
+  return campaignProfileId;
+}
+
+function getCampaignActiveKey(){
+  return campaignActiveKeyBase + getActiveProfileId();
+}
+
+function canMigrateLegacyCampaign(){
+  var pid = getActiveProfileId();
+  if(pid !== "profile1") return false;
+  try{ return localStorage.getItem("mentaris.campaign.migrated." + pid) !== "1"; }catch(e){ return true; }
+}
+
+function markLegacyCampaignMigrated(){
+  var pid = getActiveProfileId();
+  try{ localStorage.setItem("mentaris.campaign.migrated." + pid, "1"); }catch(e){}
+}
+
 function getCampaignStateKey(id){
-  return campaignStateKeyBase + id;
+  return campaignStateKeyBase + getActiveProfileId() + "." + id;
 }
 
 function getCampaignDataKey(id){
@@ -1070,26 +1182,41 @@ function getCampaignDataKey(id){
 }
 
 function getStoredCampaignId(){
-  try{ return localStorage.getItem(campaignActiveKey) || ""; }catch(e){ return ""; }
+  try{ return localStorage.getItem(getCampaignActiveKey()) || ""; }catch(e){ return ""; }
 }
 
 function setStoredCampaignId(id){
-  try{ localStorage.setItem(campaignActiveKey, id); }catch(e){}
+  try{ localStorage.setItem(getCampaignActiveKey(), id); }catch(e){}
 }
 
 function loadCampaignState(){
-  var key = getCampaignStateKey(campaignId || campaignDefaultId);
+  var targetId = campaignId || campaignDefaultId;
+  var key = getCampaignStateKey(targetId);
   try{
     var raw = localStorage.getItem(key);
     if(raw) return JSON.parse(raw);
   }catch(e){}
-  if((campaignId || campaignDefaultId) === campaignDefaultId){
+  var migrated = false;
+  var legacyState = null;
+  if(canMigrateLegacyCampaign()){
     try{
-      var legacy = localStorage.getItem("mathsteroid.campaign.state");
-      if(legacy) return JSON.parse(legacy);
+      var legacyKey = campaignStateKeyBase + targetId;
+      var legacyRaw = localStorage.getItem(legacyKey);
+      if(legacyRaw) legacyState = JSON.parse(legacyRaw);
     }catch(e){}
+    if(!legacyState && targetId === campaignDefaultId){
+      try{
+        var legacy = localStorage.getItem("mathsteroid.campaign.state");
+        if(legacy) legacyState = JSON.parse(legacy);
+      }catch(e){}
+    }
+    if(legacyState){
+      try{ localStorage.setItem(key, JSON.stringify(legacyState)); }catch(e){}
+      migrated = true;
+    }
   }
-  return null;
+  if(migrated) markLegacyCampaignMigrated();
+  return legacyState;
 }
 
 function saveCampaignState(state){
@@ -1180,6 +1307,92 @@ function isDigitMode(){
     || state.questionMode === "digits2"
     || state.questionMode === "add_digits2"
     || state.questionMode === "add_digits3";
+}
+
+function isMissileAllowed(){
+  return !isSquareMode() && !isRationalMode();
+}
+
+function getMissileAnswerString(){
+  var answer = null;
+  if(isDigitMode()){
+    if(state.correctDigit == null) return null;
+    answer = String(state.correctDigit);
+  }else{
+    answer = String(state.answer || "");
+  }
+  if(!/^\d+$/.test(answer)) return null;
+  return answer;
+}
+
+function findCorrectAsteroid(){
+  if(state.correctAsteroidId){
+    for(var i=0; i<asteroids.length; i++){
+      if(asteroids[i].id === state.correctAsteroidId) return asteroids[i];
+    }
+  }
+  for(var j=0; j<asteroids.length; j++){
+    var a = asteroids[j];
+    if(a.isCorrect && a.waveId === state.waveId) return a;
+  }
+  return null;
+}
+
+function canMissileLock(target){
+  if(!target) return false;
+  var dx = target.x - player.x;
+  var dy = target.y - player.y;
+  var forward = (dy < -20) && (Math.abs(dx) < player.w * 0.6);
+  return !forward;
+}
+
+function launchMissile(target){
+  if(!target) return false;
+  var dx = target.x - player.x;
+  var dy = target.y - player.y;
+  var dist = Math.max(1, Math.hypot(dx, dy));
+  var speed = 720;
+  bullets.push({
+    x: player.x,
+    y: player.y - 18,
+    vx: (dx / dist) * speed,
+    vy: (dy / dist) * speed,
+    r: 5,
+    kind: "missile",
+    targetId: target.id,
+    speed: speed
+  });
+  state.shots += 1;
+  player.recoil = 1;
+  player.flash = 1;
+  playSfx(state, "shot_missile");
+  if(tourGuide) tourGuide.notify("fire");
+  return true;
+}
+
+function handleMissileInput(digit){
+  if(!state.running || state.paused || state.over) return false;
+  if((player.blasterMode || "single") !== "missile") return false;
+  var answer = getMissileAnswerString();
+  if(!answer) return false;
+
+  var buffer = (state.missileBufferTimer > 0) ? state.missileBuffer : "";
+  buffer += digit;
+  if(answer.indexOf(buffer) !== 0){
+    buffer = (answer.indexOf(digit) === 0) ? digit : "";
+  }
+  state.missileBuffer = buffer;
+  state.missileBufferTimer = 1.2;
+
+  if(buffer && buffer === answer){
+    var target = findCorrectAsteroid();
+    if(target && canMissileLock(target)){
+      launchMissile(target);
+    }
+    state.missileBuffer = "";
+    state.missileBufferTimer = 0;
+  }
+  return true;
 }
 
 function isClassicMode(){
@@ -1802,7 +2015,8 @@ function choosePowerupDrop(){
     return { type: sType, group: "secondary" };
   }
   if(roll < 0.45){
-    var offense = ["dual", "laser", "fire", "ice", "electric", "pierce", "plasma", "rail"];
+    var offense = ["laser", "fire", "ice", "electric", "pierce", "plasma", "rail"];
+    if(isMissileAllowed()) offense.unshift("missile");
     var oType = offense[Math.floor(Math.random() * offense.length)];
     return { type: oType, group: "offense" };
   }
@@ -1835,10 +2049,13 @@ function maybeSpawnAnswerPowerup(hitAst){
 
 function applyPowerup(p){
   if(p.group === "offense"){
+    if(p.type === "missile" && !isMissileAllowed()){
+      p.type = "laser";
+    }
     player.blasterMode = p.type;
     player.blasterHitsRemaining = 2;
     player.blasterTimer = 0;
-    if(p.type === "dual") showToast("OFFENSE -> DUAL BLASTER");
+    if(p.type === "missile") showToast("OFFENSE -> MISSILE SHOT");
     else if(p.type === "laser") showToast("OFFENSE -> LASER BURST");
     else if(p.type === "fire") showToast("OFFENSE -> FIREBALL");
     else if(p.type === "ice") showToast("OFFENSE -> ICE SHARDS");
@@ -2129,6 +2346,8 @@ function resetSession(){
   state.empCascade = null;
   state.empCascadeTimer = 0;
   state.empCascadeInterval = 0;
+  state.missileBuffer = "";
+  state.missileBufferTimer = 0;
 
   player.cooldown = 0;
   player.vx = 0;
@@ -2405,6 +2624,7 @@ function openSettings(){
   loadWideGameplay();
   loadMousepadAutoStart();
   renderSettingsCatalogs();
+  if(sfxCatalogPanel) sfxCatalogPanel.classList.add("open");
 }
 
 function closeSettings(){
@@ -2413,6 +2633,7 @@ function closeSettings(){
   if(overlayPowerups) overlayPowerups.classList.remove("show");
   if(overlaySfx) overlaySfx.classList.remove("show");
   if(overlayControls) overlayControls.classList.remove("show");
+  if(sfxCatalogPanel) sfxCatalogPanel.classList.remove("open");
   stopAllPreviewAudio();
   if(state.running && !state.over) state.paused = false;
   syncTimerPause();
@@ -2463,13 +2684,17 @@ function fire(){
   if(!state.running || state.paused || state.over) return;
   if(player.cooldown > 0) return;
 
-  state.shots++;
   player.cooldown = 0.16;
   var mode = player.blasterMode || "single";
-  if(mode === "dual"){
-    bullets.push({ x: player.x - 16, y: player.y - 22, vy: -860, r: 3.2, vx: 0, kind: "dual" });
-    bullets.push({ x: player.x + 16, y: player.y - 22, vy: -860, r: 3.2, vx: 0, kind: "dual" });
-  }else if(mode === "laser"){
+  if(mode === "missile"){
+    var missileTarget = findCorrectAsteroid();
+    if(missileTarget && canMissileLock(missileTarget)){
+      launchMissile(missileTarget);
+    }
+    return;
+  }
+  state.shots++;
+  if(mode === "laser"){
     bullets.push({ x: player.x, y: player.y - 24, vy: -980, r: 5.2, vx: 0, kind: "laser", len: 22, w: 3.6 });
   }else if(mode === "fire"){
     bullets.push({ x: player.x, y: player.y - 20, vy: -720, r: 6.2, vx: 0, kind: "fire" });
@@ -2492,6 +2717,7 @@ function fire(){
   var gunSfx = (mode === "laser" || mode === "rail") ? "gun2" : "gun1";
   if(mode === "ice") gunSfx = "ice_shot";
   if(mode === "electric") gunSfx = "bolt_shot";
+  if(mode === "plasma") gunSfx = "shot_orb";
   playSfx(state, gunSfx);
   if(tourGuide) tourGuide.notify("fire");
 }
@@ -2732,6 +2958,18 @@ function loseLife(reason){
     state.endReasonDetail = reason ? ("OUT OF LIVES (" + reason + ")") : "OUT OF LIVES";
     endGame("destroyed");
   }
+}
+
+function consumeShipLife(detail){
+  if(state.over) return true;
+  state.lives = Math.max(0, state.lives - 1);
+  syncHud();
+  if(state.lives <= 0){
+    state.endReasonDetail = detail || "OUT OF LIVES";
+    endGame("destroyed");
+    return true;
+  }
+  return false;
 }
 
 function recordFactMiss(a,b){
@@ -3771,6 +4009,12 @@ function update(dt){
   if(player.shockwaveCooldown > 0){
     player.shockwaveCooldown = Math.max(0, player.shockwaveCooldown - dtReal);
   }
+  if(state.missileBufferTimer > 0){
+    state.missileBufferTimer = Math.max(0, state.missileBufferTimer - dtReal);
+    if(state.missileBufferTimer === 0){
+      state.missileBuffer = "";
+    }
+  }
 
   state.spawnTimer -= dtSlow;
   if(!tutorialActive || tutorialSpawnUnlocked){
@@ -3789,7 +4033,27 @@ function update(dt){
         b.noHit = false;
       }
     }
-    if(b.kind === "pierce" && b.lookUp){
+    if(b.kind === "missile"){
+      var target = null;
+      if(b.targetId){
+        for(var mi=0; mi<asteroids.length; mi++){
+          if(asteroids[mi].id === b.targetId){
+            target = asteroids[mi];
+            break;
+          }
+        }
+      }
+      if(target){
+        var mdx = target.x - b.x;
+        var mdy = target.y - b.y;
+        var mdist = Math.max(1, Math.hypot(mdx, mdy));
+        var mspd = b.speed || 700;
+        var vxT = (mdx / mdist) * mspd;
+        var vyT = (mdy / mdist) * mspd;
+        b.vx = (b.vx || 0) * 0.75 + vxT * 0.25;
+        b.vy = (b.vy || 0) * 0.75 + vyT * 0.25;
+      }
+    }else if(b.kind === "pierce" && b.lookUp){
       steerLookUpShot(b);
     }else if(player.lockTimer > 0 && state.correctAsteroidId){
       var target = null;
@@ -3810,7 +4074,13 @@ function update(dt){
     }
     b.y += b.vy * dtReal;
     if(b.vx) b.x += b.vx * dtReal;
-    if(b.y < -20) bullets.splice(bi,1);
+    if(b.kind === "missile"){
+      if(b.y < -40 || b.y > view.h + 40 || b.x < -40 || b.x > view.w + 40){
+        bullets.splice(bi,1);
+      }
+    }else if(b.y < -20){
+      bullets.splice(bi,1);
+    }
   }
 
   updateAlienBullets(dtSlow, view);
@@ -4163,7 +4433,7 @@ function update(dt){
           player.invuln = 0.55;
           player.hull = clamp(player.hull - dmgHit, 0, 1);
           state.streak = 0;
-          syncHud();
+          if(consumeShipLife("OUT OF LIVES (ALIEN COLLISION)")) return;
           if(player.hull <= 0){
             player.hull = 0;
             syncHud();
@@ -4218,7 +4488,7 @@ function update(dt){
           player.invuln = 0.45;
           player.hull = clamp(player.hull - dmgHit, 0, 1);
           state.streak = 0;
-          syncHud();
+          if(consumeShipLife("OUT OF LIVES (ALIEN SHOT)")) return;
           if(player.hull <= 0){
             player.hull = 0;
             syncHud();
@@ -4525,7 +4795,7 @@ function draw(){
     }
     ctx.restore();
 
-    var barX = 120;
+    var barX = 96;
     var barY = view.hudH + 10;
     var barW = Math.min(260, w * 0.35);
     var barH = 10;
@@ -4554,7 +4824,7 @@ function draw(){
     }
     if(targetCount > 0){
       hudBars.push({
-        label: "ASTEROIDS SHOT",
+        label: "PROGRESS",
         ratio: clamp(state.questionsCompleted / targetCount, 0, 1),
         fill: "rgba(210,210,210,.92)",
         glow: "rgba(255,255,255,.25)"
@@ -4586,6 +4856,37 @@ function draw(){
         ctx.fillText(b.label, barX - 8, bY + barH / 2);
         ctx.restore();
       }
+    }
+
+    var maxLives = Math.max(0, state.livesStart || 0);
+    if(maxLives > 0){
+      var livesLeft = Math.max(0, Math.min(state.lives || 0, maxLives));
+      var lifeGap = 4;
+      var lifeH = 6;
+      var availableW = barW - lifeGap * (maxLives - 1);
+      var lifeW = Math.max(6, Math.floor(availableW / maxLives));
+      if(lifeW > 18) lifeW = 18;
+      var totalW = lifeW * maxLives + lifeGap * (maxLives - 1);
+      if(totalW > barW){
+        lifeW = Math.max(5, Math.floor((barW - lifeGap * (maxLives - 1)) / maxLives));
+      }
+      var lifeY = barY + hudBars.length * (barH + barGap) + 6;
+      ctx.save();
+      ctx.fillStyle = labelColor;
+      ctx.font = labelStyle;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      ctx.fillText("LIVES", barX - 8, lifeY + lifeH / 2);
+      for(var li=0; li<maxLives; li++){
+        var lx = barX + li * (lifeW + lifeGap);
+        var isActive = li < livesLeft;
+        ctx.fillStyle = isActive ? "rgba(255,80,80,.9)" : "rgba(255,80,80,.2)";
+        ctx.fillRect(lx, lifeY, lifeW, lifeH);
+        ctx.strokeStyle = "rgba(255,120,120,.5)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(lx, lifeY, lifeW, lifeH);
+      }
+      ctx.restore();
     }
 
     var profile = getShipProfile(player.shipType);
@@ -4841,10 +5142,14 @@ function drawHudPickupIcon(entry, cx, cy, size){
       ctx.restore();
       return;
     }
-    if(type === "dual"){
+    if(type === "missile"){
       ctx.beginPath();
-      ctx.rect(-10, -10, 6, 20);
-      ctx.rect(4, -10, 6, 20);
+      ctx.moveTo(0, -14);
+      ctx.lineTo(6, -2);
+      ctx.lineTo(2, 12);
+      ctx.lineTo(-2, 12);
+      ctx.lineTo(-6, -2);
+      ctx.closePath();
       ctx.fill();
       ctx.stroke();
       ctx.restore();
@@ -5030,7 +5335,7 @@ function getPowerupColor(p){
       : p.type === "emp" ? "rgba(175,0,111,.7)"
       : "rgba(193,216,47,.7)";
   }
-  if(p.type === "dual") return "rgba(0,229,255,.7)";
+  if(p.type === "missile") return "rgba(255,221,0,.8)";
   if(p.type === "laser") return "rgba(0,229,255,.7)";
   if(p.type === "fire") return "rgba(255,77,109,.7)";
   if(p.type === "ice") return "rgba(180,220,255,.8)";
@@ -5135,10 +5440,14 @@ function drawPowerupIcon(p, color){
       ctx.stroke();
       return;
     }
-    if(p.type === "dual"){
+    if(p.type === "missile"){
       ctx.beginPath();
-      ctx.rect(-10, -10, 6, 20);
-      ctx.rect(4, -10, 6, 20);
+      ctx.moveTo(0, -14);
+      ctx.lineTo(6, -2);
+      ctx.lineTo(2, 12);
+      ctx.lineTo(-2, 12);
+      ctx.lineTo(-6, -2);
+      ctx.closePath();
       ctx.fill();
       ctx.stroke();
       return;
@@ -5353,6 +5662,25 @@ function drawBullets(){
       ctx.fillStyle = "rgba(255,221,0,.7)";
       ctx.beginPath();
       ctx.arc(b.x, b.y, b.r * 0.7, 0, Math.PI*2);
+      ctx.fill();
+      continue;
+    }
+
+    if(b.kind === "missile"){
+      drawTrail("rgba(255,221,0,.8)", b.r * 7, 4.5, 0.6);
+      ctx.globalAlpha = 0.9;
+      ctx.fillStyle = "rgba(255,221,0,.95)";
+      ctx.beginPath();
+      ctx.moveTo(b.x, b.y - b.r * 2.2);
+      ctx.lineTo(b.x + b.r, b.y + b.r * 1.6);
+      ctx.lineTo(b.x, b.y + b.r);
+      ctx.lineTo(b.x - b.r, b.y + b.r * 1.6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = "rgba(255,255,255,.7)";
+      ctx.beginPath();
+      ctx.arc(b.x, b.y + b.r * 0.6, b.r * 0.45, 0, Math.PI*2);
       ctx.fill();
       continue;
     }
@@ -5683,7 +6011,7 @@ function handleShipAsteroidCollision(a, hitX, hitY, force){
 
       player.hull = clamp(player.hull - dmgHit, 0, 1);
       state.streak = 0;
-      syncHud();
+      if(consumeShipLife("OUT OF LIVES (ASTEROID COLLISION)")) return true;
 
       if(player.hull <= 0){
         player.hull = 0;
@@ -6554,11 +6882,34 @@ if(btnPowerups && overlayPowerups){
     overlayPowerups.classList.add("show");
   });
 }
-if(btnSfx && overlaySfx){
+if(btnSfx){
   btnSfx.addEventListener("click", function(){
     playSfx(state, "menu_beep");
-    overlayMenu.classList.remove("show");
-    overlaySfx.classList.add("show");
+    if(sfxCatalogPanel){
+      var willOpen = !sfxCatalogPanel.classList.contains("open");
+      sfxCatalogPanel.classList.toggle("open", willOpen);
+      if(willOpen){
+        renderSettingsCatalogs();
+        if(sfxList && typeof sfxList.scrollIntoView === "function"){
+          sfxList.scrollIntoView({ block: "start", behavior: "smooth" });
+        }
+      }
+    }else{
+      openSettings();
+      setSettingsTab("audio");
+      if(sfxList && typeof sfxList.scrollIntoView === "function"){
+        sfxList.scrollIntoView({ block: "start", behavior: "smooth" });
+      }
+    }
+  });
+}
+if(sfxCategoryButtons && sfxCategoryButtons.length){
+  sfxCategoryButtons.forEach(function(btn){
+    btn.addEventListener("click", function(){
+      playSfx(state, "menu_beep");
+      var cat = btn.getAttribute("data-sfx-category") || "all";
+      setSfxCategory(cat);
+    });
   });
 }
 if(btnHome){
@@ -6874,6 +7225,11 @@ function applyQueryParams(){
 
   var campaignParam = params.get("campaign");
   if(campaignParam === "1" || campaignParam === "true"){
+    var profileParam = params.get("campaignProfile");
+    if(profileParam){
+      campaignProfileId = profileParam;
+      try{ localStorage.setItem(campaignProfileKey, profileParam); }catch(e){}
+    }
     var campaignIdParam = params.get("campaignId");
     campaignId = campaignIdParam || getStoredCampaignId() || campaignDefaultId;
     setStoredCampaignId(campaignId);

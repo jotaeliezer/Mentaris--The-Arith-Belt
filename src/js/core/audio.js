@@ -26,6 +26,8 @@ function initSfx(){
     hull_repair_pickup: new Audio("sfx/hull_repair_pickup.mp3"),
     shield_pickup: new Audio("sfx/sheld_pickup.mp3"),
     shot_powerup: new Audio("sfx/shot_powerup.mp3"),
+    shot_missile: new Audio("sfx/shot_missile.mp3"),
+    shot_orb: new Audio("sfx/shot_orb.mp3"),
     time_activate: new Audio("sfx/time_activate.mp3"),
     explosion: new Audio("sfx/explosion.mp3"),
     gun1: new Audio("sfx/gun1.mp3"),
@@ -58,6 +60,8 @@ function initSfx(){
   sfxBank.hull_repair_pickup.volume = 0.55;
   sfxBank.shield_pickup.volume = 0.55;
   sfxBank.shot_powerup.volume = 0.55;
+  sfxBank.shot_missile.volume = 0.4;
+  sfxBank.shot_orb.volume = 0.4;
   sfxBank.time_activate.volume = 0.55;
   sfxBank.explosion.volume = 0.6;
   sfxBank.gun1.volume = 0.35;
