@@ -335,6 +335,28 @@
       <!-- POWERUPS / SFX CATALOGS MOVED INTO SETTINGS OVERLAY -->
 <!-- POWERUPS / SFX CATALOGS MOVED INTO SETTINGS OVERLAY -->
 
+      <div id="missileOverlay" class="overlay">
+        <div class="card missileCard">
+          <div class="cardHead">
+            <div>
+              <h2 class="title">Missile Lock</h2>
+              <p class="subtitle" id="missileSubtitle">Enter the asteroid answer within 5 seconds.</p>
+            </div>
+            <button id="btnMissileCancel" class="btn">Cancel</button>
+          </div>
+          <div class="cardBody missileBody">
+            <div class="panel missilePanel">
+              <div class="missilePrompt" id="missilePrompt">Target Answer</div>
+              <input id="missileInput" class="missileInput" type="text" inputmode="numeric" autocomplete="off" placeholder="----" />
+              <div class="missileTimer" id="missileTimer">5.0s</div>
+            </div>
+          </div>
+          <div class="row missileActions">
+            <button id="btnMissileConfirm" class="btn" style="border-color: rgba(0,229,255,.35); background: rgba(0,229,255,.12);">Launch</button>
+          </div>
+        </div>
+      </div>
+
 <!-- GAME OVER -->
       <div id="overlayEnd" class="overlay">
         <div class="card">

@@ -1628,6 +1628,7 @@
   var overlayPowerups = document.getElementById("overlayPowerups");
   var overlaySfx = document.getElementById("overlaySfx");
   var overlayControls = document.getElementById("overlayControls");
+  var missileOverlay = document.getElementById("missileOverlay");
   var btnStart = document.getElementById("btnStart");
   var btnClose = document.getElementById("btnClose");
   var btnGameplay = document.getElementById("btnGameplay");
@@ -1646,6 +1647,12 @@
   var btnCloseSfx = document.getElementById("btnCloseSfx");
   var btnBackSfx = document.getElementById("btnBackSfx");
   var btnCloseControls = document.getElementById("btnCloseControls");
+  var btnMissileCancel = document.getElementById("btnMissileCancel");
+  var btnMissileConfirm = document.getElementById("btnMissileConfirm");
+  var missileInput = document.getElementById("missileInput");
+  var missileTimerEl = document.getElementById("missileTimer");
+  var missilePromptEl = document.getElementById("missilePrompt");
+  var missileSubtitleEl = document.getElementById("missileSubtitle");
   var btnEndRestart = document.getElementById("btnEndRestart");
   var btnEndSettings = document.getElementById("btnEndSettings");
   var btnEndNext = document.getElementById("btnEndNext");
@@ -1653,6 +1660,11 @@
   var toast = document.getElementById("toast");
   var countdownEl = document.getElementById("countdown");
   var warningClip = null;
+  var missileInputActive = false;
+  var missileInputAnswer = "";
+  var missileInputDeadline = 0;
+  var missileInputPrevSlow = null;
+  var missileInputPrevMousepad = false;
   var powerupsSecondaryList = document.getElementById("powerupsSecondaryList");
   var powerupsDefenseList = document.getElementById("powerupsDefenseList");
   var powerupsOffenseList = document.getElementById("powerupsOffenseList");
@@ -1861,6 +1873,11 @@
   var tutorialHideQuestion = false;
   var answerHitsSincePowerup = 0;
   var hiddenPowerupActive = false;
+  var survivorTimer = 0;
+  var survivorRewardReady = false;
+  var cleanWaveStreak = 0;
+  var waveHadWrongHit = false;
+  var precisionWindowSec = 2.5;
   var fx = createFx(ctx, state, player, null);
   var particles = fx.particles;
   var rings = fx.rings;
@@ -2363,9 +2380,6 @@
       unlockSfx(state);
       audioPrimed = true;
     }
-    var isDigitKey = k.length === 1 && k >= "0" && k <= "9";
-    if (isDigitKey && handleMissileInput(k))
-      return;
     if (k === "p")
       togglePause();
     if (k === "0")
@@ -2379,8 +2393,13 @@
     if ((k === "w" || k === "arrowup") && !e.repeat && state.running && !state.paused && !state.over) {
       playSfx(state, "ship_advance");
     }
-    if (k === "x")
-      secondaryFire();
+    if (k === "x") {
+      if ((player.blasterMode || "single") === "missile") {
+        openMissileInput();
+      } else {
+        secondaryFire();
+      }
+    }
     if (k === "c")
       shockwave();
     if (k === "b") {
@@ -2422,6 +2441,10 @@
   var mouseImpulse = { x: 0, y: 0 };
   var mousepadDeadzonePad = 0.18;
   function updateCursorVisibility() {
+    if (missileInputActive) {
+      document.body.style.cursor = "";
+      return;
+    }
     if (mousepadActive)
       return;
     var hide = state.running && !state.paused && !screenshotMode;
@@ -2912,7 +2935,11 @@
       tourGuide.notify("fire");
     return true;
   }
-  function handleMissileInput(digit) {
+  function openMissileInput() {
+    if (missileInputActive)
+      return false;
+    if (!missileOverlay || !missileInput)
+      return false;
     if (!state.running || state.paused || state.over)
       return false;
     if ((player.blasterMode || "single") !== "missile")
@@ -2920,20 +2947,78 @@
     var answer = getMissileAnswerString();
     if (!answer)
       return false;
-    var buffer = state.missileBufferTimer > 0 ? state.missileBuffer : "";
-    buffer += digit;
-    if (answer.indexOf(buffer) !== 0) {
-      buffer = answer.indexOf(digit) === 0 ? digit : "";
+    missileInputActive = true;
+    missileInputAnswer = answer;
+    missileInputDeadline = performance.now() + 5e3;
+    missileInput.value = "";
+    missileInput.maxLength = Math.max(1, answer.length);
+    if (missilePromptEl) {
+      missilePromptEl.textContent = "Target Answer (" + answer.length + " digits)";
     }
-    state.missileBuffer = buffer;
-    state.missileBufferTimer = 1.2;
-    if (buffer && buffer === answer) {
-      var target = findCorrectAsteroid();
-      if (target && canMissileLock(target)) {
-        launchMissile(target);
+    if (missileSubtitleEl) {
+      missileSubtitleEl.textContent = "Enter the asteroid answer within 5 seconds.";
+    }
+    if (missileTimerEl) {
+      missileTimerEl.textContent = "5.0s";
+    }
+    missileInputPrevSlow = {
+      remaining: state.slowMoRemaining || 0,
+      scale: state.slowMoScale || 0.42
+    };
+    state.slowMoRemaining = Math.max(state.slowMoRemaining || 0, 5);
+    state.slowMoScale = 0.12;
+    missileInputPrevMousepad = mousepadActive;
+    if (mousepadActive)
+      setMousepadActive(false);
+    updateCursorVisibility();
+    missileOverlay.classList.add("show");
+    setTimeout(function() {
+      try {
+        missileInput.focus();
+        missileInput.select();
+      } catch (e) {
       }
-      state.missileBuffer = "";
-      state.missileBufferTimer = 0;
+    }, 50);
+    return true;
+  }
+  function closeMissileInput(message) {
+    if (!missileInputActive)
+      return;
+    missileInputActive = false;
+    missileInputAnswer = "";
+    missileInputDeadline = 0;
+    if (missileOverlay)
+      missileOverlay.classList.remove("show");
+    if (missileInputPrevSlow) {
+      state.slowMoRemaining = missileInputPrevSlow.remaining;
+      state.slowMoScale = missileInputPrevSlow.scale || 0.42;
+    } else {
+      state.slowMoRemaining = 0;
+      state.slowMoScale = 0.42;
+    }
+    missileInputPrevSlow = null;
+    if (missileInputPrevMousepad)
+      setMousepadActive(true);
+    updateCursorVisibility();
+    if (message)
+      showToast(message);
+  }
+  function attemptMissileLaunch() {
+    if (!missileInputActive)
+      return false;
+    var value = (missileInput ? missileInput.value : "").trim();
+    if (!value)
+      return false;
+    if (!/^\d+$/.test(value))
+      return false;
+    if (value !== missileInputAnswer)
+      return false;
+    var target = findCorrectAsteroid();
+    if (target && canMissileLock(target)) {
+      launchMissile(target);
+      closeMissileInput();
+    } else {
+      closeMissileInput("MISSILE NO LOCK");
     }
     return true;
   }
@@ -3440,7 +3525,8 @@
       driftAmp,
       driftRate,
       driftPhase,
-      spriteIndex: randi(0, asteroidSprites.length - 1)
+      spriteIndex: randi(0, asteroidSprites.length - 1),
+      spawnAt: getElapsedSeconds()
     };
     if (isCorrect && !tutorialActive && !hiddenPowerupActive && answerHitsSincePowerup >= 7) {
       var drop = choosePowerupDrop();
@@ -3556,15 +3642,27 @@
     var sType = secondary[Math.floor(Math.random() * secondary.length)];
     return { type: sType, group: "secondary" };
   }
-  function maybeDropPowerup() {
+  function canSpawnEventPowerup() {
+    if (tutorialActive)
+      return false;
     if (hiddenPowerupActive)
-      return;
-    if (Math.random() > 0.7)
-      return;
+      return false;
+    return true;
+  }
+  function maybeSpawnEventPowerup(chance, x, y) {
+    if (!canSpawnEventPowerup())
+      return false;
+    if (Math.random() > chance)
+      return false;
     var drop = choosePowerupDrop();
     if (!drop)
-      return;
-    spawnPowerup(drop.type, drop.group);
+      return false;
+    spawnPowerup(drop.type, drop.group, x, y);
+    return true;
+  }
+  function resetSurvivorTimer() {
+    survivorTimer = 0;
+    survivorRewardReady = false;
   }
   function maybeSpawnAnswerPowerup(hitAst) {
     if (!hitAst)
@@ -3808,6 +3906,7 @@
       gameOverSfxTimer = 0;
     }
     stopMissionClearedSfx();
+    closeMissileInput();
     if (countdownTimerId) {
       clearInterval(countdownTimerId);
       countdownTimerId = 0;
@@ -3919,6 +4018,9 @@
     player.fadeOutDur = 0;
     answerHitsSincePowerup = 0;
     hiddenPowerupActive = false;
+    resetSurvivorTimer();
+    cleanWaveStreak = 0;
+    waveHadWrongHit = false;
     resetAliens();
     nextProblem();
     syncHud();
@@ -4235,10 +4337,6 @@
     player.cooldown = 0.16;
     var mode = player.blasterMode || "single";
     if (mode === "missile") {
-      var missileTarget = findCorrectAsteroid();
-      if (missileTarget && canMissileLock(missileTarget)) {
-        launchMissile(missileTarget);
-      }
       return;
     }
     state.shots++;
@@ -4773,6 +4871,11 @@
       }
       warningClip = null;
     }
+    var nearMiss = !!(hitAst && hitAst.warned);
+    var precisionHit = false;
+    if (hitAst && typeof hitAst.spawnAt === "number") {
+      precisionHit = getElapsedSeconds() - hitAst.spawnAt <= precisionWindowSec;
+    }
     state.correct++;
     state.hits++;
     state.streak++;
@@ -4809,6 +4912,7 @@
     } else {
     }
     syncHud();
+    var completedQuestion = false;
     if (isDigitMode()) {
       state.digitsLeft = Math.max(0, state.digitsLeft - 1);
       if (state.digitsLeft > 0) {
@@ -4817,6 +4921,7 @@
         prepareWave();
       } else {
         state.questionsCompleted++;
+        completedQuestion = true;
         if (shouldEndByQuestionLimit()) {
           endGame("questions");
           return;
@@ -4825,6 +4930,7 @@
       }
     } else {
       state.questionsCompleted++;
+      completedQuestion = true;
       if (shouldEndByQuestionLimit()) {
         endGame("questions");
         return;
@@ -4832,11 +4938,32 @@
       nextProblem();
     }
     if (!tutorialActive) {
+      var spawned = false;
       if (hitAst && hitAst.hiddenPowerup) {
         maybeSpawnAnswerPowerup(hitAst);
+        spawned = true;
       } else {
         answerHitsSincePowerup += 1;
-        maybeDropPowerup();
+        if (nearMiss && hitAst) {
+          spawned = maybeSpawnEventPowerup(0.1, hitAst.x, hitAst.y);
+        }
+        if (!spawned && precisionHit && hitAst) {
+          spawned = maybeSpawnEventPowerup(0.3, hitAst.x, hitAst.y);
+        }
+        if (completedQuestion) {
+          if (waveHadWrongHit) {
+            cleanWaveStreak = 0;
+          } else {
+            cleanWaveStreak += 1;
+          }
+          waveHadWrongHit = false;
+          if (!spawned && cleanWaveStreak >= 3) {
+            if (maybeSpawnEventPowerup(1)) {
+              cleanWaveStreak = 0;
+              spawned = true;
+            }
+          }
+        }
       }
     }
   }
@@ -4844,6 +4971,7 @@
     state.wrong++;
     state.hits++;
     state.streak = 0;
+    waveHadWrongHit = true;
     state.score = Math.max(0, state.score - 60);
     playSfx(state, "wrong_asteroid");
     state.ddSpeedBonus = clamp(state.ddSpeedBonus - 0.02, 0, 0.35);
@@ -5300,6 +5428,27 @@
         return;
       }
     }
+    if (missileInputActive) {
+      var remainingMs = missileInputDeadline - performance.now();
+      var remainingSec = Math.max(0, remainingMs / 1e3);
+      if (missileTimerEl) {
+        missileTimerEl.textContent = remainingSec.toFixed(1) + "s";
+      }
+      if (remainingSec <= 0) {
+        closeMissileInput("MISSILE WINDOW EXPIRED");
+      }
+    }
+    if (!tutorialActive) {
+      survivorTimer += dtReal;
+      if (survivorTimer >= 45) {
+        survivorRewardReady = true;
+      }
+      if (survivorRewardReady) {
+        if (maybeSpawnEventPowerup(1)) {
+          resetSurvivorTimer();
+        }
+      }
+    }
     var profile = getShipProfile(player.shipType);
     player.speed = profile.speed;
     var spinActive = false;
@@ -5722,6 +5871,8 @@
           state.missed++;
           state.correctInPlay = false;
           state.correctAsteroidId = 0;
+          waveHadWrongHit = true;
+          cleanWaveStreak = 0;
           if (a.hiddenPowerup) {
             hiddenPowerupActive = false;
             answerHitsSincePowerup = 0;
@@ -5922,6 +6073,7 @@
               tourGuide.notify("alien");
             aliens.splice(ai3, 1);
             showToast("ALIEN CLEARED");
+            maybeSpawnEventPowerup(0.4, al.x, al.y);
             break;
           }
         }
@@ -5934,6 +6086,7 @@
       if (dxC * dxC + dyC * dyC < (al2.r + 18) * (al2.r + 18)) {
         if (player.invuln <= 0) {
           registerShotTypeHit(2, true);
+          resetSurvivorTimer();
           state.alienCollisions += 1;
           kickShake(18, 0.16);
           state.collisionSlow = Math.max(state.collisionSlow || 0, 1);
@@ -5990,6 +6143,7 @@
         alienBullets.splice(ab, 1);
         if (player.invuln <= 0) {
           registerShotTypeHit(1, false);
+          resetSurvivorTimer();
           state.alienShotsHit += 1;
           kickShake(12, 0.12);
           state.collisionSlow = Math.max(state.collisionSlow || 0, 1);
@@ -7418,6 +7572,7 @@
       return false;
     if (force || player.invuln <= 0) {
       registerShotTypeHit(1, false);
+      resetSurvivorTimer();
       if (a.isCorrect && a.waveId === state.waveId) {
         state.correctInPlay = false;
         state.correctAsteroidId = 0;
@@ -8367,6 +8522,59 @@
       playSfx(state, "menu_beep");
       overlayControls.classList.remove("show");
       overlayMenu.classList.add("show");
+    });
+  }
+  if (btnMissileCancel) {
+    btnMissileCancel.addEventListener("click", function() {
+      playSfx(state, "menu_beep");
+      closeMissileInput();
+    });
+  }
+  if (btnMissileConfirm) {
+    btnMissileConfirm.addEventListener("click", function() {
+      playSfx(state, "menu_beep");
+      if (!attemptMissileLaunch()) {
+        if (missileInput && missileInput.value) {
+          showToast("CODE INVALID");
+          missileInput.select();
+        }
+      }
+    });
+  }
+  if (missileInput) {
+    missileInput.addEventListener("input", function() {
+      if (!missileInputActive)
+        return;
+      var cleaned = (missileInput.value || "").replace(/\D+/g, "");
+      if (cleaned !== missileInput.value)
+        missileInput.value = cleaned;
+      if (cleaned && cleaned.length >= missileInputAnswer.length) {
+        attemptMissileLaunch();
+      }
+    });
+    missileInput.addEventListener("keydown", function(e) {
+      if (!missileInputActive)
+        return;
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (!attemptMissileLaunch()) {
+          if (missileInput.value) {
+            showToast("CODE INVALID");
+            missileInput.select();
+          }
+        }
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        closeMissileInput();
+      }
+    });
+  }
+  if (missileOverlay) {
+    missileOverlay.addEventListener("click", function(e) {
+      if (e.target === missileOverlay) {
+        playSfx(state, "menu_beep");
+        closeMissileInput();
+      }
     });
   }
   document.addEventListener("fullscreenchange", function() {

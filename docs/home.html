@@ -509,33 +509,6 @@
       text-shadow: 0 2px 10px rgba(0,0,0,.6);
     }
 
-    .beltChoice.locked{
-      cursor: not-allowed;
-      opacity: 0.55;
-      border-color: rgba(255,255,255,.2);
-    }
-
-    .beltChoice.locked:hover{
-      transform: none;
-      box-shadow: none;
-      border-color: rgba(255,255,255,.2);
-    }
-
-    .beltChoice .lockTag{
-      position: absolute;
-      top: 10px;
-      right: 12px;
-      padding: 4px 8px;
-      border-radius: 999px;
-      background: rgba(0,0,0,.55);
-      border: 1px solid rgba(255,255,255,.2);
-      font-size: 10px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      color: rgba(255,255,255,.75);
-      z-index: 2;
-    }
-
     .choiceCard h4{
       margin:0 0 6px;
       font-size:13px;
@@ -694,70 +667,6 @@
       color:rgba(0,229,255,.95);
     }
 
-    .campaignProfileGrid{
-      display:grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap:14px;
-    }
-
-    .profileCard{
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-    }
-
-    .profileHeader{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-    }
-
-    .profileName{
-      font-size:14px;
-      letter-spacing:1px;
-      text-transform:uppercase;
-      color: rgba(255,255,255,.92);
-    }
-
-    .profileStatus{
-      font-size:11px;
-      letter-spacing:1px;
-      color: rgba(232,236,255,.6);
-    }
-
-    .profileMeta{
-      font-size:12px;
-      color: rgba(232,236,255,.6);
-      line-height:1.45;
-    }
-
-    .profileActions{
-      display:flex;
-      gap:8px;
-      flex-wrap:wrap;
-    }
-
-    .profileEdit{
-      display:none;
-      gap:8px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-
-    .profileEdit input{
-      flex:1;
-      min-width:160px;
-    }
-
-    .profileCard.editing .profileEdit{ display:flex; }
-    .profileCard.editing .profileActions{ display:none; }
-
-    .profileCard.active{
-      border-color: rgba(0,229,255,.45);
-      box-shadow: 0 18px 36px rgba(0,0,0,.35);
-    }
-
     .campaignView{
       display:none;
     }
@@ -800,8 +709,7 @@
     .showHelp .helpText{ display:block; }
 
     #campaignOverlay.overlay,
-    #campaignConfirmOverlay.overlay,
-    #campaignEraseOverlay.overlay{
+    #campaignConfirmOverlay.overlay{
       background: rgba(6,9,16,.96);
       backdrop-filter: none;
     }
@@ -1498,23 +1406,19 @@
                   <h4>Ember Cluster</h4>
                   <p>Warm glow with scattered dust lanes.</p>
                 </div>
-                <div class="choiceCard beltChoice locked" data-belt="aurora" data-locked="true" style="background-image:url('images/background2.png');">
-                  <span class="lockTag">LOCKED</span>
+                <div class="choiceCard beltChoice" data-belt="aurora" style="background-image:url('images/background2.png');">
                   <h4>Aurora Cluster</h4>
                   <p>Cool nebula haze and icy highlights.</p>
                 </div>
-                <div class="choiceCard beltChoice locked" data-belt="rift" data-locked="true" style="background-image:url('images/background3.png');">
-                  <span class="lockTag">LOCKED</span>
+                <div class="choiceCard beltChoice" data-belt="rift" style="background-image:url('images/background3.png');">
                   <h4>Rift Cluster</h4>
                   <p>Dense field with higher contrast drift.</p>
                 </div>
-                <div class="choiceCard beltChoice locked" data-belt="vega" data-locked="true" style="background-image:url('images/background7.png');">
-                  <span class="lockTag">LOCKED</span>
+                <div class="choiceCard beltChoice" data-belt="vega" style="background-image:url('images/background7.png');">
                   <h4>Vega Cluster</h4>
                   <p>Wide galaxy wash with soft flares.</p>
                 </div>
-                <div class="choiceCard beltChoice locked" data-belt="void" data-locked="true" style="background-image:url('images/background9.png');">
-                  <span class="lockTag">LOCKED</span>
+                <div class="choiceCard beltChoice" data-belt="void" style="background-image:url('images/background9.png');">
                   <h4>Void Cluster</h4>
                   <p>Deep space with faint starlight.</p>
                 </div>
@@ -1708,9 +1612,11 @@
             <span class="settingsTitleMain">MENTARIS</span>
             <span class="settingsTitleSub">The Arith Belt</span>
           </div>
-          <p class="subtitle">Settings console for active missions.</p>
+          <p class="subtitle">Settings console for pilots.</p>
         </div>
-        <button id="btnCloseSettings" class="btn">Close</button>
+        <div class="settingsActions">
+          <button id="btnCloseSettings" class="btn">Close</button>
+        </div>
       </div>
       <div class="cardBody settingsBody">
         <div class="settingsTabs">
@@ -1743,8 +1649,8 @@
                 </div>
               </div>
               <div class="panel audioSfxPanel">
-                <button id="btnSfxHome" class="btn catalogToggleBtn" type="button">Active SFX</button>
-                <div id="sfxCatalogPanelHome" class="catalogTogglePanel open">
+                <button id="btnActiveSfxHome" class="btn catalogToggleBtn" type="button">Active SFX</button>
+                <div id="sfxCatalogPanelHome" class="catalogTogglePanel">
                   <div class="sfxCategoryRow">
                     <button type="button" class="btn sfxCategoryBtn active" data-sfx-category="all">All</button>
                     <button type="button" class="btn sfxCategoryBtn" data-sfx-category="shots">Shot Types</button>
@@ -1762,6 +1668,7 @@
               </div>
             </div>
           </div>
+
           <div class="panel settingsPanel" data-settings-panel="display">
             <h3>Display</h3>
             <div class="settingsToggleRow">
@@ -1773,6 +1680,7 @@
             </div>
             <p class="monoSmall">Switch between fullscreen, commands, and widened layout.</p>
           </div>
+
           <div class="panel settingsPanel" data-settings-panel="controls">
             <h3>Controls</h3>
             <div class="settingsCommands">
@@ -1789,6 +1697,7 @@
             </label>
             <p class="monoSmall">Note: If you have Steam, you can remap your controller to the keys used in the game and play with a controller.</p>
           </div>
+
           <div class="panel settingsPanel" data-settings-panel="catalogs">
             <h3>Catalogs</h3>
             <div class="catalogGrid">
@@ -1808,15 +1717,8 @@
           </div>
         </div>
       </div>
-      <div class="row">
-        <button id="btnCloseSettingsBottom" class="btn">Close</button>
-      </div>
     </div>
   </div>
-
-
-
-  
 
 
   <div id="leaderboardsOverlay" class="overlay">
@@ -1829,23 +1731,6 @@
         <button id="btnCloseLeaderboards" class="btn">Close</button>
       </div>
       <div class="cardBody">
-        <div class="panel" style="margin-bottom:12px;">
-          <h3>Categories</h3>
-          <div class="grid" style="grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px;">
-            <label>
-              OPERATION
-              <select id="homeLeaderboardOperation"></select>
-            </label>
-            <label>
-              MODE
-              <select id="homeLeaderboardMode"></select>
-            </label>
-            <label>
-              SUBMODE
-              <select id="homeLeaderboardSubmode"></select>
-            </label>
-          </div>
-        </div>
         <div class="leaderboardsMain">
           <div class="panel">
             <h3>High Scores</h3>
@@ -1889,11 +1774,11 @@
       <div class="panel" style="margin-top:10px;">
         <div class="briefingShipRow">
           <div class="briefingShipMeta">
-            <h3 id="briefingShip">Ship: ƒ?"</h3>
-            <p class="monoSmall" id="briefingMode" style="margin:0;">Mode: ƒ?"</p>
-            <p class="monoSmall" id="briefingDifficulty" style="margin:0;">Difficulty: ƒ?"</p>
-            <p class="monoSmall" id="briefingOperation" style="margin:0;">Operation: ƒ?"</p>
-            <p class="monoSmall" id="briefingSubmode" style="margin:0;">Submode: ƒ?"</p>
+            <h3 id="briefingShip">Ship: ï¿½?"</h3>
+            <p class="monoSmall" id="briefingMode" style="margin:0;">Mode: ï¿½?"</p>
+            <p class="monoSmall" id="briefingDifficulty" style="margin:0;">Difficulty: ï¿½?"</p>
+            <p class="monoSmall" id="briefingOperation" style="margin:0;">Operation: ï¿½?"</p>
+            <p class="monoSmall" id="briefingSubmode" style="margin:0;">Submode: ï¿½?"</p>
           </div>
         </div>
       </div>
@@ -1940,8 +1825,8 @@
       <div class="cardBody campaignView active" id="campaignProfilesView" style="grid-template-columns: 1fr;">
         <div class="panel">
           <h3>Campaign Profiles</h3>
-          <p class="monoSmall">Choose a profile to continue your campaign progress.</p>
-          <div class="campaignProfileGrid" id="campaignProfileGrid"></div>
+          <p class="monoSmall" style="margin-top:4px;">Choose a profile to continue your campaign progress.</p>
+          <div class="campaignProfilesGrid" id="campaignProfilesGrid"></div>
         </div>
       </div>
       <div class="cardBody campaignView" id="campaignSelectView" style="grid-template-columns: 1fr;">
@@ -1952,20 +1837,41 @@
       </div>
       <div class="cardBody campaignView" id="campaignMissionsView">
         <div class="panel">
-          <div class="row" style="justify-content:space-between;">
-            <h3 style="margin:0;">Missions</h3>
-            <button id="btnCampaignBack" class="btn">Back</button>
-          </div>
+          <h3>Missions</h3>
           <ul class="list" id="campaignList"></ul>
         </div>
         <div class="panel">
           <h3>Details</h3>
           <div class="monoSmall" id="campaignDetails">Select a mission to view its settings.</div>
           <p class="monoSmall" id="campaignStatusText" style="margin-top:10px;">Loading campaign status...</p>
+          <div class="campaignActions">
+            <button id="btnCampaignStart" class="btn" style="border-color: rgba(0,229,255,.35); background: rgba(0,229,255,.14);">Start Mission</button>
+            <button id="btnCampaignContinue" class="btn" style="display:none; border-color: rgba(0,229,255,.35); background: rgba(0,229,255,.12);">Continue</button>
+          </div>
+        </div>
+      </div>
+      <div class="row campaignFooter">
+        <button id="btnCampaignBack" class="btn">Back</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="campaignEraseOverlay" class="overlay">
+    <div class="card" style="max-width:520px;">
+      <div class="cardHead">
+        <div>
+          <h2 class="title">Erase Campaign?</h2>
+          <p class="subtitle" id="campaignEraseSubtitle">Erase campaign progress for this profile?</p>
+        </div>
+        <button id="btnCampaignEraseCancel" class="btn">Cancel</button>
+      </div>
+      <div class="cardBody" style="grid-template-columns: 1fr;">
+        <div class="panel">
+          <p class="monoSmall" style="margin:0;">This wipes campaign progress and resets all missions for this pilot.</p>
         </div>
       </div>
       <div class="row">
-        <button id="btnCampaignProfilesBack" class="btn">Back</button>
+        <button id="btnCampaignEraseConfirm" class="btn" style="border-color: rgba(255,77,109,.35); background: rgba(255,77,109,.14);">Erase</button>
       </div>
     </div>
   </div>
@@ -1987,26 +1893,6 @@
       <div class="row">
         <button id="btnCampaignConfirmStart" class="btn" style="border-color: rgba(255,221,0,.35); background: rgba(255,221,0,.14);">Start Over</button>
         <button id="btnCampaignConfirmContinue" class="btn" style="border-color: rgba(0,229,255,.35); background: rgba(0,229,255,.12);">Continue</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="campaignEraseOverlay" class="overlay">
-    <div class="card" style="max-width:520px;">
-      <div class="cardHead">
-        <div>
-          <h2 class="title">Erase Profile?</h2>
-          <p class="subtitle" id="campaignEraseSubtitle">This will reset the selected profile's campaign progress.</p>
-        </div>
-        <button id="btnCampaignEraseCancel" class="btn">Cancel</button>
-      </div>
-      <div class="cardBody" style="grid-template-columns: 1fr;">
-        <div class="panel">
-          <p class="monoSmall" id="campaignEraseText" style="margin:0;">Erase campaign progress for this profile?</p>
-        </div>
-      </div>
-      <div class="row">
-        <button id="btnCampaignEraseConfirm" class="btn" style="border-color: rgba(255,107,107,.35); background: rgba(255,107,107,.18);">Erase Progress</button>
       </div>
     </div>
   </div>
@@ -2054,15 +1940,16 @@
       belt: "dusk",
     };
 
+    var campaignProfileKey = "mentaris.campaign.profile.active";
+    var campaignProfilesKey = "mentaris.campaign.profiles";
     var campaignActiveKeyBase = "mathsteroid.campaign.active.";
     var campaignStateKeyBase = "mathsteroid.campaign.state.";
     var campaignDataKeyBase = "mathsteroid.campaign.data.";
-    var campaignProfilesKey = "mentaris.campaign.profiles";
-    var campaignProfileKey = "mentaris.campaign.profile.active";
-    var campaignProfileSlots = 3;
     var campaignDataVersion = 4;
     var campaignMaxFailuresDefault = 3;
     var campaignDefaultId = "sector_run";
+    var campaignProfileSlots = ["profile1", "profile2", "profile3"];
+    var activeProfileId = "";
     var campaignSets = [
       {
         id: "sector_run",
@@ -2197,15 +2084,11 @@
         ]
       }
     ];
-    var activeCampaignId = null;
-    var activeProfileId = null;
 
     function createDefaultCampaignProfiles(){
-      var list = [];
-      for(var i=0; i<campaignProfileSlots; i++){
-        list.push({ id: "profile" + (i + 1), name: "", created: 0, lastUsed: 0 });
-      }
-      return list;
+      return campaignProfileSlots.map(function(id){
+        return { id: id, name: "", createdAt: null };
+      });
     }
 
     function loadCampaignProfiles(){
@@ -2214,78 +2097,67 @@
         var raw = localStorage.getItem(campaignProfilesKey);
         if(raw) profiles = JSON.parse(raw);
       }catch(e){}
-      if(!Array.isArray(profiles)) profiles = createDefaultCampaignProfiles();
-      if(profiles.length < campaignProfileSlots){
-        for(var i=profiles.length; i<campaignProfileSlots; i++){
-          profiles.push({ id: "profile" + (i + 1), name: "", created: 0, lastUsed: 0 });
+      if(!Array.isArray(profiles) || profiles.length !== campaignProfileSlots.length){
+        profiles = createDefaultCampaignProfiles();
+      }
+      for(var i=0; i<campaignProfileSlots.length; i++){
+        var slotId = campaignProfileSlots[i];
+        var slot = profiles[i];
+        if(!slot || typeof slot !== "object"){
+          profiles[i] = { id: slotId, name: "", createdAt: null };
+        }else{
+          slot.id = slotId;
+          if(typeof slot.name !== "string") slot.name = "";
         }
-      }
-      if(profiles.length > campaignProfileSlots){
-        profiles = profiles.slice(0, campaignProfileSlots);
-      }
-      for(var j=0; j<profiles.length; j++){
-        if(!profiles[j].id) profiles[j].id = "profile" + (j + 1);
-        if(!profiles[j].name) profiles[j].name = "";
-        if(!profiles[j].created) profiles[j].created = 0;
-        if(!profiles[j].lastUsed) profiles[j].lastUsed = 0;
       }
       return profiles;
     }
 
-    function saveCampaignProfiles(list){
-      try{ localStorage.setItem(campaignProfilesKey, JSON.stringify(list)); }catch(e){}
-    }
-
-    function canMigrateLegacyCampaign(profileId){
-      var pid = profileId || getActiveProfileId();
-      if(pid !== "profile1") return false;
-      try{ return localStorage.getItem("mentaris.campaign.migrated." + pid) !== "1"; }catch(e){ return true; }
-    }
-
-    function markLegacyCampaignMigrated(profileId){
-      var pid = profileId || getActiveProfileId();
-      try{ localStorage.setItem("mentaris.campaign.migrated." + pid, "1"); }catch(e){}
-    }
-
-    function getCampaignActiveKey(profileId){
-      var pid = profileId || getActiveProfileId();
-      return campaignActiveKeyBase + pid;
+    function saveCampaignProfiles(profiles){
+      try{ localStorage.setItem(campaignProfilesKey, JSON.stringify(profiles)); }catch(e){}
     }
 
     function getActiveProfileId(){
       if(activeProfileId) return activeProfileId;
       var stored = null;
       try{ stored = localStorage.getItem(campaignProfileKey); }catch(e){}
-      var profiles = loadCampaignProfiles();
-      if(stored){
+      if(stored && campaignProfileSlots.indexOf(stored) !== -1) activeProfileId = stored;
+      if(!activeProfileId){
+        var profiles = loadCampaignProfiles();
+        var firstFilled = null;
         for(var i=0; i<profiles.length; i++){
-          if(profiles[i].id === stored){
-            activeProfileId = stored;
-            return activeProfileId;
+          if(profiles[i] && profiles[i].name){
+            firstFilled = profiles[i];
+            break;
           }
         }
+        activeProfileId = firstFilled ? firstFilled.id : campaignProfileSlots[0];
       }
-      activeProfileId = profiles[0].id;
-      try{ localStorage.setItem(campaignProfileKey, activeProfileId); }catch(e){}
       return activeProfileId;
     }
 
     function setActiveProfileId(id){
-      var profiles = loadCampaignProfiles();
-      var target = null;
-      for(var i=0; i<profiles.length; i++){
-        if(profiles[i].id === id){
-          target = profiles[i];
-          break;
-        }
-      }
-      if(!target) return;
-      activeProfileId = target.id;
-      target.lastUsed = Date.now();
-      saveCampaignProfiles(profiles);
-      try{ localStorage.setItem(campaignProfileKey, activeProfileId); }catch(e){}
+      activeProfileId = campaignProfileSlots.indexOf(id) !== -1 ? id : campaignProfileSlots[0];
       activeCampaignId = null;
+      try{ localStorage.setItem(campaignProfileKey, activeProfileId); }catch(e){}
     }
+
+    function getCampaignActiveKey(){
+      return campaignActiveKeyBase + getActiveProfileId();
+    }
+
+    function canMigrateLegacyCampaign(){
+      var pid = getActiveProfileId();
+      if(pid !== "profile1") return false;
+      try{ return localStorage.getItem("mentaris.campaign.migrated." + pid) !== "1"; }catch(e){ return true; }
+    }
+
+    function markLegacyCampaignMigrated(){
+      var pid = getActiveProfileId();
+      try{ localStorage.setItem("mentaris.campaign.migrated." + pid, "1"); }catch(e){}
+    }
+
+    var activeCampaignId = null;
 
     function findCampaignSet(id){
       for(var i=0; i<campaignSets.length; i++){
@@ -2338,32 +2210,33 @@
 
     function loadCampaignState(campaignId){
       var set = getCampaignSet(campaignId);
-      var profileId = getActiveProfileId();
-      var key = getCampaignStateKey(set.id, profileId);
+      var key = getCampaignStateKey(set.id);
       var state = null;
       try{
         var raw = localStorage.getItem(key);
         if(raw) state = JSON.parse(raw);
       }catch(e){}
       var migrated = false;
-      if(!state && canMigrateLegacyCampaign(profileId)){
+      var legacyState = null;
+      if(!state && canMigrateLegacyCampaign()){
         try{
           var legacyKey = campaignStateKeyBase + set.id;
           var legacyRaw = localStorage.getItem(legacyKey);
-          if(legacyRaw) state = JSON.parse(legacyRaw);
+          if(legacyRaw) legacyState = JSON.parse(legacyRaw);
         }catch(e){}
-        if(!state && set.id === campaignDefaultId){
+        if(!legacyState && set.id === campaignDefaultId){
           try{
             var legacy = localStorage.getItem("mathsteroid.campaign.state");
-            if(legacy) state = JSON.parse(legacy);
+            if(legacy) legacyState = JSON.parse(legacy);
           }catch(e){}
         }
-        if(state){
-          try{ localStorage.setItem(key, JSON.stringify(state)); }catch(e){}
+        if(legacyState){
+          try{ localStorage.setItem(key, JSON.stringify(legacyState)); }catch(e){}
           migrated = true;
         }
       }
-      if(migrated) markLegacyCampaignMigrated(profileId);
+      if(migrated) markLegacyCampaignMigrated();
+      state = state || legacyState;
       return normalizeCampaignState(state, set.missions.length);
     }
 
@@ -2414,10 +2287,149 @@
       return set && set.maxFailures ? set.maxFailures : campaignMaxFailuresDefault;
     }
 
+    function resetCampaignProgressForProfile(profileId){
+      campaignSets.forEach(function(set){
+        resetCampaignState(set.id, profileId);
+      });
+    }
+
+    function openCampaignEraseConfirm(profileId, name){
+      pendingEraseProfileId = profileId;
+      if(campaignEraseSubtitle){
+        var label = name ? name.toUpperCase() : "THIS PROFILE";
+        campaignEraseSubtitle.textContent = "Erase campaign progress for " + label + "?";
+      }
+      if(campaignEraseOverlay) campaignEraseOverlay.classList.add("show");
+    }
+
+    function closeCampaignEraseConfirm(){
+      pendingEraseProfileId = null;
+      if(campaignEraseOverlay) campaignEraseOverlay.classList.remove("show");
+    }
+
+    function renderCampaignProfiles(){
+      if(!campaignProfilesGrid) return;
+      var profiles = loadCampaignProfiles();
+      var activeId = getActiveProfileId();
+      campaignProfilesGrid.innerHTML = "";
+      profiles.forEach(function(profile){
+        var card = document.createElement("div");
+        var isEmpty = !profile.name;
+        card.className = "campaignProfileCard" + (isEmpty ? " empty" : "") + (profile.id === activeId ? " active" : "");
+
+        var header = document.createElement("div");
+        header.className = "campaignProfileHeader";
+        var name = document.createElement("div");
+        name.className = "campaignProfileName";
+        name.textContent = isEmpty ? "New Profile" : profile.name.toUpperCase();
+        var status = document.createElement("div");
+        status.className = "campaignProfileStatus";
+        status.textContent = isEmpty ? "EMPTY" : (profile.id === activeId ? "ACTIVE" : "READY");
+        header.appendChild(name);
+        header.appendChild(status);
+        card.appendChild(header);
+
+        var desc = document.createElement("div");
+        desc.className = "campaignProfileDesc";
+        desc.textContent = isEmpty
+          ? "Create a profile to save campaign progress."
+          : "Continue this pilot's campaign progress.";
+        card.appendChild(desc);
+
+        if(isEmpty){
+          var inputRow = document.createElement("div");
+          inputRow.className = "campaignProfileInput";
+          inputRow.style.display = "none";
+          var input = document.createElement("input");
+          input.type = "text";
+          input.maxLength = 16;
+          input.placeholder = "Pilot name";
+          var saveBtn = document.createElement("button");
+          saveBtn.type = "button";
+          saveBtn.className = "btn";
+          saveBtn.textContent = "Save & Continue";
+          var cancelBtn = document.createElement("button");
+          cancelBtn.type = "button";
+          cancelBtn.className = "btn";
+          cancelBtn.textContent = "Cancel";
+          inputRow.appendChild(input);
+          inputRow.appendChild(saveBtn);
+          inputRow.appendChild(cancelBtn);
+          card.appendChild(inputRow);
+
+          var newBtn = document.createElement("button");
+          newBtn.type = "button";
+          newBtn.className = "btn";
+          newBtn.textContent = "New Profile";
+          card.appendChild(newBtn);
+
+          newBtn.addEventListener("click", function(){
+            playMenuBeep();
+            newBtn.style.display = "none";
+            inputRow.style.display = "flex";
+            input.focus();
+          });
+          cancelBtn.addEventListener("click", function(){
+            playMenuBeep();
+            input.value = "";
+            inputRow.style.display = "none";
+            newBtn.style.display = "";
+          });
+          saveBtn.addEventListener("click", function(){
+            playMenuBeep();
+            var value = String(input.value || "").trim();
+            if(!value){
+              input.focus();
+              return;
+            }
+            profile.name = value;
+            if(!profile.createdAt) profile.createdAt = Date.now();
+            saveCampaignProfiles(profiles);
+            resetCampaignProgressForProfile(profile.id);
+            setActiveProfileId(profile.id);
+            renderCampaignProfiles();
+            renderCampaignSetList();
+            renderCampaignList();
+            updateCampaignStatus();
+            showCampaignSelectView();
+          });
+        }else{
+          var actions = document.createElement("div");
+          actions.className = "campaignProfileActions";
+          var continueBtn = document.createElement("button");
+          continueBtn.type = "button";
+          continueBtn.className = "btn";
+          continueBtn.textContent = "Continue";
+          var eraseBtn = document.createElement("button");
+          eraseBtn.type = "button";
+          eraseBtn.className = "btn btnDanger";
+          eraseBtn.textContent = "Erase";
+          actions.appendChild(continueBtn);
+          actions.appendChild(eraseBtn);
+          card.appendChild(actions);
+          continueBtn.addEventListener("click", function(){
+            playMenuBeep();
+            setActiveProfileId(profile.id);
+            renderCampaignProfiles();
+            renderCampaignSetList();
+            renderCampaignList();
+            updateCampaignStatus();
+            showCampaignSelectView();
+          });
+          eraseBtn.addEventListener("click", function(){
+            playMenuBeep();
+            openCampaignEraseConfirm(profile.id, profile.name);
+          });
+        }
+        campaignProfilesGrid.appendChild(card);
+      });
+    }
+
     var form = document.getElementById("homeMenu");
     var resetBtn = document.getElementById("btnReset");
     var saved = loadSessionConfig("asteroidConfig", defaults);
     ensureCampaignData();
+    saveCampaignProfiles(loadCampaignProfiles());
     if(saved.timerMode && String(saved.timerMode).charAt(0) === "q"){
       saved.targetMode = saved.timerMode;
       saved.timerMode = "off";
@@ -2457,6 +2469,7 @@
         if(window.homeDrone){
           try{ window.homeDrone.volume = 0.22 * getHomeVolume() * getHomeSfxVolume(); }catch(e){}
         }
+        updatePreviewVolumesHome();
       });
     }
     var sfxVolumeInput = document.getElementById("sfxVolume");
@@ -2465,6 +2478,7 @@
         if(window.homeDrone){
           try{ window.homeDrone.volume = 0.22 * getHomeVolume() * getHomeSfxVolume(); }catch(e){}
         }
+        updatePreviewVolumesHome();
       });
     }
 
@@ -2489,7 +2503,7 @@
       { id: "ice", label: "Ice Shards", icon: "images/shot_ice.png", desc: "Ice shots for about 12 seconds." },
       { id: "electric", label: "Electric Bolts", icon: "images/shot_electric.png", desc: "Electric bolts for about 12 seconds." },
       { id: "pierce", label: "Look Up Shot", icon: "images/shot_lookup.png", desc: "Piercing shots for about 12 seconds." },
-      { id: "plasma", label: "Plasma Orb", icon: "images/shot_orb.png", desc: "Plasma shots for about 12 seconds." },
+      { id: "plasma", label: "Plasma Orb", icon: "images/shot_plasma.png", desc: "Plasma shots for about 12 seconds." },
       { id: "rail", label: "Rail Beam", icon: "images/shot_rail.png", desc: "Rail beam shots for about 12 seconds." }
     ];
 
@@ -2533,6 +2547,8 @@
 
     var homePreviewPlayers = {};
     var activeHomePreview = null;
+    var previewVolumeKeyHome = "mentaris.preview.sfx.";
+    var activeSfxCategoryHome = "all";
 
     function formatDurationHome(sec){
       if(!isFinite(sec) || sec <= 0) return "--:--";
@@ -2550,14 +2566,12 @@
       return Math.max(0, Math.min(1, master * sfx));
     }
 
-    var previewVolumeKeyHome = "mentaris.preview.sfx.";
-
     function getPreviewItemVolumeHome(id){
       if(!id) return 1;
       try{
-        var rawVal = localStorage.getItem(previewVolumeKeyHome + id);
-        if(rawVal != null){
-          var val = parseFloat(rawVal);
+        var raw = localStorage.getItem(previewVolumeKeyHome + id);
+        if(raw != null){
+          var val = parseFloat(raw);
           if(isFinite(val)) return Math.max(0, Math.min(1, val));
         }
       }catch(e){}
@@ -2568,6 +2582,17 @@
       if(!id) return;
       var safe = Math.max(0, Math.min(1, value));
       try{ localStorage.setItem(previewVolumeKeyHome + id, String(safe)); }catch(e){}
+    }
+
+    function updatePreviewVolumesHome(){
+      for(var key in homePreviewPlayers){
+        if(Object.prototype.hasOwnProperty.call(homePreviewPlayers, key)){
+          var audio = homePreviewPlayers[key];
+          try{
+            audio.volume = getPreviewVolumeHome() * getPreviewItemVolumeHome(key);
+          }catch(e){}
+        }
+      }
     }
 
     function stopPreviewAudioHome(audio){
@@ -2591,9 +2616,7 @@
       if(!listEl) return;
       listEl.innerHTML = "";
       var list = items || [];
-      if(filter){
-        list = list.filter(filter);
-      }
+      if(filter) list = list.filter(filter);
       if(!list.length){
         var empty = document.createElement("li");
         empty.className = "catalogEmpty";
@@ -2655,29 +2678,24 @@
           playBtn.type = "button";
           playBtn.className = "btn catalogControlBtn";
           playBtn.innerHTML = "&#9654;";
-          playBtn.setAttribute("aria-label", "Play");
-          playBtn.title = "Play";
           var stopBtn = document.createElement("button");
           stopBtn.type = "button";
           stopBtn.className = "btn catalogControlBtn";
           stopBtn.innerHTML = "&#9632;";
-          stopBtn.setAttribute("aria-label", "Stop");
-          stopBtn.title = "Stop";
           var volume = document.createElement("input");
           volume.type = "range";
-          volume.className = "catalogVolume";
           volume.min = "0";
-          volume.max = "100";
-          volume.step = "1";
-          var initialVolume = getPreviewItemVolumeHome(item.id);
-          volume.value = String(Math.round(initialVolume * 100));
+          volume.max = "1";
+          volume.step = "0.01";
+          volume.className = "catalogVolume";
+          volume.value = String(getPreviewItemVolumeHome(item.id));
           var duration = document.createElement("div");
           duration.className = "catalogDuration";
           duration.textContent = "--:--";
 
           var audio = new Audio(item.src);
           audio.preload = "metadata";
-          audio.volume = getPreviewVolumeHome() * initialVolume;
+          audio.volume = getPreviewVolumeHome() * getPreviewItemVolumeHome(item.id);
           homePreviewPlayers[item.id] = audio;
           (function(audioRef, durationEl, playBtnEl, stopBtnEl, volumeEl, itemId){
             audioRef.addEventListener("loadedmetadata", function(){
@@ -2692,8 +2710,7 @@
               }
               activeHomePreview = audioRef;
               try{
-                var itemVol = getPreviewItemVolumeHome(itemId);
-                audioRef.volume = getPreviewVolumeHome() * itemVol;
+                audioRef.volume = getPreviewVolumeHome() * getPreviewItemVolumeHome(itemId);
                 audioRef.currentTime = 0;
                 audioRef.play().catch(function(){});
               }catch(e){}
@@ -2704,9 +2721,8 @@
             });
             volumeEl.addEventListener("input", function(){
               var val = parseFloat(volumeEl.value);
-              var scaled = isFinite(val) ? (val / 100) : 1;
-              setPreviewItemVolumeHome(itemId, scaled);
-              audioRef.volume = getPreviewVolumeHome() * getPreviewItemVolumeHome(itemId);
+              if(!Number.isNaN(val)) setPreviewItemVolumeHome(itemId, val);
+              try{ audioRef.volume = getPreviewVolumeHome() * getPreviewItemVolumeHome(itemId); }catch(e){}
             });
           })(audio, duration, playBtn, stopBtn, volume, item.id);
           try{ audio.load(); }catch(e){}
@@ -2715,7 +2731,7 @@
           controls.appendChild(stopBtn);
           controls.appendChild(volume);
           controls.appendChild(duration);
-          text.appendChild(controls);;
+          text.appendChild(controls);
         }
 
         li.appendChild(icon);
@@ -2731,9 +2747,35 @@
       renderCatalogListHome(powerupsDefenseListHome, homePowerupCatalogDefense);
       renderCatalogListHome(powerupsOffenseListHome, homePowerupCatalogOffense);
       renderCatalogListHome(sfxListHome, homeSfxCatalog, function(item){
-        if(!activeSfxCategoryHome || activeSfxCategoryHome === "all") return true;
-        return item.category === activeSfxCategoryHome;
+        return activeSfxCategoryHome === "all" || item.category === activeSfxCategoryHome;
       });
+    }
+
+    function setSfxCategoryHome(category){
+      activeSfxCategoryHome = category || "all";
+      if(sfxCategoryButtonsHome && sfxCategoryButtonsHome.length){
+        sfxCategoryButtonsHome.forEach(function(btn){
+          var cat = btn.getAttribute("data-sfx-category") || "all";
+          btn.classList.toggle("active", cat === activeSfxCategoryHome);
+        });
+      }
+      renderHomeCatalogs();
+    }
+
+    function setSettingsTabHome(tabId){
+      var target = tabId || "audio";
+      if(settingsTabButtonsHome && settingsTabButtonsHome.length){
+        settingsTabButtonsHome.forEach(function(btn){
+          var id = btn.getAttribute("data-settings-tab") || "audio";
+          btn.classList.toggle("active", id === target);
+        });
+      }
+      if(settingsPanelsHome && settingsPanelsHome.length){
+        settingsPanelsHome.forEach(function(panel){
+          var id = panel.getAttribute("data-settings-panel") || "audio";
+          panel.classList.toggle("active", id === target);
+        });
+      }
     }
 
     var shipRadios = Array.prototype.slice.call(document.querySelectorAll('input[name="ship"]'));
@@ -2897,73 +2939,22 @@
     var controlsOverlay = document.getElementById("controlsOverlay");
     var leaderboardsOverlay = document.getElementById("leaderboardsOverlay");
     var settingsOverlay = document.getElementById("settingsOverlay");
-    var settingsTabButtonsHome = settingsOverlay ? settingsOverlay.querySelectorAll("[data-settings-tab]") : [];
-    var settingsPanelsHome = settingsOverlay ? settingsOverlay.querySelectorAll("[data-settings-panel]") : [];
-    var toggleWideGameplayHome = document.getElementById("toggleWideGameplayHome");
-    var toggleMousepadAutoHome = document.getElementById("toggleMousepadAutoHome");
-    var wideGameplayKey = "mentaris.gameplay.wide";
-    var mousepadAutoKey = "mentaris.mousepad.autostart";
-
-    function setSettingsTabHome(tabId){
-      if(!settingsTabButtonsHome || !settingsPanelsHome) return;
-      for(var i=0; i<settingsTabButtonsHome.length; i++){
-        var btn = settingsTabButtonsHome[i];
-        var isActive = btn.getAttribute("data-settings-tab") === tabId;
-        btn.classList.toggle("active", isActive);
-      }
-      for(var j=0; j<settingsPanelsHome.length; j++){
-        var panel = settingsPanelsHome[j];
-        var show = panel.getAttribute("data-settings-panel") === tabId;
-        panel.classList.toggle("active", show);
-      }
-    }
-
-    function setSfxCategoryHome(category){
-      activeSfxCategoryHome = category || "all";
-      if(sfxCategoryButtonsHome && sfxCategoryButtonsHome.length){
-        for(var i=0; i<sfxCategoryButtonsHome.length; i++){
-          var btn = sfxCategoryButtonsHome[i];
-          var isActive = (btn.getAttribute("data-sfx-category") || "all") === activeSfxCategoryHome;
-          btn.classList.toggle("active", isActive);
-        }
-      }
-      renderHomeCatalogs();
-    }
-
-    function loadSettingsTogglesHome(){
-      try{
-        var wideStored = localStorage.getItem(wideGameplayKey);
-        if(toggleWideGameplayHome){
-          toggleWideGameplayHome.checked = wideStored === "1" || wideStored === "true";
-        }
-      }catch(e){}
-      try{
-        var mouseStored = localStorage.getItem(mousepadAutoKey);
-        if(toggleMousepadAutoHome){
-          toggleMousepadAutoHome.checked = mouseStored === "1" || mouseStored === "true";
-        }
-      }catch(e){}
-    }
     var briefingOverlay = document.getElementById("briefingOverlay");
     var campaignOverlay = document.getElementById("campaignOverlay");
     var btnCloseCampaign = document.getElementById("btnCloseCampaign");
-    var btnCampaignProfilesBack = document.getElementById("btnCampaignProfilesBack");
     var btnCampaignStart = document.getElementById("btnCampaignStart");
-    var btnCampaignReset = document.getElementById("btnCampaignReset");
     var btnCampaignContinue = document.getElementById("btnCampaignContinue");
     var campaignConfirmOverlay = document.getElementById("campaignConfirmOverlay");
-    var campaignEraseOverlay = document.getElementById("campaignEraseOverlay");
-    var btnCampaignEraseCancel = document.getElementById("btnCampaignEraseCancel");
-    var btnCampaignEraseConfirm = document.getElementById("btnCampaignEraseConfirm");
-    var campaignEraseSubtitle = document.getElementById("campaignEraseSubtitle");
-    var campaignEraseText = document.getElementById("campaignEraseText");
-    var campaignErasePending = null;
     var btnCampaignConfirmStart = document.getElementById("btnCampaignConfirmStart");
     var btnCampaignConfirmCancel = document.getElementById("btnCampaignConfirmCancel");
     var btnCampaignConfirmContinue = document.getElementById("btnCampaignConfirmContinue");
     var btnCampaignBack = document.getElementById("btnCampaignBack");
     var campaignProfilesView = document.getElementById("campaignProfilesView");
-    var campaignProfileGrid = document.getElementById("campaignProfileGrid");
+    var campaignProfilesGrid = document.getElementById("campaignProfilesGrid");
+    var campaignEraseOverlay = document.getElementById("campaignEraseOverlay");
+    var btnCampaignEraseConfirm = document.getElementById("btnCampaignEraseConfirm");
+    var btnCampaignEraseCancel = document.getElementById("btnCampaignEraseCancel");
+    var campaignEraseSubtitle = document.getElementById("campaignEraseSubtitle");
     var campaignSelectView = document.getElementById("campaignSelectView");
     var campaignMissionsView = document.getElementById("campaignMissionsView");
     var campaignSetList = document.getElementById("campaignSetList");
@@ -2980,22 +2971,18 @@
     var btnCloseSettings = document.getElementById("btnCloseSettings");
     var btnCloseSettingsBottom = document.getElementById("btnCloseSettingsBottom");
 
-    var btnPowerupsHome = document.getElementById("btnPowerupsHome");
-    var btnSfxHome = document.getElementById("btnSfxHome");
-    var powerupsOverlayHome = document.getElementById("powerupsOverlayHome");
-    var sfxOverlayHome = document.getElementById("sfxOverlayHome");
-    var btnClosePowerupsHome = document.getElementById("btnClosePowerupsHome");
-    var btnBackPowerupsHome = document.getElementById("btnBackPowerupsHome");
-    var btnCloseSfxHome = document.getElementById("btnCloseSfxHome");
-    var btnBackSfxHome = document.getElementById("btnBackSfxHome");
+    var settingsTabButtonsHome = Array.prototype.slice.call(document.querySelectorAll("#settingsOverlay .settingsTabBtn"));
+    var settingsPanelsHome = Array.prototype.slice.call(document.querySelectorAll("#settingsOverlay .settingsPanel"));
+    var btnActiveSfxHome = document.getElementById("btnActiveSfxHome");
+    var sfxCatalogPanelHome = document.getElementById("sfxCatalogPanelHome");
+    var sfxCategoryButtonsHome = Array.prototype.slice.call(document.querySelectorAll("#settingsOverlay .sfxCategoryBtn"));
     var powerupsSecondaryListHome = document.getElementById("powerupsSecondaryListHome");
     var powerupsDefenseListHome = document.getElementById("powerupsDefenseListHome");
     var powerupsOffenseListHome = document.getElementById("powerupsOffenseListHome");
     var sfxListHome = document.getElementById("sfxListHome");
-    var sfxCatalogPanelHome = document.getElementById("sfxCatalogPanelHome");
-    var sfxCategoryButtonsHome = settingsOverlay ? settingsOverlay.querySelectorAll("[data-sfx-category]") : [];
-    var activeSfxCategoryHome = "all";
     var btnFullscreenHome = document.getElementById("btnFullscreenHome");
+    var toggleWideGameplayHome = document.getElementById("toggleWideGameplayHome");
+    var toggleMousepadAutoHome = document.getElementById("toggleMousepadAutoHome");
     var btnLaunchGame = document.getElementById("btnLaunchGame");
     var btnStepBack = document.getElementById("btnStepBack");
     var btnStepNext = document.getElementById("btnStepNext");
@@ -3005,6 +2992,7 @@
     var stepIndex = 0;
     var pendingConfig = null;
     var pendingCampaign = null;
+    var pendingEraseProfileId = null;
     var campaignShipSelect = false;
     var launchPending = false;
     var tutorialPending = false;
@@ -3399,55 +3387,56 @@
         playMenuBeep();
         settingsOverlay.classList.add("show");
         setSettingsTabHome("audio");
-        renderHomeCatalogs();
-        loadSettingsTogglesHome();
+        loadWideGameplayHome();
+        loadMousepadAutoHome();
+        setSfxCategoryHome(activeSfxCategoryHome);
+        if(sfxCatalogPanelHome) sfxCatalogPanelHome.classList.remove("open");
       });
     }
-    if (btnPowerupsHome && powerupsOverlayHome) {
-      btnPowerupsHome.addEventListener("click", function(){
-        playMenuBeep();
-        if(settingsOverlay) settingsOverlay.classList.remove("show");
-        renderHomeCatalogs();
-        powerupsOverlayHome.classList.add("show");
-        powerupsOverlayHome.scrollTop = 0;
-        window.scrollTo(0, 0);
+    if(settingsTabButtonsHome && settingsTabButtonsHome.length){
+      settingsTabButtonsHome.forEach(function(btn){
+        btn.addEventListener("click", function(){
+          playMenuBeep();
+          var tabId = btn.getAttribute("data-settings-tab") || "audio";
+          setSettingsTabHome(tabId);
+          if(tabId === "catalogs"){ renderHomeCatalogs(); }
+        });
       });
     }
-    if (btnSfxHome) {
-      btnSfxHome.addEventListener("click", function(){
+    if(btnActiveSfxHome && sfxCatalogPanelHome){
+      btnActiveSfxHome.addEventListener("click", function(){
         playMenuBeep();
-        if(sfxCatalogPanelHome){
-          var willOpen = !sfxCatalogPanelHome.classList.contains("open");
-          sfxCatalogPanelHome.classList.toggle("open", willOpen);
-          if(willOpen){
-            renderHomeCatalogs();
-            if(sfxListHome && typeof sfxListHome.scrollIntoView === "function"){
-              sfxListHome.scrollIntoView({ block: "start", behavior: "smooth" });
-            }
-          }
-        }else{
-          if(settingsOverlay) settingsOverlay.classList.add("show");
-          setSettingsTabHome("audio");
+        var willOpen = !sfxCatalogPanelHome.classList.contains("open");
+        sfxCatalogPanelHome.classList.toggle("open", willOpen);
+        if(willOpen){
           renderHomeCatalogs();
-          loadSettingsTogglesHome();
           if(sfxListHome && typeof sfxListHome.scrollIntoView === "function"){
             sfxListHome.scrollIntoView({ block: "start", behavior: "smooth" });
           }
         }
       });
     }
-    if (sfxCategoryButtonsHome && sfxCategoryButtonsHome.length) {
-      for(var i=0; i<sfxCategoryButtonsHome.length; i++){
-        (function(btn){
-          btn.addEventListener("click", function(){
-            playMenuBeep();
-            var cat = btn.getAttribute("data-sfx-category") || "all";
-            setSfxCategoryHome(cat);
-          });
-        })(sfxCategoryButtonsHome[i]);
-      }
+    if(sfxCategoryButtonsHome && sfxCategoryButtonsHome.length){
+      sfxCategoryButtonsHome.forEach(function(btn){
+        btn.addEventListener("click", function(){
+          playMenuBeep();
+          var cat = btn.getAttribute("data-sfx-category") || "all";
+          setSfxCategoryHome(cat);
+        });
+      });
     }
-
+    if(toggleWideGameplayHome){
+      toggleWideGameplayHome.addEventListener("change", function(){
+        playMenuBeep();
+        setWideGameplayHome(toggleWideGameplayHome.checked);
+      });
+    }
+    if(toggleMousepadAutoHome){
+      toggleMousepadAutoHome.addEventListener("change", function(){
+        playMenuBeep();
+        setMousepadAutoHome(toggleMousepadAutoHome.checked);
+      });
+    }
     if (btnCampaign && campaignOverlay) {
       btnCampaign.addEventListener("click", function(){
         playMenuBeep();
@@ -3456,19 +3445,6 @@
         showCampaignProfilesView();
         campaignOverlay.classList.add("show");
         if(menuWrap) menuWrap.classList.add("hidden");
-      });
-    }
-    if (btnCampaignProfilesBack && campaignOverlay) {
-      btnCampaignProfilesBack.addEventListener("click", function(){
-        playMenuBeep();
-        if(campaignProfilesView && campaignProfilesView.classList.contains("active")){
-          closeCampaignEraseConfirm();
-          campaignOverlay.classList.remove("show");
-          if(menuWrap) menuWrap.classList.remove("hidden");
-          return;
-        }
-        renderCampaignProfiles();
-        showCampaignProfilesView();
       });
     }
     if(btnLaunchHome){
@@ -3517,63 +3493,9 @@
       });
     }
     if (btnCloseSettingsBottom && settingsOverlay) {
-    if(settingsTabButtonsHome && settingsTabButtonsHome.length){
-      settingsTabButtonsHome.forEach(function(btn){
-        btn.addEventListener("click", function(){
-          playMenuBeep();
-          var tabId = btn.getAttribute("data-settings-tab") || "audio";
-          setSettingsTabHome(tabId);
-          if(tabId == "catalogs" || tabId == "audio"){ renderHomeCatalogs(); }
-        });
-      });
-    }
-    if(toggleWideGameplayHome){
-      toggleWideGameplayHome.addEventListener("change", function(){
-        playMenuBeep();
-        try{ localStorage.setItem(wideGameplayKey, toggleWideGameplayHome.checked ? "1" : "0"); }catch(e){}
-      });
-    }
-    if(toggleMousepadAutoHome){
-      toggleMousepadAutoHome.addEventListener("change", function(){
-        playMenuBeep();
-        try{ localStorage.setItem(mousepadAutoKey, toggleMousepadAutoHome.checked ? "1" : "0"); }catch(e){}
-      });
-    }
       btnCloseSettingsBottom.addEventListener("click", function(){
         playMenuBeep();
         settingsOverlay.classList.remove("show");
-        stopAllPreviewAudioHome();
-      });
-    }
-    if (btnClosePowerupsHome && powerupsOverlayHome) {
-      btnClosePowerupsHome.addEventListener("click", function(){
-        playMenuBeep();
-        powerupsOverlayHome.classList.remove("show");
-        if(settingsOverlay) settingsOverlay.classList.add("show");
-        stopAllPreviewAudioHome();
-      });
-    }
-    if (btnBackPowerupsHome && powerupsOverlayHome) {
-      btnBackPowerupsHome.addEventListener("click", function(){
-        playMenuBeep();
-        powerupsOverlayHome.classList.remove("show");
-        if(settingsOverlay) settingsOverlay.classList.add("show");
-        stopAllPreviewAudioHome();
-      });
-    }
-    if (btnCloseSfxHome && sfxOverlayHome) {
-      btnCloseSfxHome.addEventListener("click", function(){
-        playMenuBeep();
-        sfxOverlayHome.classList.remove("show");
-        if(settingsOverlay) settingsOverlay.classList.add("show");
-        stopAllPreviewAudioHome();
-      });
-    }
-    if (btnBackSfxHome && sfxOverlayHome) {
-      btnBackSfxHome.addEventListener("click", function(){
-        playMenuBeep();
-        sfxOverlayHome.classList.remove("show");
-        if(settingsOverlay) settingsOverlay.classList.add("show");
         stopAllPreviewAudioHome();
       });
     }
@@ -3606,6 +3528,34 @@
       setFullscreenLabel(btnFullscreenHome, !!document.fullscreenElement);
     }
 
+    var wideGameplayKey = "mentaris.gameplay.wide";
+    var mousepadAutoKey = "mentaris.mousepad.autostart";
+
+    function setWideGameplayHome(isWide){
+      var on = !!isWide;
+      document.body.classList.toggle("wideGameplay", on);
+      try{ localStorage.setItem(wideGameplayKey, on ? "1" : "0"); }catch(e){}
+      if(toggleWideGameplayHome) toggleWideGameplayHome.checked = on;
+    }
+
+    function loadWideGameplayHome(){
+      var stored = null;
+      try{ stored = localStorage.getItem(wideGameplayKey); }catch(e){}
+      setWideGameplayHome(stored === "1" || stored === "true");
+    }
+
+    function setMousepadAutoHome(isOn){
+      var on = !!isOn;
+      try{ localStorage.setItem(mousepadAutoKey, on ? "1" : "0"); }catch(e){}
+      if(toggleMousepadAutoHome) toggleMousepadAutoHome.checked = on;
+    }
+
+    function loadMousepadAutoHome(){
+      var stored = null;
+      try{ stored = localStorage.getItem(mousepadAutoKey); }catch(e){}
+      setMousepadAutoHome(stored === "1" || stored === "true");
+    }
+
     if(btnFullscreenHome){
       btnFullscreenHome.addEventListener("click", function(){
         playMenuBeep();
@@ -3619,15 +3569,22 @@
     if (btnCloseCampaign && campaignOverlay) {
       btnCloseCampaign.addEventListener("click", function(){
         playMenuBeep();
-        closeCampaignEraseConfirm();
         campaignOverlay.classList.remove("show");
         if(menuWrap) menuWrap.classList.remove("hidden");
+        showCampaignProfilesView();
       });
     }
     if (btnCampaignBack) {
       btnCampaignBack.addEventListener("click", function(){
         playMenuBeep();
-        showCampaignSelectView();
+        if(campaignMissionsView && campaignMissionsView.classList.contains("active")){
+          showCampaignSelectView();
+        }else if(campaignSelectView && campaignSelectView.classList.contains("active")){
+          showCampaignProfilesView();
+        }else{
+          if(campaignOverlay) campaignOverlay.classList.remove("show");
+          if(menuWrap) menuWrap.classList.remove("hidden");
+        }
       });
     }
     if (btnCloseFunnel && funnelOverlay) {
@@ -3675,21 +3632,11 @@
         if(menuWrap) menuWrap.classList.remove("hidden");
       });
     }
-    if (btnCampaignReset) {
-      btnCampaignReset.addEventListener("click", function(){
-        playMenuBeep();
-        resetCampaignState(getActiveCampaignId());
-        ensureCampaignData();
-        renderCampaignSetList();
-        renderCampaignList();
-        updateCampaignStatus();
-      });
-    }
     if (btnCampaignConfirmStart && campaignConfirmOverlay) {
       btnCampaignConfirmStart.addEventListener("click", function(){
         playMenuBeep();
         var activeId = getActiveCampaignId();
-        resetCampaignState(activeId);
+        resetCampaignState(activeId, getActiveProfileId());
         ensureCampaignData();
         renderCampaignSetList();
         renderCampaignList();
@@ -3718,36 +3665,20 @@
         campaignConfirmOverlay.classList.remove("show");
       });
     }
+    if (btnCampaignEraseConfirm && campaignEraseOverlay) {
+      btnCampaignEraseConfirm.addEventListener("click", function(){
+        playMenuBeep();
+        if(pendingEraseProfileId){
+          resetCampaignProgressForProfile(pendingEraseProfileId);
+        }
+        closeCampaignEraseConfirm();
+        renderCampaignProfiles();
+      });
+    }
     if (btnCampaignEraseCancel && campaignEraseOverlay) {
       btnCampaignEraseCancel.addEventListener("click", function(){
         playMenuBeep();
         closeCampaignEraseConfirm();
-      });
-    }
-    if (btnCampaignEraseConfirm && campaignEraseOverlay) {
-      btnCampaignEraseConfirm.addEventListener("click", function(){
-        playMenuBeep();
-        if(!campaignErasePending){
-          closeCampaignEraseConfirm();
-          return;
-        }
-        resetCampaignProgressForProfile(campaignErasePending.id);
-        showToast("PROFILE RESET");
-        renderCampaignProfiles();
-        if(campaignErasePending.id === getActiveProfileId()){
-          renderCampaignSetList();
-          renderCampaignList();
-          updateCampaignStatus();
-        }
-        closeCampaignEraseConfirm();
-      });
-    }
-    if (campaignEraseOverlay) {
-      campaignEraseOverlay.addEventListener("click", function(e){
-        if (e.target === campaignEraseOverlay){
-          playMenuBeep();
-          closeCampaignEraseConfirm();
-        }
       });
     }
 
@@ -3767,36 +3698,23 @@
         if (e.target === settingsOverlay) stopAllPreviewAudioHome();
       });
     }
-    if (powerupsOverlayHome) {
-      powerupsOverlayHome.addEventListener("click", function(e){
-        if (e.target === powerupsOverlayHome) {
-          powerupsOverlayHome.classList.remove("show");
-          if(settingsOverlay) settingsOverlay.classList.add("show");
-          stopAllPreviewAudioHome();
-        }
-      });
-    }
-    if (sfxOverlayHome) {
-      sfxOverlayHome.addEventListener("click", function(e){
-        if (e.target === sfxOverlayHome) {
-          sfxOverlayHome.classList.remove("show");
-          if(settingsOverlay) settingsOverlay.classList.add("show");
-          stopAllPreviewAudioHome();
-        }
-      });
-    }
     if (campaignOverlay) {
       campaignOverlay.addEventListener("click", function(e){
         if (e.target === campaignOverlay){
-          closeCampaignEraseConfirm();
           campaignOverlay.classList.remove("show");
           if(menuWrap) menuWrap.classList.remove("hidden");
+          showCampaignProfilesView();
         }
       });
     }
     if (campaignConfirmOverlay) {
       campaignConfirmOverlay.addEventListener("click", function(e){
         if (e.target === campaignConfirmOverlay) campaignConfirmOverlay.classList.remove("show");
+      });
+    }
+    if (campaignEraseOverlay) {
+      campaignEraseOverlay.addEventListener("click", function(e){
+        if (e.target === campaignEraseOverlay) closeCampaignEraseConfirm();
       });
     }
     if (funnelOverlay) {
@@ -3816,6 +3734,8 @@
       if(params.get("campaignPick") !== "1") return;
       var idx = parseInt(params.get("campaignIndex"), 10);
       if(Number.isNaN(idx)) return;
+      var profileParam = params.get("campaignProfile");
+      if(profileParam) setActiveProfileId(profileParam);
       var campaignId = params.get("campaignId") || getActiveCampaignId();
       setActiveCampaignId(campaignId);
       ensureCampaignData();
@@ -3905,10 +3825,6 @@
 
     beltChoices.forEach(function(card){
       card.addEventListener("click", function(){
-        if(card.dataset.locked === "true"){
-          showToast("CLUSTER LOCKED");
-          return;
-        }
         playMenuBeep();
         setBelt(card.getAttribute("data-belt"));
         advanceFromChoice();
@@ -3977,6 +3893,7 @@
       if(campaignProfilesView) campaignProfilesView.classList.add("active");
       if(campaignSelectView) campaignSelectView.classList.remove("active");
       if(campaignMissionsView) campaignMissionsView.classList.remove("active");
+      renderCampaignProfiles();
     }
 
     function showCampaignSelectView(){
@@ -3989,160 +3906,6 @@
       if(campaignProfilesView) campaignProfilesView.classList.remove("active");
       if(campaignSelectView) campaignSelectView.classList.remove("active");
       if(campaignMissionsView) campaignMissionsView.classList.add("active");
-    }
-
-    function activateCampaignProfile(profileId){
-      setActiveProfileId(profileId);
-      ensureCampaignData();
-      renderCampaignSetList();
-      renderCampaignList();
-      updateCampaignStatus();
-      showCampaignSelectView();
-    }
-
-    function setCampaignActiveForProfile(profileId, campaignId){
-      var key = getCampaignActiveKey(profileId);
-      var targetId = campaignId || campaignDefaultId;
-      try{ localStorage.setItem(key, targetId); }catch(e){}
-      if(profileId === getActiveProfileId()) activeCampaignId = targetId;
-    }
-
-    function resetCampaignProgressForProfile(profileId){
-      campaignSets.forEach(function(set){
-        resetCampaignState(set.id, profileId);
-      });
-      setCampaignActiveForProfile(profileId, campaignDefaultId);
-    }
-
-    function openCampaignEraseConfirm(profile){
-      if(!campaignEraseOverlay || !profile) return false;
-      campaignErasePending = { id: profile.id, name: profile.name || "" };
-      if(campaignEraseSubtitle){
-        campaignEraseSubtitle.textContent = "This will reset the selected profile's campaign progress.";
-      }
-      if(campaignEraseText){
-        var label = campaignErasePending.name || "this profile";
-        campaignEraseText.textContent = "Erase campaign progress for " + label + "? This cannot be undone.";
-      }
-      campaignEraseOverlay.classList.add("show");
-      return true;
-    }
-
-    function closeCampaignEraseConfirm(){
-      if(campaignEraseOverlay) campaignEraseOverlay.classList.remove("show");
-      campaignErasePending = null;
-    }
-
-    function renderCampaignProfiles(){
-      if(!campaignProfileGrid) return;
-      var profiles = loadCampaignProfiles();
-      var activeId = getActiveProfileId();
-      campaignProfileGrid.innerHTML = "";
-      profiles.forEach(function(profile, index){
-        var isEmpty = !profile.name;
-        var isActive = profile.id === activeId;
-        var card = document.createElement("div");
-        card.className = "panel profileCard" + (isEmpty ? " empty" : " filled") + (isActive ? " active" : "");
-
-        var header = document.createElement("div");
-        header.className = "profileHeader";
-        var name = document.createElement("div");
-        name.className = "profileName";
-        name.textContent = isEmpty ? "New Profile" : profile.name;
-        var status = document.createElement("div");
-        status.className = "profileStatus";
-        status.textContent = isEmpty ? "EMPTY" : (isActive ? "ACTIVE" : "READY");
-        header.appendChild(name);
-        header.appendChild(status);
-
-        var meta = document.createElement("div");
-        meta.className = "profileMeta";
-        meta.textContent = isEmpty ? "Create a profile to save campaign progress." : "Continue this pilot's campaign progress.";
-
-        var actions = document.createElement("div");
-        actions.className = "profileActions";
-        var actionBtn = document.createElement("button");
-        actionBtn.type = "button";
-        actionBtn.className = "btn";
-        actionBtn.textContent = isEmpty ? "New Profile" : "Continue";
-        actions.appendChild(actionBtn);
-        var eraseBtn = null;
-        if(!isEmpty){
-          eraseBtn = document.createElement("button");
-          eraseBtn.type = "button";
-          eraseBtn.className = "btn";
-          eraseBtn.textContent = "Erase";
-          actions.appendChild(eraseBtn);
-        }
-
-        var editRow = document.createElement("div");
-        editRow.className = "profileEdit";
-        var input = document.createElement("input");
-        input.type = "text";
-        input.maxLength = 18;
-        input.placeholder = "Pilot name";
-        var saveBtn = document.createElement("button");
-        saveBtn.type = "button";
-        saveBtn.className = "btn";
-        saveBtn.textContent = "Save & Continue";
-        editRow.appendChild(input);
-        editRow.appendChild(saveBtn);
-
-        card.appendChild(header);
-        card.appendChild(meta);
-        card.appendChild(actions);
-        card.appendChild(editRow);
-        campaignProfileGrid.appendChild(card);
-
-        if(isEmpty){
-          actionBtn.addEventListener("click", function(e){
-            e.preventDefault();
-            playMenuBeep();
-            card.classList.add("editing");
-            input.focus();
-          });
-          saveBtn.addEventListener("click", function(){
-            var nameVal = (input.value || "").trim();
-            if(!nameVal){
-              input.focus();
-              return;
-            }
-            profiles[index].name = nameVal;
-            profiles[index].created = profiles[index].created || Date.now();
-            profiles[index].lastUsed = Date.now();
-            saveCampaignProfiles(profiles);
-            playMenuBeep();
-            activateCampaignProfile(profile.id);
-          });
-          input.addEventListener("keydown", function(e){
-            if(e.key === "Enter"){
-              e.preventDefault();
-              saveBtn.click();
-            }
-          });
-        }else{
-          actionBtn.addEventListener("click", function(){
-            playMenuBeep();
-            activateCampaignProfile(profile.id);
-          });
-          if(eraseBtn){
-            eraseBtn.addEventListener("click", function(){
-              playMenuBeep();
-              if(openCampaignEraseConfirm(profile)) return;
-              var confirmMsg = "Erase campaign progress for " + profile.name + "?";
-              if(!window.confirm(confirmMsg)) return;
-              resetCampaignProgressForProfile(profile.id);
-              showToast("PROFILE RESET");
-              renderCampaignProfiles();
-              if(profile.id === getActiveProfileId()){
-                renderCampaignSetList();
-                renderCampaignList();
-                updateCampaignStatus();
-              }
-            });
-          }
-        }
-      });
     }
 
     function renderCampaignSetList(){
@@ -4297,7 +4060,7 @@
     }
 
     function openCampaignShipSelect(index, config, campaignId){
-      pendingCampaign = { index: index, id: campaignId || getActiveCampaignId() };
+      pendingCampaign = { index: index, id: campaignId || getActiveCampaignId(), profileId: getActiveProfileId() };
       pendingConfig = config;
       campaignShipSelect = true;
       if(menuWrap) menuWrap.classList.add("hidden");
@@ -4314,7 +4077,7 @@
       campaignShipSelect = false;
       var config = Object.assign({}, defaults, m.config);
       if(config.ship){
-        pendingCampaign = { index: index, id: activeId };
+        pendingCampaign = { index: index, id: activeId, profileId: getActiveProfileId() };
         pendingConfig = config;
         showBriefing(config);
       }else{
@@ -4520,16 +4283,18 @@
       if(pendingCampaign){
         ensureCampaignData();
         var activeId = pendingCampaign.id || getActiveCampaignId();
+        var profileId = pendingCampaign.profileId || getActiveProfileId();
+        setActiveProfileId(profileId);
         setActiveCampaignId(activeId);
         var state = loadCampaignState(activeId);
         state.active = true;
         state.failed = false;
         state.index = pendingCampaign.index;
-        saveCampaignState(state, activeId);
+        saveCampaignState(state, activeId, profileId);
         params.set("campaign", "1");
         params.set("campaignIndex", String(pendingCampaign.index));
         params.set("campaignId", activeId);
-        params.set("campaignProfile", getActiveProfileId());
+        params.set("campaignProfile", profileId);
       }
       setTimeout(function(){
         window.location.href = "asteroid_blaster.html?" + params.toString();
@@ -4577,52 +4342,6 @@
       });
     }
 
-    var leaderboardSelection = { operation: "", modeLabel: "", submode: "" };
-
-    function describeLeaderboardMode(modeLabel){
-      var modeStr = String(modeLabel || "classic");
-      var isAdd = modeStr.indexOf("add_") === 0;
-      var isSquare = modeStr.indexOf("square_") === 0;
-      var isRational = modeStr.indexOf("rational_") === 0;
-      var operation = isRational ? "Rationals" : (isSquare ? "Squares" : (isAdd ? "Addition" : "Multiplication"));
-      var modeName = "Classic Answer";
-      if(isRational){
-        modeName = (modeStr == "rational_dec") ? "Target Decimal" : "Target Fraction";
-      }else if(isSquare){
-        modeName = (modeStr == "square_root") ? "Square Roots" : "Perfect Squares";
-      }else{
-        modeName = (modeStr.indexOf("digits") !== -1) ? "Digit Hunt" : "Classic Answer";
-      }
-      var subLabel = "";
-      if(isRational){
-        subLabel = (modeStr == "rational_dec") ? "Decimal" : "Fraction";
-      }else if(isSquare){
-        subLabel = (modeStr == "square_root") ? "Shoot Roots" : "Shoot Squares";
-      }else{
-        var sub = (modeStr.indexOf("3") !== -1) ? "3" : "2";
-        subLabel = isAdd ? (sub + "x" + sub) : ("1x" + sub);
-      }
-      return {
-        operation: operation,
-        modeLabel: modeName,
-        submode: subLabel,
-        key: operation + "|" + modeName + "|" + subLabel
-      };
-    }
-
-    function getLeaderboardCategory(item){
-      if(item && item.operation && item.modeLabel && item.submode){
-        return {
-          operation: item.operation,
-          modeLabel: item.modeLabel,
-          submode: item.submode,
-          key: item.modeKey || (item.operation + "|" + item.modeLabel + "|" + item.submode)
-        };
-      }
-      return describeLeaderboardMode(item && item.mode ? item.mode : "");
-    }
-
-
     function renderHomeStats(){
       var card = document.querySelector(".leaderboardsCard");
       var hsTopEl = document.getElementById("homeHighScoresTop");
@@ -4631,9 +4350,6 @@
       var detailPanel = document.getElementById("homeScoreDetail");
       var detailTitle = document.getElementById("homeScoreDetailTitle");
       var detailList = document.getElementById("homeScoreDetailList");
-      var opSelect = document.getElementById("homeLeaderboardOperation");
-      var modeSelect = document.getElementById("homeLeaderboardMode");
-      var subSelect = document.getElementById("homeLeaderboardSubmode");
       if(!hsTopEl || !hsRestEl || !ltEl) return;
       hsTopEl.innerHTML = "";
       hsRestEl.innerHTML = "";
@@ -4642,167 +4358,34 @@
       if(card) card.classList.remove("showDetail");
       var stats = null;
       try{
-        var rawStats = localStorage.getItem("mathsteroid.stats");
-        if(rawStats) stats = JSON.parse(rawStats);
+        var raw = localStorage.getItem("mathsteroid.stats");
+        if(raw) stats = JSON.parse(raw);
       }catch(e){
         stats = null;
       }
 
-      var categoryMap = {};
-      if(stats && stats.highScoresByKey){
-        var keys = Object.keys(stats.highScoresByKey);
-        for(var k=0; k<keys.length; k++){
-          var key = keys[k];
-          var list = stats.highScoresByKey[key] || [];
-          if(!list.length) continue;
-          var info = getLeaderboardCategory(list[0]);
-          categoryMap[key] = {
-            key: key,
-            operation: info.operation,
-            modeLabel: info.modeLabel,
-            submode: info.submode,
-            scores: list.slice()
-          };
-        }
-      }
-      if(!Object.keys(categoryMap).length && stats && stats.highScores){
-        for(var h=0; h<stats.highScores.length; h++){
-          var item = stats.highScores[h];
-          var info2 = getLeaderboardCategory(item);
-          var key2 = info2.key;
-          if(!categoryMap[key2]){
-            categoryMap[key2] = {
-              key: key2,
-              operation: info2.operation,
-              modeLabel: info2.modeLabel,
-              submode: info2.submode,
-              scores: []
-            };
-          }
-          categoryMap[key2].scores.push(item);
-        }
-      }
-
-      var categories = Object.keys(categoryMap).map(function(key){ return categoryMap[key]; });
-      categories.sort(function(a,b){
-        if(a.operation !== b.operation) return a.operation.localeCompare(b.operation);
-        if(a.modeLabel !== b.modeLabel) return a.modeLabel.localeCompare(b.modeLabel);
-        return a.submode.localeCompare(b.submode);
-      });
-
-      function setSelectOptions(select, options, selectedValue){
-        if(!select) return;
-        select.innerHTML = "";
-        for(var i=0; i<options.length; i++){
-          var opt = document.createElement("option");
-          opt.value = options[i];
-          opt.textContent = options[i];
-          if(options[i] === selectedValue) opt.selected = true;
-          select.appendChild(opt);
-        }
-      }
-
-      if(opSelect && modeSelect && subSelect){
-        if(!categories.length){
-          setSelectOptions(opSelect, ["-"]);
-          setSelectOptions(modeSelect, ["-"]);
-          setSelectOptions(subSelect, ["-"]);
-          opSelect.disabled = true;
-          modeSelect.disabled = true;
-          subSelect.disabled = true;
-        }else{
-          opSelect.disabled = false;
-          modeSelect.disabled = false;
-          subSelect.disabled = false;
-          var ops = [];
-          for(var o=0; o<categories.length; o++){
-            if(ops.indexOf(categories[o].operation) === -1) ops.push(categories[o].operation);
-          }
-          if(ops.indexOf(leaderboardSelection.operation) === -1){
-            leaderboardSelection.operation = ops[0];
-            leaderboardSelection.modeLabel = "";
-            leaderboardSelection.submode = "";
-          }
-          setSelectOptions(opSelect, ops, leaderboardSelection.operation);
-
-          var modes = [];
-          for(var m=0; m<categories.length; m++){
-            if(categories[m].operation !== leaderboardSelection.operation) continue;
-            if(modes.indexOf(categories[m].modeLabel) === -1) modes.push(categories[m].modeLabel);
-          }
-          if(modes.indexOf(leaderboardSelection.modeLabel) === -1){
-            leaderboardSelection.modeLabel = modes[0];
-            leaderboardSelection.submode = "";
-          }
-          setSelectOptions(modeSelect, modes, leaderboardSelection.modeLabel);
-
-          var submodes = [];
-          for(var s=0; s<categories.length; s++){
-            if(categories[s].operation !== leaderboardSelection.operation) continue;
-            if(categories[s].modeLabel !== leaderboardSelection.modeLabel) continue;
-            if(submodes.indexOf(categories[s].submode) === -1) submodes.push(categories[s].submode);
-          }
-          if(submodes.indexOf(leaderboardSelection.submode) === -1){
-            leaderboardSelection.submode = submodes[0];
-          }
-          setSelectOptions(subSelect, submodes, leaderboardSelection.submode);
-
-          opSelect.onchange = function(){
-            leaderboardSelection.operation = opSelect.value;
-            leaderboardSelection.modeLabel = "";
-            leaderboardSelection.submode = "";
-            renderHomeStats();
-          };
-          modeSelect.onchange = function(){
-            leaderboardSelection.modeLabel = modeSelect.value;
-            leaderboardSelection.submode = "";
-            renderHomeStats();
-          };
-          subSelect.onchange = function(){
-            leaderboardSelection.submode = subSelect.value;
-            renderHomeStats();
-          };
-        }
-      }
-
-      var activeCategory = null;
-      if(categories.length){
-        var activeKey = leaderboardSelection.operation + "|" + leaderboardSelection.modeLabel + "|" + leaderboardSelection.submode;
-        activeCategory = categoryMap[activeKey];
-        if(!activeCategory){
-          activeCategory = categories[0];
-          leaderboardSelection.operation = activeCategory.operation;
-          leaderboardSelection.modeLabel = activeCategory.modeLabel;
-          leaderboardSelection.submode = activeCategory.submode;
-        }
-      }
-
-      var hs = activeCategory ? activeCategory.scores.slice() : [];
-      hs.sort(function(a,b){ return b.score - a.score; });
+      var hs = stats && stats.highScores ? stats.highScores : [];
       var top = hs.slice(0,5);
       var rest = hs.slice(5);
 
       function buildRow(item, rank){
         var row = document.createElement("li");
-        var name = item.name ? ("  - " + item.name) : "";
-        row.innerHTML = "<span>#" + rank + "  - " + item.score + " pts" + name + "</span><b>Lv " + item.level + "</b>";
+        var name = item.name ? (" â€¢ " + item.name) : "";
+        row.innerHTML = "<span>#" + rank + " â€¢ " + item.score + " pts" + name + "</span><b>Lv " + item.level + "</b>";
         row.dataset.scoreId = item.id || "";
         row.style.cursor = "pointer";
         row.addEventListener("click", function(){
           if(!detailPanel || !detailList || !card) return;
           detailList.innerHTML = "";
           var date = item.date ? new Date(item.date) : null;
-          var title = (item.name ? item.name + "  - " : "") + item.score + " pts";
+          var title = (item.name ? item.name + " â€¢ " : "") + item.score + " pts";
           if(detailTitle) detailTitle.textContent = title;
-          var info = getLeaderboardCategory(item);
           var rows = [
             ["SCORE", item.score],
             ["LEVEL", item.level],
             ["CORRECT", item.correct],
-            ["OPERATION", info.operation || "-"],
-            ["MODE", info.modeLabel || "-"],
-            ["SUBMODE", info.submode || "-"],
-            ["DATE", date ? date.toLocaleString() : "-"]
+            ["MODE", item.mode || "â€”"],
+            ["DATE", date ? date.toLocaleString() : "â€”"]
           ];
           for(var r=0;r<rows.length;r++){
             var li = document.createElement("li");
@@ -4816,7 +4399,7 @@
 
       if(!hs.length){
         var liEmpty = document.createElement("li");
-        liEmpty.innerHTML = '<span>NO SCORES YET</span><b class="pillGood">PLAY</b>';
+        liEmpty.innerHTML = "<span>NO SCORES YET</span><b class=\"pillGood\">PLAY</b>";
         hsTopEl.appendChild(liEmpty);
       }else{
         for(var i=0;i<top.length;i++){
@@ -4824,7 +4407,7 @@
         }
         if(!rest.length){
           var liRest = document.createElement("li");
-          liRest.innerHTML = '<span>NO MORE SCORES</span><b class="pillGood">-</b>';
+          liRest.innerHTML = "<span>NO MORE SCORES</span><b class=\"pillGood\">â€”</b>";
           hsRestEl.appendChild(liRest);
         }else{
           for(var j=0;j<rest.length;j++){
@@ -4834,9 +4417,6 @@
       }
 
       if(!stats){
-        var li1 = document.createElement("li");
-        li1.innerHTML = "<span>BEST SCORE</span><b>0</b>";
-        ltEl.appendChild(li1);
         var li2 = document.createElement("li");
         li2.innerHTML = "<span>SESSIONS</span><b>0</b>";
         ltEl.appendChild(li2);
