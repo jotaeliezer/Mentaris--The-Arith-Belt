@@ -508,6 +508,32 @@
       z-index: 1;
       text-shadow: 0 2px 10px rgba(0,0,0,.6);
     }
+    .beltChoice.locked{
+      opacity:0.5;
+      cursor:not-allowed;
+      border-color: rgba(255,255,255,.08);
+      box-shadow:none;
+      transform:none;
+      filter: grayscale(0.45);
+    }
+    .beltChoice.locked:hover{
+      transform:none;
+      border-color: rgba(255,255,255,.12);
+      box-shadow:none;
+    }
+    .beltLockTag{
+      position:absolute;
+      top:10px;
+      right:10px;
+      padding:4px 8px;
+      border-radius:999px;
+      font-size:10px;
+      letter-spacing:1px;
+      text-transform:uppercase;
+      background: rgba(8,12,24,.75);
+      border:1px solid rgba(255,255,255,.2);
+      color: rgba(232,236,255,.75);
+    }
 
     .choiceCard h4{
       margin:0 0 6px;
@@ -1406,20 +1432,24 @@
                   <h4>Ember Cluster</h4>
                   <p>Warm glow with scattered dust lanes.</p>
                 </div>
-                <div class="choiceCard beltChoice" data-belt="aurora" style="background-image:url('images/background2.png');">
+                <div class="choiceCard beltChoice locked" data-belt="aurora" data-locked="true" style="background-image:url('images/background2.png');">
                   <h4>Aurora Cluster</h4>
+                  <span class="beltLockTag">Locked</span>
                   <p>Cool nebula haze and icy highlights.</p>
                 </div>
-                <div class="choiceCard beltChoice" data-belt="rift" style="background-image:url('images/background3.png');">
+                <div class="choiceCard beltChoice locked" data-belt="rift" data-locked="true" style="background-image:url('images/background3.png');">
                   <h4>Rift Cluster</h4>
+                  <span class="beltLockTag">Locked</span>
                   <p>Dense field with higher contrast drift.</p>
                 </div>
-                <div class="choiceCard beltChoice" data-belt="vega" style="background-image:url('images/background7.png');">
+                <div class="choiceCard beltChoice locked" data-belt="vega" data-locked="true" style="background-image:url('images/background7.png');">
                   <h4>Vega Cluster</h4>
+                  <span class="beltLockTag">Locked</span>
                   <p>Wide galaxy wash with soft flares.</p>
                 </div>
-                <div class="choiceCard beltChoice" data-belt="void" style="background-image:url('images/background9.png');">
+                <div class="choiceCard beltChoice locked" data-belt="void" data-locked="true" style="background-image:url('images/background9.png');">
                   <h4>Void Cluster</h4>
+                  <span class="beltLockTag">Locked</span>
                   <p>Deep space with faint starlight.</p>
                 </div>
               </div>
@@ -3175,8 +3205,30 @@
       selectChoice(difficultyChoices, key, "data-diff");
     }
 
+    function isBeltLocked(key){
+      if(!beltChoices || !beltChoices.length) return false;
+      var option = beltChoices.find(function(card){
+        return card.getAttribute("data-belt") === key;
+      });
+      return !!(option && option.getAttribute("data-locked") === "true");
+    }
+
+    function getFirstUnlockedBelt(){
+      if(!beltChoices || !beltChoices.length) return "dusk";
+      for(var i=0; i<beltChoices.length; i++){
+        if(beltChoices[i].getAttribute("data-locked") !== "true"){
+          return beltChoices[i].getAttribute("data-belt");
+        }
+      }
+      return "dusk";
+    }
+
     function setBelt(key){
-      selectedBelt = key || "dusk";
+      var next = key || "dusk";
+      if(isBeltLocked(next)){
+        next = getFirstUnlockedBelt();
+      }
+      selectedBelt = next;
       if(beltInput) beltInput.value = selectedBelt;
       selectChoice(beltChoices, selectedBelt, "data-belt");
     }
@@ -3825,8 +3877,14 @@
 
     beltChoices.forEach(function(card){
       card.addEventListener("click", function(){
+        var beltKey = card.getAttribute("data-belt");
+        if(card.getAttribute("data-locked") === "true"){
+          showToast("CLUSTER LOCKED");
+          playMenuBeep();
+          return;
+        }
         playMenuBeep();
-        setBelt(card.getAttribute("data-belt"));
+        setBelt(beltKey);
         advanceFromChoice();
       });
     });

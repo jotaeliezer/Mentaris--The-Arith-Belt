@@ -530,6 +530,7 @@
       { id: "dash", title: "Step 9: Dash", body: "Press Space to dash through danger.", event: "dash" },
       { id: "ability", title: "Step 10: Ability", body: "Press C to use your ship ability.", event: "ability" },
       { id: "alien", title: "Step 11: Alien Contact", body: "Shoot down the alien target.", event: "alien" },
+      { id: "mousepad", title: "Step 12: Mousepad", body: "Press B to enable mousepad, then move the ship with your mouse.", event: "mousepad", hideDuringAction: true, actionPauseMs: 700 },
       { id: "portal", title: "Final Step: Portal", body: "Cadet, fly up into the portal. Mission starts on contact.", event: "portal" }
     ];
     var progressTotal = 0;
@@ -2329,8 +2330,8 @@
   }
   var shipProfiles = {
     classic: { speed: 440, response: 8, dashDist: 200, dashCooldown: 1.3, shockwaveRadius: 220, shockwaveStrength: 760, shockwaveCooldown: 3.5, ability: "shockwave", accelUp: 4.2, accelDown: 6.5 },
-    spire: { speed: 560, response: 14, dashDist: 130, dashCooldown: 1.3, shockwaveRadius: 150, shockwaveStrength: 480, shockwaveCooldown: 3.5, ability: "flares", accelUp: 6, accelDown: 8 },
-    am2: { speed: 660, response: 17, dashDist: 130, dashCooldown: 1.9, shockwaveRadius: 160, shockwaveStrength: 520, shockwaveCooldown: 4.2, ability: "spin", accelUp: 7.2, accelDown: 9 }
+    spire: { speed: 520, response: 14, dashDist: 130, dashCooldown: 1.3, shockwaveRadius: 150, shockwaveStrength: 480, shockwaveCooldown: 3.5, ability: "flares", accelUp: 6, accelDown: 8 },
+    am2: { speed: 600, response: 17, dashDist: 130, dashCooldown: 1.9, shockwaveRadius: 160, shockwaveStrength: 520, shockwaveCooldown: 4.2, ability: "spin", accelUp: 7.2, accelDown: 9 }
   };
   function getShipProfile(shipType) {
     var base = { speed: 560, response: 14, dashDist: 130, dashCooldown: 1.3, shockwaveRadius: 160, shockwaveStrength: 520, shockwaveCooldown: 3.5, ability: "shockwave" };
@@ -4574,10 +4575,9 @@
       player.y = endY;
       var teleportHit = findAsteroidCollisionAt(endX, endY);
       if (teleportHit) {
-        if (handleShipAsteroidCollision(teleportHit.asteroid, endX, endY, true)) {
-          if (state.over)
-            return;
-        }
+        handleShipAsteroidCollision(teleportHit.asteroid, endX, endY, true, true);
+        if (state.over)
+          return;
       }
       player.teleportHide = 0.2;
       player.teleportFx = {
@@ -5572,6 +5572,9 @@
     if (tourGuide && tutorialActive) {
       var dxMove = player.x - tutorialLastPos.x;
       var dyMove = player.y - tutorialLastPos.y;
+      if (mousepadActive && (Math.abs(virtualAxes.x) > 0.2 || Math.abs(virtualAxes.y) > 0.2)) {
+        tourGuide.notify("mousepad");
+      }
       var moveDist = Math.abs(dxMove) + Math.abs(dyMove);
       if (moveDist > 1.5) {
         if (Math.abs(dxMove) >= Math.abs(dyMove)) {
@@ -6334,6 +6337,7 @@
     ctx.save();
     ctx.translate(cam.x || 0, cam.y || 0);
     drawTutorialPortal();
+    drawMousepadDots();
     for (var i = 0; i < asteroids.length; i++)
       drawAsteroid(asteroids[i]);
     drawAliens(ctx);
@@ -6946,6 +6950,71 @@
     ctx.restore();
     ctx.restore();
     ctx.globalCompositeOperation = "source-over";
+  }
+  function drawMousepadDots() {
+    if (!mousepadActive || !state.running || state.paused || state.over || missileInputActive)
+      return;
+    var w = view.w;
+    var h = view.h;
+    var marginX = Math.max(70, w * 0.12);
+    var marginY = Math.max(70, h * 0.14);
+    var left = marginX;
+    var right = w - marginX;
+    var top = view.hudH + marginY;
+    var bottom = h - marginY * 0.75;
+    if (right <= left || bottom <= top)
+      return;
+    var cx = (left + right) / 2;
+    var cy = (top + bottom) / 2;
+    var gridX = [left, cx, right];
+    var gridY = [top, cy, bottom];
+    var dotRadius = 2.6;
+    var baseAlpha = mousepadMode === "pad" ? 0.26 : mousepadMode === "hybrid" ? 0.22 : 0.18;
+    ctx.save();
+    ctx.fillStyle = "rgba(232,236,255,.9)";
+    ctx.globalAlpha = baseAlpha;
+    for (var gx = 0; gx < gridX.length; gx++) {
+      for (var gy = 0; gy < gridY.length; gy++) {
+        ctx.beginPath();
+        ctx.arc(gridX[gx], gridY[gy], dotRadius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    var maxX = right - cx;
+    var maxY = bottom - cy;
+    var targetX = cx + virtualAxes.x * maxX;
+    var targetY = cy + virtualAxes.y * maxY;
+    var ringR = mousepadMode === "pad" ? 7 : 6;
+    ctx.globalAlpha = 0.7;
+    ctx.strokeStyle = "rgba(0,229,255,.85)";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(targetX, targetY, ringR, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 0.45;
+    ctx.fillStyle = "rgba(0,229,255,.8)";
+    ctx.beginPath();
+    ctx.arc(targetX, targetY, ringR * 0.45, 0, Math.PI * 2);
+    ctx.fill();
+    if (mousepadMode === "hybrid") {
+      ctx.globalAlpha = 0.35;
+      ctx.strokeStyle = "rgba(232,236,255,.6)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(targetX - 10, targetY);
+      ctx.lineTo(targetX + 10, targetY);
+      ctx.moveTo(targetX, targetY - 10);
+      ctx.lineTo(targetX, targetY + 10);
+      ctx.stroke();
+    } else if (mousepadMode === "fps") {
+      ctx.globalAlpha = 0.32;
+      ctx.strokeStyle = "rgba(255,255,255,.5)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
   function drawPowerups() {
     if (!powerups.length)
@@ -7562,7 +7631,7 @@
     }
     return null;
   }
-  function handleShipAsteroidCollision(a, hitX, hitY, force) {
+  function handleShipAsteroidCollision(a, hitX, hitY, force, noRemove) {
     if (a.noDamage)
       return false;
     var dx = a.x - hitX;
@@ -7570,16 +7639,24 @@
     var dist = Math.hypot(dx, dy);
     if (dist >= a.r + 16)
       return false;
+    if (!force && player.invuln > 0) {
+      return false;
+    }
     if (force || player.invuln <= 0) {
       registerShotTypeHit(1, false);
       resetSurvivorTimer();
-      if (a.isCorrect && a.waveId === state.waveId) {
+      if (!noRemove && a.isCorrect && a.waveId === state.waveId) {
         state.correctInPlay = false;
         state.correctAsteroidId = 0;
       }
       kickShake(18, 0.14);
       state.asteroidCollisions += 1;
       state.collisionSlow = Math.max(state.collisionSlow || 0, 1);
+      a.shakeTimer = 0.2;
+      a.shakeDur = 0.2;
+      a.shakeAmp = 4.2;
+      a.vx = (a.vx || 0) + dx / Math.max(1, dist) * 120;
+      a.vy = (a.vy || 0) + dy / Math.max(1, dist) * 120;
       var knockBack = 0.7;
       player.vx = -dx / Math.max(1, dist) * player.speed * knockBack;
       player.vy = -dy / Math.max(1, dist) * player.speed * knockBack;
@@ -7626,7 +7703,7 @@
         }
       }
     }
-    return true;
+    return !noRemove;
   }
   function updateDashGhosts(dt) {
     for (var i = dashGhosts.length - 1; i >= 0; i--) {
@@ -7642,6 +7719,7 @@
   function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scaleMul) {
     ctx.save();
     ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+    var baseAlpha = ctx.globalAlpha;
     var dmg = 1 - clamp(player.hull, 0, 1);
     var useVX = typeof overrideVX === "number" ? overrideVX : player.vx;
     var useVY = typeof overrideVY === "number" ? overrideVY : player.vy;
@@ -7682,7 +7760,7 @@
     ctx.scale(squashX * (1 + sway) * (1 - backwardShrink * 0.4), (1 - sway * 0.6) * (1 + forwardStretch - backwardShrink));
     if (player.defenseMode === "armor" && !ghost) {
       ctx.save();
-      ctx.globalAlpha = 0.7;
+      ctx.globalAlpha = baseAlpha * 0.7;
       ctx.shadowColor = "rgba(180,220,255,.95)";
       ctx.shadowBlur = 22;
       ctx.strokeStyle = "rgba(180,220,255,.6)";
@@ -7698,20 +7776,20 @@
       ctx.lineTo(-30, -8);
       ctx.closePath();
       ctx.stroke();
-      ctx.globalAlpha = 0.28;
+      ctx.globalAlpha = baseAlpha * 0.28;
       ctx.fillStyle = "rgba(120,200,255,.25)";
       ctx.fill();
       ctx.restore();
     }
     if (player.defenseMode === "shield" && !ghost) {
       ctx.save();
-      ctx.globalAlpha = 0.75;
+      ctx.globalAlpha = baseAlpha * 0.75;
       ctx.strokeStyle = "rgba(0,229,255,.75)";
       ctx.lineWidth = 2.6;
       ctx.beginPath();
       ctx.arc(0, -26, 30, Math.PI * 1.15, Math.PI * 1.85);
       ctx.stroke();
-      ctx.globalAlpha = 0.25;
+      ctx.globalAlpha = baseAlpha * 0.25;
       ctx.strokeStyle = "rgba(0,229,255,.35)";
       ctx.lineWidth = 5;
       ctx.beginPath();
@@ -7720,7 +7798,7 @@
       ctx.restore();
     }
     ctx.save();
-    ctx.globalAlpha = 0.9;
+    ctx.globalAlpha = baseAlpha * 0.9;
     ctx.beginPath();
     ctx.arc(0, 3, 30, 0, Math.PI * 2);
     ctx.fillStyle = "rgba(0,229,255,.06)";
@@ -8027,7 +8105,7 @@
     drawHull();
     ctx.restore();
     ctx.save();
-    ctx.globalAlpha = 0.9;
+    ctx.globalAlpha = baseAlpha * 0.9;
     ctx.fillStyle = colors.highlight || colors.accent;
     ctx.fillRect(stripe1.x, stripe1.y, stripe1.w, stripe1.h);
     ctx.fillRect(stripe2.x, stripe2.y, stripe2.w, stripe2.h);
@@ -8081,7 +8159,7 @@
     ctx.restore();
     var blink = (Math.sin(t * 6e-3) + 1) / 2;
     ctx.save();
-    ctx.globalAlpha = 0.25 + blink * 0.55;
+    ctx.globalAlpha = baseAlpha * (0.25 + blink * 0.55);
     ctx.fillStyle = colors.highlight || colors.accent;
     ctx.beginPath();
     ctx.arc(-24, 4, 2.2, 0, Math.PI * 2);
@@ -8111,7 +8189,7 @@
     }
     if (dmg > 0.02) {
       ctx.save();
-      ctx.globalAlpha = clamp(dmg * 0.95, 0, 0.95);
+      ctx.globalAlpha = baseAlpha * clamp(dmg * 0.95, 0, 0.95);
       ctx.fillStyle = "rgba(0,0,0,.22)";
       ctx.beginPath();
       ctx.ellipse(-5, 6, 10 + dmg * 10, 6 + dmg * 7, -0.4, 0, Math.PI * 2);
@@ -8119,7 +8197,7 @@
       ctx.beginPath();
       ctx.ellipse(6, 2, 7 + dmg * 7, 4 + dmg * 5, 0.3, 0, Math.PI * 2);
       ctx.fill();
-      ctx.globalAlpha = clamp(dmg * 0.65, 0, 0.7);
+      ctx.globalAlpha = baseAlpha * clamp(dmg * 0.65, 0, 0.7);
       ctx.strokeStyle = "rgba(232,236,255,.22)";
       ctx.lineWidth = 1.1;
       ctx.beginPath();
@@ -8136,7 +8214,7 @@
     }
     if (player.hitFlash > 0 && !ghost) {
       ctx.save();
-      ctx.globalAlpha = clamp(player.hitFlash, 0, 1) * 0.55;
+      ctx.globalAlpha = baseAlpha * clamp(player.hitFlash, 0, 1) * 0.55;
       ctx.strokeStyle = "rgba(255,77,109,.9)";
       ctx.lineWidth = 3.2;
       ctx.beginPath();
@@ -8264,7 +8342,7 @@
     var flash = ghost ? 0 : player.flash || 0;
     if (flash > 0) {
       ctx.save();
-      ctx.globalAlpha = Math.min(1, flash);
+      ctx.globalAlpha = baseAlpha * Math.min(1, flash);
       ctx.fillStyle = colors.accent;
       ctx.beginPath();
       ctx.moveTo(-4, -26 - recoilShift);
@@ -8281,7 +8359,7 @@
     bloom *= ghostFlameBoost;
     var flameWiggle = (Math.sin(t * 0.06) + Math.sin(t * 0.11 + 1.4)) * 0.6 * (0.6 + speedMag);
     ctx.save();
-    ctx.globalAlpha = 0.2 + bloom * 0.22;
+    ctx.globalAlpha = baseAlpha * (0.2 + bloom * 0.22);
     ctx.fillStyle = colors.flame || "rgba(0,229,255,.35)";
     ctx.shadowColor = colors.flame || "rgba(0,229,255,.4)";
     ctx.shadowBlur = 12 + bloom * 9;
@@ -8298,7 +8376,7 @@
     ctx.fill();
     ctx.restore();
     ctx.save();
-    ctx.globalAlpha = 0.85 + forwardBoost * 0.35;
+    ctx.globalAlpha = baseAlpha * (0.85 + forwardBoost * 0.35);
     ctx.fillStyle = colors.flame || "rgba(193,216,47,.16)";
     ctx.beginPath();
     if (isSpire) {
@@ -8315,7 +8393,7 @@
     }
     ctx.closePath();
     ctx.fill();
-    ctx.globalAlpha = 0.22 + forwardBoost * 0.25;
+    ctx.globalAlpha = baseAlpha * (0.22 + forwardBoost * 0.25);
     ctx.fillStyle = "rgba(0,229,255,.16)";
     ctx.beginPath();
     if (isSpire) {
@@ -8332,7 +8410,7 @@
     }
     ctx.closePath();
     ctx.fill();
-    ctx.globalAlpha = 0.8;
+    ctx.globalAlpha = baseAlpha * 0.8;
     ctx.fillStyle = colors.flame || "rgba(0,229,255,.14)";
     ctx.beginPath();
     if (isSpire) {
@@ -8350,7 +8428,7 @@
     ctx.closePath();
     ctx.fill();
     if (isAm2) {
-      ctx.globalAlpha = 0.75;
+      ctx.globalAlpha = baseAlpha * 0.75;
       ctx.fillStyle = colors.flame || "rgba(120,220,255,.9)";
       ctx.beginPath();
       ctx.moveTo(-3 + thrusterOffsetX, thrusterBaseY - 2);
@@ -8363,7 +8441,7 @@
     if (Math.abs(vxN) > 0.18 && !ghost) {
       var sx = vxN > 0 ? -30 : 30;
       ctx.save();
-      ctx.globalAlpha = 0.55;
+      ctx.globalAlpha = baseAlpha * 0.55;
       ctx.fillStyle = "rgba(175,0,111,.14)";
       ctx.beginPath();
       ctx.moveTo(sx, 6);
@@ -8374,14 +8452,14 @@
       ctx.restore();
     }
     ctx.save();
-    ctx.globalAlpha = 0.7;
+    ctx.globalAlpha = baseAlpha * 0.7;
     ctx.fillStyle = "rgba(255,255,255,.10)";
     ctx.beginPath();
     ctx.arc(0, -20, 6, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
     ctx.save();
-    ctx.globalAlpha = 0.85;
+    ctx.globalAlpha = baseAlpha * 0.85;
     ctx.strokeStyle = "rgba(255,255,255,.18)";
     ctx.lineWidth = 1.6;
     ctx.beginPath();
@@ -8953,7 +9031,9 @@
               autoStart: "1",
               ship: "spire",
               belt: "dusk",
-              questionMode: "classic"
+              questionMode: "classic",
+              timerMode: "180",
+              targetMode: "off"
             });
             window.location.href = "asteroid_blaster.html?" + params2.toString();
           }

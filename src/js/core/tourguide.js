@@ -19,6 +19,7 @@ export function createTourGuide(options){
     { id: "dash", title: "Step 9: Dash", body: "Press Space to dash through danger.", event: "dash" },
     { id: "ability", title: "Step 10: Ability", body: "Press C to use your ship ability.", event: "ability" },
     { id: "alien", title: "Step 11: Alien Contact", body: "Shoot down the alien target.", event: "alien" },
+    { id: "mousepad", title: "Step 12: Mousepad", body: "Press B to enable mousepad, then move the ship with your mouse.", event: "mousepad", hideDuringAction: true, actionPauseMs: 700 },
     { id: "portal", title: "Final Step: Portal", body: "Cadet, fly up into the portal. Mission starts on contact.", event: "portal" }
   ];
   var progressTotal = 0;
