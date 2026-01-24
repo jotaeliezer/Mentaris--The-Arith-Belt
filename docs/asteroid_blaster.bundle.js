@@ -93,7 +93,8 @@
       campaignIndex: -1,
       redemptionEnabled: false,
       redemptionUsed: false,
-      timerWarningPlayed: false
+      timerWarningPlayed: false,
+      timerModeOverride: null
     };
   }
   function createPlayer() {
@@ -184,7 +185,27 @@
       baseSpeed = 0.9;
     state2.baseSpeed = baseSpeed;
     state2.livesStart = parseInt(inputs2.lives.value, 10);
-    state2.timerMode = inputs2.timerMode.value;
+    var timerVal = inputs2.timerMode ? inputs2.timerMode.value : state2.timerMode;
+    if (state2.timerModeOverride) {
+      if (inputs2.timerMode) {
+        var hasOverride = false;
+        for (var ti = 0; ti < inputs2.timerMode.options.length; ti++) {
+          if (inputs2.timerMode.options[ti].value === String(state2.timerModeOverride)) {
+            hasOverride = true;
+            break;
+          }
+        }
+        if (hasOverride && timerVal && timerVal !== state2.timerModeOverride) {
+          state2.timerModeOverride = null;
+        }
+      }
+      if (state2.timerModeOverride) {
+        timerVal = state2.timerModeOverride;
+      }
+    }
+    if (!timerVal)
+      timerVal = state2.timerMode || "off";
+    state2.timerMode = timerVal;
     if (inputs2.targetMode)
       state2.targetMode = inputs2.targetMode.value;
     if (inputs2.strikes)
@@ -213,6 +234,8 @@
     if (inputs2.decoyFunction)
       state2.decoyFunction = inputs2.decoyFunction.value || "units_bias";
     state2.timeLimitSec = state2.timerMode === "off" ? 0 : parseInt(state2.timerMode, 10);
+    if (Number.isNaN(state2.timeLimitSec))
+      state2.timeLimitSec = 0;
     state2.questionLimit = 0;
     if (state2.targetMode && state2.targetMode.charAt(0) === "q") {
       var qCount = parseInt(state2.targetMode.slice(1), 10);
@@ -530,7 +553,8 @@
       { id: "dash", title: "Step 9: Dash", body: "Press Space to dash through danger.", event: "dash" },
       { id: "ability", title: "Step 10: Ability", body: "Press C to use your ship ability.", event: "ability" },
       { id: "alien", title: "Step 11: Alien Contact", body: "Shoot down the alien target.", event: "alien" },
-      { id: "mousepad", title: "Step 12: Mousepad", body: "Press B to enable mousepad, then move the ship with your mouse.", event: "mousepad", hideDuringAction: true, actionPauseMs: 700 },
+      { id: "mousepad_hybrid", title: "Step 12: Mousepad (Hybrid)", body: "Press B to enable mousepad. Fly to dots 1-4 in order.", event: "mousepad_hybrid", hideDuringAction: true, actionPauseMs: 700 },
+      { id: "mousepad_pad", title: "Step 13: Mousepad (Pad)", body: "Press B again for Pad mode. Hybrid blends mouse with keys; Pad is a steady virtual stick. Connect the dots again.", event: "mousepad_pad", hideDuringAction: true, actionPauseMs: 700 },
       { id: "portal", title: "Final Step: Portal", body: "Cadet, fly up into the portal. Mission starts on contact.", event: "portal" }
     ];
     var progressTotal = 0;
@@ -552,6 +576,10 @@
     var completedSteps = {};
     var stepProgress = 0;
     var stepAccepting = false;
+    var interjectSteps = null;
+    var interjectIndex = 0;
+    var interjectActive = false;
+    var interjectOnDone = null;
     var overlay = null;
     var cardEl = null;
     var titleEl = null;
@@ -728,6 +756,9 @@
         complete();
         return;
       }
+      renderStep(step, immediate, index + 1, steps.length, false);
+    }
+    function renderStep(step, immediate, index, total, hideProgress) {
       if (onStep)
         onStep(step.id, step);
       stepProgress = 0;
@@ -749,11 +780,11 @@
           cardEl.classList.remove("is-fading");
         stepRevealAt = Date.now();
         if (progressEl) {
-          if (step.showProgress === false) {
+          if (hideProgress || step.showProgress === false) {
             progressEl.textContent = "";
           } else {
-            var pi = step.progressIndex || index + 1;
-            var pt = step.progressTotal || steps.length;
+            var pi = step.progressIndex || index;
+            var pt = step.progressTotal || total;
             progressEl.textContent = "Step " + pi + " of " + pt;
           }
         }
@@ -768,6 +799,21 @@
       }, delay);
     }
     function next() {
+      if (interjectActive && interjectSteps && interjectSteps.length) {
+        interjectIndex += 1;
+        if (interjectIndex >= interjectSteps.length) {
+          interjectActive = false;
+          interjectSteps = null;
+          interjectIndex = 0;
+          var done = interjectOnDone;
+          interjectOnDone = null;
+          if (done)
+            done();
+          return;
+        }
+        renderStep(interjectSteps[interjectIndex], false, interjectIndex + 1, interjectSteps.length, true);
+        return;
+      }
       stepIndex += 1;
       showStep(stepIndex, false);
     }
@@ -808,6 +854,10 @@
       overlay.style.display = "flex";
       overlay.classList.remove("show");
       stepIndex = 0;
+      interjectActive = false;
+      interjectSteps = null;
+      interjectIndex = 0;
+      interjectOnDone = null;
       if (skipBtn)
         skipBtn.style.display = "inline-flex";
       requestAnimationFrame(function() {
@@ -837,7 +887,7 @@
         return;
       if (!stepAccepting)
         return;
-      var step = steps[stepIndex];
+      var step = interjectActive ? interjectSteps ? interjectSteps[interjectIndex] : null : steps[stepIndex];
       if (step && step.event === eventName) {
         stepProgress += 1;
         var required = step.count || 1;
@@ -846,10 +896,36 @@
         }
       }
     }
+    function jumpTo(stepId) {
+      if (!active || !stepId)
+        return;
+      var idx = -1;
+      for (var i = 0; i < steps.length; i++) {
+        if (steps[i].id === stepId) {
+          idx = i;
+          break;
+        }
+      }
+      if (idx >= 0) {
+        stepIndex = idx;
+        renderStep(steps[stepIndex], true, stepIndex + 1, steps.length, false);
+      }
+    }
+    function interject(sequence, onDone) {
+      if (!active || !sequence || !sequence.length)
+        return;
+      interjectSteps = sequence.slice();
+      interjectIndex = 0;
+      interjectActive = true;
+      interjectOnDone = typeof onDone === "function" ? onDone : null;
+      renderStep(interjectSteps[0], true, 1, interjectSteps.length, true);
+    }
     return {
       start,
       stop,
-      notify
+      notify,
+      jumpTo,
+      interject
     };
   }
 
@@ -1872,6 +1948,18 @@
   var tutorialPortalLock = false;
   var tutorialPortalNotifyPending = false;
   var tutorialHideQuestion = false;
+  var tutorialDots = [];
+  var tutorialDotsIndex = 0;
+  var tutorialDotsActive = false;
+  var tutorialDotsFade = 0;
+  var tutorialDotsFading = false;
+  var tutorialDotsRequiredMode = null;
+  var tutorialDotsEvent = null;
+  var tutorialDotsNotifyPending = false;
+  var tutorialRecoveryActive = false;
+  var tutorialRecoveryResumeStepId = null;
+  var tutorialRespawnActive = false;
+  var tutorialRespawnTargetY = 0;
   var answerHitsSincePowerup = 0;
   var hiddenPowerupActive = false;
   var survivorTimer = 0;
@@ -2037,6 +2125,11 @@
     };
     icon.img.src = icon.src;
   });
+  var bulletLaser = { img: new Image(), ready: false, src: "images/bullet_single.png" };
+  bulletLaser.img.onload = function() {
+    bulletLaser.ready = true;
+  };
+  bulletLaser.img.src = bulletLaser.src;
   var powerupCatalogSecondary = [
     { id: "repair", label: "Hull Repair", icon: powerupIcons.repair.src, desc: "Instant hull repair (+35%)." },
     { id: "time", label: "Time Dilation", icon: powerupIcons.time.src, desc: "Grants one Time Dilation charge (press X to slow time)." },
@@ -2436,11 +2529,25 @@
   var mousepadPaused = false;
   var mousepadSensitivityPad = 0.3;
   var mousepadSensitivityPadMode = 0.18;
+  var mousepadSensitivityFps = 20;
   var virtualAxes = { x: 0, y: 0 };
   var padCursor = { x: 0, y: 0 };
   var mousepadMode = "hybrid";
   var mouseImpulse = { x: 0, y: 0 };
   var mousepadDeadzonePad = 0.18;
+  var mousepadPadDefaults = {
+    sensitivityPad: 0.3,
+    sensitivityPadMode: 0.18,
+    sensitivityFps: 20,
+    deadzone: 0.18
+  };
+  function resetMousepadPadSettings() {
+    mousepadSensitivityPad = mousepadPadDefaults.sensitivityPad;
+    mousepadSensitivityPadMode = mousepadPadDefaults.sensitivityPadMode;
+    mousepadSensitivityFps = mousepadPadDefaults.sensitivityFps;
+    mousepadDeadzonePad = mousepadPadDefaults.deadzone;
+  }
+  resetMousepadPadSettings();
   function updateCursorVisibility() {
     if (missileInputActive) {
       document.body.style.cursor = "";
@@ -3795,6 +3902,35 @@
     player.blasterMode = "single";
     player.blasterHitsRemaining = 0;
     player.blasterTimer = 0;
+  }
+  function triggerTutorialRecovery(reason) {
+    if (!tutorialActive || !tourGuide || tutorialRecoveryActive)
+      return false;
+    tutorialRecoveryActive = true;
+    tutorialRecoveryResumeStepId = tutorialStepId || null;
+    player.hidden = true;
+    player.vx = 0;
+    player.vy = 0;
+    player.moveSpeed = 0;
+    player.shipShake = Math.max(player.shipShake || 0, 1);
+    playSfx(state, "explosion");
+    var boomX = player.x;
+    var boomY = player.y - 8;
+    spawnRing(boomX, boomY, 20);
+    spawnParticles(boomX, boomY, "spark");
+    spawnParticles(boomX, boomY, "smoke");
+    kickShake(20, 0.16);
+    showToast(reason || "HULL CRITICAL");
+    tourGuide.interject([
+      { id: "recovery_warn", title: "Hull Warning", body: "Beware the green HP bar at the top left. Avoid crashing into asteroids and alien attacks.", autoAdvanceMs: 2600, showProgress: false },
+      { id: "recovery_powerup", title: "Repair Protocol", body: "Shoot the answer for a chance at a powerup. Grab the wrench to repair hull.", autoAdvanceMs: 2600, showProgress: false }
+    ], function() {
+      tutorialRecoveryActive = false;
+      if (tourGuide && tutorialRecoveryResumeStepId) {
+        tourGuide.jumpTo(tutorialRecoveryResumeStepId);
+      }
+    });
+    return true;
   }
   function registerShotTypeHit(amount, forceClear) {
     if (player.blasterMode === "single")
@@ -5268,7 +5404,8 @@
       missionClearFx.t = 0;
       missionClearFx.explodeTimer = 0;
       missionClearFx.exitSpeed = 0;
-      missionClearFx.sfxPlayed = false;
+      missionClearFx.sfxClip = playSfx(state, "mission_cleared1");
+      missionClearFx.sfxPlayed = true;
       missionClearFx.mode = "time";
       player.hidden = false;
       gameOverFx.active = false;
@@ -5569,12 +5706,20 @@
     }
     player.x = clamp(player.x, player.w / 2 + 10, r.width - player.w / 2 - 10);
     player.y = clamp(player.y, topLimit + player.h / 2 + 6, bottomLimit - player.h / 2);
+    if (tutorialRespawnActive) {
+      var targetY = tutorialRespawnTargetY || view.h - 58;
+      var settleRespawn = 1 - Math.exp(-6 * dtReal);
+      player.y += (targetY - player.y) * settleRespawn;
+      player.vx = 0;
+      player.vy = 0;
+      if (Math.abs(player.y - targetY) < 2) {
+        player.y = targetY;
+        tutorialRespawnActive = false;
+      }
+    }
     if (tourGuide && tutorialActive) {
       var dxMove = player.x - tutorialLastPos.x;
       var dyMove = player.y - tutorialLastPos.y;
-      if (mousepadActive && (Math.abs(virtualAxes.x) > 0.2 || Math.abs(virtualAxes.y) > 0.2)) {
-        tourGuide.notify("mousepad");
-      }
       var moveDist = Math.abs(dxMove) + Math.abs(dyMove);
       if (moveDist > 1.5) {
         if (Math.abs(dxMove) >= Math.abs(dyMove)) {
@@ -5592,6 +5737,9 @@
         tutorialLastPos.x = player.x;
         tutorialLastPos.y = player.y;
       }
+    }
+    if (tutorialActive) {
+      updateTutorialDots(dtReal);
     }
     if (mousepadMode === "hybrid" && mousepadActive && !spinActive && Math.abs(inputX) < 0.05) {
       player.bankHold = clamp(player.vx / (player.speed || 1), -1, 1);
@@ -5829,10 +5977,18 @@
       if (a.effectTimer != null) {
         a.effectTimer -= dtSlow;
         if (a.effectTimer <= 0) {
-          if (a.effect === "burn") {
+          if (a.effect === "impact") {
+            finalizeAsteroidImpact(a);
+          } else if (a.effect === "burn") {
+            if (a.effectReason) {
+              finalizeAsteroidImpact(a);
+            }
             spawnParticles(a.x, a.y, "smoke");
             spawnParticles(a.x, a.y, "spark");
           } else if (a.effect === "freeze") {
+            if (a.effectReason) {
+              finalizeAsteroidImpact(a);
+            }
             spawnParticles(a.x, a.y, "spark");
           }
           asteroids.splice(ai, 1);
@@ -5906,6 +6062,78 @@
       }
     }
     resolveAsteroidCollisions();
+    function applyBulletImpactAsteroid(ast, bullet) {
+      if (!ast || ast.noDamage)
+        return;
+      var kind2 = bullet.kind || "single";
+      var profile2 = {
+        single: { push: 0.7, spin: 0.04, slow: 0.9, shake: 2.6 },
+        laser: { push: 1.25, spin: 0.12, slow: 0.72, shake: 4.2 },
+        rail: { push: 1.35, spin: 0.13, slow: 0.68, shake: 4.4 },
+        fire: { push: 1.05, spin: 0.08, slow: 0.8, shake: 3.6 },
+        ice: { push: 0.95, spin: 0.06, slow: 0.62, shake: 3.4 },
+        electric: { push: 0.9, spin: 0.1, slow: 0.82, shake: 3.8 },
+        plasma: { push: 1.15, spin: 0.11, slow: 0.75, shake: 4 },
+        missile: { push: 1.4, spin: 0.15, slow: 0.7, shake: 4.8 },
+        pierce: { push: 0.95, spin: 0.08, slow: 0.86, shake: 3.2 }
+      }[kind2] || { push: 0.9, spin: 0.08, slow: 0.85, shake: 3 };
+      var bvx = typeof bullet.vx === "number" ? bullet.vx : 0;
+      var bvy = typeof bullet.vy === "number" ? bullet.vy : -800;
+      var speed = Math.hypot(bvx, bvy);
+      var nx = speed ? bvx / speed : 0;
+      var ny = speed ? bvy / speed : -1;
+      var basePush = Math.min(200, 40 + (bullet.r || 4) * 14);
+      var push = basePush * profile2.push;
+      ast.vx = (ast.vx || 0) + nx * push * 0.16;
+      ast.vy = (ast.vy || 0) + ny * push * 0.16;
+      ast.vx *= profile2.slow;
+      ast.vy *= profile2.slow;
+      ast.spin = (ast.spin || 0) + nx * -profile2.spin + (Math.random() - 0.5) * 0.03;
+      ast.shakeTimer = 0.16;
+      ast.shakeDur = 0.16;
+      ast.shakeAmp = Math.max(ast.shakeAmp || 0, profile2.shake);
+    }
+    function scheduleAsteroidImpactRemoval(ast, kind2, reason, meta) {
+      if (!ast)
+        return;
+      var delays = {
+        single: 0.08,
+        laser: 0.14,
+        rail: 0.16,
+        fire: 0.12,
+        ice: 0.14,
+        electric: 0.12,
+        plasma: 0.16,
+        missile: 0.18,
+        pierce: 0.1
+      };
+      var delay = delays[kind2] || 0.1;
+      ast.effect = "impact";
+      ast.effectTimer = delay;
+      ast.effectDuration = delay;
+      ast.effectMeta = Object.assign({ kind: kind2, reason }, meta || {});
+      ast.noDamage = true;
+    }
+    function finalizeAsteroidImpact(ast) {
+      if (!ast)
+        return;
+      var meta = ast.effectMeta || {};
+      var reason = meta.reason || ast.effectReason;
+      if (reason === "correct") {
+        impactCorrect(ast.x, ast.y, ast.r);
+      } else if (reason === "wrong") {
+        impactWrong(ast.x, ast.y);
+      } else {
+        impactDebris(ast.x, ast.y);
+      }
+      if (meta.split) {
+        spawnSplitAsteroids(ast);
+      }
+      if (meta.chain) {
+        chainDestroy(ast, meta.chain.radius, meta.chain.maxTargets);
+      }
+      ast.effectMeta = null;
+    }
     var stopHits = false;
     var clearedWaveId = null;
     for (var ai2 = asteroids.length - 1; ai2 >= 0; ai2--) {
@@ -5976,6 +6204,7 @@
               }
             }
           }
+          applyBulletImpactAsteroid(hitAst, bb);
           hitAst.hit = true;
           if (hitAst.isCorrect && isDigitMode() && hitAst.hitsRemaining && hitAst.hitsRemaining > 1) {
             var totalHits = hitAst.hitsTotal || hitAst.hitsRemaining;
@@ -5998,16 +6227,15 @@
           }
           if (hitAst.ghost || hitAst.label === null) {
             state.score += 2;
-            impactDebris(hitAst.x, hitAst.y);
             playSfx(state, "impact_thud", 0.4);
-            asteroids.splice(hitIndex, 1);
+            scheduleAsteroidImpactRemoval(hitAst, kind, "debris");
             break;
           }
-          if (hitAst.isCorrect && hitAst.waveId === state.waveId) {
+          var wasCorrect = hitAst.isCorrect && hitAst.waveId === state.waveId;
+          if (wasCorrect) {
             var wid = state.waveId;
             state.correctInPlay = false;
             state.correctAsteroidId = 0;
-            impactCorrect(hitAst.x, hitAst.y, hitAst.r);
             retireWave(wid);
             bestStreak = Math.max(bestStreak, state.streak + 1);
             onCorrectHit(hitAst);
@@ -6015,27 +6243,27 @@
             clearedWaveId = wid;
           } else {
             recordFactMiss(state.a, state.b);
-            impactWrong(hitAst.x, hitAst.y);
             onWrongHit();
           }
-          if (kind === "laser") {
-            spawnSplitAsteroids(hitAst);
-            asteroids.splice(hitIndex, 1);
-          } else if (kind === "fire") {
+          var impactReason = wasCorrect ? "correct" : "wrong";
+          if (kind === "fire") {
             markAsteroidEffect(hitAst, "burn", 1.6);
+            hitAst.effectReason = impactReason;
+            hitAst.noDamage = true;
           } else if (kind === "ice") {
             markAsteroidEffect(hitAst, "freeze", 1.1);
+            hitAst.effectReason = impactReason;
+            hitAst.noDamage = true;
+          } else if (kind === "laser") {
+            scheduleAsteroidImpactRemoval(hitAst, kind, impactReason, { split: true });
           } else if (kind === "electric") {
-            asteroids.splice(hitIndex, 1);
-            chainDestroy(hitAst, 140, 3);
+            scheduleAsteroidImpactRemoval(hitAst, kind, impactReason, { chain: { radius: 140, maxTargets: 3 } });
           } else if (kind === "plasma") {
-            asteroids.splice(hitIndex, 1);
-            chainDestroy(hitAst, 180, 4);
+            scheduleAsteroidImpactRemoval(hitAst, kind, impactReason, { chain: { radius: 180, maxTargets: 4 } });
           } else if (kind === "rail") {
-            asteroids.splice(hitIndex, 1);
-            chainDestroy(hitAst, 160, 2);
+            scheduleAsteroidImpactRemoval(hitAst, kind, impactReason, { chain: { radius: 160, maxTargets: 2 } });
           } else {
-            asteroids.splice(hitIndex, 1);
+            scheduleAsteroidImpactRemoval(hitAst, kind, impactReason);
           }
           if (clearedWaveId !== null && isDigitMode()) {
             clearWaveAsteroids(clearedWaveId);
@@ -6118,6 +6346,12 @@
             player.invuln = 0.55;
             player.hull = clamp(player.hull - dmgHit, 0, 1);
             state.streak = 0;
+            if (player.hull <= 0 && tutorialActive) {
+              player.hull = Math.max(player.hull, 0.12);
+              syncHud();
+              triggerTutorialRecovery("HULL CRITICAL");
+              return;
+            }
             if (consumeShipLife("OUT OF LIVES (ALIEN COLLISION)"))
               return;
             if (player.hull <= 0) {
@@ -6175,6 +6409,12 @@
             player.invuln = 0.45;
             player.hull = clamp(player.hull - dmgHit, 0, 1);
             state.streak = 0;
+            if (player.hull <= 0 && tutorialActive) {
+              player.hull = Math.max(player.hull, 0.12);
+              syncHud();
+              triggerTutorialRecovery("HULL CRITICAL");
+              return;
+            }
             if (consumeShipLife("OUT OF LIVES (ALIEN SHOT)"))
               return;
             if (player.hull <= 0) {
@@ -6337,7 +6577,6 @@
     ctx.save();
     ctx.translate(cam.x || 0, cam.y || 0);
     drawTutorialPortal();
-    drawMousepadDots();
     for (var i = 0; i < asteroids.length; i++)
       drawAsteroid(asteroids[i]);
     drawAliens(ctx);
@@ -6347,6 +6586,7 @@
     drawAlienBullets(ctx);
     drawBullets();
     drawDashGhosts();
+    drawTutorialDots();
     drawShip();
     ctx.restore();
     if (gameOverFx.active && gameOverFx.reason === "destroyed") {
@@ -6479,11 +6719,23 @@
       });
       if (state.timeLimitSec > 0) {
         var elapsedProg = getElapsedSeconds();
+        var remainingProg = Math.max(0, state.timeLimitSec - elapsedProg);
+        var timeRatio = clamp(remainingProg / state.timeLimitSec, 0, 1);
+        var fillColor = "rgba(0,169,255,.9)";
+        var glowColor = "rgba(0,169,255,.35)";
+        if (remainingProg <= 15) {
+          var pulse = 0.65 + 0.35 * Math.sin(performance.now() * 0.02);
+          fillColor = "rgba(255,80,80," + (0.7 + 0.2 * pulse).toFixed(2) + ")";
+          glowColor = "rgba(255,80,80," + (0.4 + 0.35 * pulse).toFixed(2) + ")";
+        } else if (remainingProg <= 30) {
+          fillColor = "rgba(255,180,60,.92)";
+          glowColor = "rgba(255,180,60,.35)";
+        }
         hudBars.push({
-          label: "TIME",
-          ratio: clamp(elapsedProg / state.timeLimitSec, 0, 1),
-          fill: "rgba(0,169,255,.9)",
-          glow: "rgba(0,169,255,.35)"
+          label: "TIMER",
+          ratio: timeRatio,
+          fill: fillColor,
+          glow: glowColor
         });
       }
       var targetCount = state.questionLimit || 0;
@@ -6879,11 +7131,11 @@
     }
     if (!entries.length)
       return;
-    var iconSize = Math.max(26, radius * 1.1);
-    var pad = 8;
+    var iconSize = Math.max(38, radius * 1.7);
+    var pad = 10;
     var boxSize = iconSize + pad;
-    var gap = 8;
-    var rightMargin = 24;
+    var gap = 10;
+    var rightMargin = 28;
     var x = w - rightMargin - boxSize;
     var startY = cy + radius + 34;
     if (player.secondaryMode === "time" && player.secondaryCharges > 0) {
@@ -6905,7 +7157,7 @@
       drawHudPickupIcon(entry, x + boxSize / 2, y + boxSize / 2, iconSize);
       if (entry.charges != null && entry.charges > 1) {
         ctx.fillStyle = "rgba(232,236,255,.9)";
-        ctx.font = "700 10px Oxanium, sans-serif";
+        ctx.font = "700 11px Oxanium, sans-serif";
         ctx.textAlign = "right";
         ctx.textBaseline = "bottom";
         ctx.fillText("x" + entry.charges, x + boxSize - 6, y + boxSize - 4);
@@ -6951,68 +7203,143 @@
     ctx.restore();
     ctx.globalCompositeOperation = "source-over";
   }
-  function drawMousepadDots() {
-    if (!mousepadActive || !state.running || state.paused || state.over || missileInputActive)
-      return;
+  function buildTutorialDots() {
     var w = view.w;
     var h = view.h;
-    var marginX = Math.max(70, w * 0.12);
-    var marginY = Math.max(70, h * 0.14);
-    var left = marginX;
-    var right = w - marginX;
-    var top = view.hudH + marginY;
-    var bottom = h - marginY * 0.75;
-    if (right <= left || bottom <= top)
+    var top = view.hudH + Math.max(80, h * 0.14);
+    var bottom = h - Math.max(80, h * 0.14);
+    var left = Math.max(70, w * 0.1);
+    var right = w - left;
+    var minSpacing = Math.max(140, Math.min(w, h) * 0.18);
+    var safeRects = [];
+    var canvasRect = canvas.getBoundingClientRect();
+    var guideCard = document.querySelector("#tourGuide .tourGuide-card");
+    if (guideCard) {
+      var cardRect = guideCard.getBoundingClientRect();
+      var pad = 18;
+      safeRects.push({
+        x1: cardRect.left - canvasRect.left - pad,
+        y1: cardRect.top - canvasRect.top - pad,
+        x2: cardRect.right - canvasRect.left + pad,
+        y2: cardRect.bottom - canvasRect.top + pad
+      });
+    }
+    function insideSafe(x2, y2) {
+      for (var i = 0; i < safeRects.length; i++) {
+        var s = safeRects[i];
+        if (x2 >= s.x1 && x2 <= s.x2 && y2 >= s.y1 && y2 <= s.y2)
+          return true;
+      }
+      return false;
+    }
+    function farEnough(x2, y2, dots2) {
+      for (var i = 0; i < dots2.length; i++) {
+        var d = dots2[i];
+        if (Math.hypot(x2 - d.x, y2 - d.y) < minSpacing)
+          return false;
+      }
+      return true;
+    }
+    var dots = [];
+    var attempts = 0;
+    while (dots.length < 4 && attempts < 300) {
+      attempts += 1;
+      var x = rand(left, right);
+      var y = rand(top, bottom);
+      if (insideSafe(x, y))
+        continue;
+      if (!farEnough(x, y, dots))
+        continue;
+      dots.push({ x, y, n: dots.length + 1 });
+    }
+    if (dots.length < 4) {
+      var midX = (left + right) / 2;
+      var midY = (top + bottom) / 2;
+      var spreadX = (right - left) * 0.32;
+      var spreadY = (bottom - top) * 0.26;
+      dots = [
+        { x: midX - spreadX, y: midY - spreadY, n: 1 },
+        { x: midX + spreadX, y: midY - spreadY, n: 2 },
+        { x: midX + spreadX, y: midY + spreadY, n: 3 },
+        { x: midX - spreadX, y: midY + spreadY, n: 4 }
+      ];
+    }
+    return dots;
+  }
+  function startTutorialDots(requiredMode, eventName) {
+    tutorialDots = buildTutorialDots();
+    tutorialDotsIndex = 0;
+    tutorialDotsActive = true;
+    tutorialDotsFade = 1;
+    tutorialDotsFading = false;
+    tutorialDotsRequiredMode = requiredMode || "hybrid";
+    tutorialDotsEvent = eventName || null;
+    tutorialDotsNotifyPending = false;
+  }
+  function stopTutorialDots() {
+    tutorialDotsActive = false;
+    tutorialDotsFading = false;
+    tutorialDotsFade = 0;
+    tutorialDotsIndex = 0;
+    tutorialDotsRequiredMode = null;
+    tutorialDotsEvent = null;
+    tutorialDotsNotifyPending = false;
+  }
+  function updateTutorialDots(dt) {
+    if (!tutorialDotsActive)
       return;
-    var cx = (left + right) / 2;
-    var cy = (top + bottom) / 2;
-    var gridX = [left, cx, right];
-    var gridY = [top, cy, bottom];
-    var dotRadius = 2.6;
-    var baseAlpha = mousepadMode === "pad" ? 0.26 : mousepadMode === "hybrid" ? 0.22 : 0.18;
-    ctx.save();
-    ctx.fillStyle = "rgba(232,236,255,.9)";
-    ctx.globalAlpha = baseAlpha;
-    for (var gx = 0; gx < gridX.length; gx++) {
-      for (var gy = 0; gy < gridY.length; gy++) {
-        ctx.beginPath();
-        ctx.arc(gridX[gx], gridY[gy], dotRadius, 0, Math.PI * 2);
-        ctx.fill();
+    if (tutorialDotsFading) {
+      tutorialDotsFade = Math.max(0, tutorialDotsFade - dt * 2.4);
+      if (tutorialDotsFade <= 0) {
+        tutorialDotsActive = false;
+        tutorialDotsFading = false;
+        if (tutorialDotsNotifyPending && tourGuide && tutorialDotsEvent) {
+          tourGuide.notify(tutorialDotsEvent);
+        }
+        tutorialDotsNotifyPending = false;
+        tutorialDotsEvent = null;
+      }
+      return;
+    }
+    if (!mousepadActive || mousepadMode !== tutorialDotsRequiredMode)
+      return;
+    var target = tutorialDots[tutorialDotsIndex];
+    if (!target)
+      return;
+    var dist = Math.hypot(player.x - target.x, player.y - target.y);
+    if (dist <= 26) {
+      tutorialDotsIndex += 1;
+      if (tutorialDotsIndex >= tutorialDots.length) {
+        tutorialDotsFading = true;
+        tutorialDotsNotifyPending = true;
       }
     }
-    var maxX = right - cx;
-    var maxY = bottom - cy;
-    var targetX = cx + virtualAxes.x * maxX;
-    var targetY = cy + virtualAxes.y * maxY;
-    var ringR = mousepadMode === "pad" ? 7 : 6;
-    ctx.globalAlpha = 0.7;
-    ctx.strokeStyle = "rgba(0,229,255,.85)";
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    ctx.arc(targetX, targetY, ringR, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.globalAlpha = 0.45;
-    ctx.fillStyle = "rgba(0,229,255,.8)";
-    ctx.beginPath();
-    ctx.arc(targetX, targetY, ringR * 0.45, 0, Math.PI * 2);
-    ctx.fill();
-    if (mousepadMode === "hybrid") {
-      ctx.globalAlpha = 0.35;
-      ctx.strokeStyle = "rgba(232,236,255,.6)";
-      ctx.lineWidth = 1;
+  }
+  function drawTutorialDots() {
+    if (!tutorialActive || !tutorialDotsActive || !tutorialDots.length)
+      return;
+    var alpha = clamp(tutorialDotsFade, 0, 1);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = "700 12px Oxanium, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    for (var i = 0; i < tutorialDots.length; i++) {
+      var dot = tutorialDots[i];
+      var active = i === tutorialDotsIndex;
+      var radius = active ? 10 : 8;
+      ctx.save();
+      ctx.globalAlpha = alpha * (active ? 1 : 0.7);
+      ctx.fillStyle = "rgba(8,12,24,.75)";
+      ctx.strokeStyle = active ? "rgba(0,229,255,.9)" : "rgba(255,255,255,.65)";
+      ctx.lineWidth = active ? 2.2 : 1.4;
       ctx.beginPath();
-      ctx.moveTo(targetX - 10, targetY);
-      ctx.lineTo(targetX + 10, targetY);
-      ctx.moveTo(targetX, targetY - 10);
-      ctx.lineTo(targetX, targetY + 10);
+      ctx.arc(dot.x, dot.y, radius, 0, Math.PI * 2);
+      ctx.fill();
       ctx.stroke();
-    } else if (mousepadMode === "fps") {
-      ctx.globalAlpha = 0.32;
-      ctx.strokeStyle = "rgba(255,255,255,.5)";
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.arc(cx, cy, 14, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.fillStyle = active ? "rgba(0,229,255,.95)" : "rgba(232,236,255,.85)";
+      ctx.fillText(String(dot.n || i + 1), dot.x, dot.y + 0.5);
+      ctx.restore();
     }
     ctx.restore();
   }
@@ -7395,6 +7722,36 @@
         ctx.fill();
         continue;
       }
+      if (b.kind === "single" && bulletLaser.ready) {
+        var trailLen = 8;
+        drawTrail("rgba(80,255,170,.65)", trailLen, 2.4, 0.4);
+        var tNow = performance.now();
+        ctx.save();
+        ctx.globalAlpha = 0.85;
+        ctx.fillStyle = "rgba(140,255,190,.9)";
+        for (var s = 0; s < 4; s++) {
+          var t = s / 3;
+          var jitterX = Math.sin(tNow * 0.02 + s * 1.7) * 1.2;
+          var jitterY = Math.cos(tNow * 0.018 + s * 1.3) * 0.9;
+          var sx = b.x + jitterX;
+          var sy = b.y + trailLen * (0.35 + t * 0.8) + jitterY;
+          ctx.beginPath();
+          ctx.arc(sx, sy, 0.9 + s % 2 * 0.45, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+        ctx.save();
+        var size = b.r * 12;
+        var iw = bulletLaser.img.naturalWidth || bulletLaser.img.width || size;
+        var ih = bulletLaser.img.naturalHeight || bulletLaser.img.height || size;
+        var scale = size / Math.max(1, Math.max(iw, ih));
+        var drawW = iw * scale;
+        var drawH = ih * scale;
+        ctx.globalAlpha = 0.95;
+        ctx.drawImage(bulletLaser.img, b.x - drawW / 2, b.y - drawH / 2, drawW, drawH);
+        ctx.restore();
+        continue;
+      }
       drawTrail("rgba(255,221,0,.85)", b.r * 6.5, 4, 0.6);
       ctx.globalAlpha = 0.9;
       ctx.fillStyle = "rgba(255,221,0,.95)";
@@ -7692,6 +8049,11 @@
         if (consumeShipLife("OUT OF LIVES (ASTEROID COLLISION)"))
           return true;
         if (player.hull <= 0) {
+          if (tutorialActive) {
+            player.hull = Math.max(player.hull, 0.12);
+            syncHud();
+            return triggerTutorialRecovery("HULL CRITICAL");
+          }
           player.hull = 0;
           syncHud();
           state.endReasonDetail = "HULL DEPLETED (ASTEROID COLLISION)";
@@ -7760,24 +8122,18 @@
     ctx.scale(squashX * (1 + sway) * (1 - backwardShrink * 0.4), (1 - sway * 0.6) * (1 + forwardStretch - backwardShrink));
     if (player.defenseMode === "armor" && !ghost) {
       ctx.save();
-      ctx.globalAlpha = baseAlpha * 0.7;
-      ctx.shadowColor = "rgba(180,220,255,.95)";
-      ctx.shadowBlur = 22;
-      ctx.strokeStyle = "rgba(180,220,255,.6)";
-      ctx.lineWidth = 3;
+      ctx.globalAlpha = baseAlpha * 0.65;
+      ctx.shadowColor = "rgba(0,229,255,.95)";
+      ctx.shadowBlur = 36;
+      ctx.strokeStyle = "rgba(0,229,255,.6)";
+      ctx.lineWidth = 2.6;
       ctx.beginPath();
-      ctx.moveTo(0, -48);
-      ctx.lineTo(30, -8);
-      ctx.lineTo(36, 20);
-      ctx.lineTo(22, 52);
-      ctx.lineTo(0, 64);
-      ctx.lineTo(-22, 52);
-      ctx.lineTo(-36, 20);
-      ctx.lineTo(-30, -8);
-      ctx.closePath();
+      ctx.arc(0, 6, 38, 0, Math.PI * 2);
       ctx.stroke();
-      ctx.globalAlpha = baseAlpha * 0.28;
-      ctx.fillStyle = "rgba(120,200,255,.25)";
+      ctx.globalAlpha = baseAlpha * 0.35;
+      ctx.fillStyle = "rgba(0,229,255,.2)";
+      ctx.beginPath();
+      ctx.arc(0, 6, 34, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
@@ -8820,6 +9176,16 @@
     state.b = savedB;
     console.log("SELF TESTS: PASS");
   }
+  function selectHasValue(select, value) {
+    if (!select)
+      return false;
+    var target = String(value);
+    for (var i = 0; i < select.options.length; i++) {
+      if (select.options[i].value === target)
+        return true;
+    }
+    return false;
+  }
   function applyConfigToInputs(config) {
     if (config.aMin != null)
       inputs.aMin.value = config.aMin;
@@ -8851,8 +9217,16 @@
       inputs.sfxVolume.value = config.sfxVolume;
     if (config.musicVolume != null && inputs.musicVolume)
       inputs.musicVolume.value = config.musicVolume;
-    if (config.timerMode != null)
+    if (config.timerMode != null && inputs.timerMode) {
       inputs.timerMode.value = config.timerMode;
+      if (!selectHasValue(inputs.timerMode, config.timerMode)) {
+        state.timerModeOverride = String(config.timerMode);
+      } else {
+        state.timerModeOverride = null;
+      }
+    } else if (config.timerMode != null) {
+      state.timerModeOverride = String(config.timerMode);
+    }
     if (config.questionMode != null && inputs.questionMode)
       inputs.questionMode.value = config.questionMode;
     if (config.sound != null && inputs.sound)
@@ -8994,6 +9368,27 @@
           player,
           onStep: function(stepId) {
             tutorialStepId = stepId;
+            if (stepId === "mousepad_hybrid") {
+              startTutorialDots("hybrid", "mousepad_hybrid");
+            } else if (stepId === "mousepad_pad") {
+              startTutorialDots("pad", "mousepad_pad");
+            } else if (tutorialDotsActive) {
+              stopTutorialDots();
+            }
+            if (stepId === "recovery_powerup") {
+              tutorialRespawnActive = true;
+              tutorialRespawnTargetY = view.h - 58;
+              player.hidden = false;
+              player.x = view.w / 2;
+              player.y = view.h + 120;
+              player.vx = 0;
+              player.vy = 0;
+              player.moveSpeed = 0;
+              player.invuln = Math.max(player.invuln, 1.2);
+              player.hull = Math.max(player.hull, 0.32);
+              syncHud();
+              spawnPowerup("repair", "secondary", player.x, player.y - 140);
+            }
             if (stepId === "correct") {
               tutorialSpawnUnlocked = true;
             }
@@ -9027,12 +9422,22 @@
             tutorialPortalLock = false;
             tutorialPortalNotifyPending = false;
             setTutorialQuestionHidden(false);
+            try {
+              sessionStorage.setItem("asteroidConfig", JSON.stringify({
+                ship: "spire",
+                belt: "dusk",
+                questionMode: "classic",
+                timerMode: "90",
+                targetMode: "off"
+              }));
+            } catch (e) {
+            }
             var params2 = new URLSearchParams({
               autoStart: "1",
               ship: "spire",
               belt: "dusk",
               questionMode: "classic",
-              timerMode: "180",
+              timerMode: "90",
               targetMode: "off"
             });
             window.location.href = "asteroid_blaster.html?" + params2.toString();

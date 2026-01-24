@@ -19,7 +19,8 @@ export function createTourGuide(options){
     { id: "dash", title: "Step 9: Dash", body: "Press Space to dash through danger.", event: "dash" },
     { id: "ability", title: "Step 10: Ability", body: "Press C to use your ship ability.", event: "ability" },
     { id: "alien", title: "Step 11: Alien Contact", body: "Shoot down the alien target.", event: "alien" },
-    { id: "mousepad", title: "Step 12: Mousepad", body: "Press B to enable mousepad, then move the ship with your mouse.", event: "mousepad", hideDuringAction: true, actionPauseMs: 700 },
+    { id: "mousepad_hybrid", title: "Step 12: Mousepad (Hybrid)", body: "Press B to enable mousepad. Fly to dots 1-4 in order.", event: "mousepad_hybrid", hideDuringAction: true, actionPauseMs: 700 },
+    { id: "mousepad_pad", title: "Step 13: Mousepad (Pad)", body: "Press B again for Pad mode. Hybrid blends mouse with keys; Pad is a steady virtual stick. Connect the dots again.", event: "mousepad_pad", hideDuringAction: true, actionPauseMs: 700 },
     { id: "portal", title: "Final Step: Portal", body: "Cadet, fly up into the portal. Mission starts on contact.", event: "portal" }
   ];
   var progressTotal = 0;
@@ -39,6 +40,10 @@ export function createTourGuide(options){
   var completedSteps = {};
   var stepProgress = 0;
   var stepAccepting = false;
+  var interjectSteps = null;
+  var interjectIndex = 0;
+  var interjectActive = false;
+  var interjectOnDone = null;
   var overlay = null;
   var cardEl = null;
   var titleEl = null;
@@ -208,6 +213,10 @@ export function createTourGuide(options){
       complete();
       return;
     }
+    renderStep(step, immediate, index + 1, steps.length, false);
+  }
+
+  function renderStep(step, immediate, index, total, hideProgress){
     if(onStep) onStep(step.id, step);
     stepProgress = 0;
     stepAccepting = false;
@@ -226,11 +235,11 @@ export function createTourGuide(options){
       if(cardEl) cardEl.classList.remove("is-fading");
       stepRevealAt = Date.now();
       if(progressEl){
-        if(step.showProgress === false){
+        if(hideProgress || step.showProgress === false){
           progressEl.textContent = "";
         }else{
-          var pi = step.progressIndex || (index + 1);
-          var pt = step.progressTotal || steps.length;
+          var pi = step.progressIndex || index;
+          var pt = step.progressTotal || total;
           progressEl.textContent = "Step " + pi + " of " + pt;
         }
       }
@@ -246,6 +255,20 @@ export function createTourGuide(options){
   }
 
   function next(){
+    if(interjectActive && interjectSteps && interjectSteps.length){
+      interjectIndex += 1;
+      if(interjectIndex >= interjectSteps.length){
+        interjectActive = false;
+        interjectSteps = null;
+        interjectIndex = 0;
+        var done = interjectOnDone;
+        interjectOnDone = null;
+        if(done) done();
+        return;
+      }
+      renderStep(interjectSteps[interjectIndex], false, interjectIndex + 1, interjectSteps.length, true);
+      return;
+    }
     stepIndex += 1;
     showStep(stepIndex, false);
   }
@@ -283,6 +306,10 @@ export function createTourGuide(options){
     overlay.style.display = "flex";
     overlay.classList.remove("show");
     stepIndex = 0;
+    interjectActive = false;
+    interjectSteps = null;
+    interjectIndex = 0;
+    interjectOnDone = null;
     if(skipBtn) skipBtn.style.display = "inline-flex";
     requestAnimationFrame(function(){
       if(!overlay) return;
@@ -307,7 +334,7 @@ export function createTourGuide(options){
   function notify(eventName){
     if(!active || !eventName) return;
     if(!stepAccepting) return;
-    var step = steps[stepIndex];
+    var step = interjectActive ? (interjectSteps ? interjectSteps[interjectIndex] : null) : steps[stepIndex];
     if(step && step.event === eventName){
       stepProgress += 1;
       var required = step.count || 1;
@@ -317,9 +344,32 @@ export function createTourGuide(options){
     }
   }
 
+  function jumpTo(stepId){
+    if(!active || !stepId) return;
+    var idx = -1;
+    for(var i=0; i<steps.length; i++){
+      if(steps[i].id === stepId){ idx = i; break; }
+    }
+    if(idx >= 0){
+      stepIndex = idx;
+      renderStep(steps[stepIndex], true, stepIndex + 1, steps.length, false);
+    }
+  }
+
+  function interject(sequence, onDone){
+    if(!active || !sequence || !sequence.length) return;
+    interjectSteps = sequence.slice();
+    interjectIndex = 0;
+    interjectActive = true;
+    interjectOnDone = typeof onDone === "function" ? onDone : null;
+    renderStep(interjectSteps[0], true, 1, interjectSteps.length, true);
+  }
+
   return {
     start: start,
     stop: stop,
-    notify: notify
+    notify: notify,
+    jumpTo: jumpTo,
+    interject: interject
   };
 }

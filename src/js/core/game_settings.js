@@ -82,7 +82,8 @@ export function createState(){
     campaignIndex:-1,
     redemptionEnabled:false,
     redemptionUsed:false,
-    timerWarningPlayed:false
+    timerWarningPlayed:false,
+    timerModeOverride:null
   };
 }
 
@@ -163,7 +164,26 @@ export function applySettingsFromInputs(state, inputs){
   if(Number.isNaN(baseSpeed)) baseSpeed = 0.9;
   state.baseSpeed = baseSpeed;
   state.livesStart = parseInt(inputs.lives.value, 10);
-  state.timerMode = inputs.timerMode.value;
+  var timerVal = inputs.timerMode ? inputs.timerMode.value : state.timerMode;
+  if(state.timerModeOverride){
+    if(inputs.timerMode){
+      var hasOverride = false;
+      for(var ti=0; ti<inputs.timerMode.options.length; ti++){
+        if(inputs.timerMode.options[ti].value === String(state.timerModeOverride)){
+          hasOverride = true;
+          break;
+        }
+      }
+      if(hasOverride && timerVal && timerVal !== state.timerModeOverride){
+        state.timerModeOverride = null;
+      }
+    }
+    if(state.timerModeOverride){
+      timerVal = state.timerModeOverride;
+    }
+  }
+  if(!timerVal) timerVal = state.timerMode || "off";
+  state.timerMode = timerVal;
   if(inputs.targetMode) state.targetMode = inputs.targetMode.value;
   if(inputs.strikes) state.strikeLimit = parseInt(inputs.strikes.value, 10);
   state.sound = inputs.sound ? !!inputs.sound.checked : true;
@@ -185,6 +205,7 @@ export function applySettingsFromInputs(state, inputs){
   if(inputs.questionMode) state.questionMode = inputs.questionMode.value || "digits3";
   if(inputs.decoyFunction) state.decoyFunction = inputs.decoyFunction.value || "units_bias";
   state.timeLimitSec = (state.timerMode === "off") ? 0 : parseInt(state.timerMode, 10);
+  if(Number.isNaN(state.timeLimitSec)) state.timeLimitSec = 0;
   state.questionLimit = 0;
   if(state.targetMode && state.targetMode.charAt(0) === "q"){
     var qCount = parseInt(state.targetMode.slice(1), 10);
