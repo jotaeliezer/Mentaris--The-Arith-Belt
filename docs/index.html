@@ -1177,6 +1177,10 @@
                   <h4>Classic Answer</h4>
                   <p>Shoot the full answer to each problem.</p>
                 </div>
+                <div class="choiceCard" data-mode="factor">
+                  <h4>Factor Hunt</h4>
+                  <p>Find the missing factor to complete the product.</p>
+                </div>
               </div>
             </div>
           </div>
@@ -3082,19 +3086,24 @@
         selectedSubmode = (mode === "rational_dec") ? "3" : "2";
         return;
       }
-      if(mode.indexOf("add_") === 0){
+      if(mode.indexOf("factor") === 0){
+        selectedOperation = "mul";
+        selectedMode = "factor";
+      }else if(mode.indexOf("add_") === 0){
         selectedOperation = "add";
       }else{
         selectedOperation = "mul";
       }
       if(mode.indexOf("classic") !== -1){
         selectedMode = "classic";
+      }else if(mode.indexOf("factor") !== -1){
+        selectedMode = "factor";
       }else{
         selectedMode = "digit";
       }
-      if(mode === "digits2" || mode === "add_digits2" || mode === "add_classic2" || mode === "classic2"){
+      if(mode === "digits2" || mode === "add_digits2" || mode === "add_classic2" || mode === "classic2" || mode === "factor2"){
         selectedSubmode = "2";
-      }else if(mode === "digits3" || mode === "add_digits3" || mode === "add_classic3" || mode === "classic3"){
+      }else if(mode === "digits3" || mode === "add_digits3" || mode === "add_classic3" || mode === "classic3" || mode === "factor3"){
         selectedSubmode = "3";
       }
     }
@@ -3104,6 +3113,7 @@
       var mode = String(questionModeInput.value || "");
       var isClassic = (mode === "classic" || mode === "classic2" || mode === "classic3"
         || mode === "add_classic2" || mode === "add_classic3"
+        || mode === "factor2" || mode === "factor3"
         || mode === "square_shoot" || mode === "square_root"
         || mode === "rational_frac" || mode === "rational_dec");
       decoyFunctionInput.disabled = !isClassic;
@@ -3118,6 +3128,7 @@
       }
       if(selectedOperation === "mul"){
         if(selectedMode === "classic") return selectedSubmode === "2" ? "classic2" : "classic3";
+        if(selectedMode === "factor") return selectedSubmode === "2" ? "factor2" : "factor3";
         return selectedSubmode === "2" ? "digits2" : "digits3";
       }
       if(selectedMode === "classic"){
@@ -3153,15 +3164,22 @@
             : "Two-digit plus two-digit problems.";
         }else{
           if(title) title.textContent = sub + " by 1";
-          if(desc) desc.textContent = (sub === "3")
-            ? "One-digit by three-digit problems."
-            : "One-digit by two-digit problems.";
+          if(selectedMode === "factor"){
+            if(desc) desc.textContent = (sub === "3")
+              ? "Find the missing factor for 3-digit products."
+              : "Find the missing factor for 2-digit products.";
+          }else{
+            if(desc) desc.textContent = (sub === "3")
+              ? "One-digit by three-digit problems."
+              : "One-digit by two-digit problems.";
+          }
         }
       });
     }
 
     function syncModeUi(){
       if(selectedOperation === "square" || selectedOperation === "rational") selectedMode = "classic";
+      if(selectedOperation !== "mul" && selectedMode === "factor") selectedMode = "classic";
       var qm = computeQuestionMode();
       if(questionModeInput) questionModeInput.value = qm;
       selectChoice(modeChoices, selectedMode, "data-mode");
@@ -3172,7 +3190,9 @@
       if(modeChoices.length){
         modeChoices.forEach(function(card){
           var isDigit = card.getAttribute("data-mode") === "digit";
+          var isFactor = card.getAttribute("data-mode") === "factor";
           card.classList.toggle("disabled", (selectedOperation === "square" || selectedOperation === "rational") && isDigit);
+          card.classList.toggle("disabled", isFactor && selectedOperation !== "mul");
         });
       }
     }
@@ -4009,6 +4029,8 @@
         classic: "Classic Answer",
         classic2: "Classic Answer 1x2",
         classic3: "Classic Answer 1x3",
+        factor2: "Factor Hunt 1x2",
+        factor3: "Factor Hunt 1x3",
         add_digits2: "Addition Digit Hunt 2x2",
         add_digits3: "Addition Digit Hunt 3x3",
         add_classic2: "Addition Classic 2x2",
@@ -4232,6 +4254,8 @@
           classic: "Classic Answer",
           classic2: "Classic Answer 1x2",
           classic3: "Classic Answer 1x3",
+          factor2: "Factor Hunt 1x2",
+          factor3: "Factor Hunt 1x3",
           add_digits2: "Addition Digit Hunt 2x2",
           add_digits3: "Addition Digit Hunt 3x3",
           add_classic2: "Addition Classic 2x2",

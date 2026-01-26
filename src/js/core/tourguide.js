@@ -8,19 +8,16 @@ export function createTourGuide(options){
   var onStep = typeof opts.onStep === "function" ? opts.onStep : null;
   var steps = [
     { id: "intro", title: "Welcome aboard, pilot", body: "Welcome to the Arith Belt. Let's begin your training.", autoAdvanceMs: 2000, showProgress: false },
-    { id: "move_up", title: "Step 1: Move Up", body: "Press W or Up Arrow to move up.", event: "move_up", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Altitude secured, cadet.", praiseBody: "Clean ascent. The fleet approves." },
-    { id: "move_down", title: "Step 2: Move Down", body: "Press S or Down Arrow to move down.", event: "move_down", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Descent confirmed.", praiseBody: "Textbook drop. Gravity loses again." },
-    { id: "move_left", title: "Step 3: Move Left", body: "Press A or Left Arrow to move left.", event: "move_left", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Portside shift executed.", praiseBody: "Nice slide - keeps you off enemy scopes." },
-    { id: "move_right", title: "Step 4: Move Right", body: "Press D or Right Arrow to move right.", event: "move_right", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Starboard move clean.", praiseBody: "Witty sidestep. Keep them guessing." },
-    { id: "fire_once", title: "Step 5: Fire Once", body: "Tap Z or click to fire a single shot.", event: "fire", count: 1 },
-    { id: "fire_again", title: "Step 6: Fire Again", body: "Tap again to fire another shot.", event: "fire", count: 1 },
-    { id: "correct", title: "Step 7: Correct Hit", body: "Hit the asteroid with the correct answer.", event: "correct" },
-    { id: "powerup", title: "Step 8: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
-    { id: "dash", title: "Step 9: Dash", body: "Press Space to dash through danger.", event: "dash" },
-    { id: "ability", title: "Step 10: Ability", body: "Press C to use your ship ability.", event: "ability" },
-    { id: "alien", title: "Step 11: Alien Contact", body: "Shoot down the alien target.", event: "alien" },
-    { id: "mousepad_hybrid", title: "Step 12: Mousepad (Hybrid)", body: "Press B to enable mousepad. Fly to dots 1-4 in order.", event: "mousepad_hybrid", hideDuringAction: true, actionPauseMs: 700 },
-    { id: "mousepad_pad", title: "Step 13: Mousepad (Pad)", body: "Press B again for Pad mode. Hybrid blends mouse with keys; Pad is a steady virtual stick. Connect the dots again.", event: "mousepad_pad", hideDuringAction: true, actionPauseMs: 700 },
+    { id: "move_arrows", title: "Step 1: Flight Controls (Arrows)", body: "Use the Up, Down, Left, and Right arrow keys to guide the ship through dots 1-4 in order.", event: "move_arrows", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Formation clean, cadet.", praiseBody: "Arrow control confirmed. Smooth tracking." },
+    { id: "move_wasd", title: "Step 2: Flight Controls (WASD)", body: "Now use W, A, S, and D to guide the ship through the same dots again.", event: "move_wasd", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "WASD verified.", praiseBody: "Sharp handling. You fly like you mean it." },
+    { id: "fire_once", title: "Step 3: Fire Once", body: "Tap Z or click to fire a single shot.", event: "fire", count: 1 },
+    { id: "fire_again", title: "Step 4: Fire Again", body: "Tap again to fire another shot.", event: "fire", count: 1 },
+    { id: "correct", title: "Step 5: Correct Hit", body: "Hit the asteroid with the correct answer.", event: "correct" },
+    { id: "powerup", title: "Step 6: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
+    { id: "dash", title: "Step 7: Dash", body: "Press Space to dash through danger.", event: "dash" },
+    { id: "ability", title: "Step 8: Ability", body: "Press C to use your ship ability.", event: "ability" },
+    { id: "alien", title: "Step 9: Alien Contact", body: "Shoot down the alien target.", event: "alien" },
+    { id: "mousepad_hybrid", title: "Step 10: Mousepad", body: "Press B to enable mousepad. Fly to dots 1-4 in order.", event: "mousepad_hybrid", hideDuringAction: true, actionPauseMs: 700 },
     { id: "portal", title: "Final Step: Portal", body: "Cadet, fly up into the portal. Mission starts on contact.", event: "portal" }
   ];
   var progressTotal = 0;

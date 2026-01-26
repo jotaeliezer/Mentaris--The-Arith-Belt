@@ -449,6 +449,14 @@
   }
 
   function renderShipPreview(ctx, ship, x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle){
+    var shipType = ship.shipType || "mk7";
+    if(shipType !== "classic" && shipType !== "spire" && shipType !== "am2"){
+      return renderShipPreviewLegacy(ctx, ship, x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle);
+    }
+    return renderShipPreviewMatched(ctx, ship, x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle);
+  }
+
+  function renderShipPreviewLegacy(ctx, ship, x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle){
     ctx.save();
     ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
 
@@ -1171,6 +1179,730 @@
 
     ctx.save();
     ctx.globalAlpha = 0.85;
+    ctx.strokeStyle = "rgba(255,255,255,.18)";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(0, -22);
+    ctx.lineTo(0, 18);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.restore();
+    ctx.restore();
+  }
+
+function renderShipPreviewMatched(ctx, ship, x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle){
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+    var baseAlpha = ctx.globalAlpha;
+    var shipType = ship.shipType || "mk7";
+
+    var dmg = 1 - clamp(ship.hull || 1, 0, 1);
+
+    var useVX = (typeof overrideVX === "number") ? overrideVX : (ship.vx || 0);
+    var useVY = (typeof overrideVY === "number") ? overrideVY : (ship.vy || 0);
+    var vxN = clamp(useVX / (ship.speed || 1), -1, 1);
+    var vyN = clamp(useVY / (ship.speed || 1), -1, 1);
+
+    var bank = (typeof ship.bankHold === "number") ? ship.bankHold : vxN;
+    var turn = bank * 0.03;
+    var squashX = 1 - Math.abs(bank) * 0.06;
+    var bob = Math.sin(performance.now()*0.01) * 0.7;
+    var forwardStretch = Math.max(0, -vyN) * 0.06;
+    var backwardShrink = Math.max(0, vyN) * 0.08;
+
+    var speedMag = Math.min(1, Math.hypot(useVX, useVY) / (ship.speed || 1));
+    var t = performance.now();
+
+    ctx.translate(x, y + bob);
+    var scale = scaleMap[shipType] || 0.74;
+    var previewScale = 2.4;
+    ctx.scale(scale * previewScale, scale * previewScale);
+
+    if(!isFinite(x) || !isFinite(y)) { ctx.restore(); return; }
+    var swayAmp = 0.008 + speedMag * 0.01;
+    var sway = Math.sin(t * 0.004) * swayAmp;
+    var shear = 0;
+    ctx.rotate(turn);
+    ctx.transform(1, 0, shear, 1, 0, 0);
+    ctx.scale(squashX * (1 + sway) * (1 - backwardShrink * 0.4), (1 - sway * 0.6) * (1 + forwardStretch - backwardShrink));
+
+    if(ship.defenseMode === "armor" && !ghost){
+      ctx.save();
+      ctx.globalAlpha = baseAlpha * 0.65;
+      ctx.shadowColor = "rgba(0,229,255,.95)";
+      ctx.shadowBlur = 36;
+      ctx.strokeStyle = "rgba(0,229,255,.6)";
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.arc(0, 6, 38, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = baseAlpha * 0.35;
+      ctx.fillStyle = "rgba(0,229,255,.2)";
+      ctx.beginPath();
+      ctx.arc(0, 6, 34, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    if(ship.defenseMode === "shield" && !ghost){
+      ctx.save();
+      var shieldY = -28;
+      var arcR = 38;
+      var arcStart = Math.PI * 1.08;
+      var arcEnd = Math.PI * 1.92;
+      ctx.globalAlpha = baseAlpha * 0.5;
+      ctx.strokeStyle = "rgba(255,221,0,.35)";
+      ctx.shadowColor = "rgba(255,221,0,.55)";
+      ctx.shadowBlur = 18;
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.arc(0, shieldY, arcR + 2, arcStart, arcEnd);
+      ctx.stroke();
+
+      ctx.shadowBlur = 8;
+      ctx.globalAlpha = baseAlpha * 0.9;
+      ctx.strokeStyle = "rgba(150,190,60,.95)";
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.arc(0, shieldY, arcR, arcStart, arcEnd);
+      ctx.stroke();
+
+      var cells = 6;
+      var step = (arcEnd - arcStart) / cells;
+      ctx.shadowBlur = 6;
+      ctx.lineWidth = 1.4;
+      ctx.strokeStyle = "rgba(150,190,60,.85)";
+      for(var c=0; c<cells; c++){
+        var ang = arcStart + step * (c + 0.5);
+        var cx = Math.cos(ang) * (arcR + 1);
+        var cy = shieldY + Math.sin(ang) * (arcR + 1);
+        var rHex = 4.6;
+        ctx.beginPath();
+        for(var s=0; s<6; s++){
+          var ha = Math.PI / 6 + s * (Math.PI / 3);
+          var hx = cx + Math.cos(ha) * rHex;
+          var hy = cy + Math.sin(ha) * rHex;
+          if(s === 0) ctx.moveTo(hx, hy);
+          else ctx.lineTo(hx, hy);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    ctx.save();
+    ctx.globalAlpha = baseAlpha * 0.9;
+    ctx.beginPath();
+    ctx.arc(0, 3, 30, 0, Math.PI*2);
+    ctx.fillStyle = "rgba(0,229,255,.06)";
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    var colors = palettes[shipType] || palettes.mk7;
+    ctx.shadowColor = colors.glow;
+    ctx.shadowBlur = 12 * (1 - dmg*0.55);
+
+    var wingLeft = [-16, -8, -50, 12, -56, 22, -50, 30, -22, 28, -8, 6];
+    var wingRight = [16, -8, 50, 12, 56, 22, 50, 30, 22, 28, 8, 6];
+    var bodyOuter = [0, -34, 18, -10, 26, 6, 22, 22, 14, 34, -14, 34, -22, 22, -26, 6, -18, -10];
+    var bodyInner = [0, -24, 10, -2, 12, 20, 0, 30, -12, 20, -10, -2];
+    var stripe1 = { x:-26, y:-2, w:52, h:4 };
+    var stripe2 = { x:-20, y:-12, w:40, h:3 };
+    var nose = [0, -38, 10, -18, -10, -18];
+    var gun = {
+      xLeft: -42,
+      xRight: 32,
+      y: 2,
+      w: 10,
+      h: 16,
+      barrelLeft: -40,
+      barrelRight: 36,
+      barrelY: -24,
+      barrelW: 3,
+      barrelH: 14,
+      centerX: -3,
+      centerY: -24,
+      centerW: 6,
+      centerH: 18
+    };
+    var useAzure = shipType === "azure";
+    if(useAzure){
+      wingLeft = [-14, 2, -46, 18, -52, 32, -46, 36, -20, 30, -8, 10];
+      wingRight = [14, 2, 46, 18, 52, 32, 46, 36, 20, 30, 8, 10];
+      bodyOuter = [0, -32, 14, -6, 20, 12, 18, 24, 12, 34, -12, 34, -18, 24, -20, 12, -14, -6];
+      bodyInner = [0, -22, 8, -2, 10, 20, 0, 30, -10, 20, -8, -2];
+      stripe1 = { x:-22, y:-2, w:44, h:4 };
+      stripe2 = { x:-16, y:-12, w:32, h:3 };
+      nose = [0, -34, 9, -18, -9, -18];
+      gun = {
+        xLeft: -46,
+        xRight: 36,
+        y: 6,
+        w: 10,
+        h: 18,
+        barrelLeft: -42,
+        barrelRight: 40,
+        barrelY: -28,
+        barrelW: 3,
+        barrelH: 20,
+        centerX: -3,
+        centerY: -28,
+        centerW: 6,
+        centerH: 20
+      };
+    }else if(shipType === "fizard"){
+      wingLeft = [-12, -10, -40, 6, -46, 14, -40, 20, -18, 18, -6, 6];
+      wingRight = [12, -10, 40, 6, 46, 14, 40, 20, 18, 18, 6, 6];
+      bodyOuter = [0, -38, 14, -12, 20, 4, 18, 18, 10, 32, -10, 32, -18, 18, -20, 4, -14, -12];
+      bodyInner = [0, -26, 8, -6, 10, 18, 0, 28, -10, 18, -8, -6];
+      stripe1 = { x:-20, y:-2, w:40, h:4 };
+      stripe2 = { x:-14, y:-12, w:28, h:3 };
+      nose = [0, -40, 8, -22, -8, -22];
+      gun = {
+        xLeft: -34,
+        xRight: 24,
+        y: -2,
+        w: 9,
+        h: 14,
+        barrelLeft: -32,
+        barrelRight: 28,
+        barrelY: -22,
+        barrelW: 3,
+        barrelH: 12,
+        centerX: -3,
+        centerY: -24,
+        centerW: 6,
+        centerH: 16
+      };
+    }else if(shipType === "classic"){
+      wingLeft = [-14, -8, -40, 8, -46, 18, -40, 26, -22, 24, -8, 6];
+      wingRight = [14, -8, 40, 8, 46, 18, 40, 26, 22, 24, 8, 6];
+      gun.barrelLeft = -36;
+    }else if(shipType === "spire"){
+      wingLeft = [-9, 4, -40, 18, -44, 30, -40, 34, -14, 26, -6, 12];
+      wingRight = [9, 4, 40, 18, 44, 30, 40, 34, 14, 26, 6, 12];
+      bodyOuter = [0, -40, 12, -10, 20, 10, 18, 24, 8, 36, -8, 36, -18, 24, -20, 10, -12, -10];
+      bodyInner = [0, -26, 6, -4, 8, 18, 0, 30, -8, 18, -6, -4];
+      stripe1 = { x:-20, y:-2, w:40, h:4 };
+      stripe2 = { x:-16, y:-10, w:32, h:3 };
+      nose = [0, -34, 12, -22, -12, -22];
+      gun = {
+        xLeft: -34,
+        xRight: 22,
+        y: 8,
+        w: 10,
+        h: 18,
+        barrelLeft: -30,
+        barrelRight: 26,
+        barrelY: -28,
+        barrelW: 3,
+        barrelH: 22,
+        centerX: -3,
+        centerY: -28,
+        centerW: 6,
+        centerH: 22
+      };
+    }else if(shipType === "am2"){
+      wingLeft = [-8, -6, -30, 2, -38, 12, -30, 18, -8, 18, -4, 6];
+      wingRight = [8, -6, 30, 2, 38, 12, 30, 18, 8, 18, 4, 6];
+      bodyOuter = [0, -38, 10, -8, 18, 12, 16, 26, 8, 36, -8, 36, -16, 26, -18, 12, -10, -8];
+      bodyInner = [0, -28, 6, -4, 10, 20, 0, 30, -10, 20, -6, -4];
+      stripe1 = { x:-12, y:-2, w:24, h:6 };
+      stripe2 = { x:-10, y:-10, w:20, h:4 };
+      nose = [0, -36, 8, -18, -8, -18];
+      gun = {
+        xLeft: -16,
+        xRight: 6,
+        y: 10,
+        w: 8,
+        h: 14,
+        barrelLeft: -14,
+        barrelRight: 10,
+        barrelY: -24,
+        barrelW: 2.5,
+        barrelH: 14,
+        centerX: -2,
+        centerY: -24,
+        centerW: 4,
+        centerH: 16
+      };
+    }
+    gun.barrelY = gun.y - 18;
+    if(shipType === "spire"){
+      gun.barrelY -= 6;
+    }else if(shipType === "am2"){
+      gun.barrelY -= 5;
+    }
+
+    ghostStyle = ghostStyle || {};
+    var leftScale = clamp(1 + bank * 0.5, 0.5, 1.5);
+    var rightScale = clamp(1 - bank * 0.5, 0.5, 1.5);
+    var ghostBodyAlpha = (ghost && ghostStyle.thrustFocus) ? 0.35 : 1;
+    var ghostFlameBoost = (ghost && ghostStyle.thrustFocus) ? 1.45 : 1;
+
+    ctx.save();
+    ctx.globalAlpha *= ghostBodyAlpha;
+    ctx.fillStyle = colors.wing;
+    ctx.strokeStyle = colors.outline;
+    ctx.lineWidth = 2.0;
+
+    function drawWing(points){
+      ctx.beginPath();
+      ctx.moveTo(points[0], points[1]);
+      for(var wi=2; wi<points.length; wi+=2){
+        ctx.lineTo(points[wi], points[wi+1]);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    ctx.save();
+    ctx.translate(-10, 0);
+    ctx.scale(leftScale, 1);
+    ctx.translate(10, 0);
+    drawWing(wingLeft);
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(10, 0);
+    ctx.scale(rightScale, 1);
+    ctx.translate(-10, 0);
+    drawWing(wingRight);
+    ctx.restore();
+
+    function drawHull(){
+      ctx.fillStyle = colors.body;
+      ctx.strokeStyle = colors.outline;
+      ctx.lineWidth = 2.3;
+      ctx.beginPath();
+      ctx.moveTo(bodyOuter[0], bodyOuter[1]);
+      for(var bi=2; bi<bodyOuter.length; bi+=2){
+        ctx.lineTo(bodyOuter[bi], bodyOuter[bi+1]);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(bodyInner[0], bodyInner[1]);
+      for(var bj=2; bj<bodyInner.length; bj+=2){
+        ctx.lineTo(bodyInner[bj], bodyInner[bj+1]);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(-200, -200, 200, 400);
+    ctx.clip();
+    ctx.translate(-10, 0);
+    ctx.scale(leftScale, 1);
+    ctx.translate(10, 0);
+    drawHull();
+    ctx.restore();
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, -200, 200, 400);
+    ctx.clip();
+    ctx.translate(10, 0);
+    ctx.scale(rightScale, 1);
+    ctx.translate(-10, 0);
+    drawHull();
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = baseAlpha * 0.9;
+    ctx.fillStyle = colors.highlight || colors.accent;
+    ctx.fillRect(stripe1.x, stripe1.y, stripe1.w, stripe1.h);
+    ctx.fillRect(stripe2.x, stripe2.y, stripe2.w, stripe2.h);
+    ctx.beginPath();
+    ctx.moveTo(nose[0], nose[1]);
+    ctx.lineTo(nose[2], nose[3]);
+    ctx.lineTo(nose[4], nose[5]);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    function drawCanopy(){
+      ctx.fillStyle = colors.canopy;
+      ctx.strokeStyle = colors.canopyStroke;
+      ctx.lineWidth = 1.7;
+      ctx.beginPath();
+      ctx.moveTo(-8, -12);
+      ctx.quadraticCurveTo(0, -20, 8, -12);
+      ctx.lineTo(10, 8);
+      ctx.quadraticCurveTo(0, 16, -10, 8);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(-200, -200, 200, 400);
+    ctx.clip();
+    ctx.translate(-8, 0);
+    ctx.scale(leftScale, 1);
+    ctx.translate(8, 0);
+    drawCanopy();
+    ctx.restore();
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, -200, 200, 400);
+    ctx.clip();
+    ctx.translate(8, 0);
+    ctx.scale(rightScale, 1);
+    ctx.translate(-8, 0);
+    drawCanopy();
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = colors.icon || colors.accent;
+    ctx.beginPath();
+    ctx.moveTo(0, 6);
+    ctx.lineTo(6, 16);
+    ctx.lineTo(0, 26);
+    ctx.lineTo(-6, 16);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    var blink = (Math.sin(t * 0.006) + 1) / 2;
+    ctx.save();
+    ctx.globalAlpha = baseAlpha * (0.25 + blink * 0.55);
+    ctx.fillStyle = colors.highlight || colors.accent;
+    ctx.beginPath();
+    ctx.arc(-24, 4, 2.2, 0, Math.PI*2);
+    ctx.arc(24, 4, 2.2, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+
+    var isAm2 = shipType === "am2";
+    var isSpire = shipType === "spire";
+    if(isAm2){
+      ctx.save();
+      ctx.fillStyle = colors.highlight || colors.accent;
+      ctx.fillRect(-3, -6, 6, 26);
+      ctx.fillRect(-8, -12, 16, 4);
+      ctx.beginPath();
+      ctx.moveTo(-18, 14);
+      ctx.lineTo(-34, 22);
+      ctx.lineTo(-16, 24);
+      ctx.closePath();
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(18, 14);
+      ctx.lineTo(34, 22);
+      ctx.lineTo(16, 24);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    if(dmg > 0.02){
+      ctx.save();
+      ctx.globalAlpha = baseAlpha * clamp(dmg * 0.95, 0, 0.95);
+      ctx.fillStyle = "rgba(0,0,0,.22)";
+      ctx.beginPath();
+      ctx.ellipse(-5, 6, 10 + dmg*10, 6 + dmg*7, -0.4, 0, Math.PI*2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(6, 2, 7 + dmg*7, 4 + dmg*5, 0.3, 0, Math.PI*2);
+      ctx.fill();
+
+      ctx.globalAlpha = baseAlpha * clamp(dmg * 0.65, 0, 0.7);
+      ctx.strokeStyle = "rgba(232,236,255,.22)";
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.moveTo(-2, -6);
+      ctx.lineTo(-8, 2);
+      ctx.lineTo(-4, 10);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(3, -4);
+      ctx.lineTo(9, 4);
+      ctx.lineTo(6, 12);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    if((ship.hitFlash || 0) > 0 && !ghost){
+      ctx.save();
+      ctx.globalAlpha = baseAlpha * clamp(ship.hitFlash, 0, 1) * 0.55;
+      ctx.strokeStyle = "rgba(255,77,109,.9)";
+      ctx.lineWidth = 3.2;
+      ctx.beginPath();
+      ctx.moveTo(0, -24);
+      ctx.lineTo(16, -6);
+      ctx.lineTo(13, 16);
+      ctx.lineTo(0, 24);
+      ctx.lineTo(-13, 16);
+      ctx.lineTo(-16, -6);
+      ctx.closePath();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    ctx.shadowBlur = 0;
+
+    var recoil = ghost ? 0 : (ship.recoil || 0);
+    var recoilShift = recoil * 4;
+
+    ctx.fillStyle = colors.accent;
+    ctx.strokeStyle = colors.outline;
+    ctx.lineWidth = 1.6;
+
+    var inset = 3;
+    function drawSideGun(xLeft, barrelX){
+      ctx.beginPath();
+      ctx.moveTo(xLeft, gun.y);
+      ctx.lineTo(xLeft + gun.w, gun.y);
+      ctx.lineTo(xLeft + gun.w - inset, gun.y + gun.h);
+      ctx.lineTo(xLeft + inset, gun.y + gun.h);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.rect(barrelX, gun.barrelY - recoilShift, gun.barrelW, gun.barrelH);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(barrelX, gun.barrelY - recoilShift);
+      ctx.lineTo(barrelX + gun.barrelW, gun.barrelY - recoilShift);
+      ctx.lineTo(barrelX + gun.barrelW/2, gun.barrelY - recoilShift - 6);
+      ctx.closePath();
+      ctx.fill();
+      if(isAm2){
+        ctx.beginPath();
+        ctx.rect(barrelX - 4, gun.barrelY - recoilShift + 6, 3, gun.barrelH - 8);
+        ctx.rect(barrelX + gun.barrelW + 1, gun.barrelY - recoilShift + 6, 3, gun.barrelH - 8);
+        ctx.fill();
+      }
+    }
+
+    ctx.save();
+    ctx.translate(-10, 0);
+    ctx.scale(leftScale, 1);
+    ctx.translate(10, 0);
+    drawSideGun(gun.xLeft, gun.barrelLeft);
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(10, 0);
+    ctx.scale(rightScale, 1);
+    ctx.translate(-10, 0);
+    drawSideGun(gun.xRight, gun.barrelRight);
+    ctx.restore();
+
+    ctx.beginPath();
+    ctx.moveTo(gun.centerX, gun.centerY - recoilShift);
+    ctx.lineTo(gun.centerX + gun.centerW, gun.centerY - recoilShift);
+    ctx.lineTo(gun.centerX + gun.centerW - inset, gun.centerY - recoilShift + gun.centerH);
+    ctx.lineTo(gun.centerX + inset, gun.centerY - recoilShift + gun.centerH);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    var thrusterOffsetX = 0;
+    var thrusterOffsetY = 0;
+    if(shipType === "classic"){
+      thrusterOffsetY = -4;
+    }
+    var thrusterBaseY = 22 + thrusterOffsetY;
+    ctx.fillStyle = colors.thruster || "rgba(18,22,32,.85)";
+    ctx.strokeStyle = colors.outline;
+    ctx.lineWidth = 1.4;
+    if(ghost && ghostStyle.thrustFocus){
+      ctx.globalAlpha = Math.min(1, ctx.globalAlpha * 1.4);
+    }
+    if(isSpire){
+      ctx.beginPath();
+      ctx.rect(-14 + thrusterOffsetX, thrusterBaseY, 28, 9);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(thrusterOffsetX, thrusterBaseY + 7, 8.5, 0, Math.PI*2);
+      ctx.fill();
+      ctx.stroke();
+    }else{
+      var thrW = (typeof thrusterWidth === "number") ? thrusterWidth : 44;
+      var thrR = (typeof thrusterRadius === "number") ? thrusterRadius : 6.5;
+      ctx.save();
+      ctx.translate(-10 + thrusterOffsetX, 0);
+      ctx.scale(leftScale, 1);
+      ctx.translate(10 - thrusterOffsetX, 0);
+      ctx.beginPath();
+      ctx.rect(-thrW / 2 + thrusterOffsetX, thrusterBaseY, thrW / 2, 8);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(-thrW * 0.27 + thrusterOffsetX, thrusterBaseY + 6, thrR, 0, Math.PI*2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.translate(10 + thrusterOffsetX, 0);
+      ctx.scale(rightScale, 1);
+      ctx.translate(-10 - thrusterOffsetX, 0);
+      ctx.beginPath();
+      ctx.rect(thrusterOffsetX, thrusterBaseY, thrW / 2, 8);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(thrW * 0.27 + thrusterOffsetX, thrusterBaseY + 6, thrR, 0, Math.PI*2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      if(isAm2){
+        ctx.beginPath();
+        ctx.arc(thrusterOffsetX, thrusterBaseY + 8, 5.5, 0, Math.PI*2);
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+
+    var flash = ghost ? 0 : (ship.flash || 0);
+    if(flash > 0){
+      ctx.save();
+      ctx.globalAlpha = baseAlpha * Math.min(1, flash);
+      ctx.fillStyle = colors.accent;
+      ctx.beginPath();
+      ctx.moveTo(-4, -26 - recoilShift);
+      ctx.lineTo(0, -38 - recoilShift - flash*6);
+      ctx.lineTo(4, -26 - recoilShift);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    var forwardBoost = Math.max(0, -vyN);
+    var flame = 12 + speedMag * 18 + (Math.sin(t*0.03) * 2.6) + forwardBoost * 22;
+    flame *= ghostFlameBoost;
+
+    var bloom = 0.35 + speedMag * 0.5 + forwardBoost * 0.6 + (Math.sin(t * 0.02) * 0.08);
+    bloom *= ghostFlameBoost;
+    var flameWiggle = (Math.sin(t * 0.06) + Math.sin(t * 0.11 + 1.4)) * 0.6 * (0.6 + speedMag);
+    ctx.save();
+    ctx.globalAlpha = baseAlpha * (0.2 + bloom * 0.22);
+    ctx.fillStyle = colors.flame || "rgba(0,229,255,.35)";
+    ctx.shadowColor = colors.flame || "rgba(0,229,255,.4)";
+    ctx.shadowBlur = 12 + bloom * 9;
+    ctx.beginPath();
+    if(isSpire){
+      ctx.arc(thrusterOffsetX, thrusterBaseY + 7, 7 + bloom * 5, 0, Math.PI*2);
+    }else{
+      ctx.arc(-12 + thrusterOffsetX, thrusterBaseY + 6, 5 + bloom * 4, 0, Math.PI*2);
+      ctx.arc(12 + thrusterOffsetX, thrusterBaseY + 6, 5 + bloom * 4, 0, Math.PI*2);
+      if(isAm2){
+        ctx.arc(thrusterOffsetX, thrusterBaseY + 8, 4.5 + bloom * 3.5, 0, Math.PI*2);
+      }
+    }
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = baseAlpha * (0.85 + forwardBoost * 0.35);
+    ctx.fillStyle = colors.flame || "rgba(193,216,47,.16)";
+    ctx.beginPath();
+    if(isSpire){
+      ctx.moveTo(-6 + thrusterOffsetX, thrusterBaseY);
+      ctx.lineTo(thrusterOffsetX + flameWiggle, thrusterBaseY + flame * 1.1);
+      ctx.lineTo(6 + thrusterOffsetX, thrusterBaseY);
+    }else{
+      ctx.moveTo(-18 + thrusterOffsetX, thrusterBaseY);
+      ctx.lineTo(-12 + thrusterOffsetX + flameWiggle, thrusterBaseY + flame);
+      ctx.lineTo(-6 + thrusterOffsetX, thrusterBaseY);
+      ctx.moveTo(6 + thrusterOffsetX, thrusterBaseY);
+      ctx.lineTo(12 + thrusterOffsetX + flameWiggle, thrusterBaseY + flame);
+      ctx.lineTo(18 + thrusterOffsetX, thrusterBaseY);
+    }
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.globalAlpha = baseAlpha * (0.22 + forwardBoost * 0.25);
+    ctx.fillStyle = "rgba(0,229,255,.16)";
+    ctx.beginPath();
+    if(isSpire){
+      ctx.moveTo(-10 + thrusterOffsetX, thrusterBaseY);
+      ctx.lineTo(thrusterOffsetX + flameWiggle, thrusterBaseY + flame*1.22);
+      ctx.lineTo(10 + thrusterOffsetX, thrusterBaseY);
+    }else{
+      ctx.moveTo(-24 + thrusterOffsetX, thrusterBaseY);
+      ctx.lineTo(-12 + thrusterOffsetX + flameWiggle, thrusterBaseY + flame*1.18);
+      ctx.lineTo(thrusterOffsetX, thrusterBaseY);
+      ctx.moveTo(thrusterOffsetX, thrusterBaseY);
+      ctx.lineTo(12 + thrusterOffsetX + flameWiggle, thrusterBaseY + flame*1.18);
+      ctx.lineTo(24 + thrusterOffsetX, thrusterBaseY);
+    }
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.globalAlpha = baseAlpha * 0.8;
+    ctx.fillStyle = colors.flame || "rgba(0,229,255,.14)";
+    ctx.beginPath();
+    if(isSpire){
+      ctx.moveTo(-4 + thrusterOffsetX, thrusterBaseY);
+      ctx.lineTo(thrusterOffsetX + flameWiggle * 0.6, thrusterBaseY + flame*0.8);
+      ctx.lineTo(4 + thrusterOffsetX, thrusterBaseY);
+    }else{
+      ctx.moveTo(-14 + thrusterOffsetX, thrusterBaseY);
+      ctx.lineTo(-12 + thrusterOffsetX + flameWiggle * 0.5, thrusterBaseY + flame*0.7);
+      ctx.lineTo(-10 + thrusterOffsetX, thrusterBaseY);
+      ctx.moveTo(10 + thrusterOffsetX, thrusterBaseY);
+      ctx.lineTo(12 + thrusterOffsetX + flameWiggle * 0.5, thrusterBaseY + flame*0.7);
+      ctx.lineTo(14 + thrusterOffsetX, thrusterBaseY);
+    }
+    ctx.closePath();
+    ctx.fill();
+    if(isAm2){
+      ctx.globalAlpha = baseAlpha * 0.75;
+      ctx.fillStyle = colors.flame || "rgba(120,220,255,.9)";
+      ctx.beginPath();
+      ctx.moveTo(-3 + thrusterOffsetX, thrusterBaseY - 2);
+      ctx.lineTo(thrusterOffsetX + flameWiggle * 0.5, thrusterBaseY - 2 + flame*0.9);
+      ctx.lineTo(3 + thrusterOffsetX, thrusterBaseY - 2);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+
+    if(Math.abs(vxN) > 0.18 && !ghost){
+      var sx = (vxN > 0) ? -30 : 30;
+      ctx.save();
+      ctx.globalAlpha = baseAlpha * 0.55;
+      ctx.fillStyle = "rgba(175,0,111,.14)";
+      ctx.beginPath();
+      ctx.moveTo(sx, 6);
+      ctx.lineTo(sx + (vxN > 0 ? -10 : 10), 10);
+      ctx.lineTo(sx, 14);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.save();
+    ctx.globalAlpha = baseAlpha * 0.7;
+    ctx.fillStyle = "rgba(255,255,255,.10)";
+    ctx.beginPath();
+    ctx.arc(0, -20, 6, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = baseAlpha * 0.85;
     ctx.strokeStyle = "rgba(255,255,255,.18)";
     ctx.lineWidth = 1.6;
     ctx.beginPath();

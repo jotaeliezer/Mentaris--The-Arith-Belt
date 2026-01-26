@@ -23,7 +23,7 @@ export function createState(){
     sfxVolume:0.85,
     musicVolume:0.6,
     questionMode:"digits3",
-    decoyFunction:"units_bias",
+    decoyFunction:"digit_shuffle",
     difficulty:"normal",
 
     // session
@@ -66,6 +66,9 @@ export function createState(){
     // arcade feel FX
     slowMoRemaining:0,
     slowMoScale:0.42,
+    slowMoWaveActive:false,
+    slowMoWaveY:0,
+    slowMoWaveSpeed:420,
     empTimer:0,
     empCascade:null,
     empCascadeTimer:0,
@@ -203,7 +206,7 @@ export function applySettingsFromInputs(state, inputs){
     state.musicVolume = clamp(musicVol, 0, 1);
   }
   if(inputs.questionMode) state.questionMode = inputs.questionMode.value || "digits3";
-  if(inputs.decoyFunction) state.decoyFunction = inputs.decoyFunction.value || "units_bias";
+  if(inputs.decoyFunction) state.decoyFunction = inputs.decoyFunction.value || "digit_shuffle";
   state.timeLimitSec = (state.timerMode === "off") ? 0 : parseInt(state.timerMode, 10);
   if(Number.isNaN(state.timeLimitSec)) state.timeLimitSec = 0;
   state.questionLimit = 0;

@@ -6,6 +6,7 @@ import { playSfx, setDrone, setShipAdvance, setShipIdle, setSoundtrack, unlockSf
 import { createTourGuide } from "./tourguide.js";
 import { createFx } from "../render/animations.js";
 import { createBackground } from "../render/background.js";
+import { createPhaserRenderer } from "../render/phaser_renderer.js";
 import { aliens, alienBullets, alienConfig, resetAliens, spawnAlien, updateAliens, updateAlienBullets, drawAliens, drawAlienBullets } from "../entities/aliens.js";
 import { computeSpawnInterval } from "./levels.js";
 import { PowerupManager } from "../entities/powerups.js";
@@ -16,6 +17,19 @@ var ctx = canvas.getContext("2d", { alpha: true });
 var view = { w: 0, h: 0, hudH: 0 };
 var gameShell = document.getElementById("gameShell");
 var isElectron = (typeof navigator !== "undefined" && /Electron/i.test(navigator.userAgent || ""));
+var phaserRoot = document.getElementById("phaserRoot");
+if(!phaserRoot && gameShell){
+  phaserRoot = document.createElement("div");
+  phaserRoot.id = "phaserRoot";
+  gameShell.insertBefore(phaserRoot, canvas);
+}
+
+var phaserRenderer = null;
+var usePhaserRenderer = true;
+try{
+  var phaserParam = new URLSearchParams(location.search).get("phaser");
+  if(phaserParam === "0" || phaserParam === "false") usePhaserRenderer = false;
+}catch(e){}
 
 if(typeof CanvasRenderingContext2D !== "undefined"){
   if(typeof ctx.roundRect !== "function"){
@@ -289,6 +303,31 @@ var campaignMaxFailures = 3;
 var campaignProfileId = "";
 
 var tourGuide = null;
+if(usePhaserRenderer && phaserRoot){
+  phaserRenderer = createPhaserRenderer({
+    parent: phaserRoot,
+    getView: function(){ return view; },
+    getState: function(){ return state; },
+    getData: function(){
+      return {
+        view: view,
+        state: state,
+        tutorialActive: tutorialActive,
+        backgroundIndex: backgroundIndex,
+        backgroundScroll: backgroundScroll,
+        backgroundScale: backgroundScale,
+        asteroids: asteroids,
+        bullets: bullets,
+        powerups: powerups,
+        aliens: aliens,
+        alienBullets: alienBullets
+      };
+    },
+    onReady: function(){
+      if(phaserRenderer) phaserRenderer.setActive(true);
+    }
+  });
+}
 var tutorialActive = false;
 var tutorialLastPos = { x:0, y:0 };
 var tutorialPowerupSpawned = false;
@@ -475,9 +514,37 @@ Object.keys(shotIcons).forEach(function(key){
   icon.img.src = icon.src;
 });
 
-var bulletLaser = { img: new Image(), ready: false, src: "images/bullet_single.png" };
-bulletLaser.img.onload = function(){ bulletLaser.ready = true; };
-bulletLaser.img.src = bulletLaser.src;
+var bulletSingle = { img: new Image(), ready: false, src: "images/bullet_single.png" };
+bulletSingle.img.onload = function(){ bulletSingle.ready = true; };
+bulletSingle.img.src = bulletSingle.src;
+
+var bulletLaserImg = { img: new Image(), ready: false, src: "images/bullet_laser.png" };
+bulletLaserImg.img.onload = function(){ bulletLaserImg.ready = true; };
+bulletLaserImg.img.src = bulletLaserImg.src;
+
+var bulletFireImg = { img: new Image(), ready: false, src: "images/bullet_fire1.png" };
+bulletFireImg.img.onload = function(){ bulletFireImg.ready = true; };
+bulletFireImg.img.src = bulletFireImg.src;
+
+var bulletIceImg = { img: new Image(), ready: false, src: "images/bullet_ice.png" };
+bulletIceImg.img.onload = function(){ bulletIceImg.ready = true; };
+bulletIceImg.img.src = bulletIceImg.src;
+
+var bulletBoltImg = { img: new Image(), ready: false, src: "images/bullet_electric1.png" };
+bulletBoltImg.img.onload = function(){ bulletBoltImg.ready = true; };
+bulletBoltImg.img.src = bulletBoltImg.src;
+
+var bulletOrbImg = { img: new Image(), ready: false, src: "images/bullet_orb.png" };
+bulletOrbImg.img.onload = function(){ bulletOrbImg.ready = true; };
+bulletOrbImg.img.src = bulletOrbImg.src;
+
+var bulletRailImg = { img: new Image(), ready: false, src: "images/bullet_rail.png" };
+bulletRailImg.img.onload = function(){ bulletRailImg.ready = true; };
+bulletRailImg.img.src = bulletRailImg.src;
+
+var bulletMissileImg = { img: new Image(), ready: false, src: "images/bullet_missile.png" };
+bulletMissileImg.img.onload = function(){ bulletMissileImg.ready = true; };
+bulletMissileImg.img.src = bulletMissileImg.src;
 
 var powerupCatalogSecondary = [
   { id: "repair", label: "Hull Repair", icon: powerupIcons.repair.src, desc: "Instant hull repair (+35%)." },
@@ -848,14 +915,10 @@ window.addEventListener("keydown", function(e){
   if(k === "b"){
     if(!mousepadActive){
       setMousepadActive(true);
-      showToast("MOUSEPAD: " + mousepadMode.toUpperCase());
-    }else if(mousepadMode === "hybrid"){
-      setMousepadMode("pad");
-      showToast("MOUSEPAD: PAD");
+      showToast("MOUSEPAD: HYBRID");
     }else{
       setMousepadActive(false);
       showToast("MOUSEPAD OFF");
-      setMousepadMode("hybrid");
     }
   }
   if(k === " " || k === "spacebar") dash();
@@ -951,17 +1014,13 @@ if(inputs.questionMode){
 }
 
 function setMousepadMode(mode){
-  if(mode === "pad"){
-    mousepadMode = "pad";
-  }else{
-    mousepadMode = "hybrid";
-  }
+  mousepadMode = "hybrid";
   if(padMode){
-    padMode.textContent = mousepadMode === "hybrid" ? "HYBRID" : "PAD";
+    padMode.textContent = "HYBRID";
   }
   mouseImpulse.x = 0;
   mouseImpulse.y = 0;
-  if(mousepadActive && mousepadMode === "hybrid" && virtualPad && virtualPad.requestPointerLock){
+  if(mousepadActive && virtualPad && virtualPad.requestPointerLock){
     virtualPad.requestPointerLock();
   }else if(document.exitPointerLock){
     document.exitPointerLock();
@@ -1095,6 +1154,10 @@ function resize(){
   g3.addColorStop(0, "rgba(255,221,0,.10)");
   g3.addColorStop(1, "rgba(0,0,0,0)");
   bg.nebula.push(g3);
+
+  if(phaserRenderer && phaserRenderer.resize){
+    phaserRenderer.resize(w, h);
+  }
 }
 
 window.addEventListener("resize", resize);
@@ -1111,6 +1174,10 @@ function getQuestionRawText(){
   if(state.questionMode === "square_root"){
     var sq = state.squareValue || (state.a * state.a);
     return "\u221A" + String(sq) + " = ?";
+  }
+  if(isFactorMode()){
+    var product = (typeof state.factorProduct === "number") ? state.factorProduct : (state.a * state.b);
+    return state.a + " x ? = " + product;
   }
   var op = isAdditionMode() ? "+" : "x";
   return state.a + " " + op + " " + state.b + " = ?";
@@ -1533,16 +1600,25 @@ function isClassicMode(){
   return state.questionMode === "classic"
     || state.questionMode === "classic2"
     || state.questionMode === "classic3"
+    || state.questionMode === "factor2"
+    || state.questionMode === "factor3"
     || state.questionMode === "add_classic2"
     || state.questionMode === "add_classic3"
     || isSquareMode()
     || isRationalMode();
 }
 
+function isFactorMode(){
+  return state.questionMode === "factor2"
+    || state.questionMode === "factor3";
+}
+
 function isClassicModeValue(mode){
   return mode === "classic"
     || mode === "classic2"
     || mode === "classic3"
+    || mode === "factor2"
+    || mode === "factor3"
     || mode === "add_classic2"
     || mode === "add_classic3"
     || mode === "square_shoot"
@@ -1556,12 +1632,15 @@ function describeQuestionMode(mode){
   var isAdd = modeLabel.indexOf("add_") === 0;
   var isSquare = modeLabel.indexOf("square_") === 0;
   var isRational = modeLabel.indexOf("rational_") === 0;
+  var isFactor = modeLabel.indexOf("factor") === 0;
   var operation = isRational ? "Rationals" : (isSquare ? "Squares" : (isAdd ? "Addition" : "Multiplication"));
   var modeName = "Classic Answer";
   if(isRational){
     modeName = (modeLabel === "rational_dec") ? "Target Decimal" : "Target Fraction";
   }else if(isSquare){
     modeName = (modeLabel === "square_root") ? "Square Roots" : "Perfect Squares";
+  }else if(isFactor){
+    modeName = "Factor Hunt";
   }else{
     modeName = (modeLabel.indexOf("digits") !== -1) ? "Digit Hunt" : "Classic Answer";
   }
@@ -1685,6 +1764,21 @@ function nextProblem(){
     state.rationalPool = pool;
     state.rationalQuestion = (state.questionMode === "rational_frac") ? entry.dec : entry.frac;
     state.answer = (state.questionMode === "rational_frac") ? entry.frac : entry.dec;
+    state.waveId++;
+    syncHud();
+    prepareWave();
+    return;
+  }
+  if(isFactorMode()){
+    if(state.questionMode === "factor2"){
+      state.a = randi(10, 99);
+      state.b = randi(2, 9);
+    }else{
+      state.a = randi(100, 999);
+      state.b = randi(2, 9);
+    }
+    state.factorProduct = state.a * state.b;
+    state.answer = state.b;
     state.waveId++;
     syncHud();
     prepareWave();
@@ -1935,41 +2029,59 @@ function genDigitDecoys(correctDigit, count){
   return Array.from(out);
 }
 
-function buildDigitDecoyBag(){
-  var diff = String(state.difficulty || "normal").toLowerCase();
-  var pool;
-  var repeats = 2;
-  if(diff === "easy"){
-    pool = state.waveDecoys;
-  }else if(diff === "normal"){
-    pool = [];
-    for(var d=0; d<=9; d++){
-      if(d !== state.correctDigit) pool.push(d);
-    }
-    for(var i=pool.length - 1; i>0; i--){
-      var j = randi(0, i);
-      var tmp = pool[i];
-      pool[i] = pool[j];
-      pool[j] = tmp;
-    }
-    pool = pool.slice(0, 6);
-    repeats = 1;
-  }else{
-    pool = [0,1,2,3,4,5,6,7,8,9];
-  }
-  var bag = [];
-  for(var i=0; i<pool.length; i++){
-    var d = pool[i];
+function buildDigitDecoyBag(excludeSet){
+  var pool = [];
+  var exclude = excludeSet || new Set();
+  for(var d=0; d<=9; d++){
     if(d === state.correctDigit) continue;
-    for(var r=0; r<repeats; r++) bag.push(d);
+    if(exclude.has(String(d))) continue;
+    pool.push(d);
   }
-  for(var s=bag.length - 1; s>0; s--){
-    var j = randi(0, s);
-    var tmp = bag[s];
-    bag[s] = bag[j];
-    bag[j] = tmp;
+  for(var i=pool.length - 1; i>0; i--){
+    var j = randi(0, i);
+    var tmp = pool[i];
+    pool[i] = pool[j];
+    pool[j] = tmp;
   }
-  return bag;
+  return pool;
+}
+
+function buildClassicDecoyBag(correct, count, excludeSet){
+  var target = Math.max(6, count || 0);
+  var exclude = excludeSet || new Set();
+  var pool = [];
+  var attempts = 0;
+  while(pool.length < target && attempts++ < 6){
+    var candidateCount = Math.max(target + attempts * 2, target);
+    var candidates = genDecoys(correct, candidateCount);
+    for(var i=0; i<candidates.length; i++){
+      var label = candidates[i];
+      var key = String(label);
+      if(label === correct) continue;
+      if(exclude.has(key)) continue;
+      if(pool.indexOf(label) !== -1) continue;
+      pool.push(label);
+      if(pool.length >= target) break;
+    }
+  }
+  if(!pool.length){
+    var fallback = genDecoys(correct, target);
+    for(var j=0; j<fallback.length; j++){
+      var lab = fallback[j];
+      var k = String(lab);
+      if(lab === correct) continue;
+      if(exclude.has(k)) continue;
+      if(pool.indexOf(lab) !== -1) continue;
+      pool.push(lab);
+    }
+  }
+  for(var kIndex=pool.length - 1; kIndex>0; kIndex--){
+    var jIndex = randi(0, kIndex);
+    var tmp = pool[kIndex];
+    pool[kIndex] = pool[jIndex];
+    pool[jIndex] = tmp;
+  }
+  return pool;
 }
 
 function prepareWave(){
@@ -1980,7 +2092,7 @@ function prepareWave(){
     state.waveDecoyBag = buildDigitDecoyBag();
   }else{
     state.waveDecoys = genDecoys(state.answer, decoyCount);
-    state.waveDecoyBag = null;
+    state.waveDecoyBag = buildClassicDecoyBag(state.answer, Math.max(6, decoyCount * 2));
   }
   state.correctInPlay = false;
   state.correctAsteroidId = 0;
@@ -2004,15 +2116,20 @@ function pickSpawnX(w){
   return rand(48, w - 48);
 }
 
+function getDifficultySpeedFactor(){
+  var diff = String(state.difficulty || "normal").toLowerCase();
+  if(diff === "easy") return 0.38;
+  if(diff === "normal") return 0.62;
+  if(diff === "hard") return 0.9;
+  if(diff === "brutal") return 1.05;
+  return 0.62;
+}
+
 function spawnAsteroid(label, isCorrect){
   var r = canvas.getBoundingClientRect();
   var w = r.width;
 
-  var levelFactor = 1;
-  var diff = String(state.difficulty || "normal").toLowerCase();
-  if(diff === "easy") levelFactor = 0.45;
-  else if(diff === "normal") levelFactor = 0.7;
-  else if(diff === "brutal") levelFactor = 1.25;
+  var levelFactor = getDifficultySpeedFactor();
   var baseVy = 100 + state.level * 14 * levelFactor;
   var speedScale = state.baseSpeed * (1 + state.ddSpeedBonus);
 
@@ -2068,15 +2185,37 @@ function spawnAsteroid(label, isCorrect){
 }
 
 function spawnDecoyOnly(){
-  var pool = (state.waveDecoys && state.waveDecoys.length) ? state.waveDecoys : [Math.max(0, state.answer + randi(-10,10))];
-  var label = pool[randi(0, pool.length - 1)];
-  if(isDigitMode()){
-    if(!state.waveDecoyBag || !state.waveDecoyBag.length){
-      state.waveDecoyBag = buildDigitDecoyBag();
+  var activeLabels = new Set();
+  for(var i=0; i<asteroids.length; i++){
+    var a = asteroids[i];
+    if(a.waveId === state.waveId && a.label != null){
+      activeLabels.add(String(a.label));
     }
-    if(state.waveDecoyBag.length){
+  }
+  var label = null;
+  if(!state.waveDecoyBag || !state.waveDecoyBag.length){
+    if(isDigitMode()){
+      state.waveDecoyBag = buildDigitDecoyBag(activeLabels);
+    }else{
+      state.waveDecoyBag = buildClassicDecoyBag(state.answer, Math.max(6, Math.round(state.decoys * 0.6)), activeLabels);
+    }
+  }
+  if(state.waveDecoyBag && state.waveDecoyBag.length){
+    for(var bi=state.waveDecoyBag.length - 1; bi>=0; bi--){
+      var cand = state.waveDecoyBag[bi];
+      if(!activeLabels.has(String(cand))){
+        label = cand;
+        state.waveDecoyBag.splice(bi, 1);
+        break;
+      }
+    }
+    if(label == null){
       label = state.waveDecoyBag.pop();
     }
+  }
+  if(label == null){
+    var pool = (state.waveDecoys && state.waveDecoys.length) ? state.waveDecoys : [Math.max(0, state.answer + randi(-10,10))];
+    label = pool[randi(0, pool.length - 1)];
   }
   spawnAsteroid(label, false);
 }
@@ -2097,7 +2236,7 @@ function spawnOneFromWave(){
   if(state.level >= 4 && Math.random() < 0.28){
     var r = canvas.getBoundingClientRect();
     var w = r.width;
-    var baseVy = 92 + state.level * 10;
+    var baseVy = (92 + state.level * 10) * getDifficultySpeedFactor();
     var speedScale = state.baseSpeed * (1 + state.ddSpeedBonus);
     asteroids.push({
       id: ++state.asteroidId,
@@ -2123,12 +2262,13 @@ function spawnOneFromWave(){
   }
 }
 
-function spawnPowerup(type, group, x, y){
+function spawnPowerup(type, group, x, y, opts){
   var r = canvas.getBoundingClientRect();
   var spin = rand(0.45, 1.1);
   if(Math.random() < 0.5) spin *= -1;
   var spawnX = (typeof x === "number") ? x : rand(60, r.width - 60);
   var spawnY = (typeof y === "number") ? y : -30;
+  var popDuration = (opts && opts.pop) ? (opts.popDuration || 0.55) : 0;
   powerups.push({
     x: spawnX,
     y: spawnY,
@@ -2137,16 +2277,22 @@ function spawnPowerup(type, group, x, y){
     rot: rand(0, Math.PI * 2),
     rotSpeed: spin,
     type: type,
-    group: group
+    group: group,
+    popTimer: popDuration,
+    popDuration: popDuration,
+    popScale: (opts && typeof opts.popScale === "number") ? opts.popScale : 0.7
   });
 }
 
 function choosePowerupDrop(){
   var roll = Math.random();
   var lowHull = player.hull < 0.3;
+  function pickSecondaryType(){
+    var pool = ["time","time","time","magnet","emp","lock","repair"];
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
   if(lowHull && roll < 0.75){
-    var secondary = ["time", "magnet", "emp", "lock"];
-    var sType = Math.random() < 0.7 ? "repair" : secondary[Math.floor(Math.random() * secondary.length)];
+    var sType = Math.random() < 0.7 ? "repair" : pickSecondaryType();
     return { type: sType, group: "secondary" };
   }
   if(roll < 0.45){
@@ -2159,8 +2305,7 @@ function choosePowerupDrop(){
     var dType = Math.random() < 0.6 ? "shield" : "armor";
     return { type: dType, group: "defense" };
   }
-  var secondary = ["repair", "time", "magnet", "emp", "lock"];
-  var sType = secondary[Math.floor(Math.random() * secondary.length)];
+  var sType = pickSecondaryType();
   return { type: sType, group: "secondary" };
 }
 
@@ -2195,7 +2340,7 @@ function maybeDropPowerup(){
 function maybeSpawnAnswerPowerup(hitAst){
   if(!hitAst) return;
   if(hitAst.hiddenPowerup){
-    spawnPowerup(hitAst.hiddenPowerup.type, hitAst.hiddenPowerup.group, hitAst.x, hitAst.y);
+    spawnPowerup(hitAst.hiddenPowerup.type, hitAst.hiddenPowerup.group, hitAst.x, hitAst.y, { pop: true, popScale: 0.8 });
     hiddenPowerupActive = false;
     answerHitsSincePowerup = 0;
     return;
@@ -2533,6 +2678,9 @@ function resetSession(){
   state.empCascadeInterval = 0;
   state.missileBuffer = "";
   state.missileBufferTimer = 0;
+  state.slowMoWaveActive = false;
+  state.slowMoWaveY = 0;
+  state.slowMoWaveSpeed = 420;
 
   player.cooldown = 0;
   player.vx = 0;
@@ -2920,8 +3068,7 @@ function secondaryFire(){
     spawnParticles(player.x, player.y, "correct");
     showToast("SECONDARY -> HULL REPAIR");
   }else if(player.secondaryMode === "time"){
-    state.slowMoRemaining = Math.max(state.slowMoRemaining, 5.0);
-    state.slowMoScale = 0.35;
+    startSlowMoWave();
     playSfx(state, "time_activate");
     showToast("SECONDARY -> TIME DILATION");
   }else if(player.secondaryMode === "magnet"){
@@ -2939,6 +3086,14 @@ function secondaryFire(){
   if(player.secondaryCharges <= 0){
     player.secondaryMode = "none";
   }
+}
+
+function startSlowMoWave(){
+  state.slowMoRemaining = Math.max(state.slowMoRemaining || 0, 8.0);
+  state.slowMoScale = 0.35;
+  state.slowMoWaveActive = true;
+  state.slowMoWaveY = view.h - 10;
+  state.slowMoWaveSpeed = 420;
 }
 
 function dash(){
@@ -3908,6 +4063,16 @@ function update(dt){
   var dtReal = dt;
   var dtSlow = dtReal;
   bg.dt = dt;
+  if(usePhaserRenderer && !tutorialActive && backgroundSprites[backgroundIndex] && backgroundReady[backgroundIndex]){
+    var bgImg = backgroundSprites[backgroundIndex];
+    var baseScale = Math.max(view.w / bgImg.width, view.h / bgImg.height);
+    var scale = baseScale * backgroundScale;
+    var drawH = Math.ceil(bgImg.height * scale) + 4;
+    var maxScroll = Math.max(1, drawH - view.h);
+    if(!state.paused && !screenshotMode){
+      backgroundScroll = (backgroundScroll + 3.0 * dtReal) % maxScroll;
+    }
+  }
   if(state.over){
     setShipIdle(state, false);
     setShipAdvance(state, false);
@@ -3927,7 +4092,16 @@ function update(dt){
 
   if(state.slowMoRemaining > 0){
     state.slowMoRemaining = Math.max(0, state.slowMoRemaining - dtReal);
-    dtSlow = dtReal * (state.slowMoScale || 0.42);
+    if(state.slowMoWaveActive){
+      state.slowMoWaveY -= (state.slowMoWaveSpeed || 260) * dtReal;
+      if(state.slowMoWaveY <= -80){
+        state.slowMoWaveActive = false;
+      }
+    }else{
+      dtSlow = dtReal * (state.slowMoScale || 0.42);
+    }
+  }else if(state.slowMoWaveActive){
+    state.slowMoWaveActive = false;
   }
 
   updateCamera(dtReal);
@@ -4028,25 +4202,9 @@ function update(dt){
   var down  = keys.has("s") || keys.has("arrowdown");
   var inputX = (right ? 1 : 0) - (left ? 1 : 0);
   var inputY = (down ? 1 : 0) - (up ? 1 : 0);
-  if(mousepadActive){
-    if(mousepadMode === "pad" && (virtualAxes.x || virtualAxes.y)){
-      var ax = virtualAxes.x;
-      var ay = virtualAxes.y;
-      var mag = Math.hypot(ax, ay);
-      if(mag < mousepadDeadzonePad){
-        ax = 0;
-        ay = 0;
-      }else if(mag > 0){
-        var scaled = (mag - mousepadDeadzonePad) / (1 - mousepadDeadzonePad);
-        ax = (ax / mag) * scaled;
-        ay = (ay / mag) * scaled;
-      }
-      inputX = clamp(inputX + ax, -1, 1);
-      inputY = clamp(inputY + ay, -1, 1);
-    }else if(mousepadMode === "hybrid" && (virtualAxes.x || virtualAxes.y)){
-      inputX = clamp(inputX + virtualAxes.x, -1, 1);
-      inputY = clamp(inputY + virtualAxes.y, -1, 1);
-    }
+  if(mousepadActive && (virtualAxes.x || virtualAxes.y)){
+    inputX = clamp(inputX + virtualAxes.x, -1, 1);
+    inputY = clamp(inputY + virtualAxes.y, -1, 1);
   }
   if(mousepadActive && mousepadMode === "hybrid"){
     var decay = Math.exp(-8 * dtReal);
@@ -4341,6 +4499,9 @@ function update(dt){
 
   for(var pi=powerups.length-1; pi>=0; pi--){
     var p = powerups[pi];
+    if(p.popTimer != null && p.popTimer > 0){
+      p.popTimer = Math.max(0, p.popTimer - dtReal);
+    }
     p.y += p.vy * dtReal;
     if(p.rotSpeed != null){
       p.rot += p.rotSpeed * dtReal;
@@ -4368,6 +4529,9 @@ function update(dt){
     }
     if(p.y - p.r > r.height + 40){
       state.powerupsMissed += 1;
+      if(tutorialActive && tutorialStepId === "powerup"){
+        spawnPowerup(p.type, p.group);
+      }
       powerups.splice(pi,1);
     }
   }
@@ -4412,15 +4576,20 @@ function update(dt){
       }
     }
     var empScale = state.empTimer > 0 ? 0.35 : 1;
-    a.y += a.vy * dtSlow * empScale;
-    a.x += a.vx * dtSlow;
+    var slowFactor = 1;
+    if(state.slowMoRemaining > 0 && state.slowMoWaveActive){
+      slowFactor = (a.y >= state.slowMoWaveY) ? (state.slowMoScale || 0.42) : 1;
+    }
+    var dtAst = dtSlow * slowFactor;
+    a.y += a.vy * dtAst * empScale;
+    a.x += a.vx * dtAst;
     if(a.baseVy != null){
-      a.vy += (a.baseVy - a.vy) * Math.min(1, dtSlow * 0.55);
+      a.vy += (a.baseVy - a.vy) * Math.min(1, dtAst * 0.55);
     }
     if(a.driftAmp){
-      a.vx += Math.sin(a.driftPhase + tNow * a.driftRate) * a.driftAmp * dtSlow;
+      a.vx += Math.sin(a.driftPhase + tNow * a.driftRate) * a.driftAmp * dtAst;
     }
-    a.vx *= (1 - Math.min(1, dtSlow * 0.35));
+    a.vx *= (1 - Math.min(1, dtAst * 0.35));
     var bound = a.r + 8;
     if(a.x < bound){
       a.x = bound;
@@ -4429,7 +4598,7 @@ function update(dt){
       a.x = r.width - bound;
       a.vx = -Math.abs(a.vx) * 0.6;
     }
-    a.rot = (a.rot || 0) + (a.spin || 0) * dtSlow;
+    a.rot = (a.rot || 0) + (a.spin || 0) * dtAst;
     if(a.isCorrect && a.waveId === state.waveId && !a.warned && a.y > r.height * 0.75){
       a.warned = true;
       if(!tutorialActive) warningClip = playSfx(state, "warning");
@@ -4724,6 +4893,10 @@ function update(dt){
           playSfx(state, "alien_kill", 0.65);
           if(tourGuide) tourGuide.notify("alien");
           aliens.splice(ai3, 1);
+          if(tutorialActive){
+            alienConfig.enabled = false;
+            alienConfig.maxOnScreen = 0;
+          }
           showToast("ALIEN CLEARED");
           maybeSpawnEventPowerup(0.40, al.x, al.y);
           break;
@@ -4970,9 +5143,25 @@ function updateGameOverFx(dt){
 function draw(){
   var w = view.w;
   var h = view.h;
+  var phaserActive = !!(usePhaserRenderer && phaserRenderer && phaserRenderer.ready && phaserRenderer.ready());
+  if(phaserActive && phaserRenderer.sync){
+    phaserRenderer.sync({
+      view: view,
+      state: state,
+      tutorialActive: tutorialActive,
+      backgroundIndex: backgroundIndex,
+      backgroundScroll: backgroundScroll,
+      backgroundScale: backgroundScale,
+      asteroids: asteroids,
+      bullets: bullets,
+      powerups: powerups,
+      aliens: aliens,
+      alienBullets: alienBullets
+    });
+  }
 
   ctx.clearRect(0,0,w,h);
-  if(!tutorialActive && backgroundSprites[backgroundIndex] && backgroundReady[backgroundIndex]){
+  if(!phaserActive && !tutorialActive && backgroundSprites[backgroundIndex] && backgroundReady[backgroundIndex]){
     var bgImg = backgroundSprites[backgroundIndex];
     var baseScale = Math.max(w / bgImg.width, h / bgImg.height);
     var scale = baseScale * backgroundScale;
@@ -4988,7 +5177,7 @@ function draw(){
     ctx.globalAlpha = 0.55;
     ctx.drawImage(bgImg, offX, offY, drawW, drawH);
     ctx.restore();
-  }else if(!tutorialActive && SHOW_STARS){
+  }else if(!phaserActive && !tutorialActive && SHOW_STARS){
     drawStars(w,h);
   }
 
@@ -4999,6 +5188,8 @@ function draw(){
 
   updateTimerHud();
 
+  drawSlowMoWave();
+
   if(introActive){
     return;
   }
@@ -5007,13 +5198,15 @@ function draw(){
   ctx.translate(cam.x || 0, cam.y || 0);
 
   drawTutorialPortal();
-  for(var i=0;i<asteroids.length;i++) drawAsteroid(asteroids[i]);
-  drawAliens(ctx);
-  drawPowerups();
+  if(!phaserActive){
+    for(var i=0;i<asteroids.length;i++) drawAsteroid(asteroids[i]);
+    drawAliens(ctx);
+    drawPowerups();
+    drawAlienBullets(ctx);
+    drawBullets();
+  }
   drawRings();
   drawParticles();
-  drawAlienBullets(ctx);
-  drawBullets();
   drawDashGhosts();
   drawTutorialDots();
 
@@ -5656,6 +5849,29 @@ function drawTutorialPortal(){
   ctx.globalCompositeOperation = "source-over";
 }
 
+function drawSlowMoWave(){
+  if(!state.slowMoWaveActive) return;
+  var y = state.slowMoWaveY || (view.h + 40);
+  var band = 110;
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  var grad = ctx.createLinearGradient(0, y - band, 0, y + band);
+  grad.addColorStop(0, "rgba(0,0,0,0)");
+  grad.addColorStop(0.35, "rgba(200,200,210,.10)");
+  grad.addColorStop(0.5, "rgba(220,220,230,.28)");
+  grad.addColorStop(0.65, "rgba(200,200,210,.12)");
+  grad.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, y - band, view.w, band * 2);
+  ctx.strokeStyle = "rgba(220,220,230,.4)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, y);
+  ctx.lineTo(view.w, y);
+  ctx.stroke();
+  ctx.restore();
+}
+
 function buildTutorialDots(){
   var w = view.w;
   var h = view.h;
@@ -5755,7 +5971,13 @@ function updateTutorialDots(dt){
     }
     return;
   }
-  if(!mousepadActive || mousepadMode !== tutorialDotsRequiredMode) return;
+  if(tutorialDotsRequiredMode === "arrows"){
+    if(!(keys.has("arrowup") || keys.has("arrowdown") || keys.has("arrowleft") || keys.has("arrowright"))) return;
+  }else if(tutorialDotsRequiredMode === "wasd"){
+    if(!(keys.has("w") || keys.has("a") || keys.has("s") || keys.has("d"))) return;
+  }else{
+    if(!mousepadActive || mousepadMode !== tutorialDotsRequiredMode) return;
+  }
   var target = tutorialDots[tutorialDotsIndex];
   if(!target) return;
   var dist = Math.hypot(player.x - target.x, player.y - target.y);
@@ -5803,10 +6025,19 @@ function drawPowerups(){
   for(var i=0;i<powerups.length;i++){
     var p = powerups[i];
     var color = getPowerupColor(p);
+    var popScale = 1;
+    var popAlpha = 1;
+    if(p.popDuration && p.popTimer > 0){
+      var t = 1 - (p.popTimer / Math.max(0.001, p.popDuration));
+      var pulse = Math.sin(clamp(t, 0, 1) * Math.PI);
+      popScale = 1 + (p.popScale || 0.6) * pulse;
+      popAlpha = 0.75 + 0.25 * pulse;
+    }
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.rotate(p.rot || 0);
-    ctx.globalAlpha = 0.9;
+    if(popScale !== 1) ctx.scale(popScale, popScale);
+    ctx.globalAlpha = 0.9 * popAlpha;
     var glow = ctx.createRadialGradient(0,0,2,0,0,p.r + 10);
     glow.addColorStop(0, color.replace("0.7", "0.35"));
     glow.addColorStop(1, "rgba(0,0,0,0)");
@@ -5815,7 +6046,7 @@ function drawPowerups(){
     ctx.arc(0, 0, p.r + 8, 0, Math.PI*2);
     ctx.fill();
 
-    ctx.globalAlpha = 0.95;
+    ctx.globalAlpha = 0.95 * popAlpha;
     drawPowerupIcon(p, color);
     ctx.restore();
   }
@@ -6027,20 +6258,20 @@ function drawBullets(){
   ctx.globalCompositeOperation = "lighter";
   for(var i=0;i<bullets.length;i++){
     var b = bullets[i];
-    function drawTrail(color, len, width, alpha){
+    function drawBulletImage(asset, sizeMul, offsetY){
+      if(!asset || !asset.ready) return;
+      var size = b.r * sizeMul;
+      var iw = asset.img.naturalWidth || asset.img.width || size;
+      var ih = asset.img.naturalHeight || asset.img.height || size;
+      var scale = size / Math.max(1, Math.max(iw, ih));
+      var drawW = iw * scale;
+      var drawH = ih * scale;
       ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.moveTo(b.x - width, b.y);
-      ctx.lineTo(b.x, b.y + len);
-      ctx.lineTo(b.x + width, b.y);
-      ctx.closePath();
-      ctx.fill();
+      ctx.globalAlpha = 0.95;
+      ctx.drawImage(asset.img, b.x - drawW / 2, b.y + (offsetY || 0) - drawH / 2, drawW, drawH);
       ctx.restore();
     }
     if(b.kind === "laser"){
-      drawTrail("rgba(0,229,255,.75)", (b.len || 18) * 1.1, (b.w || 3) + 6, 0.6);
       ctx.globalAlpha = 0.9;
       ctx.strokeStyle = "rgba(0,229,255,.9)";
       ctx.lineWidth = b.w || 3;
@@ -6055,11 +6286,11 @@ function drawBullets(){
       ctx.moveTo(b.x, b.y);
       ctx.lineTo(b.x, b.y - (b.len || 18));
       ctx.stroke();
+      drawBulletImage(bulletLaserImg, 12, -(b.len || 18));
       continue;
     }
 
     if(b.kind === "rail"){
-      drawTrail("rgba(0,229,255,.7)", (b.len || 34) * 0.95, (b.w || 4) + 7, 0.55);
       ctx.globalAlpha = 0.95;
       ctx.strokeStyle = "rgba(0,229,255,.95)";
       ctx.lineWidth = b.w || 4;
@@ -6074,84 +6305,31 @@ function drawBullets(){
       ctx.moveTo(b.x, b.y);
       ctx.lineTo(b.x, b.y - (b.len || 34));
       ctx.stroke();
+      drawBulletImage(bulletRailImg, 12, -(b.len || 34));
       continue;
     }
 
     if(b.kind === "fire"){
-      drawTrail("rgba(255,77,109,.75)", b.r * 7.5, b.r * 1.6, 0.6);
-      ctx.globalAlpha = 0.95;
-      ctx.fillStyle = "rgba(255,77,109,.95)";
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
-      ctx.fill();
-      ctx.globalAlpha = 0.6;
-      ctx.fillStyle = "rgba(255,221,0,.75)";
-      ctx.beginPath();
-      ctx.arc(b.x - 1, b.y + 1, b.r * 0.55, 0, Math.PI*2);
-      ctx.fill();
+      drawBulletImage(bulletFireImg, 12, 0);
       continue;
     }
 
     if(b.kind === "plasma"){
-      drawTrail("rgba(0,229,255,.7)", b.r * 7, b.r * 1.6, 0.55);
-      ctx.globalAlpha = 0.95;
-      ctx.fillStyle = "rgba(193,216,47,.9)";
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
-      ctx.fill();
-      ctx.globalAlpha = 0.5;
-      ctx.fillStyle = "rgba(0,229,255,.65)";
-      ctx.beginPath();
-      ctx.arc(b.x - 1, b.y + 1, b.r * 0.6, 0, Math.PI*2);
-      ctx.fill();
+      drawBulletImage(bulletOrbImg, 12, 0);
       continue;
     }
 
     if(b.kind === "ice"){
-      drawTrail("rgba(190,230,255,.8)", b.r * 8, b.r * 1.4, 0.6);
-      ctx.globalAlpha = 0.9;
-      ctx.fillStyle = "rgba(190,230,255,.95)";
-      ctx.beginPath();
-      ctx.moveTo(b.x, b.y - b.r * 2.3);
-      ctx.lineTo(b.x - b.r * 0.65, b.y + b.r * 1.6);
-      ctx.lineTo(b.x + b.r * 0.65, b.y + b.r * 1.6);
-      ctx.closePath();
-      ctx.fill();
-      ctx.globalAlpha = 0.5;
-      ctx.strokeStyle = "rgba(255,255,255,.65)";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(b.x, b.y - b.r * 1.9);
-      ctx.lineTo(b.x, b.y + b.r * 1.2);
-      ctx.stroke();
+      drawBulletImage(bulletIceImg, 12, 0);
       continue;
     }
 
     if(b.kind === "electric"){
-      drawTrail("rgba(0,229,255,.75)", 28, 4, 0.55);
-      ctx.globalAlpha = 0.9;
-      ctx.strokeStyle = "rgba(0,229,255,.95)";
-      ctx.lineWidth = 2.4;
-      ctx.beginPath();
-      ctx.moveTo(b.x - 2, b.y + 10);
-      ctx.lineTo(b.x + 3, b.y + 4);
-      ctx.lineTo(b.x - 3, b.y - 2);
-      ctx.lineTo(b.x + 2, b.y - 12);
-      ctx.stroke();
-      ctx.globalAlpha = 0.35;
-      ctx.strokeStyle = "rgba(0,229,255,.4)";
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.moveTo(b.x - 2, b.y + 10);
-      ctx.lineTo(b.x + 3, b.y + 4);
-      ctx.lineTo(b.x - 3, b.y - 2);
-      ctx.lineTo(b.x + 2, b.y - 12);
-      ctx.stroke();
+      drawBulletImage(bulletBoltImg, 14, 0);
       continue;
     }
 
     if(b.kind === "pierce"){
-      drawTrail("rgba(175,0,111,.8)", b.r * 6.5, 4.2, 0.55);
       ctx.globalAlpha = 0.9;
       ctx.strokeStyle = "rgba(175,0,111,.9)";
       ctx.lineWidth = 2;
@@ -6167,56 +6345,15 @@ function drawBullets(){
     }
 
     if(b.kind === "missile"){
-      drawTrail("rgba(255,221,0,.8)", b.r * 7, 4.5, 0.6);
-      ctx.globalAlpha = 0.9;
-      ctx.fillStyle = "rgba(255,221,0,.95)";
-      ctx.beginPath();
-      ctx.moveTo(b.x, b.y - b.r * 2.2);
-      ctx.lineTo(b.x + b.r, b.y + b.r * 1.6);
-      ctx.lineTo(b.x, b.y + b.r);
-      ctx.lineTo(b.x - b.r, b.y + b.r * 1.6);
-      ctx.closePath();
-      ctx.fill();
-      ctx.globalAlpha = 0.5;
-      ctx.fillStyle = "rgba(255,255,255,.7)";
-      ctx.beginPath();
-      ctx.arc(b.x, b.y + b.r * 0.6, b.r * 0.45, 0, Math.PI*2);
-      ctx.fill();
+      drawBulletImage(bulletMissileImg, 12, 0);
       continue;
     }
 
-    if(b.kind === "single" && bulletLaser.ready){
-      var trailLen = 8;
-      drawTrail("rgba(80,255,170,.65)", trailLen, 2.4, 0.4);
-      var tNow = performance.now();
-      ctx.save();
-      ctx.globalAlpha = 0.85;
-      ctx.fillStyle = "rgba(140,255,190,.9)";
-      for(var s=0; s<4; s++){
-        var t = s / 3;
-        var jitterX = Math.sin(tNow * 0.02 + s * 1.7) * 1.2;
-        var jitterY = Math.cos(tNow * 0.018 + s * 1.3) * 0.9;
-        var sx = b.x + jitterX;
-        var sy = b.y + trailLen * (0.35 + t * 0.8) + jitterY;
-        ctx.beginPath();
-        ctx.arc(sx, sy, 0.9 + (s % 2) * 0.45, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.restore();
-      ctx.save();
-      var size = b.r * 12;
-      var iw = bulletLaser.img.naturalWidth || bulletLaser.img.width || size;
-      var ih = bulletLaser.img.naturalHeight || bulletLaser.img.height || size;
-      var scale = size / Math.max(1, Math.max(iw, ih));
-      var drawW = iw * scale;
-      var drawH = ih * scale;
-      ctx.globalAlpha = 0.95;
-      ctx.drawImage(bulletLaser.img, b.x - drawW / 2, b.y - drawH / 2, drawW, drawH);
-      ctx.restore();
+    if(b.kind === "single" && bulletSingle.ready){
+      drawBulletImage(bulletSingle, 12, 0);
       continue;
     }
 
-    drawTrail("rgba(255,221,0,.85)", b.r * 6.5, 4, 0.6);
     ctx.globalAlpha = 0.9;
     ctx.fillStyle = "rgba(255,221,0,.95)";
     ctx.beginPath();
@@ -6652,18 +6789,48 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
 
   if(player.defenseMode === "shield" && !ghost){
     ctx.save();
-    ctx.globalAlpha = baseAlpha * 0.75;
-    ctx.strokeStyle = "rgba(0,229,255,.75)";
-    ctx.lineWidth = 2.6;
+    var shieldY = -28;
+    var arcR = 38;
+    var arcStart = Math.PI * 1.08;
+    var arcEnd = Math.PI * 1.92;
+    ctx.globalAlpha = baseAlpha * 0.5;
+    ctx.strokeStyle = "rgba(255,221,0,.35)";
+    ctx.shadowColor = "rgba(255,221,0,.55)";
+    ctx.shadowBlur = 18;
+    ctx.lineWidth = 10;
     ctx.beginPath();
-    ctx.arc(0, -26, 30, Math.PI*1.15, Math.PI*1.85);
+    ctx.arc(0, shieldY, arcR + 2, arcStart, arcEnd);
     ctx.stroke();
-    ctx.globalAlpha = baseAlpha * 0.25;
-    ctx.strokeStyle = "rgba(0,229,255,.35)";
-    ctx.lineWidth = 5;
+
+    ctx.shadowBlur = 8;
+    ctx.globalAlpha = baseAlpha * 0.9;
+    ctx.strokeStyle = "rgba(150,190,60,.95)";
+    ctx.lineWidth = 3.2;
     ctx.beginPath();
-    ctx.arc(0, -26, 30, Math.PI*1.15, Math.PI*1.85);
+    ctx.arc(0, shieldY, arcR, arcStart, arcEnd);
     ctx.stroke();
+
+    var cells = 6;
+    var step = (arcEnd - arcStart) / cells;
+    ctx.shadowBlur = 6;
+    ctx.lineWidth = 1.4;
+    ctx.strokeStyle = "rgba(150,190,60,.85)";
+    for(var c=0; c<cells; c++){
+      var ang = arcStart + step * (c + 0.5);
+      var cx = Math.cos(ang) * (arcR + 1);
+      var cy = shieldY + Math.sin(ang) * (arcR + 1);
+      var rHex = 4.6;
+      ctx.beginPath();
+      for(var s=0; s<6; s++){
+        var ha = Math.PI / 6 + s * (Math.PI / 3);
+        var hx = cx + Math.cos(ha) * rHex;
+        var hy = cy + Math.sin(ha) * rHex;
+        if(s === 0) ctx.moveTo(hx, hy);
+        else ctx.lineTo(hx, hy);
+      }
+      ctx.closePath();
+      ctx.stroke();
+    }
     ctx.restore();
   }
 
@@ -7903,10 +8070,12 @@ function boot(){
         player: player,
         onStep: function(stepId){
           tutorialStepId = stepId;
-          if(stepId === "mousepad_hybrid"){
+          if(stepId === "move_arrows"){
+            startTutorialDots("arrows", "move_arrows");
+          }else if(stepId === "move_wasd"){
+            startTutorialDots("wasd", "move_wasd");
+          }else if(stepId === "mousepad_hybrid"){
             startTutorialDots("hybrid", "mousepad_hybrid");
-          }else if(stepId === "mousepad_pad"){
-            startTutorialDots("pad", "mousepad_pad");
           }else if(tutorialDotsActive){
             stopTutorialDots();
           }

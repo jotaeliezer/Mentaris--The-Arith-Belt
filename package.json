@@ -13,9 +13,9 @@
     "dist": "npm run build && electron-builder"
   },
   "devDependencies": {
-    "esbuild": "^0.20.2",
     "electron": "^31.0.0",
-    "electron-builder": "^24.13.3"
+    "electron-builder": "^24.13.3",
+    "esbuild": "^0.20.2"
   },
   "build": {
     "appId": "com.atmc.asteroidblaster",
@@ -32,5 +32,8 @@
     "win": {
       "target": "nsis"
     }
+  },
+  "dependencies": {
+    "phaser": "^3.90.0"
   }
 }

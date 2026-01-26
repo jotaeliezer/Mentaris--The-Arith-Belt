@@ -1,0 +1,388 @@
+"use strict";
+
+import Phaser from "phaser";
+
+var ASTEROID_KEYS = ["asteroid1","asteroid2","asteroid3","asteroid4","asteroid6"];
+var ALIEN_KEYS = ["alien_ET","alien_brain","alien_golem","alien_galaga","alien_eye","alien_saucer","alien_robot","alien_spider"];
+var POWERUP_KEYS = {
+  repair: "powerup_hullrepair",
+  time: "powerup_timedelay",
+  magnet: "powerup_magnet",
+  shield: "powerup_shield",
+  armor: "powerup_armor",
+  emp: "powerup_EMP",
+  lock: "powerup_targetlock"
+};
+var BULLET_KEYS = {
+  single: "bullet_single",
+  laser: "bullet_laser",
+  fire: "bullet_fire1",
+  ice: "bullet_ice",
+  electric: "bullet_electric1",
+  pierce: "bullet_orb",
+  plasma: "bullet_orb",
+  rail: "bullet_rail",
+  missile: "bullet_missile"
+};
+var BACKGROUND_KEYS = ["background8","background1","background2","background3","background7","background9"];
+
+export function createPhaserRenderer(opts){
+  var options = opts || {};
+  var parent = options.parent;
+  var getView = options.getView;
+  var getState = options.getState;
+  var getData = options.getData;
+  var onReady = options.onReady;
+
+  var ready = false;
+  var active = false;
+  var sceneRef = null;
+  var gameRef = null;
+
+  var backgroundSprite = null;
+  var starfield = null;
+  var worldGroup = null;
+  var spritePool = {
+    asteroids: new Map(),
+    bullets: new Map(),
+    powerups: new Map(),
+    aliens: new Map(),
+    alienBullets: new Map(),
+    labels: new Map()
+  };
+
+  function preload(){}
+
+  function create(){
+    sceneRef = this;
+    worldGroup = this.add.container(0, 0);
+
+    var g = this.add.graphics();
+    g.fillStyle(0x050816, 1);
+    g.fillRect(0, 0, 256, 256);
+    g.fillStyle(0xffffff, 0.6);
+    for(var i=0; i<120; i++){
+      g.fillCircle(Math.random() * 256, Math.random() * 256, Math.random() * 1.6 + 0.4);
+    }
+    g.generateTexture("starfield", 256, 256);
+    g.destroy();
+    starfield = this.add.tileSprite(0, 0, 10, 10, "starfield").setOrigin(0,0).setAlpha(0.6);
+    starfield.setVisible(false);
+    var initialView = getView ? getView() : null;
+    if(initialView && initialView.w && initialView.h){
+      starfield.setSize(initialView.w, initialView.h);
+    }
+
+    var pending = 0;
+    function addTexture(key, srcKey){
+      var textureKey = key;
+      var src = "images/" + srcKey + ".png";
+      if(sceneRef.textures.exists(textureKey)) return;
+      pending += 1;
+      var img = new Image();
+      img.onload = function(){
+        if(!sceneRef.textures.exists(textureKey)){
+          sceneRef.textures.addImage(textureKey, img);
+        }
+        pending -= 1;
+        if(pending <= 0){
+          ready = true;
+          if(typeof onReady === "function") onReady();
+        }
+      };
+      img.onerror = function(){
+        pending -= 1;
+        if(pending <= 0){
+          ready = true;
+          if(typeof onReady === "function") onReady();
+        }
+      };
+      img.src = src;
+    }
+
+    ASTEROID_KEYS.forEach(function(key){ addTexture(key, key); });
+    ALIEN_KEYS.forEach(function(key){ addTexture(key, key); });
+    Object.keys(POWERUP_KEYS).forEach(function(k){ addTexture(POWERUP_KEYS[k], POWERUP_KEYS[k]); });
+    Object.keys(BULLET_KEYS).forEach(function(k){ addTexture(BULLET_KEYS[k], BULLET_KEYS[k]); });
+    for(var i=0; i<BACKGROUND_KEYS.length; i++){
+      var key = BACKGROUND_KEYS[i];
+      addTexture(key, key);
+    }
+    if(pending === 0){
+      ready = true;
+      if(typeof onReady === "function") onReady();
+    }
+
+    backgroundSprite = this.add.image(0, 0, "starfield").setOrigin(0.5, 0.5).setAlpha(0.55);
+    backgroundSprite.setVisible(false);
+  }
+
+  function update(){
+    if(!active || !ready) return;
+    if(typeof getData === "function"){
+      var data = getData();
+      if(data) sync(data);
+    }
+  }
+
+  function resize(w, h){
+    if(!gameRef || !sceneRef) return;
+    gameRef.scale.resize(w, h);
+    if(starfield){
+      starfield.setSize(w, h);
+    }
+  }
+
+  function clearPool(map){
+    map.forEach(function(entry){
+      if(entry && entry.destroy) entry.destroy();
+    });
+    map.clear();
+  }
+
+  function destroy(){
+    clearPool(spritePool.asteroids);
+    clearPool(spritePool.bullets);
+    clearPool(spritePool.powerups);
+    clearPool(spritePool.aliens);
+    clearPool(spritePool.alienBullets);
+    clearPool(spritePool.labels);
+    if(gameRef){
+      gameRef.destroy(true);
+      gameRef = null;
+    }
+  }
+
+  function ensureSprite(map, id, createFn){
+    var sprite = map.get(id);
+    if(!sprite){
+      sprite = createFn();
+      map.set(id, sprite);
+    }
+    return sprite;
+  }
+
+  function syncBackground(data){
+    if(!sceneRef || !backgroundSprite) return;
+    var view = data.view;
+    if(!view) return;
+    var w = view.w;
+    var h = view.h;
+
+    var useTutorial = !!data.tutorialActive;
+    if(useTutorial){
+      backgroundSprite.setVisible(false);
+      if(starfield){
+        starfield.setVisible(true);
+        starfield.setSize(w, h);
+        starfield.tilePositionY -= 0.3;
+      }
+      return;
+    }
+    if(starfield) starfield.setVisible(false);
+    var idx = data.backgroundIndex || 0;
+    var key = BACKGROUND_KEYS[(idx % BACKGROUND_KEYS.length + BACKGROUND_KEYS.length) % BACKGROUND_KEYS.length];
+    if(sceneRef.textures.exists(key)){
+      if(backgroundSprite.texture.key !== key){
+        backgroundSprite.setTexture(key);
+      }
+      backgroundSprite.setVisible(true);
+    }else{
+      backgroundSprite.setVisible(false);
+      return;
+    }
+    var scale = data.backgroundScale || 1;
+    var tex = backgroundSprite.texture.getSourceImage();
+    if(tex && tex.width){
+      var baseScale = Math.max(w / tex.width, h / tex.height);
+      backgroundSprite.setScale(baseScale * scale);
+    }
+    backgroundSprite.setPosition(w / 2, h / 2 + (data.backgroundScroll || 0) * 0.4);
+  }
+
+  function syncAsteroids(data){
+    var asteroids = data.asteroids || [];
+    var seen = new Set();
+    for(var i=0; i<asteroids.length; i++){
+      var a = asteroids[i];
+      var keyIdx = (a.spriteIndex != null ? a.spriteIndex : (a.id % ASTEROID_KEYS.length)) % ASTEROID_KEYS.length;
+      var texKey = ASTEROID_KEYS[keyIdx];
+      if(!sceneRef.textures.exists(texKey)) continue;
+      var sprite = ensureSprite(spritePool.asteroids, a.id, function(){
+        return sceneRef.add.image(a.x, a.y, texKey).setOrigin(0.5, 0.5);
+      });
+      if(sprite.texture.key !== texKey) sprite.setTexture(texKey);
+      sprite.setPosition(a.x, a.y);
+      sprite.setRotation(a.rot || 0);
+      sprite.setAlpha(a.ghost ? 0.2 : 0.95);
+      var size = (a.r || 24) * 2;
+      sprite.setDisplaySize(size, size);
+      seen.add(a.id);
+
+      var labelId = "l" + a.id;
+      if(a.label !== null && a.label !== undefined && !a.ghost){
+        var label = ensureSprite(spritePool.labels, labelId, function(){
+          return sceneRef.add.text(a.x, a.y, String(a.label), {
+            fontFamily: "Oxanium, sans-serif",
+            fontSize: "16px",
+            color: "#e8ecff",
+            align: "center"
+          }).setOrigin(0.5, 0.5);
+        });
+        label.setText(String(a.label));
+        label.setPosition(a.x, a.y + 1);
+        label.setVisible(true);
+      }else{
+        var existing = spritePool.labels.get(labelId);
+        if(existing) existing.setVisible(false);
+      }
+    }
+    spritePool.asteroids.forEach(function(sprite, id){
+      if(!seen.has(id)){
+        sprite.destroy();
+        spritePool.asteroids.delete(id);
+        var label = spritePool.labels.get("l" + id);
+        if(label){
+          label.destroy();
+          spritePool.labels.delete("l" + id);
+        }
+      }
+    });
+  }
+
+  function syncBullets(data){
+    var bullets = data.bullets || [];
+    var seen = new Set();
+    for(var i=0; i<bullets.length; i++){
+      var b = bullets[i];
+      var key = BULLET_KEYS[b.kind] || BULLET_KEYS.single;
+      var id = b.uid || (b.id != null ? b.id : ("b" + i + "_" + Math.round(b.x) + "_" + Math.round(b.y)));
+      if(!sceneRef.textures.exists(key)) continue;
+      var sprite = ensureSprite(spritePool.bullets, id, function(){
+        return sceneRef.add.image(b.x, b.y, key).setOrigin(0.5, 0.5);
+      });
+      if(sprite.texture.key !== key) sprite.setTexture(key);
+      sprite.setPosition(b.x, b.y);
+      var size = (b.r || 4) * 3.2;
+      if(b.kind && b.kind !== "single"){
+        size *= 1.2;
+      }
+      sprite.setDisplaySize(size, size);
+      seen.add(id);
+    }
+    spritePool.bullets.forEach(function(sprite, id){
+      if(!seen.has(id)){
+        sprite.destroy();
+        spritePool.bullets.delete(id);
+      }
+    });
+  }
+
+  function syncPowerups(data){
+    var powerups = data.powerups || [];
+    var seen = new Set();
+    for(var i=0; i<powerups.length; i++){
+      var p = powerups[i];
+      var key = POWERUP_KEYS[p.type];
+      if(!key) continue;
+      var id = p.uid || ("p" + i + "_" + Math.round(p.x) + "_" + Math.round(p.y));
+      if(!sceneRef.textures.exists(key)) continue;
+      var sprite = ensureSprite(spritePool.powerups, id, function(){
+        return sceneRef.add.image(p.x, p.y, key).setOrigin(0.5, 0.5);
+      });
+      if(sprite.texture.key !== key) sprite.setTexture(key);
+      sprite.setPosition(p.x, p.y);
+      sprite.setRotation(p.rot || 0);
+      var size = (p.r || 16) * 2.4;
+      sprite.setDisplaySize(size, size);
+      seen.add(id);
+    }
+    spritePool.powerups.forEach(function(sprite, id){
+      if(!seen.has(id)){
+        sprite.destroy();
+        spritePool.powerups.delete(id);
+      }
+    });
+  }
+
+  function syncAliens(data){
+    var aliens = data.aliens || [];
+    var seen = new Set();
+    for(var i=0; i<aliens.length; i++){
+      var a = aliens[i];
+      var idx = (a.uid || i) % ALIEN_KEYS.length;
+      var key = ALIEN_KEYS[idx];
+      var id = a.uid || ("a" + i + "_" + Math.round(a.x));
+      if(!sceneRef.textures.exists(key)) continue;
+      var sprite = ensureSprite(spritePool.aliens, id, function(){
+        return sceneRef.add.image(a.x, a.y, key).setOrigin(0.5, 0.5);
+      });
+      if(sprite.texture.key !== key) sprite.setTexture(key);
+      sprite.setPosition(a.x, a.y);
+      var size = (a.r || 24) * 2.1;
+      sprite.setDisplaySize(size, size);
+      seen.add(id);
+    }
+    spritePool.aliens.forEach(function(sprite, id){
+      if(!seen.has(id)){
+        sprite.destroy();
+        spritePool.aliens.delete(id);
+      }
+    });
+  }
+
+  function syncAlienBullets(data){
+    var bullets = data.alienBullets || [];
+    var seen = new Set();
+    for(var i=0; i<bullets.length; i++){
+      var b = bullets[i];
+      var id = b.uid || ("ab" + i + "_" + Math.round(b.x));
+      var sprite = ensureSprite(spritePool.alienBullets, id, function(){
+        return sceneRef.add.circle(b.x, b.y, b.r || 4, 0x00e5ff, 0.9);
+      });
+      sprite.setPosition(b.x, b.y);
+      sprite.setRadius(b.r || 4);
+      seen.add(id);
+    }
+    spritePool.alienBullets.forEach(function(sprite, id){
+      if(!seen.has(id)){
+        sprite.destroy();
+        spritePool.alienBullets.delete(id);
+      }
+    });
+  }
+
+  function sync(data){
+    if(!ready || !sceneRef) return;
+    if(!data) return;
+    syncBackground(data);
+    syncAsteroids(data);
+    syncBullets(data);
+    syncPowerups(data);
+    syncAliens(data);
+    syncAlienBullets(data);
+  }
+
+  function setActive(flag){
+    active = !!flag;
+  }
+
+  var view = getView ? getView() : { w: 900, h: 700 };
+  gameRef = new Phaser.Game({
+    type: Phaser.WEBGL,
+    parent: parent,
+    width: view.w || 900,
+    height: view.h || 700,
+    transparent: true,
+    antialias: true,
+    scene: { preload: preload, create: create, update: update }
+  });
+
+  return {
+    ready: function(){ return ready; },
+    resize: resize,
+    destroy: destroy,
+    sync: sync,
+    setActive: setActive
+  };
+}
