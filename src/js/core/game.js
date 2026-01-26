@@ -121,6 +121,8 @@ var missionBriefBody = null;
 var missionBriefBtn = null;
 var missionBriefOnAccept = null;
 var missionBriefShowing = false;
+var missionBriefBypass = false;
+var missionBriefAnimating = false;
 var warningClip = null;
 var missileInputActive = false;
 var missileInputAnswer = "";
@@ -145,6 +147,76 @@ var wideGameplayKey = "mentaris.gameplay.wide";
 var mousepadAutoKey = "mentaris.mousepad.autostart";
 var mousepadAutoStart = false;
 var pauseAllowed = false;
+var secondaryTypeOrder = ["time", "magnet", "emp", "lock"];
+
+function updateAudioFromInputs(){
+  if(inputs.sound) state.sound = !!inputs.sound.checked;
+  if(inputs.volume){
+    var vol = parseFloat(inputs.volume.value);
+    if(!Number.isNaN(vol)) state.volume = clamp(vol, 0, 1);
+  }
+  if(inputs.sfxVolume){
+    var sfxVol = parseFloat(inputs.sfxVolume.value);
+    if(!Number.isNaN(sfxVol)) state.sfxVolume = clamp(sfxVol, 0, 1);
+  }
+  if(inputs.musicVolume){
+    var musicVol = parseFloat(inputs.musicVolume.value);
+    if(!Number.isNaN(musicVol)) state.musicVolume = clamp(musicVol, 0, 1);
+  }
+  var shouldPlay = state.sound && state.running && !state.over;
+  setDrone(state, shouldPlay);
+  setSoundtrack(state, shouldPlay);
+}
+
+function getSecondaryInventory(){
+  if(!player.secondaryInventory) player.secondaryInventory = {};
+  return player.secondaryInventory;
+}
+
+function getSecondaryInventoryEntries(){
+  var inv = getSecondaryInventory();
+  var entries = [];
+  for(var i=0; i<secondaryTypeOrder.length; i++){
+    var type = secondaryTypeOrder[i];
+    var count = inv[type] || 0;
+    if(count > 0){
+      entries.push({ type: type, count: count });
+    }
+  }
+  return entries;
+}
+
+function setSelectedSecondary(type){
+  var inv = getSecondaryInventory();
+  if(!type || !inv[type]){
+    player.secondaryMode = "none";
+    player.secondaryCharges = 0;
+    return;
+  }
+  player.secondaryMode = type;
+  player.secondaryCharges = inv[type] || 0;
+}
+
+function selectSecondaryByIndex(index){
+  var entries = getSecondaryInventoryEntries();
+  if(index < 0 || index >= entries.length) return;
+  setSelectedSecondary(entries[index].type);
+  showToast("SECONDARY -> " + entries[index].type.toUpperCase());
+}
+
+function addSecondaryPowerup(type){
+  if(!type) return;
+  var inv = getSecondaryInventory();
+  inv[type] = (inv[type] || 0) + 1;
+  if(!player.secondaryMode || player.secondaryMode === "none"){
+    player.secondaryMode = type;
+  }
+  if(player.secondaryMode === type){
+    player.secondaryCharges = inv[type] || 0;
+  }else if(!inv[player.secondaryMode]){
+    setSelectedSecondary(type);
+  }
+}
 
 function setSettingsTab(tabId){
   if(!settingsTabButtons || !settingsPanels) return;
@@ -323,6 +395,7 @@ if(usePhaserRenderer && phaserRoot){
         backgroundIndex: backgroundIndex,
         backgroundScroll: backgroundScroll,
         backgroundScale: backgroundScale,
+        hideAsteroids: state.hideAsteroids,
         asteroids: asteroids,
         bullets: bullets,
         powerups: powerups,
@@ -544,6 +617,10 @@ bulletBoltImg.img.src = bulletBoltImg.src;
 var bulletOrbImg = { img: new Image(), ready: false, src: "images/bullet_orb.png" };
 bulletOrbImg.img.onload = function(){ bulletOrbImg.ready = true; };
 bulletOrbImg.img.src = bulletOrbImg.src;
+
+var bulletBolaImg = { img: new Image(), ready: false, src: "images/bullet_bola.png" };
+bulletBolaImg.img.onload = function(){ bulletBolaImg.ready = true; };
+bulletBolaImg.img.src = bulletBolaImg.src;
 
 var bulletRailImg = { img: new Image(), ready: false, src: "images/bullet_rail.png" };
 bulletRailImg.img.onload = function(){ bulletRailImg.ready = true; };
@@ -907,7 +984,7 @@ function isTextInput(el){
 window.addEventListener("keydown", function(e){
   if(isTextInput(document.activeElement)) return;
   var k = (e.key || "").toLowerCase();
-  var prevent = ["arrowleft","arrowright","arrowup","arrowdown","a","d","w","s","p","r","m","z","x","c","b"," ","spacebar"];
+  var prevent = ["arrowleft","arrowright","arrowup","arrowdown","a","d","w","s","p","r","m","z","e","x","q","c","b","1","2","3"," ","spacebar"];
   if(prevent.indexOf(k) !== -1) e.preventDefault();
 
   keys.add(k);
@@ -919,17 +996,20 @@ window.addEventListener("keydown", function(e){
   if(k === "0") toggleScreenshot();
   if(k === "r") hardRestart();
   if(k === "m") openSettings();
-  if(k === "z" && !e.repeat) fire();
+  if((k === "z" || k === "e") && !e.repeat) fire();
   if((k === "w" || k === "arrowup") && !e.repeat && state.running && !state.paused && !state.over){
     playSfx(state, "ship_advance");
   }
-  if(k === "x"){
+  if(k === "x" || k === "q"){
     if((player.blasterMode || "single") === "missile"){
       openMissileInput();
     }else{
       secondaryFire();
     }
   }
+  if(k === "1") selectSecondaryByIndex(0);
+  if(k === "2") selectSecondaryByIndex(1);
+  if(k === "3") selectSecondaryByIndex(2);
   if(k === "c") shockwave();
   if(k === "b"){
     if(!mousepadActive){
@@ -987,6 +1067,13 @@ function resetMousepadPadSettings(){
   mousepadDeadzonePad = mousepadPadDefaults.deadzone;
 }
 
+function setMissionBriefActive(active){
+  missionBriefShowing = !!active;
+  state.hideAsteroids = !!active;
+  player.hidden = !!active;
+  updateCursorVisibility();
+}
+
 resetMousepadPadSettings();
 
 function updateCursorVisibility(){
@@ -1030,6 +1117,18 @@ if(controlPad){
 
 if(inputs.questionMode){
   inputs.questionMode.addEventListener("change", updateDecoyFunctionAvailability);
+}
+if(inputs.volume){
+  inputs.volume.addEventListener("input", updateAudioFromInputs);
+}
+if(inputs.sfxVolume){
+  inputs.sfxVolume.addEventListener("input", updateAudioFromInputs);
+}
+if(inputs.musicVolume){
+  inputs.musicVolume.addEventListener("input", updateAudioFromInputs);
+}
+if(inputs.sound){
+  inputs.sound.addEventListener("change", updateAudioFromInputs);
 }
 
 function setMousepadMode(mode){
@@ -1531,7 +1630,9 @@ function launchMissile(target){
     r: 5,
     kind: "missile",
     targetId: target.id,
-    speed: speed
+    speed: speed,
+    rot: 0,
+    trail: []
   });
   state.shots += 1;
   player.recoil = 1;
@@ -2420,28 +2521,12 @@ function applyPowerup(p){
       spawnRing(player.x, player.y, 18);
       spawnParticles(player.x, player.y, "correct");
       showToast("HULL REPAIRED");
-    }else if(p.type === "emp"){
-      state.empTimer = Math.max(state.empTimer, 2.0);
-      spawnRing(player.x, player.y, 24);
-      showToast("SECONDARY -> EMP BURST");
-      var targets = [];
-      for(var ai=0; ai<asteroids.length; ai++){
-        var a = asteroids[ai];
-        if(!a.isCorrect || a.waveId !== state.waveId){
-          targets.push({ id: a.id, y: a.y });
-        }
-      }
-      targets.sort(function(a1, a2){ return a2.y - a1.y; });
-      state.empCascade = targets;
-      state.empCascadeTimer = 0;
-      state.empCascadeInterval = 1.0;
     }else{
-      player.secondaryMode = p.type;
-      player.secondaryCharges = 1;
-      if(p.type === "time") showToast("SECONDARY -> TIME DILATION (X)");
-      else if(p.type === "magnet") showToast("SECONDARY -> MAGNET SWEEP (X)");
-      else if(p.type === "emp") showToast("SECONDARY -> EMP BURST (X)");
-      else if(p.type === "lock") showToast("SECONDARY -> TARGET LOCK (X)");
+      addSecondaryPowerup(p.type);
+      if(p.type === "time") showToast("SECONDARY -> TIME DILATION (X/Q)");
+      else if(p.type === "magnet") showToast("SECONDARY -> MAGNET SWEEP (X/Q)");
+      else if(p.type === "emp") showToast("SECONDARY -> EMP BURST (X/Q)");
+      else if(p.type === "lock") showToast("SECONDARY -> TARGET LOCK (X/Q)");
     }
   }
 }
@@ -2726,10 +2811,15 @@ function resetSession(){
   state.slowMoWaveActive = false;
   state.slowMoWaveY = 0;
   state.slowMoWaveSpeed = 420;
+  state.slowMoWaveDelay = 0;
   state.empWaveActive = false;
   state.empWaveY = 0;
   state.empWaveSpeed = 720;
   state.empWavePhase = 0;
+  state.hideAsteroids = false;
+  state.flaresActive = false;
+  state.flaresTimer = 0;
+  state.flaresEmitTimer = 0;
 
   player.cooldown = 0;
   player.vx = 0;
@@ -2744,6 +2834,7 @@ function resetSession(){
   player.blasterTimer = 0;
   player.secondaryMode = "none";
   player.secondaryCharges = 0;
+  player.secondaryInventory = {};
   player.secondaryCooldown = 0;
   player.lockTimer = 0;
   player.lockTargetId = 0;
@@ -2907,6 +2998,23 @@ function startCountdown(skipReset){
 function startIntroThenCountdown(){
   if(!countdownEl) return false;
   if(countdownEl.classList.contains("show") || introActive) return true;
+
+  if(!tutorialActive && !missionBriefShowing && !missionBriefBypass){
+    ensureMissionBrief();
+    if(missionBriefOverlay){
+      if(countdownEl) countdownEl.classList.remove("show");
+      countdownActive = false;
+      missionBriefTitle.textContent = "Mission Briefing";
+      missionBriefBody.textContent = getMissionBriefText();
+      setMissionBriefActive(true);
+      missionBriefOverlay.classList.add("show");
+      missionBriefOnAccept = function(){
+        startIntroThenCountdown();
+      };
+      return true;
+    }
+  }
+  missionBriefBypass = false;
 
   overlayMenu.classList.remove("show");
   hideEndOverlay();
@@ -3089,7 +3197,7 @@ function fire(){
   }else if(mode === "electric"){
     bullets.push({ x: player.x, y: player.y - 24, vy: -920, r: 4.2, vx: 0, kind: "electric" });
   }else if(mode === "pierce"){
-    bullets.push({ x: player.x, y: player.y - 24, vy: -900, r: 3.8, vx: 0, kind: "pierce", speed: 900 });
+    bullets.push({ x: player.x, y: player.y - 24, vy: -900, r: 3.8, vx: 0, kind: "pierce", speed: 900, rot: 0, spin: 6 });
   }else if(mode === "plasma"){
     bullets.push({ x: player.x, y: player.y - 24, vy: -700, r: 7.6, vx: 0, kind: "plasma" });
   }else if(mode === "rail"){
@@ -3114,41 +3222,54 @@ function secondaryFire(){
   if(player.secondaryCooldown > 0) return;
   if(player.secondaryCharges <= 0) return;
 
-  player.secondaryCharges--;
+  var inv = getSecondaryInventory();
+  var activeType = player.secondaryMode;
+  if(!activeType || activeType === "none" || !inv[activeType]) return;
+  inv[activeType] -= 1;
+  player.secondaryCharges = Math.max(0, inv[activeType] || 0);
   player.secondaryCooldown = 1.2;
 
-  if(player.secondaryMode === "repair"){
+  if(activeType === "repair"){
     player.hull = clamp(player.hull + 0.35, 0, 1);
     spawnRing(player.x, player.y, 18);
     spawnParticles(player.x, player.y, "correct");
     showToast("SECONDARY -> HULL REPAIR");
-  }else if(player.secondaryMode === "time"){
+  }else if(activeType === "time"){
     startSlowMoWave();
     playSfx(state, "time_activate");
     showToast("SECONDARY -> TIME DILATION");
-  }else if(player.secondaryMode === "magnet"){
+  }else if(activeType === "magnet"){
     player.magnetTimer = 6.0;
     showToast("SECONDARY -> MAGNET SWEEP");
-  }else if(player.secondaryMode === "emp"){
+  }else if(activeType === "emp"){
     state.empTimer = Math.max(state.empTimer, 2.0);
     startEmpWave();
     playSfx(state, "emp_activate");
     showToast("SECONDARY -> EMP BURST");
-  }else if(player.secondaryMode === "lock"){
+  }else if(activeType === "lock"){
     player.lockTimer = Math.max(player.lockTimer, 6.0);
     showToast("SECONDARY -> TARGET LOCK");
   }
 
   if(player.secondaryCharges <= 0){
-    player.secondaryMode = "none";
+    if(inv[activeType] <= 0) delete inv[activeType];
+    var remaining = getSecondaryInventoryEntries();
+    if(remaining.length){
+      setSelectedSecondary(remaining[0].type);
+    }else{
+      player.secondaryMode = "none";
+      player.secondaryCharges = 0;
+    }
   }
+  if(tourGuide) tourGuide.notify("secondary");
 }
 
 function startSlowMoWave(){
   state.slowMoRemaining = Math.max(state.slowMoRemaining || 0, 8.0);
   state.slowMoScale = 0.35;
-  state.slowMoWaveActive = true;
-  state.slowMoWaveY = view.h - 10;
+  state.slowMoWaveDelay = 0.8;
+  state.slowMoWaveActive = false;
+  state.slowMoWaveY = view.h + 20;
   state.slowMoWaveSpeed = 420;
 }
 
@@ -3157,6 +3278,78 @@ function startEmpWave(){
   state.empWaveY = view.h + 30;
   state.empWaveSpeed = 720;
   state.empWavePhase = 0;
+}
+
+function emitFlareStream(){
+  if(!state.flaresActive || !spawnDirectedSparks) return;
+  var flareOffset = state.flaresOffset || 46;
+  var flareY = player.y - 4;
+  var leftX = player.x - flareOffset;
+  var rightX = player.x + flareOffset;
+  var bursts = 3;
+  var burstParams = [];
+  for(var i=0; i<bursts; i++){
+    burstParams.push({
+      spread: 0.18 + i * 0.08,
+      speedMin: 260 + i * 40,
+      speedMax: 520 + i * 60,
+      count: 8 + i * 4
+    });
+  }
+  function emitSide(x, dir){
+    for(var i=0; i<burstParams.length; i++){
+      var p = burstParams[i];
+      spawnDirectedSparks(x, flareY, dir, 0, p.spread, p.count, p.speedMin, p.speedMax, 0.18, 0.32, "spark");
+      spawnDirectedSparks(x, flareY, dir, 0, p.spread, Math.max(5, p.count - 4), p.speedMin * 0.75, p.speedMax * 0.85, 0.16, 0.3, "spark_white");
+    }
+  }
+  emitSide(leftX, -1);
+  emitSide(rightX, 1);
+}
+
+function applyFlaresToAsteroid(a, dtReal){
+  if(!state.flaresActive) return;
+  var flareOffset = state.flaresOffset || 46;
+  var flareRadius = state.flaresRadius || 150;
+  var flareStrength = state.flaresStrength || 480;
+  var flareY = player.y;
+  var band = 44;
+  if(Math.abs(a.y - flareY) > band) return;
+
+  var hit = false;
+  var leftX = player.x - flareOffset;
+  var dxL = a.x - leftX;
+  var distL = Math.hypot(dxL, a.y - flareY);
+  if(distL < flareRadius){
+    var pushL = (1 - distL / flareRadius) * flareStrength;
+    a.vx = (a.vx || 0) - pushL * dtReal;
+    a.vy = (a.vy || 0) + ((a.y - flareY) / Math.max(1, distL)) * pushL * dtReal * 0.2;
+    hit = true;
+  }
+  var rightX = player.x + flareOffset;
+  var dxR = a.x - rightX;
+  var distR = Math.hypot(dxR, a.y - flareY);
+  if(distR < flareRadius){
+    var pushR = (1 - distR / flareRadius) * flareStrength;
+    a.vx = (a.vx || 0) + pushR * dtReal;
+    a.vy = (a.vy || 0) + ((a.y - flareY) / Math.max(1, distR)) * pushR * dtReal * 0.2;
+    hit = true;
+  }
+
+  if(a.flareSparkTimer == null) a.flareSparkTimer = 0;
+  if(a.flareSparkTimer > 0){
+    a.flareSparkTimer = Math.max(0, a.flareSparkTimer - dtReal);
+  }
+  if(hit && a.flareSparkTimer <= 0){
+    spawnParticles(a.x, a.y, "spark");
+    spawnParticles(a.x, a.y, "spark_white");
+    if(spawnDirectedSparks){
+      var ang = Math.random() * Math.PI * 2;
+      spawnDirectedSparks(a.x, a.y, Math.cos(ang), Math.sin(ang), 1.2, 10, 220, 520, 0.14, 0.3, "spark");
+      spawnDirectedSparks(a.x, a.y, Math.cos(ang + 1.3), Math.sin(ang + 1.3), 1.2, 6, 200, 420, 0.14, 0.28, "spark_white");
+    }
+    a.flareSparkTimer = 0.18;
+  }
 }
 
 function dash(){
@@ -3243,45 +3436,12 @@ function shockwave(){
   player.shockwaveCooldown = profile.shockwaveCooldown || 3.5;
 
   if(profile.ability === "flares"){
-    var flareOffset = 46;
-    var flareRadius = profile.shockwaveRadius || 150;
-    var flareStrength = profile.shockwaveStrength || 480;
-    var leftX = player.x - flareOffset;
-    var rightX = player.x + flareOffset;
-    for(var f=0; f<asteroids.length; f++){
-      var af = asteroids[f];
-      if(af.ghost || af.label === null) continue;
-      var dxL = af.x - leftX;
-      var dyL = af.y - player.y;
-      var distL = Math.hypot(dxL, dyL);
-      if(distL < flareRadius){
-        var pushL = (1 - distL / flareRadius) * flareStrength;
-        af.vx = (af.vx || 0) - pushL;
-        af.vy = (af.vy || 0) + (dyL / Math.max(1, distL)) * pushL * 0.2;
-      }
-      var dxR = af.x - rightX;
-      var dyR = af.y - player.y;
-      var distR = Math.hypot(dxR, dyR);
-      if(distR < flareRadius){
-        var pushR = (1 - distR / flareRadius) * flareStrength;
-        af.vx = (af.vx || 0) + pushR;
-        af.vy = (af.vy || 0) + (dyR / Math.max(1, distR)) * pushR * 0.2;
-      }
-    }
-    if(spawnDirectedSparks){
-      var flareY = player.y - 4;
-      function emitFlares(x, dir){
-        for(var i=0; i<3; i++){
-          var spread = 0.22 + i * 0.08;
-          var speedMin = 300 + i * 40;
-          var speedMax = 640 + i * 60;
-          spawnDirectedSparks(x, flareY, dir, 0, spread, 16, speedMin, speedMax, 0.14, 0.28, "spark");
-          spawnDirectedSparks(x, flareY, dir, 0, spread, 10, speedMin * 0.8, speedMax * 0.9, 0.12, 0.24, "spark_white");
-        }
-      }
-      emitFlares(leftX, -1);
-      emitFlares(rightX, 1);
-    }
+    state.flaresActive = true;
+    state.flaresTimer = 0.9;
+    state.flaresEmitTimer = 0;
+    state.flaresOffset = 46;
+    state.flaresRadius = profile.shockwaveRadius || 150;
+    state.flaresStrength = profile.shockwaveStrength || 480;
     kickShake(12, 0.1);
     playSfx(state, "flares");
     showToast("SIDE FLARES");
@@ -3329,7 +3489,8 @@ function shockwave(){
       hide: 0.35,
       ghostDur: 0.28,
       zoomDur: 0.32,
-      reappearPlayed: false
+      reappearPlayed: false,
+      locked: true
     };
     player.invuln = Math.max(player.invuln, 0.6);
     kickShake(8, 0.08);
@@ -4157,6 +4318,10 @@ function update(dt){
       player.x += (countdownTarget.x - player.x) * settle;
       player.y += (countdownTarget.y - player.y) * settle;
     }
+    if(missionBriefShowing){
+      player.hidden = true;
+      state.hideAsteroids = true;
+    }
     setShipIdle(state, false);
     setShipAdvance(state, false);
     return;
@@ -4164,6 +4329,13 @@ function update(dt){
 
   if(state.slowMoRemaining > 0){
     state.slowMoRemaining = Math.max(0, state.slowMoRemaining - dtReal);
+    if(state.slowMoWaveDelay > 0){
+      state.slowMoWaveDelay = Math.max(0, state.slowMoWaveDelay - dtReal);
+      if(state.slowMoWaveDelay === 0 && !state.slowMoWaveActive){
+        state.slowMoWaveActive = true;
+        state.slowMoWaveY = view.h - 10;
+      }
+    }
     if(state.slowMoWaveActive){
       state.slowMoWaveY -= (state.slowMoWaveSpeed || 260) * dtReal;
       if(state.slowMoWaveY <= -80){
@@ -4226,10 +4398,6 @@ function update(dt){
     if(remaining <= 15 && remaining > 0 && !state.timerMark15Played){
       state.timerMark15Played = true;
       if(!tutorialActive) playSfx(state, "sec_15_mark");
-    }
-    if(remaining <= 4 && !state.timerWarningPlayed){
-      state.timerWarningPlayed = true;
-      if(!tutorialActive) playSfx(state, "warning");
     }
     if(elapsed >= state.timeLimitSec){
       endGame("time");
@@ -4416,6 +4584,10 @@ function update(dt){
       player.teleportFx.reappearPlayed = true;
       playSfx(state, "teleport_reappear");
     }
+    if(player.teleportFx.locked){
+      player.x = player.teleportFx.endX;
+      player.y = player.teleportFx.endY;
+    }
     var fxTotal = Math.max(player.teleportFx.ghostDur || 0, (player.teleportFx.hide || 0) + (player.teleportFx.zoomDur || 0));
     if(player.teleportFx.t >= fxTotal){
       player.teleportFx = null;
@@ -4497,6 +4669,17 @@ function update(dt){
 
   if(keys.has("x")) secondaryFire();
   if(keys.has("c")) shockwave();
+  if(state.flaresActive){
+    state.flaresTimer = Math.max(0, state.flaresTimer - dtReal);
+    state.flaresEmitTimer = (state.flaresEmitTimer || 0) - dtReal;
+    if(state.flaresEmitTimer <= 0){
+      state.flaresEmitTimer = 0.06;
+      emitFlareStream();
+    }
+    if(state.flaresTimer === 0){
+      state.flaresActive = false;
+    }
+  }
   if(player.dashCooldown > 0){
     player.dashCooldown = Math.max(0, player.dashCooldown - dtReal);
   }
@@ -4544,9 +4727,25 @@ function update(dt){
         var mspd = b.speed || 700;
         var vxT = (mdx / mdist) * mspd;
         var vyT = (mdy / mdist) * mspd;
-        b.vx = (b.vx || 0) * 0.75 + vxT * 0.25;
-        b.vy = (b.vy || 0) * 0.75 + vyT * 0.25;
+        var avoidX = 0;
+        var avoidY = 0;
+        var avoidRadius = 90;
+        for(var aiAvoid=0; aiAvoid<asteroids.length; aiAvoid++){
+          var av = asteroids[aiAvoid];
+          if(!av || av.id === b.targetId || av.ghost) continue;
+          var dxA = b.x - av.x;
+          var dyA = b.y - av.y;
+          var distA = Math.hypot(dxA, dyA);
+          if(distA > 0 && distA < avoidRadius){
+            var strength = (1 - distA / avoidRadius) * 260;
+            avoidX += (dxA / distA) * strength;
+            avoidY += (dyA / distA) * strength;
+          }
+        }
+        b.vx = (b.vx || 0) * 0.68 + (vxT + avoidX) * 0.32;
+        b.vy = (b.vy || 0) * 0.68 + (vyT + avoidY) * 0.32;
       }
+      b.rot = Math.atan2(b.vy || -1, b.vx || 0) + Math.PI / 2;
     }else if(b.kind === "pierce" && b.lookUp){
       steerLookUpShot(b);
     }else if(player.lockTimer > 0 && state.correctAsteroidId){
@@ -4568,7 +4767,14 @@ function update(dt){
     }
     b.y += b.vy * dtReal;
     if(b.vx) b.x += b.vx * dtReal;
+    if(b.kind === "pierce"){
+      b.spin = (typeof b.spin === "number") ? b.spin : 6;
+      b.rot = (b.rot || 0) + b.spin * dtReal;
+    }
     if(b.kind === "missile"){
+      if(!b.trail) b.trail = [];
+      b.trail.push({ x: b.x, y: b.y });
+      if(b.trail.length > 14) b.trail.shift();
       if(b.y < -40 || b.y > view.h + 40 || b.x < -40 || b.x > view.w + 40){
         bullets.splice(bi,1);
       }
@@ -4626,6 +4832,7 @@ function update(dt){
   var tNow = performance.now() * 0.001;
   for(var ai=asteroids.length-1; ai>=0; ai--){
     var a = asteroids[ai];
+    applyFlaresToAsteroid(a, dtReal);
     if(a.shakeTimer != null && a.shakeTimer > 0){
       a.shakeTimer = Math.max(0, a.shakeTimer - dtSlow);
     }
@@ -4820,12 +5027,13 @@ function update(dt){
       if(bb.noHit) continue;
       var ddx = a2.x - bb.x;
       var ddy = a2.y - bb.y;
-      if(ddx*ddx + ddy*ddy <= (a2.r + bb.r) * (a2.r + bb.r)){
-        var kind = bb.kind || "single";
-        var lookUpActivated = false;
-        if(kind === "pierce"){
-          if(!bb.lookUpUsed){
-            bb.lookUpUsed = true;
+        if(ddx*ddx + ddy*ddy <= (a2.r + bb.r) * (a2.r + bb.r)){
+          var kind = bb.kind || "single";
+          var lookUpActivated = false;
+          if(kind === "pierce"){
+            bb.spin = (bb.spin || 6) + 2.5;
+            if(!bb.lookUpUsed){
+              bb.lookUpUsed = true;
             bb.lookUpTargetId = findNextLookUpTargetId(bb, a2.id);
             if(bb.lookUpTargetId){
               bb.lookUp = true;
@@ -4965,14 +5173,15 @@ function update(dt){
       if(bb2.noHit) continue;
       var dxA = al.x - bb2.x;
       var dyA = al.y - bb2.y;
-        if(dxA*dxA + dyA*dyA <= (al.r + bb2.r) * (al.r + bb2.r)){
-          if(bb2.pierce && bb2.pierce > 0){
-            bb2.pierce -= 1;
-          }else{
-            bullets.splice(bj2,1);
-          }
-          al.hitShake = 0.75;
-          al.hitsTaken += 1;
+    if(dxA*dxA + dyA*dyA <= (al.r + bb2.r) * (al.r + bb2.r)){
+      if(bb2.pierce && bb2.pierce > 0){
+        bb2.pierce -= 1;
+      }else{
+        bullets.splice(bj2,1);
+      }
+      al.hitShake = 0.75;
+      al.stunTimer = Math.max(al.stunTimer || 0, 0.4);
+      al.hitsTaken += 1;
         if(al.hitsTaken >= al.answer){
           state.aliensShot += 1;
           state.score += al.score;
@@ -5287,7 +5496,9 @@ function draw(){
 
   drawTutorialPortal();
   if(!phaserActive){
-    for(var i=0;i<asteroids.length;i++) drawAsteroid(asteroids[i]);
+    if(!state.hideAsteroids){
+      for(var i=0;i<asteroids.length;i++) drawAsteroid(asteroids[i]);
+    }
     drawAliens(ctx);
     drawPowerups();
     drawAlienBullets(ctx);
@@ -5380,7 +5591,7 @@ function draw(){
     var qRaw = getQuestionRawText();
     var qParsed = parseRepeatingText(qRaw);
     var qDisplay = qParsed.display;
-    if(!(tutorialActive && tutorialHideQuestion)){
+    if(!(tutorialActive && tutorialHideQuestion) && !missionBriefShowing){
       ctx.fillText(qDisplay, w/2, questionTop);
       if(qParsed.repeatStart >= 0 && qParsed.repeatLen > 0){
         var qWidth = ctx.measureText(qDisplay).width;
@@ -5856,8 +6067,16 @@ function drawActivePickupHud(hudFade, rightX, cy, radius, w){
   if(player.defenseMode && player.defenseMode !== "none" && player.defenseTimer > 0){
     entries.push({ type: player.defenseMode, group: "defense" });
   }
-  if(player.secondaryMode && player.secondaryMode !== "none" && player.secondaryCharges > 0){
-    entries.push({ type: player.secondaryMode, group: "secondary", charges: player.secondaryCharges });
+  var secondaryEntries = getSecondaryInventoryEntries();
+  for(var s=0; s<secondaryEntries.length; s++){
+    var entry = secondaryEntries[s];
+    entries.push({
+      type: entry.type,
+      group: "secondary",
+      charges: entry.count,
+      slot: s + 1,
+      selected: entry.type === player.secondaryMode
+    });
   }
   if(!entries.length) return;
 
@@ -5879,13 +6098,20 @@ function drawActivePickupHud(hudFade, rightX, cy, radius, w){
     var y = startY + i * (boxSize + gap);
     ctx.save();
     ctx.fillStyle = "rgba(8,12,24,.72)";
-    ctx.strokeStyle = "rgba(255,255,255,.22)";
+    ctx.strokeStyle = entry.selected ? "rgba(0,229,255,.6)" : "rgba(255,255,255,.22)";
     ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.roundRect(x, y, boxSize, boxSize, 10);
     ctx.fill();
     ctx.stroke();
     drawHudPickupIcon(entry, x + boxSize / 2, y + boxSize / 2, iconSize);
+    if(entry.slot){
+      ctx.fillStyle = "rgba(0,229,255,.9)";
+      ctx.font = "700 11px Oxanium, sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      ctx.fillText(String(entry.slot), x + 6, y + 5);
+    }
     if(entry.charges != null && entry.charges > 1){
       ctx.fillStyle = "rgba(232,236,255,.9)";
       ctx.font = "700 11px Oxanium, sans-serif";
@@ -5940,24 +6166,79 @@ function drawTutorialPortal(){
 function drawSlowMoWave(){
   if(!state.slowMoWaveActive) return;
   var y = state.slowMoWaveY || (view.h + 40);
-  var band = 110;
+  var band = 160;
   ctx.save();
   ctx.globalCompositeOperation = "screen";
   var grad = ctx.createLinearGradient(0, y - band, 0, y + band);
   grad.addColorStop(0, "rgba(0,0,0,0)");
-  grad.addColorStop(0.35, "rgba(200,200,210,.10)");
-  grad.addColorStop(0.5, "rgba(220,220,230,.28)");
-  grad.addColorStop(0.65, "rgba(200,200,210,.12)");
+  grad.addColorStop(0.3, "rgba(200,200,210,.18)");
+  grad.addColorStop(0.5, "rgba(220,220,230,.42)");
+  grad.addColorStop(0.7, "rgba(200,200,210,.2)");
   grad.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = grad;
   ctx.fillRect(0, y - band, view.w, band * 2);
-  ctx.strokeStyle = "rgba(220,220,230,.4)";
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(220,220,230,.55)";
+  ctx.lineWidth = 3.2;
   ctx.beginPath();
   ctx.moveTo(0, y);
   ctx.lineTo(view.w, y);
   ctx.stroke();
   ctx.restore();
+}
+
+function ensureMissionBrief(){
+  if(missionBriefOverlay) return;
+  if(document.getElementById("missionBriefStyles") == null){
+    var style = document.createElement("style");
+    style.id = "missionBriefStyles";
+    style.textContent = "#missionBriefOverlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:18;background:rgba(6,10,20,.7);backdrop-filter:blur(4px);}#missionBriefOverlay.show{display:flex;}#missionBriefOverlay .missionBrief-card{background:rgba(8,12,24,.92);border:1px solid rgba(0,229,255,.3);border-radius:18px;padding:18px 20px;max-width:480px;width:min(480px,92%);box-shadow:0 18px 48px rgba(0,0,0,.5);font-family:\"Oxanium\",sans-serif;transform:scale(1);opacity:1;transition:transform .35s ease, opacity .35s ease;}#missionBriefOverlay .missionBrief-card.is-exiting{transform:scale(0.86);opacity:0;}#missionBriefOverlay h3{margin:0 0 10px;font-size:14px;letter-spacing:1.6px;text-transform:uppercase;color:#e8ecff;}#missionBriefOverlay p{margin:0 0 16px;font-size:13px;line-height:1.6;color:rgba(232,236,255,.8);}#missionBriefOverlay .brief-actions{display:flex;justify-content:flex-end;}#missionBriefOverlay .brief-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#e8ecff;border-radius:12px;padding:8px 12px;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:\"Oxanium\",sans-serif;}";
+    document.head.appendChild(style);
+  }
+  missionBriefOverlay = document.createElement("div");
+  missionBriefOverlay.id = "missionBriefOverlay";
+  missionBriefOverlay.innerHTML = "<div class=\"missionBrief-card\"><h3></h3><p></p><div class=\"brief-actions\"><button class=\"brief-btn\" type=\"button\">UNDERSTOOD</button></div></div>";
+  var shell = gameShell || document.body;
+  shell.appendChild(missionBriefOverlay);
+  missionBriefTitle = missionBriefOverlay.querySelector("h3");
+  missionBriefBody = missionBriefOverlay.querySelector("p");
+  missionBriefBtn = missionBriefOverlay.querySelector(".brief-btn");
+  if(missionBriefBtn){
+    missionBriefBtn.addEventListener("click", function(){
+      if(missionBriefAnimating) return;
+      missionBriefAnimating = true;
+      var card = missionBriefOverlay.querySelector(".missionBrief-card");
+      if(card) card.classList.add("is-exiting");
+      missionBriefBypass = true;
+      setTimeout(function(){
+        missionBriefOverlay.classList.remove("show");
+        if(card) card.classList.remove("is-exiting");
+        missionBriefAnimating = false;
+        setMissionBriefActive(false);
+        var cb = missionBriefOnAccept;
+        missionBriefOnAccept = null;
+        if(cb) cb();
+      }, 320);
+    });
+  }
+}
+
+function getMissionBriefText(){
+  var info = describeQuestionMode(state.questionMode || (inputs.questionMode ? inputs.questionMode.value : "classic"));
+  var modeName = info.modeLabel || "Classic Answer";
+  var op = info.operation || "Multiplication";
+  var sub = info.submode ? (" (" + info.submode + ")") : "";
+  var summary = op + " • " + modeName + sub + ".";
+  var detail = "Shoot the correct answer asteroids before they escape. Avoid decoys and stay sharp.";
+  if(modeName.indexOf("Digit Hunt") !== -1){
+    detail = "Shoot the digits in the correct order to complete the answer. Avoid decoys.";
+  }else if(modeName.indexOf("Factor Hunt") !== -1){
+    detail = "Find the missing factor that completes the product. Avoid decoys.";
+  }else if(op === "Rationals"){
+    detail = "Match the fraction/decimal shown. Avoid incorrect values.";
+  }else if(op === "Squares"){
+    detail = "Solve the square or root and shoot the correct asteroid.";
+  }
+  return summary + " " + detail;
 }
 
 function drawEmpWave(){
@@ -6369,7 +6650,7 @@ function drawBullets(){
   ctx.globalCompositeOperation = "lighter";
   for(var i=0;i<bullets.length;i++){
     var b = bullets[i];
-    function drawBulletImage(asset, sizeMul, offsetY){
+    function drawBulletImage(asset, sizeMul, offsetY, rotation){
       if(!asset || !asset.ready) return;
       var size = b.r * sizeMul;
       var iw = asset.img.naturalWidth || asset.img.width || size;
@@ -6379,43 +6660,21 @@ function drawBullets(){
       var drawH = ih * scale;
       ctx.save();
       ctx.globalAlpha = 0.95;
-      ctx.drawImage(asset.img, b.x - drawW / 2, b.y + (offsetY || 0) - drawH / 2, drawW, drawH);
+      if(rotation){
+        ctx.translate(b.x, b.y + (offsetY || 0));
+        ctx.rotate(rotation);
+        ctx.drawImage(asset.img, -drawW / 2, -drawH / 2, drawW, drawH);
+      }else{
+        ctx.drawImage(asset.img, b.x - drawW / 2, b.y + (offsetY || 0) - drawH / 2, drawW, drawH);
+      }
       ctx.restore();
     }
     if(b.kind === "laser"){
-      ctx.globalAlpha = 0.9;
-      ctx.strokeStyle = "rgba(0,229,255,.9)";
-      ctx.lineWidth = b.w || 3;
-      ctx.beginPath();
-      ctx.moveTo(b.x, b.y);
-      ctx.lineTo(b.x, b.y - (b.len || 18));
-      ctx.stroke();
-      ctx.globalAlpha = 0.35;
-      ctx.strokeStyle = "rgba(255,255,255,.7)";
-      ctx.lineWidth = (b.w || 3) + 2;
-      ctx.beginPath();
-      ctx.moveTo(b.x, b.y);
-      ctx.lineTo(b.x, b.y - (b.len || 18));
-      ctx.stroke();
       drawBulletImage(bulletLaserImg, 12, -(b.len || 18));
       continue;
     }
 
     if(b.kind === "rail"){
-      ctx.globalAlpha = 0.95;
-      ctx.strokeStyle = "rgba(0,229,255,.95)";
-      ctx.lineWidth = b.w || 4;
-      ctx.beginPath();
-      ctx.moveTo(b.x, b.y);
-      ctx.lineTo(b.x, b.y - (b.len || 34));
-      ctx.stroke();
-      ctx.globalAlpha = 0.4;
-      ctx.strokeStyle = "rgba(255,255,255,.7)";
-      ctx.lineWidth = (b.w || 4) + 3;
-      ctx.beginPath();
-      ctx.moveTo(b.x, b.y);
-      ctx.lineTo(b.x, b.y - (b.len || 34));
-      ctx.stroke();
       drawBulletImage(bulletRailImg, 12, -(b.len || 34));
       continue;
     }
@@ -6441,22 +6700,28 @@ function drawBullets(){
     }
 
     if(b.kind === "pierce"){
-      ctx.globalAlpha = 0.9;
-      ctx.strokeStyle = "rgba(175,0,111,.9)";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.r + 2, 0, Math.PI*2);
-      ctx.stroke();
-      ctx.globalAlpha = 0.85;
-      ctx.fillStyle = "rgba(255,221,0,.7)";
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.r * 0.7, 0, Math.PI*2);
-      ctx.fill();
+      drawBulletImage(bulletBolaImg, 12, 0, b.rot || 0);
       continue;
     }
 
     if(b.kind === "missile"){
-      drawBulletImage(bulletMissileImg, 12, 0);
+      if(b.trail && b.trail.length > 1){
+        ctx.save();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(120,220,255,.45)";
+        for(var t=1; t<b.trail.length; t++){
+          var p0 = b.trail[t - 1];
+          var p1 = b.trail[t];
+          var alpha = t / b.trail.length;
+          ctx.globalAlpha = alpha * 0.7;
+          ctx.beginPath();
+          ctx.moveTo(p0.x, p0.y);
+          ctx.lineTo(p1.x, p1.y);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+      drawBulletImage(bulletMissileImg, 12, 0, b.rot || 0);
       continue;
     }
 
@@ -7682,6 +7947,7 @@ btnClose.addEventListener("click", function(){
   playSfx(state, "menu_beep");
   closeSettings();
 });
+setPauseAllowed(false);
 btnPause.addEventListener("click", function(){ togglePause(); });
 btnSettings.addEventListener("click", function(){
   playSfx(state, "menu_beep");
@@ -8220,6 +8486,9 @@ function boot(){
             if(!(state.powerupsCollected > 0)){
               spawnPowerup("shield", "defense");
             }
+          }
+          if(stepId === "secondary_aid"){
+            spawnPowerup("time", "secondary", player.x, player.y - 140);
           }
           if(stepId === "alien" && !tutorialAlienSpawned){
             tutorialAlienSpawned = true;

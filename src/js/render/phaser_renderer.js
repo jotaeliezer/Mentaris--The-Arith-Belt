@@ -19,7 +19,7 @@ var BULLET_KEYS = {
   fire: "bullet_fire1",
   ice: "bullet_ice",
   electric: "bullet_electric1",
-  pierce: "bullet_orb",
+  pierce: "bullet_bola",
   plasma: "bullet_orb",
   rail: "bullet_rail",
   missile: "bullet_missile"
@@ -48,7 +48,8 @@ export function createPhaserRenderer(opts){
     powerups: new Map(),
     aliens: new Map(),
     alienBullets: new Map(),
-    labels: new Map()
+    labels: new Map(),
+    missileTrails: new Map()
   };
 
   function preload(){}
@@ -147,6 +148,7 @@ export function createPhaserRenderer(opts){
     clearPool(spritePool.aliens);
     clearPool(spritePool.alienBullets);
     clearPool(spritePool.labels);
+    clearPool(spritePool.missileTrails);
     if(gameRef){
       gameRef.destroy(true);
       gameRef = null;
@@ -201,6 +203,15 @@ export function createPhaserRenderer(opts){
   }
 
   function syncAsteroids(data){
+    if(data.hideAsteroids){
+      spritePool.asteroids.forEach(function(sprite){
+        if(sprite) sprite.setVisible(false);
+      });
+      spritePool.labels.forEach(function(label){
+        if(label) label.setVisible(false);
+      });
+      return;
+    }
     var asteroids = data.asteroids || [];
     var seen = new Set();
     for(var i=0; i<asteroids.length; i++){
@@ -215,6 +226,7 @@ export function createPhaserRenderer(opts){
       sprite.setPosition(a.x, a.y);
       sprite.setRotation(a.rot || 0);
       sprite.setAlpha(a.ghost ? 0.2 : 0.95);
+      sprite.setVisible(true);
       var size = (a.r || 24) * 2;
       sprite.setDisplaySize(size, size);
       seen.add(a.id);
@@ -253,6 +265,7 @@ export function createPhaserRenderer(opts){
   function syncBullets(data){
     var bullets = data.bullets || [];
     var seen = new Set();
+    var seenTrails = new Set();
     for(var i=0; i<bullets.length; i++){
       var b = bullets[i];
       var key = BULLET_KEYS[b.kind] || BULLET_KEYS.single;
@@ -263,17 +276,46 @@ export function createPhaserRenderer(opts){
       });
       if(sprite.texture.key !== key) sprite.setTexture(key);
       sprite.setPosition(b.x, b.y);
+      sprite.setRotation(b.rot || 0);
       var size = (b.r || 4) * 3.2;
       if(b.kind && b.kind !== "single"){
         size *= 1.2;
       }
       sprite.setDisplaySize(size, size);
       seen.add(id);
+
+      if(b.kind === "missile"){
+        var trail = spritePool.missileTrails.get(id);
+        if(!trail){
+          trail = sceneRef.add.graphics();
+          spritePool.missileTrails.set(id, trail);
+        }
+        trail.clear();
+        if(b.trail && b.trail.length > 1){
+          for(var t=1; t<b.trail.length; t++){
+            var p0 = b.trail[t - 1];
+            var p1 = b.trail[t];
+            var alpha = t / b.trail.length;
+            trail.lineStyle(2, 0x78dcff, 0.45 * alpha);
+            trail.beginPath();
+            trail.moveTo(p0.x, p0.y);
+            trail.lineTo(p1.x, p1.y);
+            trail.strokePath();
+          }
+        }
+        seenTrails.add(id);
+      }
     }
     spritePool.bullets.forEach(function(sprite, id){
       if(!seen.has(id)){
         sprite.destroy();
         spritePool.bullets.delete(id);
+      }
+    });
+    spritePool.missileTrails.forEach(function(trail, id){
+      if(!seenTrails.has(id)){
+        trail.destroy();
+        spritePool.missileTrails.delete(id);
       }
     });
   }

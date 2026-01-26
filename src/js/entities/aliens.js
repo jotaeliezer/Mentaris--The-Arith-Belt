@@ -130,6 +130,12 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
       + Math.sin(a.t * (brutal ? 4.2 : 2.4) + a.uid * 1.7) * (60 * erraticFactor);
     a.vx = (wobble + chase) * motionScale;
     a.vy = ((a.speed * 0.35) + Math.sin(a.t * (brutal ? 1.4 : 0.9) + a.uid) * (16 * erraticFactor)) * motionScale;
+    if(a.stunTimer > 0){
+      a.stunTimer = Math.max(0, a.stunTimer - dt);
+      a.vx *= 0.15;
+      a.vy *= 0.15;
+      a.fireCooldown = Math.max(a.fireCooldown, 0.35);
+    }
     if(asteroids && asteroids.length){
       var pushX = 0;
       var pushY = 0;
