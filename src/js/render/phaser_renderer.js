@@ -75,9 +75,19 @@ export function createPhaserRenderer(opts){
     }
 
     var pending = 0;
+    function resolveImagePath(srcKey){
+      if(ASTEROID_KEYS.indexOf(srcKey) !== -1) return "images/asteroids/" + srcKey + ".png";
+      if(ALIEN_KEYS.indexOf(srcKey) !== -1) return "images/aliens/" + srcKey + ".png";
+      if(BACKGROUND_KEYS.indexOf(srcKey) !== -1) return "images/backgrounds/" + srcKey + ".png";
+      if(srcKey.indexOf("powerup_") === 0) return "images/powerups/" + srcKey + ".png";
+      if(srcKey.indexOf("shot_") === 0) return "images/shots/" + srcKey + ".png";
+      if(srcKey.indexOf("bullet_") === 0) return "images/bullets/" + srcKey + ".png";
+      return "images/" + srcKey + ".png";
+    }
+
     function addTexture(key, srcKey){
       var textureKey = key;
-      var src = "images/" + srcKey + ".png";
+      var src = resolveImagePath(srcKey);
       if(sceneRef.textures.exists(textureKey)) return;
       pending += 1;
       var img = new Image();

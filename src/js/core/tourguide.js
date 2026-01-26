@@ -114,7 +114,7 @@ export function createTourGuide(options){
   function startTypeAudio(){
     try{
       if(!typeAudio){
-        typeAudio = new Audio("sfx/tutorial_messages.mp3");
+        typeAudio = new Audio("sfx/ui/tutorial_messages.mp3");
         typeAudio.loop = true;
         typeAudio.volume = 0.4;
       }

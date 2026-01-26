@@ -673,6 +673,20 @@
       color:rgba(0,229,255,.85);
     }
 
+    .campaignListItem.locked{
+      opacity:0.55;
+      cursor:not-allowed;
+      border-color: rgba(255,255,255,.08);
+      box-shadow:none;
+      transform:none;
+    }
+
+    .campaignListItem.locked:hover{
+      transform:none;
+      box-shadow:none;
+      border-color: rgba(255,255,255,.08);
+    }
+
     .campaignListItem:hover{
       transform: translateY(-3px);
       box-shadow: 0 10px 24px rgba(0,0,0,.35);
@@ -1120,10 +1134,10 @@
   </div>
 
   <div class="shipFloaters" aria-hidden="true">
-    <img class="shipFloat shipFloat--a" src="images/asteroid1.png" alt="" />
-    <img class="shipFloat shipFloat--b" src="images/asteroid2.png" alt="" />
-    <img class="shipFloat shipFloat--c" src="images/asteroid3.png" alt="" />
-    <img class="shipFloat shipFloat--d" src="images/asteroid2.png" alt="" />
+    <img class="shipFloat shipFloat--a" src="images/asteroids/asteroid1.png" alt="" />
+    <img class="shipFloat shipFloat--b" src="images/asteroids/asteroid2.png" alt="" />
+    <img class="shipFloat shipFloat--c" src="images/asteroids/asteroid3.png" alt="" />
+    <img class="shipFloat shipFloat--d" src="images/asteroids/asteroid2.png" alt="" />
   </div>
 
   <footer class="siteFooter">© 2025 Mentaris: The Arith Belt. All rights reserved.</footer>
@@ -1428,30 +1442,30 @@
               <h3>Cluster Selector</h3>
               <input type="hidden" id="belt" name="belt" value="dusk" />
               <div class="choiceGrid" id="beltChoices">
-                <div class="choiceCard beltChoice selected" data-belt="dusk" style="background-image:url('images/background8.png');">
+                <div class="choiceCard beltChoice selected" data-belt="dusk" style="background-image:url('images/backgrounds/background8.png');">
                   <h4>Dusk Cluster</h4>
                   <p>Default training field with deep stars.</p>
                 </div>
-                <div class="choiceCard beltChoice" data-belt="ember" style="background-image:url('images/background1.png');">
+                <div class="choiceCard beltChoice" data-belt="ember" style="background-image:url('images/backgrounds/background1.png');">
                   <h4>Ember Cluster</h4>
                   <p>Warm glow with scattered dust lanes.</p>
                 </div>
-                <div class="choiceCard beltChoice locked" data-belt="aurora" data-locked="true" style="background-image:url('images/background2.png');">
+                <div class="choiceCard beltChoice locked" data-belt="aurora" data-locked="true" style="background-image:url('images/backgrounds/background2.png');">
                   <h4>Aurora Cluster</h4>
                   <span class="beltLockTag">Locked</span>
                   <p>Cool nebula haze and icy highlights.</p>
                 </div>
-                <div class="choiceCard beltChoice locked" data-belt="rift" data-locked="true" style="background-image:url('images/background3.png');">
+                <div class="choiceCard beltChoice locked" data-belt="rift" data-locked="true" style="background-image:url('images/backgrounds/background3.png');">
                   <h4>Rift Cluster</h4>
                   <span class="beltLockTag">Locked</span>
                   <p>Dense field with higher contrast drift.</p>
                 </div>
-                <div class="choiceCard beltChoice locked" data-belt="vega" data-locked="true" style="background-image:url('images/background7.png');">
+                <div class="choiceCard beltChoice locked" data-belt="vega" data-locked="true" style="background-image:url('images/backgrounds/background7.png');">
                   <h4>Vega Cluster</h4>
                   <span class="beltLockTag">Locked</span>
                   <p>Wide galaxy wash with soft flares.</p>
                 </div>
-                <div class="choiceCard beltChoice locked" data-belt="void" data-locked="true" style="background-image:url('images/background9.png');">
+                <div class="choiceCard beltChoice locked" data-belt="void" data-locked="true" style="background-image:url('images/backgrounds/background9.png');">
                   <h4>Void Cluster</h4>
                   <span class="beltLockTag">Locked</span>
                   <p>Deep space with faint starlight.</p>
@@ -1979,8 +1993,8 @@
     var campaignActiveKeyBase = "mathsteroid.campaign.active.";
     var campaignStateKeyBase = "mathsteroid.campaign.state.";
     var campaignDataKeyBase = "mathsteroid.campaign.data.";
-    var campaignDataVersion = 4;
-    var campaignMaxFailuresDefault = 3;
+    var campaignDataVersion = 5;
+    var campaignMaxFailuresDefault = 5;
     var campaignDefaultId = "sector_run";
     var campaignProfileSlots = ["profile1", "profile2", "profile3"];
     var activeProfileId = "";
@@ -1989,43 +2003,43 @@
         id: "sector_run",
         name: "Sector Run",
         desc: "Starter training across six sectors.",
-        maxFailures: 3,
+        maxFailures: 5,
         missions: [
           {
             id: "m1",
             title: "Sector 1: Calibration",
             desc: "Digit hunt warm-up.",
-            config: { ship: "spire", questionMode: "digits2", difficulty: "easy", targetMode: "q7", timerMode: "off", decoys: 3, speed: 0.7, lives: 10, strikes: 6, aMin: 2, aMax: 9, bMin: 2, bMax: 9 }
+            config: { ship: "spire", questionMode: "digits2", difficulty: "easy", targetMode: "q7", timerMode: "off", decoys: 2, speed: 0.6, lives: 15, strikes: 10, aMin: 2, aMax: 9, bMin: 2, bMax: 9 }
           },
           {
             id: "m2",
             title: "Sector 2: Drift Line",
             desc: "Faster digit hunt.",
-            config: { ship: "classic", questionMode: "add_digits3", difficulty: "normal", targetMode: "q10", timerMode: "off", decoys: 3, speed: 0.8, lives: 10, strikes: 5, aMin: 2, aMax: 12, bMin: 2, bMax: 9 }
+            config: { ship: "classic", questionMode: "add_digits3", difficulty: "easy", targetMode: "q10", timerMode: "off", decoys: 3, speed: 0.7, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 9 }
           },
           {
             id: "m3",
             title: "Sector 3: Classic Sweep",
             desc: "Classic answers under time.",
-            config: { ship: "am2", questionMode: "classic2", difficulty: "normal", targetMode: "off", timerMode: "60", decoys: 3, decoyFunction: "units_bias", speed: 0.85, lives: 10, strikes: 4, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
+            config: { ship: "am2", questionMode: "classic2", difficulty: "easy", targetMode: "off", timerMode: "75", decoys: 3, decoyFunction: "units_bias", speed: 0.7, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
           },
           {
             id: "m4",
             title: "Sector 4: Signal Storm",
             desc: "Addition digit hunt.",
-            config: { questionMode: "add_digits2", difficulty: "hard", targetMode: "q10", timerMode: "off", decoys: 4, speed: 0.9, lives: 10, strikes: 3, aMin: 10, aMax: 99, bMin: 10, bMax: 99 }
+            config: { questionMode: "add_digits2", difficulty: "normal", targetMode: "q10", timerMode: "off", decoys: 3, speed: 0.75, lives: 15, strikes: 10, aMin: 10, aMax: 99, bMin: 10, bMax: 99 }
           },
           {
             id: "m5",
             title: "Sector 5: Deep Cluster",
             desc: "Square memorization.",
-            config: { questionMode: "square_shoot", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "structured", speed: 1.0, lives: 5, strikes: 3, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
+            config: { questionMode: "square_shoot", difficulty: "normal", targetMode: "off", timerMode: "90", decoys: 3, decoyFunction: "structured", speed: 0.8, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
           },
           {
             id: "m6",
             title: "Sector 6: Root Relay",
             desc: "Square root precision.",
-            config: { questionMode: "square_root", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "structured", speed: 1.0, lives: 5, strikes: 3, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
+            config: { questionMode: "square_root", difficulty: "normal", targetMode: "off", timerMode: "90", decoys: 3, decoyFunction: "structured", speed: 0.8, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
           }
         ]
       },
@@ -2033,43 +2047,43 @@
         id: "rift_assault",
         name: "Rift Assault",
         desc: "Higher speeds, tighter margins.",
-        maxFailures: 3,
+        maxFailures: 5,
         missions: [
           {
             id: "r1",
             title: "Rift 1: Vector Burn",
             desc: "Rapid digit hunt.",
-            config: { ship: "spire", questionMode: "digits3", difficulty: "normal", targetMode: "q10", timerMode: "off", decoys: 4, speed: 0.9, lives: 10, strikes: 5, aMin: 2, aMax: 9, bMin: 2, bMax: 9 }
+            config: { ship: "spire", questionMode: "digits3", difficulty: "normal", targetMode: "q10", timerMode: "off", decoys: 3, speed: 0.8, lives: 15, strikes: 10, aMin: 2, aMax: 9, bMin: 2, bMax: 9 }
           },
           {
             id: "r2",
             title: "Rift 2: Split Signal",
             desc: "Dense addition fields.",
-            config: { ship: "classic", questionMode: "add_digits3", difficulty: "hard", targetMode: "q12", timerMode: "off", decoys: 4, speed: 0.95, lives: 10, strikes: 4, aMin: 5, aMax: 15, bMin: 5, bMax: 15 }
+            config: { ship: "classic", questionMode: "add_digits3", difficulty: "normal", targetMode: "q12", timerMode: "off", decoys: 3, speed: 0.85, lives: 15, strikes: 10, aMin: 5, aMax: 15, bMin: 5, bMax: 15 }
           },
           {
             id: "r3",
             title: "Rift 3: Phase Lock",
             desc: "Classic answers under pressure.",
-            config: { ship: "am2", questionMode: "classic3", difficulty: "hard", targetMode: "off", timerMode: "75", decoys: 4, decoyFunction: "units_bias", speed: 1.0, lives: 5, strikes: 3, aMin: 3, aMax: 12, bMin: 3, bMax: 12 }
+            config: { ship: "am2", questionMode: "classic3", difficulty: "normal", targetMode: "off", timerMode: "90", decoys: 3, decoyFunction: "units_bias", speed: 0.9, lives: 15, strikes: 10, aMin: 3, aMax: 12, bMin: 3, bMax: 12 }
           },
           {
             id: "r4",
             title: "Rift 4: Echo Surge",
             desc: "Addition classics at speed.",
-            config: { questionMode: "add_classic2", difficulty: "hard", targetMode: "off", timerMode: "75", decoys: 4, decoyFunction: "units_bias", speed: 1.05, lives: 5, strikes: 3, aMin: 10, aMax: 99, bMin: 10, bMax: 99 }
+            config: { questionMode: "add_classic2", difficulty: "normal", targetMode: "off", timerMode: "90", decoys: 3, decoyFunction: "units_bias", speed: 0.95, lives: 15, strikes: 10, aMin: 10, aMax: 99, bMin: 10, bMax: 99 }
           },
           {
             id: "r5",
             title: "Rift 5: Prism Array",
             desc: "Squares at high tempo.",
-            config: { questionMode: "square_shoot", difficulty: "brutal", targetMode: "off", timerMode: "90", decoys: 5, decoyFunction: "structured", speed: 1.1, lives: 5, strikes: 2, aMin: 4, aMax: 15, bMin: 4, bMax: 15 }
+            config: { questionMode: "square_shoot", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "structured", speed: 0.95, lives: 15, strikes: 10, aMin: 4, aMax: 15, bMin: 4, bMax: 15 }
           },
           {
             id: "r6",
             title: "Rift 6: Root Spiral",
             desc: "Roots with tight margins.",
-            config: { questionMode: "square_root", difficulty: "brutal", targetMode: "off", timerMode: "90", decoys: 5, decoyFunction: "structured", speed: 1.1, lives: 5, strikes: 2, aMin: 4, aMax: 15, bMin: 4, bMax: 15 }
+            config: { questionMode: "square_root", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "structured", speed: 0.95, lives: 15, strikes: 10, aMin: 4, aMax: 15, bMin: 4, bMax: 15 }
           }
         ]
       },
@@ -2077,43 +2091,43 @@
         id: "void_run",
         name: "Void Run",
         desc: "Elite tempo with razor-thin margin.",
-        maxFailures: 3,
+        maxFailures: 5,
         missions: [
           {
             id: "v1",
             title: "Void 1: Singularity Drift",
             desc: "High-speed digit hunt.",
-            config: { ship: "spire", questionMode: "digits3", difficulty: "hard", targetMode: "q12", timerMode: "off", decoys: 5, speed: 1.1, lives: 5, strikes: 4, aMin: 3, aMax: 12, bMin: 3, bMax: 12 }
+            config: { ship: "spire", questionMode: "digits3", difficulty: "hard", targetMode: "q12", timerMode: "off", decoys: 4, speed: 0.95, lives: 15, strikes: 10, aMin: 3, aMax: 12, bMin: 3, bMax: 12 }
           },
           {
             id: "v2",
             title: "Void 2: Ion Wake",
             desc: "Addition under pressure.",
-            config: { ship: "classic", questionMode: "add_digits3", difficulty: "brutal", targetMode: "q12", timerMode: "off", decoys: 5, speed: 1.15, lives: 5, strikes: 3, aMin: 8, aMax: 18, bMin: 8, bMax: 18 }
+            config: { ship: "classic", questionMode: "add_digits3", difficulty: "hard", targetMode: "q12", timerMode: "off", decoys: 4, speed: 1.0, lives: 15, strikes: 10, aMin: 8, aMax: 18, bMin: 8, bMax: 18 }
           },
           {
             id: "v3",
             title: "Void 3: Razor Current",
             desc: "Classic answers at max pace.",
-            config: { ship: "am2", questionMode: "classic3", difficulty: "brutal", targetMode: "off", timerMode: "75", decoys: 5, decoyFunction: "units_bias", speed: 1.2, lives: 5, strikes: 2, aMin: 4, aMax: 15, bMin: 4, bMax: 15 }
+            config: { ship: "am2", questionMode: "classic3", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "units_bias", speed: 1.05, lives: 15, strikes: 10, aMin: 4, aMax: 15, bMin: 4, bMax: 15 }
           },
           {
             id: "v4",
             title: "Void 4: Nova Cipher",
             desc: "Addition classics at speed.",
-            config: { questionMode: "add_classic3", difficulty: "brutal", targetMode: "off", timerMode: "75", decoys: 5, decoyFunction: "units_bias", speed: 1.2, lives: 5, strikes: 2, aMin: 20, aMax: 99, bMin: 20, bMax: 99 }
+            config: { questionMode: "add_classic3", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "units_bias", speed: 1.05, lives: 15, strikes: 10, aMin: 20, aMax: 99, bMin: 20, bMax: 99 }
           },
           {
             id: "v5",
             title: "Void 5: Prism Collapse",
             desc: "Squares at extreme tempo.",
-            config: { questionMode: "square_shoot", difficulty: "brutal", targetMode: "off", timerMode: "90", decoys: 6, decoyFunction: "structured", speed: 1.25, lives: 5, strikes: 2, aMin: 6, aMax: 20, bMin: 6, bMax: 20 }
+            config: { questionMode: "square_shoot", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 5, decoyFunction: "structured", speed: 1.1, lives: 15, strikes: 10, aMin: 6, aMax: 20, bMin: 6, bMax: 20 }
           },
           {
             id: "v6",
             title: "Void 6: Root Singe",
             desc: "Roots with no slack.",
-            config: { questionMode: "square_root", difficulty: "brutal", targetMode: "off", timerMode: "90", decoys: 6, decoyFunction: "structured", speed: 1.25, lives: 5, strikes: 1, aMin: 6, aMax: 20, bMin: 6, bMax: 20 }
+            config: { questionMode: "square_root", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 5, decoyFunction: "structured", speed: 1.1, lives: 15, strikes: 10, aMin: 6, aMax: 20, bMin: 6, bMax: 20 }
           }
         ]
       }
@@ -2216,6 +2230,47 @@
     function setActiveCampaignId(id){
       activeCampaignId = id || campaignDefaultId;
       try{ localStorage.setItem(getCampaignActiveKey(), activeCampaignId); }catch(e){}
+    }
+
+    function isCampaignComplete(set){
+      if(!set) return false;
+      var state = loadCampaignState(set.id);
+      if(!state || state.failed) return false;
+      if(!state.completed || !state.completed.length) return false;
+      for(var i=0; i<state.completed.length; i++){
+        if(!state.completed[i]) return false;
+      }
+      return true;
+    }
+
+    function getCampaignUnlockIndex(){
+      var unlockIndex = 0;
+      for(var i=0; i<campaignSets.length; i++){
+        if(isCampaignComplete(campaignSets[i])){
+          unlockIndex = Math.max(unlockIndex, i + 1);
+        }else{
+          break;
+        }
+      }
+      return Math.min(unlockIndex, campaignSets.length - 1);
+    }
+
+    function isCampaignUnlocked(id){
+      if(!id) return false;
+      var idx = -1;
+      for(var i=0; i<campaignSets.length; i++){
+        if(campaignSets[i].id === id){ idx = i; break; }
+      }
+      if(idx <= 0) return true;
+      return idx <= getCampaignUnlockIndex();
+    }
+
+    function ensureActiveCampaignUnlocked(){
+      var activeId = getActiveCampaignId();
+      if(isCampaignUnlocked(activeId)) return;
+      var unlockIdx = getCampaignUnlockIndex();
+      var nextId = campaignSets[unlockIdx] ? campaignSets[unlockIdx].id : campaignDefaultId;
+      setActiveCampaignId(nextId);
     }
 
     function getCampaignStateKey(id, profileId){
@@ -2518,27 +2573,27 @@
 
 
     var homePowerupCatalogSecondary = [
-      { id: "repair", label: "Hull Repair", icon: "images/powerup_hullrepair.png", desc: "Instant hull repair (+35%)." },
-      { id: "time", label: "Time Dilation", icon: "images/powerup_timedelay.png", desc: "Grants one Time Dilation charge (press X to slow time)." },
-      { id: "magnet", label: "Magnet Sweep", icon: "images/powerup_magnet.png", desc: "Grants one Magnet Sweep charge (press X to pull the correct asteroid)." },
-      { id: "emp", label: "EMP Burst", icon: "images/powerup_EMP.png", desc: "Triggers immediately and cascades non-answer asteroids." },
-      { id: "lock", label: "Target Lock", icon: "images/powerup_targetlock.png", desc: "Grants one Target Lock charge (press X to steer shots to the correct asteroid)." }
+      { id: "repair", label: "Hull Repair", icon: "images/powerups/powerup_hullrepair.png", desc: "Instant hull repair (+35%)." },
+      { id: "time", label: "Time Dilation", icon: "images/powerups/powerup_timedelay.png", desc: "Grants one Time Dilation charge (press X to slow time)." },
+      { id: "magnet", label: "Magnet Sweep", icon: "images/powerups/powerup_magnet.png", desc: "Grants one Magnet Sweep charge (press X to pull the correct asteroid)." },
+      { id: "emp", label: "EMP Burst", icon: "images/powerups/powerup_EMP.png", desc: "Triggers immediately and cascades non-answer asteroids." },
+      { id: "lock", label: "Target Lock", icon: "images/powerups/powerup_targetlock.png", desc: "Grants one Target Lock charge (press X to steer shots to the correct asteroid)." }
     ];
 
     var homePowerupCatalogDefense = [
-      { id: "shield", label: "Shield", icon: "images/powerup_shield.png", desc: "Temporary shield for 10 seconds." },
-      { id: "armor", label: "Armor", icon: "images/powerup_armor.png", desc: "Temporary armor for 12 seconds." }
+      { id: "shield", label: "Shield", icon: "images/powerups/powerup_shield.png", desc: "Temporary shield for 10 seconds." },
+      { id: "armor", label: "Armor", icon: "images/powerups/powerup_armor.png", desc: "Temporary armor for 12 seconds." }
     ];
 
     var homePowerupCatalogOffense = [
-      { id: "missile", label: "Missile Shot", icon: "images/shot_missile.png", desc: "Type the correct answer to launch a seeking missile." },
-      { id: "laser", label: "Laser Burst", icon: "images/shot_laser.png", desc: "High-speed laser shots for about 12 seconds." },
-      { id: "fire", label: "Fireball", icon: "images/shot_fre.png", desc: "Fireball shots for about 12 seconds." },
-      { id: "ice", label: "Ice Shards", icon: "images/shot_ice.png", desc: "Ice shots for about 12 seconds." },
-      { id: "electric", label: "Electric Bolts", icon: "images/shot_electric.png", desc: "Electric bolts for about 12 seconds." },
-      { id: "pierce", label: "Look Up Shot", icon: "images/shot_lookup.png", desc: "Piercing shots for about 12 seconds." },
-      { id: "plasma", label: "Plasma Orb", icon: "images/shot_plasma.png", desc: "Plasma shots for about 12 seconds." },
-      { id: "rail", label: "Rail Beam", icon: "images/shot_rail.png", desc: "Rail beam shots for about 12 seconds." }
+      { id: "missile", label: "Missile Shot", icon: "images/shots/shot_missile.png", desc: "Type the correct answer to launch a seeking missile." },
+      { id: "laser", label: "Laser Burst", icon: "images/shots/shot_laser.png", desc: "High-speed laser shots for about 12 seconds." },
+      { id: "fire", label: "Fireball", icon: "images/shots/shot_fre.png", desc: "Fireball shots for about 12 seconds." },
+      { id: "ice", label: "Ice Shards", icon: "images/shots/shot_ice.png", desc: "Ice shots for about 12 seconds." },
+      { id: "electric", label: "Electric Bolts", icon: "images/shots/shot_electric.png", desc: "Electric bolts for about 12 seconds." },
+      { id: "pierce", label: "Look Up Shot", icon: "images/shots/shot_lookup.png", desc: "Piercing shots for about 12 seconds." },
+      { id: "plasma", label: "Plasma Orb", icon: "images/shots/shot_plasma.png", desc: "Plasma shots for about 12 seconds." },
+      { id: "rail", label: "Rail Beam", icon: "images/shots/shot_rail.png", desc: "Rail beam shots for about 12 seconds." }
     ];
 
     var homeSfxCatalog = [
@@ -3988,22 +4043,27 @@
 
     function renderCampaignSetList(){
       if(!campaignSetList) return;
+      ensureActiveCampaignUnlocked();
       var activeId = getActiveCampaignId();
       campaignSetList.innerHTML = "";
       campaignSets.forEach(function(set){
         var li = document.createElement("li");
         var isActive = set.id === activeId;
-        li.className = "campaignListItem campaignSetItem" + (isActive ? " selected" : "");
+        var isUnlocked = isCampaignUnlocked(set.id);
+        li.className = "campaignListItem campaignSetItem"
+          + (isActive ? " selected" : "")
+          + (isUnlocked ? "" : " locked");
         li.setAttribute("data-campaign", set.id);
         li.innerHTML = ""
           + "<div class=\"campaignSetRow\">"
           + "<span class=\"campaignSetName\">" + set.name + "</span>"
-          + "<span class=\"campaignStatus\">" + (isActive ? "ACTIVE" : "SELECT") + "</span>"
+          + "<span class=\"campaignStatus\">" + (isActive ? "ACTIVE" : (isUnlocked ? "UNLOCKED" : "LOCKED")) + "</span>"
           + "</div>"
           + "<div class=\"campaignSetDesc\">" + set.desc + "</div>";
         li.addEventListener("click", function(){
           var id = this.getAttribute("data-campaign");
           if(!id) return;
+          if(!isCampaignUnlocked(id)) return;
           setActiveCampaignId(id);
           renderCampaignSetList();
           renderCampaignList();

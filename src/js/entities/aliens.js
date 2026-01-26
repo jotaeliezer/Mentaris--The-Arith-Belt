@@ -29,14 +29,14 @@ var spawnTimer = alienConfig.spawnCooldown;
 var alienId = 1;
 var unlocked = false;
 var alienSprites = [
-  { src: "images/alien_ET.png", img: null },
-  { src: "images/alien_brain.png", img: null },
-  { src: "images/alien_golem.png", img: null },
-  { src: "images/alien_galaga.png", img: null },
-  { src: "images/alien_eye.png", img: null },
-  { src: "images/alien_saucer.png", img: null },
-  { src: "images/alien_robot.png", img: null },
-  { src: "images/alien_spider.png", img: null }
+  { src: "images/aliens/alien_ET.png", img: null },
+  { src: "images/aliens/alien_brain.png", img: null },
+  { src: "images/aliens/alien_golem.png", img: null },
+  { src: "images/aliens/alien_galaga.png", img: null },
+  { src: "images/aliens/alien_eye.png", img: null },
+  { src: "images/aliens/alien_saucer.png", img: null },
+  { src: "images/aliens/alien_robot.png", img: null },
+  { src: "images/aliens/alien_spider.png", img: null }
 ];
 
 function ensureAlienSprites(){

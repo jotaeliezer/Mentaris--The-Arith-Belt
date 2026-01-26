@@ -338,6 +338,13 @@ var endReasonLine = document.getElementById("endReasonLine");
 var statsList = document.getElementById("statsList");
 var weakList = document.getElementById("weakList");
 var accBar = document.getElementById("accBar");
+var endGrade = document.getElementById("endGrade");
+var breakdownCorrect = document.getElementById("breakdownCorrect");
+var breakdownWrong = document.getElementById("breakdownWrong");
+var breakdownMissed = document.getElementById("breakdownMissed");
+var breakdownCorrectValue = document.getElementById("breakdownCorrectValue");
+var breakdownWrongValue = document.getElementById("breakdownWrongValue");
+var breakdownMissedValue = document.getElementById("breakdownMissedValue");
 var highScoresEnd = document.getElementById("highScoresEnd");
 var endNameInput = document.getElementById("endNameInput");
 var endSequence = document.querySelector(".endSequence");
@@ -513,12 +520,12 @@ var beltIndexMap = {
   void: 5
 };
 var backgroundSources = [
-  "images/background8.png",
-  "images/background1.png",
-  "images/background2.png",
-  "images/background3.png",
-  "images/background7.png",
-  "images/background9.png"
+  "images/backgrounds/background8.png",
+  "images/backgrounds/background1.png",
+  "images/backgrounds/background2.png",
+  "images/backgrounds/background3.png",
+  "images/backgrounds/background7.png",
+  "images/backgrounds/background9.png"
 ];
 for(var bi=0; bi<backgroundSources.length; bi++){
   var bgImg = new Image();
@@ -546,16 +553,16 @@ for(var si=0; si<asteroidSpriteIds.length; si++){
   (function(idx){
     img.onload = function(){ asteroidSpriteReady[idx] = true; };
   })(si);
-  img.src = "images/asteroid" + asteroidSpriteIds[si] + ".png";
+  img.src = "images/asteroids/asteroid" + asteroidSpriteIds[si] + ".png";
   asteroidSprites.push(img);
   asteroidSpriteReady.push(false);
 }
 
 var cooldownIcons = {
-  dash: { img: new Image(), ready: false, src: "images/dash.png" },
-  shockwave: { img: new Image(), ready: false, src: "images/shockwave.png" },
-  flares: { img: new Image(), ready: false, src: "images/flares.png" },
-  teleport: { img: new Image(), ready: false, src: "images/teleport.png" }
+  dash: { img: new Image(), ready: false, src: "images/ui/dash.png" },
+  shockwave: { img: new Image(), ready: false, src: "images/ui/shockwave.png" },
+  flares: { img: new Image(), ready: false, src: "images/ui/flares.png" },
+  teleport: { img: new Image(), ready: false, src: "images/ui/teleport.png" }
 };
 Object.keys(cooldownIcons).forEach(function(key){
   var icon = cooldownIcons[key];
@@ -564,13 +571,13 @@ Object.keys(cooldownIcons).forEach(function(key){
 });
 
 var powerupIcons = {
-  repair: { img: new Image(), ready: false, src: "images/powerup_hullrepair.png" },
-  time: { img: new Image(), ready: false, src: "images/powerup_timedelay.png" },
-  magnet: { img: new Image(), ready: false, src: "images/powerup_magnet.png" },
-  shield: { img: new Image(), ready: false, src: "images/powerup_shield.png" },
-  armor: { img: new Image(), ready: false, src: "images/powerup_armor.png" },
-  emp: { img: new Image(), ready: false, src: "images/powerup_EMP.png" },
-  lock: { img: new Image(), ready: false, src: "images/powerup_targetlock.png" }
+  repair: { img: new Image(), ready: false, src: "images/powerups/powerup_hullrepair.png" },
+  time: { img: new Image(), ready: false, src: "images/powerups/powerup_timedelay.png" },
+  magnet: { img: new Image(), ready: false, src: "images/powerups/powerup_magnet.png" },
+  shield: { img: new Image(), ready: false, src: "images/powerups/powerup_shield.png" },
+  armor: { img: new Image(), ready: false, src: "images/powerups/powerup_armor.png" },
+  emp: { img: new Image(), ready: false, src: "images/powerups/powerup_EMP.png" },
+  lock: { img: new Image(), ready: false, src: "images/powerups/powerup_targetlock.png" }
 };
 Object.keys(powerupIcons).forEach(function(key){
   var icon = powerupIcons[key];
@@ -579,14 +586,14 @@ Object.keys(powerupIcons).forEach(function(key){
 });
 
 var shotIcons = {
-  missile: { img: new Image(), ready: false, src: "images/shot_missile.png" },
-  electric: { img: new Image(), ready: false, src: "images/shot_electric.png" },
-  fire: { img: new Image(), ready: false, src: "images/shot_fre.png" },
-  ice: { img: new Image(), ready: false, src: "images/shot_ice.png" },
-  laser: { img: new Image(), ready: false, src: "images/shot_laser.png" },
-  plasma: { img: new Image(), ready: false, src: "images/shot_plasma.png" },
-  pierce: { img: new Image(), ready: false, src: "images/shot_lookup.png" },
-  rail: { img: new Image(), ready: false, src: "images/shot_rail.png" }
+  missile: { img: new Image(), ready: false, src: "images/shots/shot_missile.png" },
+  electric: { img: new Image(), ready: false, src: "images/shots/shot_electric.png" },
+  fire: { img: new Image(), ready: false, src: "images/shots/shot_fre.png" },
+  ice: { img: new Image(), ready: false, src: "images/shots/shot_ice.png" },
+  laser: { img: new Image(), ready: false, src: "images/shots/shot_laser.png" },
+  plasma: { img: new Image(), ready: false, src: "images/shots/shot_plasma.png" },
+  pierce: { img: new Image(), ready: false, src: "images/shots/shot_lookup.png" },
+  rail: { img: new Image(), ready: false, src: "images/shots/shot_rail.png" }
 };
 Object.keys(shotIcons).forEach(function(key){
   var icon = shotIcons[key];
@@ -594,39 +601,39 @@ Object.keys(shotIcons).forEach(function(key){
   icon.img.src = icon.src;
 });
 
-var bulletSingle = { img: new Image(), ready: false, src: "images/bullet_single.png" };
+var bulletSingle = { img: new Image(), ready: false, src: "images/bullets/bullet_single.png" };
 bulletSingle.img.onload = function(){ bulletSingle.ready = true; };
 bulletSingle.img.src = bulletSingle.src;
 
-var bulletLaserImg = { img: new Image(), ready: false, src: "images/bullet_laser.png" };
+var bulletLaserImg = { img: new Image(), ready: false, src: "images/bullets/bullet_laser.png" };
 bulletLaserImg.img.onload = function(){ bulletLaserImg.ready = true; };
 bulletLaserImg.img.src = bulletLaserImg.src;
 
-var bulletFireImg = { img: new Image(), ready: false, src: "images/bullet_fire1.png" };
+var bulletFireImg = { img: new Image(), ready: false, src: "images/bullets/bullet_fire1.png" };
 bulletFireImg.img.onload = function(){ bulletFireImg.ready = true; };
 bulletFireImg.img.src = bulletFireImg.src;
 
-var bulletIceImg = { img: new Image(), ready: false, src: "images/bullet_ice.png" };
+var bulletIceImg = { img: new Image(), ready: false, src: "images/bullets/bullet_ice.png" };
 bulletIceImg.img.onload = function(){ bulletIceImg.ready = true; };
 bulletIceImg.img.src = bulletIceImg.src;
 
-var bulletBoltImg = { img: new Image(), ready: false, src: "images/bullet_electric1.png" };
+var bulletBoltImg = { img: new Image(), ready: false, src: "images/bullets/bullet_electric1.png" };
 bulletBoltImg.img.onload = function(){ bulletBoltImg.ready = true; };
 bulletBoltImg.img.src = bulletBoltImg.src;
 
-var bulletOrbImg = { img: new Image(), ready: false, src: "images/bullet_orb.png" };
+var bulletOrbImg = { img: new Image(), ready: false, src: "images/bullets/bullet_orb.png" };
 bulletOrbImg.img.onload = function(){ bulletOrbImg.ready = true; };
 bulletOrbImg.img.src = bulletOrbImg.src;
 
-var bulletBolaImg = { img: new Image(), ready: false, src: "images/bullet_bola.png" };
+var bulletBolaImg = { img: new Image(), ready: false, src: "images/bullets/bullet_bola.png" };
 bulletBolaImg.img.onload = function(){ bulletBolaImg.ready = true; };
 bulletBolaImg.img.src = bulletBolaImg.src;
 
-var bulletRailImg = { img: new Image(), ready: false, src: "images/bullet_rail.png" };
+var bulletRailImg = { img: new Image(), ready: false, src: "images/bullets/bullet_rail.png" };
 bulletRailImg.img.onload = function(){ bulletRailImg.ready = true; };
 bulletRailImg.img.src = bulletRailImg.src;
 
-var bulletMissileImg = { img: new Image(), ready: false, src: "images/bullet_missile.png" };
+var bulletMissileImg = { img: new Image(), ready: false, src: "images/bullets/bullet_missile.png" };
 bulletMissileImg.img.onload = function(){ bulletMissileImg.ready = true; };
 bulletMissileImg.img.src = bulletMissileImg.src;
 
@@ -655,53 +662,53 @@ var powerupCatalogOffense = [
 ];
 
 var sfxCatalog = [
-  { id: "menu_beep", label: "Menu Beep", desc: "UI blip.", when: "Menu and overlay buttons.", badge: "SFX", src: "sfx/menu_beep.mp3", category: "menu" },
-  { id: "session_start", label: "Session Start", desc: "Countdown cue.", when: "Countdown before a run.", badge: "SFX", src: "sfx/session_start.mp3", category: "progress" },
-  { id: "mission_cleared1", label: "Mission Cleared", desc: "Clear fanfare.", when: "After wave clear, before the end panel.", badge: "SFX", src: "sfx/mission_cleared1.mp3", category: "progress" },
-  { id: "game_over3", label: "Game Over", desc: "Fail sting.", when: "After ship destruction.", badge: "SFX", src: "sfx/game_over3.mp3", category: "progress" },
-  { id: "explosion", label: "Explosion", desc: "Ship explosion.", when: "Player destroyed.", badge: "SFX", src: "sfx/explosion.mp3", category: "ship" },
-  { id: "ship_drone", label: "Ship Drone", desc: "Engine drone loop.", when: "Active during runs.", badge: "SFX", src: "sfx/ship_drone.mp3", category: "ship" },
-  { id: "ship_idle", label: "Ship Idle", desc: "Idle thruster loop.", when: "Idle or moving left, right, down.", badge: "SFX", src: "sfx/ship_idle.mp3", category: "ship" },
-  { id: "ship_advance", label: "Ship Advance", desc: "Advance thruster loop.", when: "Moving upward.", badge: "SFX", src: "sfx/ship_advance.mp3", category: "ship" },
-  { id: "dash", label: "Dash", desc: "Dash whoosh.", when: "Dashing and intro kick.", badge: "SFX", src: "sfx/dash.mp3", category: "ship" },
-  { id: "gun1", label: "Gun 1", desc: "Primary blaster.", when: "Standard, missile, and fire shots.", badge: "SFX", src: "sfx/gun1.mp3", category: "shots" },
-  { id: "gun2", label: "Gun 2", desc: "Heavy blaster.", when: "Laser and rail shots.", badge: "SFX", src: "sfx/gun2.mp3", category: "shots" },
-  { id: "ice_shot", label: "Ice Shot", desc: "Ice blaster.", when: "Ice shots.", badge: "SFX", src: "sfx/ice_shot.mp3", category: "shots" },
-  { id: "bolt_shot", label: "Bolt Shot", desc: "Electric blaster.", when: "Electric shots.", badge: "SFX", src: "sfx/bolt_shot.mp3", category: "shots" },
-  { id: "shot_missile", label: "Missile Shot", desc: "Missile launch.", when: "Typing the correct answer with missile shot.", badge: "SFX", src: "sfx/shot_missile.mp3", category: "shots" },
-  { id: "shot_orb", label: "Plasma Orb", desc: "Plasma orb shot.", when: "Plasma shots.", badge: "SFX", src: "sfx/shot_orb.mp3", category: "shots" },
-  { id: "shot_railbeam", label: "Rail Beam", desc: "Rail beam shot.", when: "Rail shots.", badge: "SFX", src: "sfx/shot_railbeam.mp3", category: "shots" },
-  { id: "impact", label: "Impact", desc: "Collision hit.", when: "Ship hits and alien impacts.", badge: "SFX", src: "sfx/impact.mp3", category: "gameplay" },
-  { id: "impact_thud", label: "Impact Thud", desc: "Asteroid thud.", when: "Asteroid impacts and EMP cascade hits.", badge: "SFX", src: "sfx/impact_thud.mp3", category: "gameplay" },
-  { id: "correct", label: "Correct", desc: "Correct hit cue.", when: "Correct answer asteroid destroyed.", badge: "SFX", src: "sfx/correct.mp3", category: "gameplay" },
-  { id: "wrong_asteroid", label: "Wrong Asteroid", desc: "Wrong hit cue.", when: "Wrong answer asteroid hit.", badge: "SFX", src: "sfx/wrong_asteroid.mp3", category: "gameplay" },
-  { id: "missed_answer", label: "Missed Answer", desc: "Missed answer cue.", when: "Correct asteroid escapes.", badge: "SFX", src: "sfx/missed_answer.mp3", category: "gameplay" },
-  { id: "level_up2", label: "Level Up", desc: "Level up cue.", when: "Level increases.", badge: "SFX", src: "sfx/level_up2.mp3", category: "progress" },
-  { id: "alien_kill", label: "Alien Kill", desc: "Alien destroyed.", when: "Alien shot down.", badge: "SFX", src: "sfx/alien_kill.mp3", category: "alien" },
-  { id: "alien_shooting", label: "Alien Shooting", desc: "Alien firing.", when: "Alien fires.", badge: "SFX", src: "sfx/alien_shooting.mp3", category: "alien" },
-  { id: "ship_damaged", label: "Ship Damaged", desc: "Damage alert.", when: "Player takes damage.", badge: "SFX", src: "sfx/ship_damaged.mp3", category: "ship" },
-  { id: "warning", label: "Warning", desc: "Warning alarm.", when: "Correct answer near escape (not in tutorial).", badge: "SFX", src: "sfx/warning.mp3", category: "alerts" },
-  { id: "shot_powerup", label: "Shot Pickup", desc: "Offense pickup.", when: "Collect shot type upgrades.", badge: "SFX", src: "sfx/shot_powerup.mp3", category: "powerups" },
-  { id: "powerup_emerges", label: "Powerup Emerges", desc: "Hidden powerup reveal.", when: "Powerup emerges from a destroyed asteroid.", badge: "SFX", src: "sfx/powerup_emerges.mp3", category: "powerups" },
-  { id: "emp_activate", label: "EMP Activate", desc: "EMP discharge.", when: "Activate EMP burst.", badge: "SFX", src: "sfx/EMP_activate.mp3", category: "powerups" },
-  { id: "hull_repair_pickup", label: "Hull Repair Pickup", desc: "Repair pickup.", when: "Collect hull repair.", badge: "SFX", src: "sfx/hull_repair_pickup.mp3", category: "powerups" },
-  { id: "armor_pickup", label: "Armor Pickup", desc: "Armor pickup.", when: "Collect armor powerup.", badge: "SFX", src: "sfx/armor_pickup.mp3", category: "powerups" },
-  { id: "shield_pickup", label: "Shield Pickup", desc: "Shield pickup.", when: "Collect shield powerup.", badge: "SFX", src: "sfx/sheld_pickup.mp3", category: "powerups" },
-  { id: "flares", label: "Flares", desc: "Verdant Spire flare burst.", when: "Press C (flares).", badge: "SFX", src: "sfx/flares.mp3", category: "ship" },
-  { id: "teleport_disappear", label: "Teleport Disappear", desc: "AM2 teleport vanish.", when: "Teleport start.", badge: "SFX", src: "sfx/teleport_disappear.mp3", category: "ship" },
-  { id: "teleport_reappear", label: "Teleport Reappear", desc: "AM2 teleport reappear.", when: "Teleport end.", badge: "SFX", src: "sfx/teleport_reappear.mp3", category: "ship" },
-  { id: "sec_15_mark", label: "15 Sec Mark", desc: "15 seconds remaining cue.", when: "Timer reaches 15s.", badge: "SFX", src: "sfx/15_sec_mark.mp3", category: "progress" },
-  { id: "time_activate", label: "Time Activate", desc: "Time dilation cue.", when: "Activate time dilation.", badge: "SFX", src: "sfx/time_activate.mp3", category: "powerups" },
-  { id: "powerup_collected", label: "Powerup Collected", desc: "Pickup chime.", when: "Collect magnet, EMP, or target lock.", badge: "SFX", src: "sfx/powerup_collected.mp3", category: "powerups" },
-  { id: "crash", label: "Crash", desc: "Hard collision.", when: "Ship collision impact.", badge: "SFX", src: "sfx/crash.mp3", category: "ship" },
-  { id: "soundtrack1", label: "Soundtrack 1", desc: "Ambient drive.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtrack1.mp3", category: "soundtracks" },
-  { id: "soundtrack2_toohottosleep", label: "Soundtrack 2", desc: "Too Hot To Sleep.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtrack2_toohottosleep.mp3", category: "soundtracks" },
-  { id: "soundtrack3", label: "Soundtrack 3", desc: "Synthwave drift.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtrack3.mp3", category: "soundtracks" },
-  { id: "soundtrack4", label: "Soundtrack 4", desc: "Dark pulse.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtrack4.mp3", category: "soundtracks" },
-  { id: "soundtrack5", label: "Soundtrack 5", desc: "Night run.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtrack5.mp3", category: "soundtracks" },
-  { id: "soundtrack6", label: "Soundtrack 6", desc: "Orbit drift.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtrack6.mp3", category: "soundtracks" },
-  { id: "soundtrack7", label: "Soundtrack 7", desc: "Rational flow.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtrack7.mp3", category: "soundtracks" },
-  { id: "soundtrack8", label: "Soundtrack 8", desc: "Void runner.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtrack8.mp3", category: "soundtracks" }
+  { id: "menu_beep", label: "Menu Beep", desc: "UI blip.", when: "Menu and overlay buttons.", badge: "SFX", src: "sfx/ui/menu_beep.mp3", category: "menu" },
+  { id: "session_start", label: "Session Start", desc: "Countdown cue.", when: "Countdown before a run.", badge: "SFX", src: "sfx/progress/session_start.mp3", category: "progress" },
+  { id: "mission_cleared1", label: "Mission Cleared", desc: "Clear fanfare.", when: "After wave clear, before the end panel.", badge: "SFX", src: "sfx/progress/mission_cleared1.mp3", category: "progress" },
+  { id: "game_over3", label: "Game Over", desc: "Fail sting.", when: "After ship destruction.", badge: "SFX", src: "sfx/progress/game_over3.mp3", category: "progress" },
+  { id: "explosion", label: "Explosion", desc: "Ship explosion.", when: "Player destroyed.", badge: "SFX", src: "sfx/ship/explosion.mp3", category: "ship" },
+  { id: "ship_drone", label: "Ship Drone", desc: "Engine drone loop.", when: "Active during runs.", badge: "SFX", src: "sfx/ship/ship_drone.mp3", category: "ship" },
+  { id: "ship_idle", label: "Ship Idle", desc: "Idle thruster loop.", when: "Idle or moving left, right, down.", badge: "SFX", src: "sfx/ship/ship_idle.mp3", category: "ship" },
+  { id: "ship_advance", label: "Ship Advance", desc: "Advance thruster loop.", when: "Moving upward.", badge: "SFX", src: "sfx/ship/ship_advance.mp3", category: "ship" },
+  { id: "dash", label: "Dash", desc: "Dash whoosh.", when: "Dashing and intro kick.", badge: "SFX", src: "sfx/ship/dash.mp3", category: "ship" },
+  { id: "gun1", label: "Gun 1", desc: "Primary blaster.", when: "Standard, missile, and fire shots.", badge: "SFX", src: "sfx/shots/gun1.mp3", category: "shots" },
+  { id: "gun2", label: "Gun 2", desc: "Heavy blaster.", when: "Laser and rail shots.", badge: "SFX", src: "sfx/shots/gun2.mp3", category: "shots" },
+  { id: "ice_shot", label: "Ice Shot", desc: "Ice blaster.", when: "Ice shots.", badge: "SFX", src: "sfx/shots/ice_shot.mp3", category: "shots" },
+  { id: "bolt_shot", label: "Bolt Shot", desc: "Electric blaster.", when: "Electric shots.", badge: "SFX", src: "sfx/shots/bolt_shot.mp3", category: "shots" },
+  { id: "shot_missile", label: "Missile Shot", desc: "Missile launch.", when: "Typing the correct answer with missile shot.", badge: "SFX", src: "sfx/shots/shot_missile.mp3", category: "shots" },
+  { id: "shot_orb", label: "Plasma Orb", desc: "Plasma orb shot.", when: "Plasma shots.", badge: "SFX", src: "sfx/shots/shot_orb.mp3", category: "shots" },
+  { id: "shot_railbeam", label: "Rail Beam", desc: "Rail beam shot.", when: "Rail shots.", badge: "SFX", src: "sfx/shots/shot_railbeam.mp3", category: "shots" },
+  { id: "impact", label: "Impact", desc: "Collision hit.", when: "Ship hits and alien impacts.", badge: "SFX", src: "sfx/gameplay/impact.mp3", category: "gameplay" },
+  { id: "impact_thud", label: "Impact Thud", desc: "Asteroid thud.", when: "Asteroid impacts and EMP cascade hits.", badge: "SFX", src: "sfx/gameplay/impact_thud.mp3", category: "gameplay" },
+  { id: "correct", label: "Correct", desc: "Correct hit cue.", when: "Correct answer asteroid destroyed.", badge: "SFX", src: "sfx/gameplay/correct.mp3", category: "gameplay" },
+  { id: "wrong_asteroid", label: "Wrong Asteroid", desc: "Wrong hit cue.", when: "Wrong answer asteroid hit.", badge: "SFX", src: "sfx/gameplay/wrong_asteroid.mp3", category: "gameplay" },
+  { id: "missed_answer", label: "Missed Answer", desc: "Missed answer cue.", when: "Correct asteroid escapes.", badge: "SFX", src: "sfx/gameplay/missed_answer.mp3", category: "gameplay" },
+  { id: "level_up2", label: "Level Up", desc: "Level up cue.", when: "Level increases.", badge: "SFX", src: "sfx/progress/level_up2.mp3", category: "progress" },
+  { id: "alien_kill", label: "Alien Kill", desc: "Alien destroyed.", when: "Alien shot down.", badge: "SFX", src: "sfx/alien/alien_kill.mp3", category: "alien" },
+  { id: "alien_shooting", label: "Alien Shooting", desc: "Alien firing.", when: "Alien fires.", badge: "SFX", src: "sfx/alien/alien_shooting.mp3", category: "alien" },
+  { id: "ship_damaged", label: "Ship Damaged", desc: "Damage alert.", when: "Player takes damage.", badge: "SFX", src: "sfx/ship/ship_damaged.mp3", category: "ship" },
+  { id: "warning", label: "Warning", desc: "Warning alarm.", when: "Correct answer near escape (not in tutorial).", badge: "SFX", src: "sfx/alerts/warning.mp3", category: "alerts" },
+  { id: "shot_powerup", label: "Shot Pickup", desc: "Offense pickup.", when: "Collect shot type upgrades.", badge: "SFX", src: "sfx/powerups/shot_powerup.mp3", category: "powerups" },
+  { id: "powerup_emerges", label: "Powerup Emerges", desc: "Hidden powerup reveal.", when: "Powerup emerges from a destroyed asteroid.", badge: "SFX", src: "sfx/powerups/powerup_emerges.mp3", category: "powerups" },
+  { id: "emp_activate", label: "EMP Activate", desc: "EMP discharge.", when: "Activate EMP burst.", badge: "SFX", src: "sfx/powerups/EMP_activate.mp3", category: "powerups" },
+  { id: "hull_repair_pickup", label: "Hull Repair Pickup", desc: "Repair pickup.", when: "Collect hull repair.", badge: "SFX", src: "sfx/powerups/hull_repair_pickup.mp3", category: "powerups" },
+  { id: "armor_pickup", label: "Armor Pickup", desc: "Armor pickup.", when: "Collect armor powerup.", badge: "SFX", src: "sfx/powerups/armor_pickup.mp3", category: "powerups" },
+  { id: "shield_pickup", label: "Shield Pickup", desc: "Shield pickup.", when: "Collect shield powerup.", badge: "SFX", src: "sfx/powerups/sheld_pickup.mp3", category: "powerups" },
+  { id: "flares", label: "Flares", desc: "Verdant Spire flare burst.", when: "Press C (flares).", badge: "SFX", src: "sfx/ship/flares.mp3", category: "ship" },
+  { id: "teleport_disappear", label: "Teleport Disappear", desc: "AM2 teleport vanish.", when: "Teleport start.", badge: "SFX", src: "sfx/ship/teleport_disappear.mp3", category: "ship" },
+  { id: "teleport_reappear", label: "Teleport Reappear", desc: "AM2 teleport reappear.", when: "Teleport end.", badge: "SFX", src: "sfx/ship/teleport_reappear.mp3", category: "ship" },
+  { id: "sec_15_mark", label: "15 Sec Mark", desc: "15 seconds remaining cue.", when: "Timer reaches 15s.", badge: "SFX", src: "sfx/progress/15_sec_mark.mp3", category: "progress" },
+  { id: "time_activate", label: "Time Activate", desc: "Time dilation cue.", when: "Activate time dilation.", badge: "SFX", src: "sfx/powerups/time_activate.mp3", category: "powerups" },
+  { id: "powerup_collected", label: "Powerup Collected", desc: "Pickup chime.", when: "Collect magnet, EMP, or target lock.", badge: "SFX", src: "sfx/powerups/powerup_collected.mp3", category: "powerups" },
+  { id: "crash", label: "Crash", desc: "Hard collision.", when: "Ship collision impact.", badge: "SFX", src: "sfx/ship/crash.mp3", category: "ship" },
+  { id: "soundtrack1", label: "Soundtrack 1", desc: "Ambient drive.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack1.mp3", category: "soundtracks" },
+  { id: "soundtrack2_toohottosleep", label: "Soundtrack 2", desc: "Too Hot To Sleep.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack2_toohottosleep.mp3", category: "soundtracks" },
+  { id: "soundtrack3", label: "Soundtrack 3", desc: "Synthwave drift.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack3.mp3", category: "soundtracks" },
+  { id: "soundtrack4", label: "Soundtrack 4", desc: "Dark pulse.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack4.mp3", category: "soundtracks" },
+  { id: "soundtrack5", label: "Soundtrack 5", desc: "Night run.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack5.mp3", category: "soundtracks" },
+  { id: "soundtrack6", label: "Soundtrack 6", desc: "Orbit drift.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack6.mp3", category: "soundtracks" },
+  { id: "soundtrack7", label: "Soundtrack 7", desc: "Rational flow.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack7.mp3", category: "soundtracks" },
+  { id: "soundtrack8", label: "Soundtrack 8", desc: "Void runner.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack8.mp3", category: "soundtracks" }
 ];
 
 var previewPlayers = {};
@@ -809,7 +816,7 @@ function renderCatalogList(listEl, items, filter){
     if(item.id && item.badge){
       var file = document.createElement("div");
       file.className = "catalogMeta";
-      file.textContent = "File: sfx/" + item.id + ".mp3";
+      file.textContent = "File: " + item.src;
       text.appendChild(file);
     }
 
@@ -4091,7 +4098,39 @@ function endGame(reason){
     statsList.appendChild(row);
   }
 
-  accBar.style.width = String(Math.round(acc*100)) + "%";
+  if(accBar){
+    accBar.style.width = String(Math.round(acc*100)) + "%";
+  }
+
+  var correctCount = state.correct || 0;
+  var wrongCount = state.wrong || 0;
+  var missedCount = state.missed || 0;
+  var totalHits = correctCount + wrongCount + missedCount;
+  var grade = "E";
+  if(acc >= 0.95){
+    grade = "S";
+  }else if(acc >= 0.9){
+    grade = "A";
+  }else if(acc >= 0.8){
+    grade = "B";
+  }else if(acc >= 0.65){
+    grade = "C";
+  }
+  if(endGrade){
+    endGrade.textContent = grade;
+    endGrade.classList.remove("gradeS", "gradeA", "gradeB", "gradeC", "gradeE");
+    endGrade.classList.add("grade" + grade);
+  }
+  if(breakdownCorrectValue) breakdownCorrectValue.textContent = String(correctCount);
+  if(breakdownWrongValue) breakdownWrongValue.textContent = String(wrongCount);
+  if(breakdownMissedValue) breakdownMissedValue.textContent = String(missedCount);
+  var totalPercent = totalHits > 0 ? 100 : 0;
+  var correctPct = totalHits > 0 ? (correctCount / totalHits) * 100 : 0;
+  var wrongPct = totalHits > 0 ? (wrongCount / totalHits) * 100 : 0;
+  var missedPct = totalHits > 0 ? (missedCount / totalHits) * 100 : 0;
+  if(breakdownCorrect) breakdownCorrect.style.width = totalPercent ? (correctPct.toFixed(1) + "%") : "0%";
+  if(breakdownWrong) breakdownWrong.style.width = totalPercent ? (wrongPct.toFixed(1) + "%") : "0%";
+  if(breakdownMissed) breakdownMissed.style.width = totalPercent ? (missedPct.toFixed(1) + "%") : "0%";
 
   weakList.innerHTML = "";
   var misses = Array.from(state.missesByFact.entries())

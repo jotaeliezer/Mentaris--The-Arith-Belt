@@ -644,6 +644,35 @@ body.launching #menuWrap{
   text-shadow: 0 0 18px rgba(0,229,255,.25);
 }
 
+.endGradeWrap{
+  margin-top:10px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+}
+
+.endGrade{
+  font-size:48px;
+  font-weight:700;
+  letter-spacing:3px;
+  color:#d8f7ff;
+  text-shadow: 0 0 18px rgba(0,229,255,.35), 0 0 36px rgba(0,229,255,.18);
+}
+
+.endGrade.gradeS{ color:#fff7c2; text-shadow: 0 0 20px rgba(255,214,79,.45), 0 0 40px rgba(255,214,79,.25); }
+.endGrade.gradeA{ color:#c7fff0; text-shadow: 0 0 18px rgba(53,242,176,.4), 0 0 36px rgba(53,242,176,.25); }
+.endGrade.gradeB{ color:#bfe0ff; text-shadow: 0 0 16px rgba(88,173,255,.4), 0 0 32px rgba(88,173,255,.2); }
+.endGrade.gradeC{ color:#ffe2a8; text-shadow: 0 0 16px rgba(255,196,92,.35), 0 0 28px rgba(255,196,92,.2); }
+.endGrade.gradeE{ color:#ffb2b2; text-shadow: 0 0 16px rgba(255,107,107,.35), 0 0 28px rgba(255,107,107,.2); }
+
+.endGradeLabel{
+  font-size:11px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+
 .endStatsWrap{
   display:grid;
   grid-template-columns: repeat(3, minmax(0,1fr));
@@ -662,6 +691,54 @@ body.launching #menuWrap{
   opacity:1;
   transform: translateY(0);
 }
+
+.breakdownBlock{
+  margin-top:12px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.breakdownBar{
+  display:flex;
+  height:12px;
+  border-radius:999px;
+  overflow:hidden;
+  border:1px solid var(--line);
+  background: rgba(255,255,255,.06);
+}
+
+.breakdownSegment{
+  height:100%;
+  min-width:2px;
+}
+
+.breakdownCorrect{ background: linear-gradient(90deg, rgba(53,242,176,.9), rgba(53,242,176,.6)); }
+.breakdownWrong{ background: linear-gradient(90deg, rgba(255,107,107,.9), rgba(255,107,107,.6)); }
+.breakdownMissed{ background: linear-gradient(90deg, rgba(255,196,92,.9), rgba(255,196,92,.6)); }
+
+.breakdownLegend{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  font-size:11px;
+  color:var(--muted);
+}
+
+.breakdownLegend b{ color: var(--text); font-weight:600; }
+
+.legendSwatch{
+  display:inline-block;
+  width:10px;
+  height:10px;
+  border-radius:3px;
+  margin-right:6px;
+  transform: translateY(1px);
+}
+
+.legendCorrect{ background: rgba(53,242,176,.9); }
+.legendWrong{ background: rgba(255,107,107,.9); }
+.legendMissed{ background: rgba(255,196,92,.9); }
 
 .panel{
   border:1px solid var(--line);

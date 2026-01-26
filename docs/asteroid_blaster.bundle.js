@@ -140713,9 +140713,24 @@
         starfield.setSize(initialView.w, initialView.h);
       }
       var pending = 0;
+      function resolveImagePath(srcKey) {
+        if (ASTEROID_KEYS.indexOf(srcKey) !== -1)
+          return "images/asteroids/" + srcKey + ".png";
+        if (ALIEN_KEYS.indexOf(srcKey) !== -1)
+          return "images/aliens/" + srcKey + ".png";
+        if (BACKGROUND_KEYS.indexOf(srcKey) !== -1)
+          return "images/backgrounds/" + srcKey + ".png";
+        if (srcKey.indexOf("powerup_") === 0)
+          return "images/powerups/" + srcKey + ".png";
+        if (srcKey.indexOf("shot_") === 0)
+          return "images/shots/" + srcKey + ".png";
+        if (srcKey.indexOf("bullet_") === 0)
+          return "images/bullets/" + srcKey + ".png";
+        return "images/" + srcKey + ".png";
+      }
       function addTexture(key2, srcKey) {
         var textureKey = key2;
-        var src = "images/" + srcKey + ".png";
+        var src = resolveImagePath(srcKey);
         if (sceneRef.textures.exists(textureKey))
           return;
         pending += 1;
@@ -141106,14 +141121,14 @@
   var alienId = 1;
   var unlocked = false;
   var alienSprites = [
-    { src: "images/alien_ET.png", img: null },
-    { src: "images/alien_brain.png", img: null },
-    { src: "images/alien_golem.png", img: null },
-    { src: "images/alien_galaga.png", img: null },
-    { src: "images/alien_eye.png", img: null },
-    { src: "images/alien_saucer.png", img: null },
-    { src: "images/alien_robot.png", img: null },
-    { src: "images/alien_spider.png", img: null }
+    { src: "images/aliens/alien_ET.png", img: null },
+    { src: "images/aliens/alien_brain.png", img: null },
+    { src: "images/aliens/alien_golem.png", img: null },
+    { src: "images/aliens/alien_galaga.png", img: null },
+    { src: "images/aliens/alien_eye.png", img: null },
+    { src: "images/aliens/alien_saucer.png", img: null },
+    { src: "images/aliens/alien_robot.png", img: null },
+    { src: "images/aliens/alien_spider.png", img: null }
   ];
   function ensureAlienSprites() {
     if (alienSprites[0].img)
@@ -141738,6 +141753,13 @@
   var statsList = document.getElementById("statsList");
   var weakList = document.getElementById("weakList");
   var accBar = document.getElementById("accBar");
+  var endGrade = document.getElementById("endGrade");
+  var breakdownCorrect = document.getElementById("breakdownCorrect");
+  var breakdownWrong = document.getElementById("breakdownWrong");
+  var breakdownMissed = document.getElementById("breakdownMissed");
+  var breakdownCorrectValue = document.getElementById("breakdownCorrectValue");
+  var breakdownWrongValue = document.getElementById("breakdownWrongValue");
+  var breakdownMissedValue = document.getElementById("breakdownMissedValue");
   var highScoresEnd = document.getElementById("highScoresEnd");
   var endNameInput = document.getElementById("endNameInput");
   var endSequence = document.querySelector(".endSequence");
@@ -141912,12 +141934,12 @@
     void: 5
   };
   var backgroundSources = [
-    "images/background8.png",
-    "images/background1.png",
-    "images/background2.png",
-    "images/background3.png",
-    "images/background7.png",
-    "images/background9.png"
+    "images/backgrounds/background8.png",
+    "images/backgrounds/background1.png",
+    "images/backgrounds/background2.png",
+    "images/backgrounds/background3.png",
+    "images/backgrounds/background7.png",
+    "images/backgrounds/background9.png"
   ];
   for (bi = 0; bi < backgroundSources.length; bi++) {
     bgImg = new Image();
@@ -141951,17 +141973,17 @@
         asteroidSpriteReady[idx] = true;
       };
     })(si);
-    img.src = "images/asteroid" + asteroidSpriteIds[si] + ".png";
+    img.src = "images/asteroids/asteroid" + asteroidSpriteIds[si] + ".png";
     asteroidSprites.push(img);
     asteroidSpriteReady.push(false);
   }
   var img;
   var si;
   var cooldownIcons = {
-    dash: { img: new Image(), ready: false, src: "images/dash.png" },
-    shockwave: { img: new Image(), ready: false, src: "images/shockwave.png" },
-    flares: { img: new Image(), ready: false, src: "images/flares.png" },
-    teleport: { img: new Image(), ready: false, src: "images/teleport.png" }
+    dash: { img: new Image(), ready: false, src: "images/ui/dash.png" },
+    shockwave: { img: new Image(), ready: false, src: "images/ui/shockwave.png" },
+    flares: { img: new Image(), ready: false, src: "images/ui/flares.png" },
+    teleport: { img: new Image(), ready: false, src: "images/ui/teleport.png" }
   };
   Object.keys(cooldownIcons).forEach(function(key) {
     var icon = cooldownIcons[key];
@@ -141971,13 +141993,13 @@
     icon.img.src = icon.src;
   });
   var powerupIcons = {
-    repair: { img: new Image(), ready: false, src: "images/powerup_hullrepair.png" },
-    time: { img: new Image(), ready: false, src: "images/powerup_timedelay.png" },
-    magnet: { img: new Image(), ready: false, src: "images/powerup_magnet.png" },
-    shield: { img: new Image(), ready: false, src: "images/powerup_shield.png" },
-    armor: { img: new Image(), ready: false, src: "images/powerup_armor.png" },
-    emp: { img: new Image(), ready: false, src: "images/powerup_EMP.png" },
-    lock: { img: new Image(), ready: false, src: "images/powerup_targetlock.png" }
+    repair: { img: new Image(), ready: false, src: "images/powerups/powerup_hullrepair.png" },
+    time: { img: new Image(), ready: false, src: "images/powerups/powerup_timedelay.png" },
+    magnet: { img: new Image(), ready: false, src: "images/powerups/powerup_magnet.png" },
+    shield: { img: new Image(), ready: false, src: "images/powerups/powerup_shield.png" },
+    armor: { img: new Image(), ready: false, src: "images/powerups/powerup_armor.png" },
+    emp: { img: new Image(), ready: false, src: "images/powerups/powerup_EMP.png" },
+    lock: { img: new Image(), ready: false, src: "images/powerups/powerup_targetlock.png" }
   };
   Object.keys(powerupIcons).forEach(function(key) {
     var icon = powerupIcons[key];
@@ -141987,14 +142009,14 @@
     icon.img.src = icon.src;
   });
   var shotIcons = {
-    missile: { img: new Image(), ready: false, src: "images/shot_missile.png" },
-    electric: { img: new Image(), ready: false, src: "images/shot_electric.png" },
-    fire: { img: new Image(), ready: false, src: "images/shot_fre.png" },
-    ice: { img: new Image(), ready: false, src: "images/shot_ice.png" },
-    laser: { img: new Image(), ready: false, src: "images/shot_laser.png" },
-    plasma: { img: new Image(), ready: false, src: "images/shot_plasma.png" },
-    pierce: { img: new Image(), ready: false, src: "images/shot_lookup.png" },
-    rail: { img: new Image(), ready: false, src: "images/shot_rail.png" }
+    missile: { img: new Image(), ready: false, src: "images/shots/shot_missile.png" },
+    electric: { img: new Image(), ready: false, src: "images/shots/shot_electric.png" },
+    fire: { img: new Image(), ready: false, src: "images/shots/shot_fre.png" },
+    ice: { img: new Image(), ready: false, src: "images/shots/shot_ice.png" },
+    laser: { img: new Image(), ready: false, src: "images/shots/shot_laser.png" },
+    plasma: { img: new Image(), ready: false, src: "images/shots/shot_plasma.png" },
+    pierce: { img: new Image(), ready: false, src: "images/shots/shot_lookup.png" },
+    rail: { img: new Image(), ready: false, src: "images/shots/shot_rail.png" }
   };
   Object.keys(shotIcons).forEach(function(key) {
     var icon = shotIcons[key];
@@ -142003,47 +142025,47 @@
     };
     icon.img.src = icon.src;
   });
-  var bulletSingle = { img: new Image(), ready: false, src: "images/bullet_single.png" };
+  var bulletSingle = { img: new Image(), ready: false, src: "images/bullets/bullet_single.png" };
   bulletSingle.img.onload = function() {
     bulletSingle.ready = true;
   };
   bulletSingle.img.src = bulletSingle.src;
-  var bulletLaserImg = { img: new Image(), ready: false, src: "images/bullet_laser.png" };
+  var bulletLaserImg = { img: new Image(), ready: false, src: "images/bullets/bullet_laser.png" };
   bulletLaserImg.img.onload = function() {
     bulletLaserImg.ready = true;
   };
   bulletLaserImg.img.src = bulletLaserImg.src;
-  var bulletFireImg = { img: new Image(), ready: false, src: "images/bullet_fire1.png" };
+  var bulletFireImg = { img: new Image(), ready: false, src: "images/bullets/bullet_fire1.png" };
   bulletFireImg.img.onload = function() {
     bulletFireImg.ready = true;
   };
   bulletFireImg.img.src = bulletFireImg.src;
-  var bulletIceImg = { img: new Image(), ready: false, src: "images/bullet_ice.png" };
+  var bulletIceImg = { img: new Image(), ready: false, src: "images/bullets/bullet_ice.png" };
   bulletIceImg.img.onload = function() {
     bulletIceImg.ready = true;
   };
   bulletIceImg.img.src = bulletIceImg.src;
-  var bulletBoltImg = { img: new Image(), ready: false, src: "images/bullet_electric1.png" };
+  var bulletBoltImg = { img: new Image(), ready: false, src: "images/bullets/bullet_electric1.png" };
   bulletBoltImg.img.onload = function() {
     bulletBoltImg.ready = true;
   };
   bulletBoltImg.img.src = bulletBoltImg.src;
-  var bulletOrbImg = { img: new Image(), ready: false, src: "images/bullet_orb.png" };
+  var bulletOrbImg = { img: new Image(), ready: false, src: "images/bullets/bullet_orb.png" };
   bulletOrbImg.img.onload = function() {
     bulletOrbImg.ready = true;
   };
   bulletOrbImg.img.src = bulletOrbImg.src;
-  var bulletBolaImg = { img: new Image(), ready: false, src: "images/bullet_bola.png" };
+  var bulletBolaImg = { img: new Image(), ready: false, src: "images/bullets/bullet_bola.png" };
   bulletBolaImg.img.onload = function() {
     bulletBolaImg.ready = true;
   };
   bulletBolaImg.img.src = bulletBolaImg.src;
-  var bulletRailImg = { img: new Image(), ready: false, src: "images/bullet_rail.png" };
+  var bulletRailImg = { img: new Image(), ready: false, src: "images/bullets/bullet_rail.png" };
   bulletRailImg.img.onload = function() {
     bulletRailImg.ready = true;
   };
   bulletRailImg.img.src = bulletRailImg.src;
-  var bulletMissileImg = { img: new Image(), ready: false, src: "images/bullet_missile.png" };
+  var bulletMissileImg = { img: new Image(), ready: false, src: "images/bullets/bullet_missile.png" };
   bulletMissileImg.img.onload = function() {
     bulletMissileImg.ready = true;
   };
@@ -145464,7 +145486,44 @@
       row.innerHTML = '<span style="color: var(--muted);">' + k + "</span><b>" + v + "</b>";
       statsList.appendChild(row);
     }
-    accBar.style.width = String(Math.round(acc * 100)) + "%";
+    if (accBar) {
+      accBar.style.width = String(Math.round(acc * 100)) + "%";
+    }
+    var correctCount = state.correct || 0;
+    var wrongCount = state.wrong || 0;
+    var missedCount = state.missed || 0;
+    var totalHits = correctCount + wrongCount + missedCount;
+    var grade = "E";
+    if (acc >= 0.95) {
+      grade = "S";
+    } else if (acc >= 0.9) {
+      grade = "A";
+    } else if (acc >= 0.8) {
+      grade = "B";
+    } else if (acc >= 0.65) {
+      grade = "C";
+    }
+    if (endGrade) {
+      endGrade.textContent = grade;
+      endGrade.classList.remove("gradeS", "gradeA", "gradeB", "gradeC", "gradeE");
+      endGrade.classList.add("grade" + grade);
+    }
+    if (breakdownCorrectValue)
+      breakdownCorrectValue.textContent = String(correctCount);
+    if (breakdownWrongValue)
+      breakdownWrongValue.textContent = String(wrongCount);
+    if (breakdownMissedValue)
+      breakdownMissedValue.textContent = String(missedCount);
+    var totalPercent = totalHits > 0 ? 100 : 0;
+    var correctPct = totalHits > 0 ? correctCount / totalHits * 100 : 0;
+    var wrongPct = totalHits > 0 ? wrongCount / totalHits * 100 : 0;
+    var missedPct = totalHits > 0 ? missedCount / totalHits * 100 : 0;
+    if (breakdownCorrect)
+      breakdownCorrect.style.width = totalPercent ? correctPct.toFixed(1) + "%" : "0%";
+    if (breakdownWrong)
+      breakdownWrong.style.width = totalPercent ? wrongPct.toFixed(1) + "%" : "0%";
+    if (breakdownMissed)
+      breakdownMissed.style.width = totalPercent ? missedPct.toFixed(1) + "%" : "0%";
     weakList.innerHTML = "";
     var misses = Array.from(state.missesByFact.entries()).sort(function(a, b) {
       return b[1] - a[1];
