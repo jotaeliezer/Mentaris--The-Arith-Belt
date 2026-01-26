@@ -26,8 +26,15 @@ function initSfx(){
     hull_repair_pickup: new Audio("sfx/hull_repair_pickup.mp3"),
     shield_pickup: new Audio("sfx/sheld_pickup.mp3"),
     shot_powerup: new Audio("sfx/shot_powerup.mp3"),
+    powerup_emerges: new Audio("sfx/powerup_emerges.mp3"),
+    emp_activate: new Audio("sfx/EMP_activate.mp3"),
     shot_missile: new Audio("sfx/shot_missile.mp3"),
     shot_orb: new Audio("sfx/shot_orb.mp3"),
+    shot_railbeam: new Audio("sfx/shot_railbeam.mp3"),
+    flares: new Audio("sfx/flares.mp3"),
+    teleport_disappear: new Audio("sfx/teleport_disappear.mp3"),
+    teleport_reappear: new Audio("sfx/teleport_reappear.mp3"),
+    sec_15_mark: new Audio("sfx/15_sec_mark.mp3"),
     time_activate: new Audio("sfx/time_activate.mp3"),
     explosion: new Audio("sfx/explosion.mp3"),
     gun1: new Audio("sfx/gun1.mp3"),
@@ -60,8 +67,15 @@ function initSfx(){
   sfxBank.hull_repair_pickup.volume = 0.55;
   sfxBank.shield_pickup.volume = 0.55;
   sfxBank.shot_powerup.volume = 0.55;
+  sfxBank.powerup_emerges.volume = 0.55;
+  sfxBank.emp_activate.volume = 0.6;
   sfxBank.shot_missile.volume = 0.4;
   sfxBank.shot_orb.volume = 0.4;
+  sfxBank.shot_railbeam.volume = 0.4;
+  sfxBank.flares.volume = 0.5;
+  sfxBank.teleport_disappear.volume = 0.5;
+  sfxBank.teleport_reappear.volume = 0.5;
+  sfxBank.sec_15_mark.volume = 0.6;
   sfxBank.time_activate.volume = 0.55;
   sfxBank.explosion.volume = 0.6;
   sfxBank.gun1.volume = 0.35;
@@ -89,12 +103,33 @@ function initSoundtracks(){
   soundtrackList = [
     new Audio("sfx/soundtrack1.mp3"),
     new Audio("sfx/soundtrack2_toohottosleep.mp3"),
-    new Audio("sfx/soundtrack3.mp3")
+    new Audio("sfx/soundtrack3.mp3"),
+    new Audio("sfx/soundtrack4.mp3"),
+    new Audio("sfx/soundtrack5.mp3"),
+    new Audio("sfx/soundtrack6.mp3"),
+    new Audio("sfx/soundtrack7.mp3"),
+    new Audio("sfx/soundtrack8.mp3")
   ];
   for(var i=0;i<soundtrackList.length;i++){
     soundtrackList[i].volume = 0.22;
     soundtrackList[i].loop = false;
   }
+}
+
+export function setSoundtrackStartIndex(idx, force){
+  initSoundtracks();
+  if(!soundtrackList || !soundtrackList.length) return;
+  var len = soundtrackList.length;
+  var nextIndex = (typeof idx === "number") ? idx : 0;
+  nextIndex = ((nextIndex % len) + len) % len;
+  if(!force && soundtrackClip && !soundtrackClip.paused){
+    return;
+  }
+  soundtrackIndex = nextIndex;
+  if(soundtrackClip){
+    try{ soundtrackClip.pause(); }catch(e){}
+  }
+  soundtrackClip = null;
 }
 
 function playSoundtrackAt(idx){

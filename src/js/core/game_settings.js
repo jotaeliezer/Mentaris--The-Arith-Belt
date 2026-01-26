@@ -86,6 +86,7 @@ export function createState(){
     redemptionEnabled:false,
     redemptionUsed:false,
     timerWarningPlayed:false,
+    timerMark15Played:false,
     timerModeOverride:null
   };
 }

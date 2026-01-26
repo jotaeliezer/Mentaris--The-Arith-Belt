@@ -10,7 +10,7 @@ export var alienConfig = {
   enabled: true,
   spawnCooldown: 22,
   maxOnScreen: 1,
-  escapeSeconds: 120
+  escapeSeconds: 160
 };
 
 export var alienTypes = {
@@ -18,7 +18,7 @@ export var alienTypes = {
     id: "scout",
     name: "Scout",
     hp: 1,
-    speed: 120,
+    speed: 90,
     score: 900,
     radius: 24,
     behavior: "strafe"
@@ -73,13 +73,15 @@ export function spawnAlien(typeId, question, answer, view){
     x: x,
     y: y,
     vx: 0,
-    vy: t.speed,
+    vy: t.speed * 0.4,
     t: 0,
     life: 0,
     question: question,
     answer: answer,
     hitsTaken: 0,
-    fireCooldown: 1.4 + Math.random() * 1.2
+    fireCooldown: 1.4 + Math.random() * 1.2,
+    strafeTimer: 0.3 + Math.random() * 0.6,
+    strafeTarget: x
   };
   aliens.push(a);
   return a;
@@ -113,7 +115,21 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
     if(a.hitShake > 0){
       a.hitShake = Math.max(0, a.hitShake - dt);
     }
-    a.vx = Math.sin(a.t * 1.1 + a.uid) * 40;
+    var diff = String((state && state.difficulty) || "normal").toLowerCase();
+    var brutal = diff === "brutal";
+    var erraticFactor = brutal ? 1 : 0.45;
+    var motionScale = brutal ? 1 : 0.7;
+
+    a.strafeTimer -= dt;
+    if(a.strafeTimer <= 0){
+      a.strafeTimer = (brutal ? 0.4 : 0.7) + Math.random() * (brutal ? 0.9 : 1.4);
+      a.strafeTarget = randi(40, Math.max(80, view.w - 40));
+    }
+    var chase = (a.strafeTarget - a.x) * 0.8;
+    var wobble = Math.sin(a.t * (brutal ? 2.1 : 1.2) + a.uid) * (120 * erraticFactor)
+      + Math.sin(a.t * (brutal ? 4.2 : 2.4) + a.uid * 1.7) * (60 * erraticFactor);
+    a.vx = (wobble + chase) * motionScale;
+    a.vy = ((a.speed * 0.35) + Math.sin(a.t * (brutal ? 1.4 : 0.9) + a.uid) * (16 * erraticFactor)) * motionScale;
     if(asteroids && asteroids.length){
       var pushX = 0;
       var pushY = 0;
@@ -188,9 +204,9 @@ export function drawAliens(ctx){
   for(var i=0; i<aliens.length; i++){
     var a = aliens[i];
     var sprite = alienSprites[a.uid % alienSprites.length];
-    var shake = a.hitShake ? a.hitShake * 9 : 0;
-    var shakeX = shake ? Math.sin((a.t || 0) * 50) * shake : 0;
-    var shakeY = shake ? Math.cos((a.t || 0) * 46) * shake : 0;
+    var shake = a.hitShake ? a.hitShake * 18 : 0;
+    var shakeX = shake ? (Math.sin((a.t || 0) * 80) + Math.cos((a.t || 0) * 54)) * 0.6 * shake : 0;
+    var shakeY = shake ? (Math.cos((a.t || 0) * 92) + Math.sin((a.t || 0) * 66)) * 0.6 * shake : 0;
     var glow = ctx.createRadialGradient(a.x, a.y, a.r * 0.2, a.x, a.y, a.r * 1.5);
     glow.addColorStop(0, "rgba(80,255,220,.35)");
     glow.addColorStop(1, "rgba(0,0,0,0)");

@@ -1557,10 +1557,10 @@
                 <label>
                   STRIKES (WRONG TARGETS)
                   <select id="strikes" name="strikes">
-                    <option value="8">8 (EASY)</option>
-                    <option value="5" selected>5 (NORMAL)</option>
-                    <option value="3">3 (HARD)</option>
-                    <option value="0">0 (BRUTAL)</option>
+                    <option value="25">25 (EASY)</option>
+                    <option value="20" selected>20 (NORMAL)</option>
+                    <option value="15">15 (HARD)</option>
+                    <option value="10">10 (BRUTAL)</option>
                   </select>
                   <span class="helpText">Wrong asteroid hits before mission failure.</span>
                 </label>
@@ -1965,7 +1965,7 @@
       volume: 0.65,
       sfxVolume: 0.85,
       musicVolume: 0.6,
-      strikes: 5,
+      strikes: 20,
       targetMode: "q15",
       timerMode: "off",
       questionMode: "digits3",
@@ -3060,10 +3060,10 @@
     }
 
     var difficultyPresets = {
-      easy: { aMin: 1, aMax: 9, bMin: 1, bMax: 9, decoys: 2, speed: 0.5, lives: 20, strikes: 8 },
-      normal: { aMin: 2, aMax: 12, bMin: 2, bMax: 12, decoys: 3, speed: 0.7, lives: 15, strikes: 5 },
-      hard: { aMin: 4, aMax: 14, bMin: 4, bMax: 14, decoys: 4, speed: 0.85, lives: 5, strikes: 3 },
-      brutal: { aMin: 6, aMax: 18, bMin: 6, bMax: 18, decoys: 5, speed: 1.0, lives: 5, strikes: 0 }
+      easy: { aMin: 1, aMax: 9, bMin: 1, bMax: 9, decoys: 2, speed: 0.5, lives: 20, strikes: 25 },
+      normal: { aMin: 2, aMax: 12, bMin: 2, bMax: 12, decoys: 3, speed: 0.7, lives: 15, strikes: 20 },
+      hard: { aMin: 4, aMax: 14, bMin: 4, bMax: 14, decoys: 4, speed: 0.85, lives: 5, strikes: 15 },
+      brutal: { aMin: 6, aMax: 18, bMin: 6, bMax: 18, decoys: 5, speed: 1.0, lives: 5, strikes: 10 }
     };
 
     function selectChoice(list, value, attr){
