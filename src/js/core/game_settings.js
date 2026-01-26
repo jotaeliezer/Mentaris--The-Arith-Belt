@@ -62,6 +62,7 @@ export function createState(){
     asteroidId:0,
     correctAsteroidId:0,
     correctDelayRemaining:0,
+    nextCorrectSpawnX:null,
 
     // arcade feel FX
     slowMoRemaining:0,
@@ -124,6 +125,7 @@ export function createPlayer(){
     lockTargetId: 0,
     defenseMode: "none",
     defenseTimer: 0,
+    armorBlocksRemaining: 0,
     magnetTimer: 0,
     dashCooldown: 0,
     shockwaveCooldown: 0,

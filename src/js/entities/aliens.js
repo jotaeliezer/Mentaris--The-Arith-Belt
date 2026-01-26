@@ -158,6 +158,17 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
     a.x += a.vx * dt;
     a.y += a.vy * dt;
 
+    if(!a.escapeActive && a.y >= view.h * 0.75){
+      a.escapeActive = true;
+      a.escapeBoost = 0;
+    }
+    if(a.escapeActive){
+      a.escapeBoost = Math.min(1, (a.escapeBoost || 0) + dt * 2.6);
+      a.vx *= 0.25;
+      a.vy = Math.max(a.vy, a.speed * (1.2 + 1.2 * a.escapeBoost));
+      a.fireCooldown = Math.max(a.fireCooldown, 2.0);
+    }
+
     if(a.x < a.r + 10) a.x = a.r + 10;
     if(a.x > view.w - a.r - 10) a.x = view.w - a.r - 10;
 

@@ -235,7 +235,8 @@ export function createPhaserRenderer(opts){
       if(sprite.texture.key !== texKey) sprite.setTexture(texKey);
       sprite.setPosition(a.x, a.y);
       sprite.setRotation(a.rot || 0);
-      sprite.setAlpha(a.ghost ? 0.2 : 0.95);
+      var ghostAlpha = a.ambient ? 0.95 : 0.2;
+      sprite.setAlpha(a.ghost ? ghostAlpha : 0.95);
       sprite.setVisible(true);
       var size = (a.r || 24) * 2;
       sprite.setDisplaySize(size, size);
@@ -273,6 +274,11 @@ export function createPhaserRenderer(opts){
   }
 
   function syncBullets(data){
+    if(data.hideAsteroids){
+      spritePool.bullets.forEach(function(sprite){ if(sprite) sprite.setVisible(false); });
+      spritePool.missileTrails.forEach(function(trail){ if(trail) trail.setVisible(false); });
+      return;
+    }
     var bullets = data.bullets || [];
     var seen = new Set();
     var seenTrails = new Set();
@@ -306,7 +312,9 @@ export function createPhaserRenderer(opts){
             var p0 = b.trail[t - 1];
             var p1 = b.trail[t];
             var alpha = t / b.trail.length;
-            trail.lineStyle(2, 0x78dcff, 0.45 * alpha);
+            var color = b.boosted ? 0xffd18a : 0x78dcff;
+            var width = b.boosted ? 3 : 2;
+            trail.lineStyle(width, color, (b.boosted ? 0.65 : 0.45) * alpha);
             trail.beginPath();
             trail.moveTo(p0.x, p0.y);
             trail.lineTo(p1.x, p1.y);
@@ -331,6 +339,10 @@ export function createPhaserRenderer(opts){
   }
 
   function syncPowerups(data){
+    if(data.hideAsteroids){
+      spritePool.powerups.forEach(function(sprite){ if(sprite) sprite.setVisible(false); });
+      return;
+    }
     var powerups = data.powerups || [];
     var seen = new Set();
     for(var i=0; i<powerups.length; i++){
@@ -358,6 +370,10 @@ export function createPhaserRenderer(opts){
   }
 
   function syncAliens(data){
+    if(data.hideAsteroids){
+      spritePool.aliens.forEach(function(sprite){ if(sprite) sprite.setVisible(false); });
+      return;
+    }
     var aliens = data.aliens || [];
     var seen = new Set();
     for(var i=0; i<aliens.length; i++){
@@ -384,6 +400,10 @@ export function createPhaserRenderer(opts){
   }
 
   function syncAlienBullets(data){
+    if(data.hideAsteroids){
+      spritePool.alienBullets.forEach(function(sprite){ if(sprite) sprite.setVisible(false); });
+      return;
+    }
     var bullets = data.alienBullets || [];
     var seen = new Set();
     for(var i=0; i<bullets.length; i++){

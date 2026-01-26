@@ -380,6 +380,23 @@
                 <div class="endGrade" id="endGrade">S</div>
                 <div class="endGradeLabel">LETTER RANK</div>
               </div>
+              <div class="endAccuracyBlock">
+                <div class="monoSmall">ACCURACY</div>
+                <div class="meter"><div id="accBar"></div></div>
+              </div>
+              <div class="breakdownBlock">
+                <div class="monoSmall">HIT BREAKDOWN</div>
+                <div class="breakdownBar" aria-label="Hit breakdown">
+                  <div id="breakdownCorrect" class="breakdownSegment breakdownCorrect"></div>
+                  <div id="breakdownWrong" class="breakdownSegment breakdownWrong"></div>
+                  <div id="breakdownMissed" class="breakdownSegment breakdownMissed"></div>
+                </div>
+                <div class="breakdownLegend">
+                  <div><span class="legendSwatch legendCorrect"></span>Correct <b id="breakdownCorrectValue">0</b></div>
+                  <div><span class="legendSwatch legendWrong"></span>Wrong <b id="breakdownWrongValue">0</b></div>
+                  <div><span class="legendSwatch legendMissed"></span>Missed <b id="breakdownMissedValue">0</b></div>
+                </div>
+              </div>
               <div class="monoSmall" id="endModeSummary">Operation: - / Mode: - / Submode: -</div>
             </div>
 
@@ -389,24 +406,7 @@
                 <div class="monoSmall endOutcome" id="endOutcome">—</div>
                 <div class="monoSmall endReasonLine" id="endReasonLine"></div>
                 <div class="list" id="statsList"></div>
-                <div style="margin-top:12px;" class="monoSmall">
-                  ACCURACY
-                  <div class="meter" style="margin-top:6px;"><div id="accBar"></div></div>
-                </div>
-                <div class="breakdownBlock">
-                  <div class="monoSmall">HIT BREAKDOWN</div>
-                  <div class="breakdownBar" aria-label="Hit breakdown">
-                    <div id="breakdownCorrect" class="breakdownSegment breakdownCorrect"></div>
-                    <div id="breakdownWrong" class="breakdownSegment breakdownWrong"></div>
-                    <div id="breakdownMissed" class="breakdownSegment breakdownMissed"></div>
-                  </div>
-                  <div class="breakdownLegend">
-                    <div><span class="legendSwatch legendCorrect"></span>Correct <b id="breakdownCorrectValue">0</b></div>
-                    <div><span class="legendSwatch legendWrong"></span>Wrong <b id="breakdownWrongValue">0</b></div>
-                    <div><span class="legendSwatch legendMissed"></span>Missed <b id="breakdownMissedValue">0</b></div>
-                  </div>
-                </div>
-              </div>
+</div>
 
               <div class="panel">
                 <h3>Weak Facts</h3>

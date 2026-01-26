@@ -142,7 +142,7 @@
 
     function playMenuBeep(){
       try{
-        var beep = new Audio("sfx/menu_beep.mp3");
+      var beep = new Audio("sfx/ui/menu_beep.mp3");
         beep.volume = 0.45;
         beep.play().catch(function(){});
       }catch(e){
@@ -386,7 +386,7 @@
 
     function playHomeDrone(){
       try{
-        var drone = new Audio("sfx/ship_drone.mp3");
+      var drone = new Audio("sfx/ship/ship_drone.mp3");
         drone.loop = true;
         drone.volume = 0.22;
         var startDrone = function(){
