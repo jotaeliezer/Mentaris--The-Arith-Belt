@@ -97,7 +97,7 @@
 
   var scaleMap = {
     am2: 0.9,
-    mk7: 0.82,
+    mk7: 0.92,
     fizard: 0.82,
     classic: 0.82,
     ember: 0.82,

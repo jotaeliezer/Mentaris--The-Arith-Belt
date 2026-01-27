@@ -462,6 +462,7 @@ var tutorialAlienSpawned = false;
 var tutorialSpawnUnlocked = true;
 var tutorialPowerupUnlocked = true;
 var tutorialAlienUnlocked = true;
+var tutorialAlienDelayRemaining = 0;
 var tutorialStepId = null;
 var tutorialPortalActive = false;
 var tutorialPortalX = 0;
@@ -2783,6 +2784,16 @@ function stopMissionClearedSfx(){
   }
 }
 
+function stopTimerMark15Sfx(){
+  if(state.timerMark15Clip){
+    try{
+      state.timerMark15Clip.pause();
+      state.timerMark15Clip.currentTime = 0;
+    }catch(e){}
+    state.timerMark15Clip = null;
+  }
+}
+
 function beginRun(){
   state.running = true;
   state.paused = false;
@@ -2792,6 +2803,7 @@ function beginRun(){
   state.pauseStart = 0;
   state.timerWarningPlayed = false;
   state.timerMark15Played = false;
+  stopTimerMark15Sfx();
 }
 
 function resetSession(){
@@ -2800,6 +2812,7 @@ function resetSession(){
     gameOverSfxTimer = 0;
   }
   stopMissionClearedSfx();
+  stopTimerMark15Sfx();
   closeMissileInput();
   if(countdownTimerId){
     clearInterval(countdownTimerId);
@@ -4030,6 +4043,7 @@ function endGame(reason){
   if(reason === void 0) reason = "destroyed";
   setDrone(state, false);
   setSoundtrack(state, false);
+  stopTimerMark15Sfx();
   state.over = true;
   state.running = false;
   state.paused = false;
@@ -4304,8 +4318,8 @@ function endGame(reason){
     missionClearFx.t = 0;
     missionClearFx.explodeTimer = 0;
     missionClearFx.exitSpeed = 0;
-    missionClearFx.sfxClip = playSfx(state, "mission_cleared1");
-    missionClearFx.sfxPlayed = true;
+    missionClearFx.sfxPlayed = false;
+    missionClearFx.sfxClip = null;
     missionClearFx.mode = "time";
     player.hidden = false;
     gameOverFx.active = false;
@@ -4514,17 +4528,22 @@ function update(dt){
     }
   }
   if(tutorialActive && tutorialStepId === "alien" && state.aliensShot === 0 && aliens.length === 0){
-    tutorialAlienUnlocked = true;
-    alienConfig.enabled = true;
-    alienConfig.maxOnScreen = Math.max(alienConfig.maxOnScreen || 0, 1);
-    spawnAlien("scout", "2 / 2", 1, view);
+    if(tutorialAlienDelayRemaining > 0){
+      tutorialAlienDelayRemaining = Math.max(0, tutorialAlienDelayRemaining - dtReal);
+    }
+    if(tutorialAlienDelayRemaining <= 0){
+      tutorialAlienUnlocked = true;
+      alienConfig.enabled = true;
+      alienConfig.maxOnScreen = Math.max(alienConfig.maxOnScreen || 0, 1);
+      spawnAlien("scout", "2 / 2", 1, view);
+    }
   }
   var alienEnabled = alienConfig.enabled;
-  if(tutorialActive && !tutorialAlienUnlocked){
+  if(tutorialActive && (!tutorialAlienUnlocked || tutorialAlienDelayRemaining > 0)){
     alienConfig.enabled = false;
   }
   var alienReport = updateAliens(dtSlow, state, player, view, getAlienQuestion, asteroids);
-  if(tutorialActive && !tutorialAlienUnlocked){
+  if(tutorialActive && (!tutorialAlienUnlocked || tutorialAlienDelayRemaining > 0)){
     alienConfig.enabled = alienEnabled;
   }
   if(alienReport.escaped){
@@ -4539,7 +4558,9 @@ function update(dt){
     var remaining = state.timeLimitSec - elapsed;
     if(remaining <= 15 && remaining > 0 && !state.timerMark15Played){
       state.timerMark15Played = true;
-      if(!tutorialActive) playSfx(state, "sec_15_mark");
+      if(!tutorialActive){
+        state.timerMark15Clip = playSfx(state, "sec_15_mark");
+      }
     }
     if(elapsed >= state.timeLimitSec){
       endGame("time");
@@ -5554,13 +5575,8 @@ function updateGameOverFx(dt){
       player.x += (targetX - player.x) * settle;
       player.y += (targetY - player.y) * settle;
       if(Math.hypot(targetX - player.x, targetY - player.y) < 2){
-        if(missionClearFx.mode === "time"){
-          missionClearFx.phase = "exit";
-          missionClearFx.exitSpeed = 140;
-        }else{
-          missionClearFx.phase = "explode";
-          missionClearFx.explodeTimer = 0.05;
-        }
+        missionClearFx.phase = "explode";
+        missionClearFx.explodeTimer = 0.05;
       }
     }else if(missionClearFx.phase === "explode"){
       missionClearFx.explodeTimer -= dt;
@@ -5603,12 +5619,14 @@ function updateGameOverFx(dt){
   updateParticles(dt);
   updateRings(dt);
 
-  if(!gameOverFx.shown && gameOverFx.t > 2.6){
+  var revealAt = gameOverFx.reason === "time" ? 3.5 : 2.6;
+  if(!gameOverFx.shown && gameOverFx.t > revealAt){
     showEndOverlay();
     gameOverFx.shown = true;
   }
 
-  if(gameOverFx.t > 5.0){
+  var endAt = gameOverFx.reason === "time" ? 6.2 : 5.0;
+  if(gameOverFx.t > endAt){
     gameOverFx.active = false;
   }
 }
@@ -5731,7 +5749,9 @@ function draw(){
   if(gameOverFx.active && gameOverFx.reason === "time"){
     ctx.save();
     var t3 = gameOverFx.t;
-    var alpha3 = clamp((t3 - 0.6) / 1.4, 0, 1);
+    var alphaIn3 = clamp((t3 - 0.25) / 0.55, 0, 1);
+    var alphaOut3 = clamp(1 - (t3 - 2.35) / 0.9, 0, 1);
+    var alpha3 = Math.min(alphaIn3, alphaOut3);
     ctx.globalAlpha = alpha3;
     ctx.fillStyle = "rgba(255,221,0,.92)";
     ctx.font = "700 " + Math.max(28, Math.min(64, w * 0.06)) + "px Oxanium, sans-serif";
@@ -6454,7 +6474,7 @@ function ensureMissionBrief(){
   if(document.getElementById("missionBriefStyles") == null){
     var style = document.createElement("style");
     style.id = "missionBriefStyles";
-    style.textContent = "#missionBriefOverlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:18;background:rgba(6,10,20,.7);backdrop-filter:blur(4px);}#missionBriefOverlay.show{display:flex;}#missionBriefOverlay .missionBrief-card{background:rgba(8,12,24,.92);border:1px solid rgba(0,229,255,.3);border-radius:18px;padding:18px 20px;max-width:480px;width:min(480px,92%);box-shadow:0 18px 48px rgba(0,0,0,.5);font-family:\"Oxanium\",sans-serif;transform:scale(1);opacity:1;transition:transform .35s ease, opacity .35s ease;}#missionBriefOverlay .missionBrief-card.is-exiting{transform:scale(0.86);opacity:0;}#missionBriefOverlay h3{margin:0 0 10px;font-size:14px;letter-spacing:1.6px;text-transform:uppercase;color:#e8ecff;}#missionBriefOverlay p{margin:0 0 16px;font-size:13px;line-height:1.6;color:rgba(232,236,255,.8);}#missionBriefOverlay .brief-actions{display:flex;justify-content:flex-end;}#missionBriefOverlay .brief-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#e8ecff;border-radius:12px;padding:8px 12px;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:\"Oxanium\",sans-serif;}";
+    style.textContent = "#missionBriefOverlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:18;background:rgba(6,10,20,.7);backdrop-filter:blur(4px);}#missionBriefOverlay.show{display:flex;}#missionBriefOverlay .missionBrief-card{background:rgba(8,12,24,.92);border:1px solid rgba(0,229,255,.3);border-radius:18px;padding:18px 20px;max-width:480px;width:min(480px,92%);box-shadow:0 18px 48px rgba(0,0,0,.5);font-family:\"Oxanium\",sans-serif;transform:scale(0.92);opacity:0;transition:transform .35s ease, opacity .35s ease;}#missionBriefOverlay.show .missionBrief-card{transform:scale(1);opacity:1;}#missionBriefOverlay .missionBrief-card.is-exiting{transform:scale(0.86);opacity:0;}#missionBriefOverlay h3{margin:0 0 10px;font-size:14px;letter-spacing:1.6px;text-transform:uppercase;color:#e8ecff;}#missionBriefOverlay p{margin:0 0 16px;font-size:13px;line-height:1.6;color:rgba(232,236,255,.8);}#missionBriefOverlay .brief-actions{display:flex;justify-content:flex-end;}#missionBriefOverlay .brief-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#e8ecff;border-radius:12px;padding:8px 12px;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:\"Oxanium\",sans-serif;}";
     document.head.appendChild(style);
   }
   missionBriefOverlay = document.createElement("div");
@@ -7617,6 +7637,38 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
     centerW: 6,
     centerH: 18
   };
+  var thrusterWidth = 44;
+  var thrusterRadius = 6.5;
+  var thrusterSeparation = 12;
+  if(shipType === "mk7"){
+    // Match the Crimson MK-7 ship card geometry.
+    wingLeft = [-16, 30, -34, 22, -44, -6, -36, -26, -22, -30, -12, 12];
+    wingRight = [16, 30, 34, 22, 44, -6, 36, -26, 22, -30, 12, 12];
+    bodyOuter = [0, -20, 16, -8, 18, 6, 14, 18, 6, 24, -6, 24, -14, 18, -18, 6, -16, -8];
+    bodyInner = [0, -14, 7, -2, 9, 10, 0, 18, -9, 10, -7, -2];
+    stripe1 = { x:0, y:0, w:0, h:0 };
+    stripe2 = { x:0, y:0, w:0, h:0 };
+    nose = [0, -24, 10, -16, -10, -16];
+    gun = {
+      xLeft: -20,
+      xRight: 10,
+      y: 0,
+      w: 10,
+      h: 16,
+      barrelLeft: -18,
+      barrelRight: 14,
+      barrelY: -18,
+      barrelW: 4.5,
+      barrelH: 14,
+      centerX: -3,
+      centerY: -20,
+      centerW: 6,
+      centerH: 18
+    };
+    thrusterWidth = 18;
+    thrusterRadius = 5.5;
+    thrusterSeparation = 16;
+  }
   var useAzure = shipType === "azure";
   if(useAzure){
     wingLeft = [-14, 2, -46, 18, -52, 32, -46, 36, -20, 30, -8, 10];
@@ -8007,8 +8059,14 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
   var thrusterOffsetY = 0;
   if(shipType === "classic"){
     thrusterOffsetY = -4;
+  }else if(shipType === "mk7"){
+    thrusterOffsetY = -2;
   }
-  var thrusterBaseY = 22 + thrusterOffsetY;
+  // Pull the thrusters and flames slightly closer to the hull.
+  var thrusterBaseY = 20 + thrusterOffsetY;
+  var thrW = (typeof thrusterWidth === "number") ? thrusterWidth : 44;
+  var thrR = (typeof thrusterRadius === "number") ? thrusterRadius : 6.5;
+  var thrSep = (typeof thrusterSeparation === "number") ? thrusterSeparation : 12;
   ctx.fillStyle = colors.thruster || "rgba(18,22,32,.85)";
   ctx.strokeStyle = colors.outline;
   ctx.lineWidth = 1.4;
@@ -8029,12 +8087,13 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
     ctx.translate(-10 + thrusterOffsetX, 0);
     ctx.scale(leftScale, 1);
     ctx.translate(10 - thrusterOffsetX, 0);
+    var leftX = -thrSep - thrW / 2 + thrusterOffsetX;
     ctx.beginPath();
-    ctx.rect(-22 + thrusterOffsetX, thrusterBaseY, 22, 8);
+    ctx.rect(leftX, thrusterBaseY, thrW, 8);
     ctx.fill();
     ctx.stroke();
     ctx.beginPath();
-    ctx.arc(-12 + thrusterOffsetX, thrusterBaseY + 6, 6.5, 0, Math.PI*2);
+    ctx.arc(-thrSep + thrusterOffsetX, thrusterBaseY + 6, thrR, 0, Math.PI*2);
     ctx.fill();
     ctx.stroke();
     ctx.restore();
@@ -8043,12 +8102,13 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
     ctx.translate(10 + thrusterOffsetX, 0);
     ctx.scale(rightScale, 1);
     ctx.translate(-10 - thrusterOffsetX, 0);
+    var rightX = thrSep - thrW / 2 + thrusterOffsetX;
     ctx.beginPath();
-    ctx.rect(thrusterOffsetX, thrusterBaseY, 22, 8);
+    ctx.rect(rightX, thrusterBaseY, thrW, 8);
     ctx.fill();
     ctx.stroke();
     ctx.beginPath();
-    ctx.arc(12 + thrusterOffsetX, thrusterBaseY + 6, 6.5, 0, Math.PI*2);
+    ctx.arc(thrSep + thrusterOffsetX, thrusterBaseY + 6, thrR, 0, Math.PI*2);
     ctx.fill();
     ctx.stroke();
     ctx.restore();
@@ -8079,6 +8139,9 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
   var forwardBoost = Math.max(0, -vyN);
   var flame = 12 + speedMag * 18 + (Math.sin(t*0.03) * 2.6) + forwardBoost * 22;
   flame *= ghostFlameBoost;
+  // Keep exhaust closer to the ship (and thus closer to the HUD area).
+  var flameLengthScale = shipType === "mk7" ? 0.78 : 0.86;
+  flame *= flameLengthScale;
 
   var bloom = 0.35 + speedMag * 0.5 + forwardBoost * 0.6 + (Math.sin(t * 0.02) * 0.08);
   bloom *= ghostFlameBoost;
@@ -8092,8 +8155,8 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
   if(isSpire){
     ctx.arc(thrusterOffsetX, thrusterBaseY + 7, 7 + bloom * 5, 0, Math.PI*2);
   }else{
-    ctx.arc(-12 + thrusterOffsetX, thrusterBaseY + 6, 5 + bloom * 4, 0, Math.PI*2);
-    ctx.arc(12 + thrusterOffsetX, thrusterBaseY + 6, 5 + bloom * 4, 0, Math.PI*2);
+    ctx.arc(-thrSep + thrusterOffsetX, thrusterBaseY + 6, 5 + bloom * 4, 0, Math.PI*2);
+    ctx.arc(thrSep + thrusterOffsetX, thrusterBaseY + 6, 5 + bloom * 4, 0, Math.PI*2);
     if(isAm2){
       ctx.arc(thrusterOffsetX, thrusterBaseY + 8, 4.5 + bloom * 3.5, 0, Math.PI*2);
     }
@@ -8110,12 +8173,12 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
     ctx.lineTo(thrusterOffsetX + flameWiggle, thrusterBaseY + flame * 1.1);
     ctx.lineTo(6 + thrusterOffsetX, thrusterBaseY);
   }else{
-    ctx.moveTo(-18 + thrusterOffsetX, thrusterBaseY);
-    ctx.lineTo(-12 + thrusterOffsetX + flameWiggle, thrusterBaseY + flame);
-    ctx.lineTo(-6 + thrusterOffsetX, thrusterBaseY);
-    ctx.moveTo(6 + thrusterOffsetX, thrusterBaseY);
-    ctx.lineTo(12 + thrusterOffsetX + flameWiggle, thrusterBaseY + flame);
-    ctx.lineTo(18 + thrusterOffsetX, thrusterBaseY);
+    ctx.moveTo(-thrSep - 6 + thrusterOffsetX, thrusterBaseY);
+    ctx.lineTo(-thrSep + thrusterOffsetX + flameWiggle, thrusterBaseY + flame);
+    ctx.lineTo(-thrSep + 6 + thrusterOffsetX, thrusterBaseY);
+    ctx.moveTo(thrSep - 6 + thrusterOffsetX, thrusterBaseY);
+    ctx.lineTo(thrSep + thrusterOffsetX + flameWiggle, thrusterBaseY + flame);
+    ctx.lineTo(thrSep + 6 + thrusterOffsetX, thrusterBaseY);
   }
   ctx.closePath();
   ctx.fill();
@@ -8128,12 +8191,12 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
     ctx.lineTo(thrusterOffsetX + flameWiggle, thrusterBaseY + flame*1.22);
     ctx.lineTo(10 + thrusterOffsetX, thrusterBaseY);
   }else{
-    ctx.moveTo(-24 + thrusterOffsetX, thrusterBaseY);
-    ctx.lineTo(-12 + thrusterOffsetX + flameWiggle, thrusterBaseY + flame*1.18);
-    ctx.lineTo(thrusterOffsetX, thrusterBaseY);
-    ctx.moveTo(thrusterOffsetX, thrusterBaseY);
-    ctx.lineTo(12 + thrusterOffsetX + flameWiggle, thrusterBaseY + flame*1.18);
-    ctx.lineTo(24 + thrusterOffsetX, thrusterBaseY);
+    ctx.moveTo(-thrSep - 12 + thrusterOffsetX, thrusterBaseY);
+    ctx.lineTo(-thrSep + thrusterOffsetX + flameWiggle, thrusterBaseY + flame*1.18);
+    ctx.lineTo(-thrSep + 2 + thrusterOffsetX, thrusterBaseY);
+    ctx.moveTo(thrSep - 2 + thrusterOffsetX, thrusterBaseY);
+    ctx.lineTo(thrSep + thrusterOffsetX + flameWiggle, thrusterBaseY + flame*1.18);
+    ctx.lineTo(thrSep + 12 + thrusterOffsetX, thrusterBaseY);
   }
   ctx.closePath();
   ctx.fill();
@@ -8146,12 +8209,12 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
     ctx.lineTo(thrusterOffsetX + flameWiggle * 0.6, thrusterBaseY + flame*0.8);
     ctx.lineTo(4 + thrusterOffsetX, thrusterBaseY);
   }else{
-    ctx.moveTo(-14 + thrusterOffsetX, thrusterBaseY);
-    ctx.lineTo(-12 + thrusterOffsetX + flameWiggle * 0.5, thrusterBaseY + flame*0.7);
-    ctx.lineTo(-10 + thrusterOffsetX, thrusterBaseY);
-    ctx.moveTo(10 + thrusterOffsetX, thrusterBaseY);
-    ctx.lineTo(12 + thrusterOffsetX + flameWiggle * 0.5, thrusterBaseY + flame*0.7);
-    ctx.lineTo(14 + thrusterOffsetX, thrusterBaseY);
+    ctx.moveTo(-thrSep - 3 + thrusterOffsetX, thrusterBaseY);
+    ctx.lineTo(-thrSep + thrusterOffsetX + flameWiggle * 0.5, thrusterBaseY + flame*0.7);
+    ctx.lineTo(-thrSep + 3 + thrusterOffsetX, thrusterBaseY);
+    ctx.moveTo(thrSep - 3 + thrusterOffsetX, thrusterBaseY);
+    ctx.lineTo(thrSep + thrusterOffsetX + flameWiggle * 0.5, thrusterBaseY + flame*0.7);
+    ctx.lineTo(thrSep + 3 + thrusterOffsetX, thrusterBaseY);
   }
   ctx.closePath();
   ctx.fill();
@@ -8709,6 +8772,7 @@ function boot(){
       tutorialSpawnUnlocked = false;
       tutorialPowerupUnlocked = false;
       tutorialAlienUnlocked = false;
+      tutorialAlienDelayRemaining = 0;
       tutorialPortalActive = false;
       tutorialPortalT = 0;
       tutorialPortalLock = false;
@@ -8769,7 +8833,8 @@ function boot(){
           }
           if(stepId === "alien" && !tutorialAlienSpawned){
             tutorialAlienSpawned = true;
-            tutorialAlienUnlocked = true;
+            tutorialAlienUnlocked = false;
+            tutorialAlienDelayRemaining = 5.5;
             alienConfig.enabled = true;
             alienConfig.maxOnScreen = Math.max(alienConfig.maxOnScreen || 0, 1);
           }
@@ -8810,6 +8875,7 @@ function boot(){
       tutorialSpawnUnlocked = true;
       tutorialPowerupUnlocked = true;
       tutorialAlienUnlocked = true;
+      tutorialAlienDelayRemaining = 0;
       alienConfig.enabled = true;
       setTutorialQuestionHidden(false);
     }

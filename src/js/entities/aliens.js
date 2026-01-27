@@ -117,8 +117,9 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
     }
     var diff = String((state && state.difficulty) || "normal").toLowerCase();
     var brutal = diff === "brutal";
-    var erraticFactor = brutal ? 1 : 0.45;
-    var motionScale = brutal ? 1 : 0.7;
+    // Keep brutal highly erratic, but calm down the default movement.
+    var erraticFactor = brutal ? 1 : 0.3;
+    var motionScale = brutal ? 1 : 0.62;
 
     a.strafeTimer -= dt;
     if(a.strafeTimer <= 0){
@@ -126,10 +127,10 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
       a.strafeTarget = randi(40, Math.max(80, view.w - 40));
     }
     var chase = (a.strafeTarget - a.x) * 0.8;
-    var wobble = Math.sin(a.t * (brutal ? 2.1 : 1.2) + a.uid) * (120 * erraticFactor)
-      + Math.sin(a.t * (brutal ? 4.2 : 2.4) + a.uid * 1.7) * (60 * erraticFactor);
+    var wobble = Math.sin(a.t * (brutal ? 2.1 : 1.1) + a.uid) * (95 * erraticFactor)
+      + Math.sin(a.t * (brutal ? 4.2 : 2.2) + a.uid * 1.7) * (40 * erraticFactor);
     a.vx = (wobble + chase) * motionScale;
-    a.vy = ((a.speed * 0.35) + Math.sin(a.t * (brutal ? 1.4 : 0.9) + a.uid) * (16 * erraticFactor)) * motionScale;
+    a.vy = ((a.speed * 0.34) + Math.sin(a.t * (brutal ? 1.4 : 0.85) + a.uid) * (10 * erraticFactor)) * motionScale;
     if(a.stunTimer > 0){
       a.stunTimer = Math.max(0, a.stunTimer - dt);
       a.vx *= 0.15;
