@@ -180,17 +180,8 @@ export function createPhaserRenderer(opts){
     if(!view) return;
     var w = view.w;
     var h = view.h;
-
-    var useTutorial = !!data.tutorialActive;
-    if(useTutorial){
-      backgroundSprite.setVisible(false);
-      if(starfield){
-        starfield.setVisible(true);
-        starfield.setSize(w, h);
-        starfield.tilePositionY -= 0.3;
-      }
-      return;
-    }
+    // Always prefer the authored background images; the starfield was
+    // a temporary tutorial-only fallback and diverges from canvas parity.
     if(starfield) starfield.setVisible(false);
     var idx = data.backgroundIndex || 0;
     var key = BACKGROUND_KEYS[(idx % BACKGROUND_KEYS.length + BACKGROUND_KEYS.length) % BACKGROUND_KEYS.length];
@@ -244,16 +235,29 @@ export function createPhaserRenderer(opts){
 
       var labelId = "l" + a.id;
       if(a.label !== null && a.label !== undefined && !a.ghost){
+        var fontSize = Math.max(14, Math.min(22, (a.r || 24) * 0.7));
         var label = ensureSprite(spritePool.labels, labelId, function(){
           return sceneRef.add.text(a.x, a.y, String(a.label), {
             fontFamily: "Oxanium, sans-serif",
-            fontSize: "16px",
+            fontSize: fontSize + "px",
             color: "#e8ecff",
-            align: "center"
+            align: "center",
+            stroke: "#000000",
+            strokeThickness: 2,
+            backgroundColor: "rgba(0,0,0,0.62)",
+            padding: { x: 6, y: 3 }
           }).setOrigin(0.5, 0.5);
         });
         label.setText(String(a.label));
         label.setPosition(a.x, a.y + 1);
+        label.setStyle({
+          fontSize: fontSize + "px",
+          stroke: "#000000",
+          strokeThickness: 2,
+          backgroundColor: "rgba(0,0,0,0.62)",
+          padding: { x: 6, y: 3 }
+        });
+        label.setAlpha(0.96);
         label.setVisible(true);
       }else{
         var existing = spritePool.labels.get(labelId);
@@ -293,11 +297,17 @@ export function createPhaserRenderer(opts){
       if(sprite.texture.key !== key) sprite.setTexture(key);
       sprite.setPosition(b.x, b.y);
       sprite.setRotation(b.rot || 0);
-      var size = (b.r || 4) * 3.2;
-      if(b.kind && b.kind !== "single"){
-        size *= 1.2;
+      var base = (b.r || 4);
+      var size = base * (b.kind === "single" ? 4.0 : 5.2);
+      if(b.kind === "rail") size = base * 5.6;
+      if(b.kind === "missile") size = base * 5.0;
+      var tex = sprite.texture && sprite.texture.getSourceImage ? sprite.texture.getSourceImage() : null;
+      if(tex && tex.width && tex.height){
+        var ratio = tex.width / tex.height;
+        sprite.setDisplaySize(size * ratio, size);
+      }else{
+        sprite.setDisplaySize(size, size);
       }
-      sprite.setDisplaySize(size, size);
       seen.add(id);
 
       if(b.kind === "missile"){
