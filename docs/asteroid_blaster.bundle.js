@@ -141483,11 +141483,11 @@
     gameShell.insertBefore(phaserRoot, canvas);
   }
   var phaserRenderer = null;
-  var usePhaserRenderer = true;
+  var usePhaserRenderer = false;
   try {
     phaserParam = new URLSearchParams(location.search).get("phaser");
-    if (phaserParam === "0" || phaserParam === "false")
-      usePhaserRenderer = false;
+    if (phaserParam === "1" || phaserParam === "true")
+      usePhaserRenderer = true;
   } catch (e) {
   }
   var phaserParam;

@@ -25,10 +25,12 @@ if(!phaserRoot && gameShell){
 }
 
 var phaserRenderer = null;
-var usePhaserRenderer = true;
+// Phaser renderer is now opt-in to avoid mid-session visual switches
+// when it becomes ready on slower connections (e.g., GitHub Pages).
+var usePhaserRenderer = false;
 try{
   var phaserParam = new URLSearchParams(location.search).get("phaser");
-  if(phaserParam === "0" || phaserParam === "false") usePhaserRenderer = false;
+  if(phaserParam === "1" || phaserParam === "true") usePhaserRenderer = true;
 }catch(e){}
 
 if(typeof CanvasRenderingContext2D !== "undefined"){
