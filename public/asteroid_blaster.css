@@ -363,7 +363,11 @@ body.launching #menuWrap{
 }
 
 #missileOverlay.overlay{
-  background: rgba(3,6,14,.78);
+  background: linear-gradient(to bottom,
+    rgba(3,6,14,.02) 0%,
+    rgba(3,6,14,.12) 32%,
+    rgba(3,6,14,.74) 62%,
+    rgba(3,6,14,.82) 100%);
   z-index: 28;
 }
 

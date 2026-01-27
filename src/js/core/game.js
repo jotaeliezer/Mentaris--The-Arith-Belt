@@ -170,54 +170,92 @@ function updateAudioFromInputs(){
   setSoundtrack(state, shouldPlay);
 }
 
-function getSecondaryInventory(){
-  if(!player.secondaryInventory) player.secondaryInventory = {};
-  return player.secondaryInventory;
+function getSecondarySlots(){
+  if(!player.secondarySlots || player.secondarySlots.length !== 3){
+    player.secondarySlots = [null, null, null];
+  }
+  return player.secondarySlots;
+}
+
+function syncSelectedSecondary(){
+  var slots = getSecondarySlots();
+  var idx = clamp(player.secondarySlotIndex | 0, 0, slots.length - 1);
+  player.secondarySlotIndex = idx;
+  var slot = slots[idx];
+  if(slot && slot.type && slot.count > 0){
+    player.secondaryMode = slot.type;
+    player.secondaryCharges = slot.count;
+    return;
+  }
+  for(var i=0; i<slots.length; i++){
+    var s = slots[i];
+    if(s && s.type && s.count > 0){
+      player.secondarySlotIndex = i;
+      player.secondaryMode = s.type;
+      player.secondaryCharges = s.count;
+      return;
+    }
+  }
+  player.secondaryMode = "none";
+  player.secondaryCharges = 0;
 }
 
 function getSecondaryInventoryEntries(){
-  var inv = getSecondaryInventory();
+  var slots = getSecondarySlots();
   var entries = [];
-  for(var i=0; i<secondaryTypeOrder.length; i++){
-    var type = secondaryTypeOrder[i];
-    var count = inv[type] || 0;
-    if(count > 0){
-      entries.push({ type: type, count: count });
-    }
+  for(var i=0; i<slots.length; i++){
+    var slot = slots[i];
+    entries.push({
+      type: slot ? slot.type : null,
+      count: slot ? slot.count : 0,
+      slotIndex: i
+    });
   }
   return entries;
 }
 
-function setSelectedSecondary(type){
-  var inv = getSecondaryInventory();
-  if(!type || !inv[type]){
-    player.secondaryMode = "none";
-    player.secondaryCharges = 0;
-    return;
-  }
-  player.secondaryMode = type;
-  player.secondaryCharges = inv[type] || 0;
-}
-
 function selectSecondaryByIndex(index){
-  var entries = getSecondaryInventoryEntries();
-  if(index < 0 || index >= entries.length) return;
-  setSelectedSecondary(entries[index].type);
-  showToast("SECONDARY -> " + entries[index].type.toUpperCase());
+  var slots = getSecondarySlots();
+  var idx = clamp(index | 0, 0, slots.length - 1);
+  player.secondarySlotIndex = idx;
+  syncSelectedSecondary();
+  if(tourGuide) tourGuide.notify("secondary_slot");
+  var slot = slots[idx];
+  if(slot && slot.type && slot.count > 0){
+    showToast("SECONDARY -> " + slot.type.toUpperCase());
+  }else{
+    showToast("SECONDARY SLOT EMPTY");
+  }
 }
 
 function addSecondaryPowerup(type){
   if(!type) return;
-  var inv = getSecondaryInventory();
-  inv[type] = (inv[type] || 0) + 1;
-  if(!player.secondaryMode || player.secondaryMode === "none"){
-    player.secondaryMode = type;
+  var slots = getSecondarySlots();
+  var selectedIdx = clamp(player.secondarySlotIndex | 0, 0, slots.length - 1);
+  var foundIdx = -1;
+  var emptyIdx = -1;
+  for(var i=0; i<slots.length; i++){
+    var slot = slots[i];
+    if(slot && slot.type === type){
+      foundIdx = i;
+      break;
+    }
+    if(slot == null && emptyIdx < 0){
+      emptyIdx = i;
+    }
   }
-  if(player.secondaryMode === type){
-    player.secondaryCharges = inv[type] || 0;
-  }else if(!inv[player.secondaryMode]){
-    setSelectedSecondary(type);
+  if(foundIdx >= 0){
+    slots[foundIdx].count += 1;
+  }else if(emptyIdx >= 0){
+    slots[emptyIdx] = { type: type, count: 1 };
+    if(player.secondaryMode === "none"){
+      player.secondarySlotIndex = emptyIdx;
+    }
+  }else{
+    // All slots full: replace the currently selected slot.
+    slots[selectedIdx] = { type: type, count: 1 };
   }
+  syncSelectedSecondary();
 }
 
 function setSettingsTab(tabId){
@@ -993,8 +1031,9 @@ function isTextInput(el){
 window.addEventListener("keydown", function(e){
   if(isTextInput(document.activeElement)) return;
   var k = (e.key || "").toLowerCase();
+  var code = e.code || "";
   var prevent = ["arrowleft","arrowright","arrowup","arrowdown","a","d","w","s","p","r","m","z","e","x","q","c","b","1","2","3"," ","spacebar"];
-  if(prevent.indexOf(k) !== -1) e.preventDefault();
+  if(prevent.indexOf(k) !== -1 || code === "Digit1" || code === "Digit2" || code === "Digit3" || code === "Numpad1" || code === "Numpad2" || code === "Numpad3") e.preventDefault();
 
   keys.add(k);
   if(!audioPrimed){
@@ -1016,9 +1055,9 @@ window.addEventListener("keydown", function(e){
       secondaryFire();
     }
   }
-  if(k === "1") selectSecondaryByIndex(0);
-  if(k === "2") selectSecondaryByIndex(1);
-  if(k === "3") selectSecondaryByIndex(2);
+  if(k === "1" || code === "Digit1" || code === "Numpad1") selectSecondaryByIndex(0);
+  if(k === "2" || code === "Digit2" || code === "Numpad2") selectSecondaryByIndex(1);
+  if(k === "3" || code === "Digit3" || code === "Numpad3") selectSecondaryByIndex(2);
   if(k === "c") shockwave();
   if(k === "b"){
     if(!mousepadActive){
@@ -2870,6 +2909,8 @@ function resetSession(){
   player.secondaryMode = "none";
   player.secondaryCharges = 0;
   player.secondaryInventory = {};
+  player.secondarySlots = [null, null, null];
+  player.secondarySlotIndex = 0;
   player.secondaryCooldown = 0;
   player.lockTimer = 0;
   player.lockTargetId = 0;
@@ -3258,13 +3299,18 @@ function fire(){
 function secondaryFire(){
   if(!state.running || state.paused || state.over) return;
   if(player.secondaryCooldown > 0) return;
-  if(player.secondaryCharges <= 0) return;
 
-  var inv = getSecondaryInventory();
-  var activeType = player.secondaryMode;
-  if(!activeType || activeType === "none" || !inv[activeType]) return;
-  inv[activeType] -= 1;
-  player.secondaryCharges = Math.max(0, inv[activeType] || 0);
+  var slots = getSecondarySlots();
+  var idx = clamp(player.secondarySlotIndex | 0, 0, slots.length - 1);
+  var slot = slots[idx];
+  if(!slot || !slot.type || !(slot.count > 0)){
+    syncSelectedSecondary();
+    slot = slots[player.secondarySlotIndex];
+    if(!slot || !slot.type || !(slot.count > 0)) return;
+  }
+  var activeType = slot.type;
+  slot.count = Math.max(0, (slot.count || 0) - 1);
+  player.secondaryCharges = slot.count;
   player.secondaryCooldown = 1.2;
 
   if(activeType === "repair"){
@@ -3289,15 +3335,11 @@ function secondaryFire(){
     showToast("SECONDARY -> TARGET LOCK");
   }
 
-  if(player.secondaryCharges <= 0){
-    if(inv[activeType] <= 0) delete inv[activeType];
-    var remaining = getSecondaryInventoryEntries();
-    if(remaining.length){
-      setSelectedSecondary(remaining[0].type);
-    }else{
-      player.secondaryMode = "none";
-      player.secondaryCharges = 0;
-    }
+  if(slot.count <= 0){
+    slots[idx] = null;
+    syncSelectedSecondary();
+  }else{
+    syncSelectedSecondary();
   }
   if(tourGuide) tourGuide.notify("secondary");
 }
@@ -5998,6 +6040,23 @@ function drawTimeDilationBadge(cx, cy, size, alpha){
 function drawHudPickupIcon(entry, cx, cy, size){
   var type = entry.type;
   var group = entry.group;
+  var isEmptySecondary = group === "secondary" && (entry.empty || !type || type === "empty");
+  if(isEmptySecondary){
+    var rEmpty = size * 0.42;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.strokeStyle = "rgba(232,236,255,.35)";
+    ctx.fillStyle = "rgba(232,236,255,.06)";
+    ctx.lineWidth = Math.max(1.4, size * 0.08);
+    if(ctx.setLineDash) ctx.setLineDash([6, 5]);
+    ctx.beginPath();
+    ctx.arc(0, 0, rEmpty, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    if(ctx.setLineDash) ctx.setLineDash([]);
+    ctx.restore();
+    return;
+  }
   var icon = group === "offense" ? shotIcons[type] : powerupIcons[type];
   ctx.save();
   ctx.translate(cx, cy);
@@ -6215,12 +6274,14 @@ function drawActivePickupHud(hudFade, rightX, cy, radius, w){
   var secondaryEntries = getSecondaryInventoryEntries();
   for(var s=0; s<secondaryEntries.length; s++){
     var entry = secondaryEntries[s];
+    var hasType = !!entry.type && entry.count > 0;
     entries.push({
-      type: entry.type,
+      type: hasType ? entry.type : "empty",
       group: "secondary",
-      charges: entry.count,
-      slot: s + 1,
-      selected: entry.type === player.secondaryMode
+      charges: hasType ? entry.count : 0,
+      slot: entry.slotIndex + 1,
+      selected: entry.slotIndex === player.secondarySlotIndex,
+      empty: !hasType
     });
   }
   if(!entries.length) return;

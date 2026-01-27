@@ -120,6 +120,8 @@ export function createPlayer(){
     secondaryMode: "none",
     secondaryCharges: 0,
     secondaryInventory: {},
+    secondarySlots: [null, null, null],
+    secondarySlotIndex: 0,
     secondaryCooldown: 0,
     lockTimer: 0,
     lockTargetId: 0,

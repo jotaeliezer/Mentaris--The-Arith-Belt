@@ -17,8 +17,9 @@ export function createTourGuide(options){
     { id: "dash", title: "Step 7: Dash", body: "Press Space to dash through danger.", event: "dash" },
     { id: "ability", title: "Step 8: Ability", body: "Press C to use your ship ability.", event: "ability" },
     { id: "secondary_aid", title: "Step 9: Aid Weapon", body: "Use X or Q to trigger your aid weapon (Time Dilation).", event: "secondary" },
-    { id: "alien", title: "Step 10: Alien Contact", body: "Shoot down the alien target.", event: "alien" },
-    { id: "mousepad_hybrid", title: "Step 11: Mousepad", body: "Press B to enable mousepad. Fly to dots 1-4 in order.", event: "mousepad_hybrid", hideDuringAction: true, actionPauseMs: 700 },
+    { id: "secondary_slots", title: "Step 10: Aid Slots", body: "You have 3 aid slots on the top-right. Press 1, 2, or 3 (or numpad 1-3) to select a slot.", event: "secondary_slot", count: 1 },
+    { id: "alien", title: "Step 11: Alien Contact", body: "Shoot down the alien target.", event: "alien" },
+    { id: "mousepad_hybrid", title: "Step 12: Mousepad", body: "Press B to enable mousepad. Fly to dots 1-4 in order.", event: "mousepad_hybrid", hideDuringAction: true, actionPauseMs: 700 },
     { id: "portal", title: "Final Step: Portal", body: "Cadet, fly up into the portal. Mission starts on contact.", event: "portal" }
   ];
   var progressTotal = 0;
