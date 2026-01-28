@@ -531,6 +531,28 @@ function spawnPickupFx(x, y){
     pickupFxTimerId = 0;
   }, 140);
 }
+
+function spawnGunSmoke(){
+  var offset = Math.max(10, player.w * 0.22);
+  var baseY = player.y - player.h * 0.55;
+  for(var side=-1; side<=1; side+=2){
+    var sx = player.x + offset * side;
+    for(var i=0; i<2; i++){
+      particles.push({
+        x: sx + rand(-2, 2),
+        y: baseY + rand(-2, 2),
+        vx: rand(-20, 20),
+        vy: rand(-90, -50),
+        r: rand(2.2, 4.2),
+        a: rand(0.12, 0.24),
+        life: rand(0.24, 0.42),
+        kind: "smoke",
+        grow: rand(6, 12)
+      });
+    }
+  }
+  if(particles.length > 180) particles.splice(0, particles.length - 180);
+}
 var updateRings = fx.updateRings;
 var drawRings = fx.drawRings;
 var spawnParticles = fx.spawnParticles;
@@ -685,7 +707,8 @@ var powerupCatalogSecondary = [
   { id: "time", label: "Time Dilation", icon: powerupIcons.time.src, desc: "Grants one Time Dilation charge (press X to slow time)." },
   { id: "magnet", label: "Magnet Sweep", icon: powerupIcons.magnet.src, desc: "Grants one Magnet Sweep charge (press X to pull the correct asteroid)." },
   { id: "emp", label: "EMP Burst", icon: powerupIcons.emp.src, desc: "Triggers immediately and cascades non-answer asteroids." },
-  { id: "lock", label: "Target Lock", icon: powerupIcons.lock.src, desc: "Grants one Target Lock charge (press X to steer shots to the correct asteroid)." }
+  { id: "lock", label: "Target Lock", icon: powerupIcons.lock.src, desc: "Grants one Target Lock charge (press X to steer shots to the correct asteroid)." },
+  { id: "autofire", label: "Auto-Fire", icon: null, desc: "Activates a rapid-fire magazine for the current shot type." }
 ];
 
 var powerupCatalogDefense = [
@@ -1047,7 +1070,13 @@ window.addEventListener("keydown", function(e){
   if(k === "0") toggleScreenshot();
   if(k === "r") hardRestart();
   if(k === "m") openSettings();
-  if((k === "z" || k === "e") && !e.repeat) fire();
+  if((k === "z" || k === "e") && !e.repeat){
+    if(player.autoFireActive && player.autoFireAmmo > 0){
+      // Auto-fire has a spin-up delay before firing.
+    }else{
+      fire();
+    }
+  }
   if((k === "w" || k === "arrowup") && !e.repeat && state.running && !state.paused && !state.over){
     playSfx(state, "ship_advance");
   }
@@ -1110,6 +1139,9 @@ var mousepadPadDefaults = {
   sensitivityFps: 20.0,
   deadzone: 0.18
 };
+var missionBriefPausedByBrief = false;
+var missionBriefWasRunning = false;
+var missionBriefPausedBefore = false;
 
 function resetMousepadPadSettings(){
   mousepadSensitivityPad = mousepadPadDefaults.sensitivityPad;
@@ -1120,9 +1152,22 @@ function resetMousepadPadSettings(){
 
 function setMissionBriefActive(active){
   missionBriefShowing = !!active;
-  state.hideAsteroids = !!active;
-  player.hidden = !!active;
   if(active){
+    missionBriefWasRunning = !!(state.running && !state.over);
+    missionBriefPausedBefore = !!state.paused;
+    missionBriefPausedByBrief = missionBriefWasRunning && !missionBriefPausedBefore;
+    if(missionBriefPausedByBrief){
+      state.paused = true;
+      syncTimerPause();
+    }
+    // Mission brief should suspend all live game activity.
+    state.over = false;
+    state.running = false;
+    state.hideAsteroids = true;
+    player.hidden = true;
+    missionClearFx.active = false;
+    gameOverFx.active = false;
+    gameOverFx.shown = false;
     bullets.length = 0;
     asteroids.length = 0;
     powerups.length = 0;
@@ -1133,6 +1178,15 @@ function setMissionBriefActive(active){
     state.correctAsteroidId = 0;
     countdownActive = false;
     if(countdownEl) countdownEl.classList.remove("show");
+  }else{
+    state.hideAsteroids = false;
+    player.hidden = false;
+    if(missionBriefPausedByBrief){
+      state.paused = missionBriefPausedBefore;
+      syncTimerPause();
+    }
+    missionBriefPausedByBrief = false;
+    missionBriefWasRunning = false;
   }
   updateCursorVisibility();
 }
@@ -1145,7 +1199,7 @@ function updateCursorVisibility(){
     return;
   }
   if(mousepadActive) return;
-  var hide = state.running && !state.paused && !screenshotMode;
+  var hide = state.running && !state.paused && !screenshotMode && !missionBriefShowing;
   document.body.style.cursor = hide ? "none" : "";
 }
 
@@ -2340,11 +2394,20 @@ function getDifficultySpeedFactor(){
 function spawnAsteroid(label, isCorrect){
   var r = canvas.getBoundingClientRect();
   var w = r.width;
+  var h = r.height;
   var spawnX = pickSpawnX(w);
   if(isCorrect && typeof state.nextCorrectSpawnX === "number"){
     spawnX = state.nextCorrectSpawnX;
     state.nextCorrectSpawnX = null;
   }
+
+  var spawnSideRoll = Math.random();
+  var spawnSide = "top";
+  var diff = String(state.difficulty || "normal").toLowerCase();
+  var allowCorrectSide = isCorrect && (diff === "hard" || diff === "brutal");
+  var sideChance = !isCorrect ? 0.44 : (allowCorrectSide ? 0.28 : 0);
+  if(spawnSideRoll < sideChance * 0.5) spawnSide = "left";
+  else if(spawnSideRoll < sideChance) spawnSide = "right";
 
   var levelFactor = getDifficultySpeedFactor();
   var baseVy = 100 + state.level * 14 * levelFactor;
@@ -2356,11 +2419,25 @@ function spawnAsteroid(label, isCorrect){
   var driftRate = rand(0.6, 1.4);
   var driftPhase = rand(0, Math.PI * 2);
 
+  var spawnY = -rand(26, 88);
+  var baseVx = rand(-35, 35);
+  if(spawnSide !== "top"){
+    var sideYMax = Math.max(80, h * 0.5);
+    spawnY = rand(0, sideYMax);
+    if(spawnSide === "left"){
+      spawnX = -rand(20, 64);
+      baseVx = rand(40, 90);
+    }else if(spawnSide === "right"){
+      spawnX = w + rand(20, 64);
+      baseVx = rand(-90, -40);
+    }
+  }
+
   var a = {
     id:id,
     x: spawnX,
-    y: -rand(26, 88),
-    vx: rand(-35, 35),
+    y: spawnY,
+    vx: baseVx,
     vy: baseVy * speedScale * (isCorrect ? 1.03 : rand(0.94, 1.10)),
     baseVy: baseVy * speedScale,
     r: size,
@@ -2506,7 +2583,7 @@ function choosePowerupDrop(){
   var roll = Math.random();
   var lowHull = player.hull < 0.3;
   function pickSecondaryType(){
-    var pool = ["time","time","emp","emp","magnet","lock","repair"];
+    var pool = ["time","time","emp","emp","magnet","lock","repair","autofire"];
     return pool[Math.floor(Math.random() * pool.length)];
   }
   if(lowHull && roll < 0.75){
@@ -2603,6 +2680,7 @@ function applyPowerup(p){
       else if(p.type === "magnet") showToast("SECONDARY -> MAGNET SWEEP (X/Q)");
       else if(p.type === "emp") showToast("SECONDARY -> EMP BURST (X/Q)");
       else if(p.type === "lock") showToast("SECONDARY -> TARGET LOCK (X/Q)");
+      else if(p.type === "autofire") showToast("SECONDARY -> AUTO-FIRE (X/Q)");
     }
   }
 }
@@ -2933,6 +3011,12 @@ function resetSession(){
   player.defenseTimer = 0;
   player.armorBlocksRemaining = 0;
   player.magnetTimer = 0;
+  player.autoFireActive = false;
+  player.autoFireAmmo = 0;
+  player.autoFireAmmoMax = 0;
+  player.autoFireMode = "single";
+  player.autoFireSpinning = false;
+  player.autoFireSpinTimer = 0;
 
   player.hull = 1;
   player.invuln = 0;
@@ -3272,14 +3356,66 @@ function toggleScreenshot(){
   showToast(screenshotMode ? "SCREENSHOT MODE" : "SCREENSHOT MODE OFF");
 }
 
-function fire(){
+var autoFireCooldowns = {
+  single: 0.18,
+  laser: 0.12,
+  fire: 0.14,
+  ice: 0.16,
+  electric: 0.15,
+  pierce: 0.24,
+  plasma: 0.22,
+  rail: 0.26
+};
+
+var autoFireAmmoMap = {
+  single: 300,
+  laser: 325,
+  fire: 250,
+  ice: 350,
+  electric: 500,
+  pierce: 100,
+  plasma: 400,
+  rail: 550
+};
+
+function getAutoFireCooldown(mode){
+  var key = String(mode || "single");
+  if(key === "missile") return null;
+  if(Object.prototype.hasOwnProperty.call(autoFireCooldowns, key)) return autoFireCooldowns[key];
+  return autoFireCooldowns.single;
+}
+
+function getAutoFireAmmo(mode){
+  var key = String(mode || "single");
+  if(Object.prototype.hasOwnProperty.call(autoFireAmmoMap, key)) return autoFireAmmoMap[key];
+  return autoFireAmmoMap.single;
+}
+
+function cleanupAutoFireSlots(){
+  var slots = getSecondarySlots();
+  var changed = false;
+  for(var i=0; i<slots.length; i++){
+    var slot = slots[i];
+    if(slot && slot.type === "autofire" && !(slot.count > 0) && !player.autoFireActive){
+      slots[i] = null;
+      changed = true;
+    }
+  }
+  if(changed) syncSelectedSecondary();
+}
+
+function fire(cooldownOverride){
   if(!state.running || state.paused || state.over) return;
   if(player.cooldown > 0) return;
 
-  player.cooldown = 0.16;
+  if(typeof cooldownOverride === "number" && isFinite(cooldownOverride)){
+    player.cooldown = cooldownOverride;
+  }else{
+    player.cooldown = 0.16;
+  }
   var mode = player.blasterMode || "single";
   if(mode === "missile"){
-    return;
+    return false;
   }
   state.shots++;
   if(mode === "laser"){
@@ -3300,6 +3436,7 @@ function fire(){
     bullets.push({ x: player.x, y: player.y - 24, vy: -880, r: 4.0, vx: 0, kind: "single" });
   }
 
+  spawnGunSmoke();
   player.recoil = 1;
   player.flash = 1;
   var gunSfx = (mode === "laser") ? "gun2" : "gun1";
@@ -3309,6 +3446,7 @@ function fire(){
   if(mode === "rail") gunSfx = "shot_railbeam";
   playSfx(state, gunSfx);
   if(tourGuide) tourGuide.notify("fire");
+  return true;
 }
 
 function secondaryFire(){
@@ -3324,6 +3462,10 @@ function secondaryFire(){
     if(!slot || !slot.type || !(slot.count > 0)) return;
   }
   var activeType = slot.type;
+  if(activeType === "autofire" && !(slot.count > 0)){
+    syncSelectedSecondary();
+    return;
+  }
   slot.count = Math.max(0, (slot.count || 0) - 1);
   player.secondaryCharges = slot.count;
   player.secondaryCooldown = 1.2;
@@ -3333,6 +3475,21 @@ function secondaryFire(){
     spawnRing(player.x, player.y, 18);
     spawnParticles(player.x, player.y, "correct");
     showToast("SECONDARY -> HULL REPAIR");
+  }else if(activeType === "autofire"){
+    var mode = player.blasterMode || "single";
+    if(mode === "missile"){
+      mode = "single";
+    }
+    var ammo = getAutoFireAmmo(mode);
+    if(!player.autoFireActive){
+      player.autoFireAmmo = 0;
+      player.autoFireAmmoMax = 0;
+    }
+    player.autoFireActive = true;
+    player.autoFireMode = mode;
+    player.autoFireAmmo += ammo;
+    player.autoFireAmmoMax += ammo;
+    showToast("SECONDARY -> AUTO-FIRE ONLINE");
   }else if(activeType === "time"){
     startSlowMoWave();
     playSfx(state, "time_activate");
@@ -3350,12 +3507,15 @@ function secondaryFire(){
     showToast("SECONDARY -> TARGET LOCK");
   }
 
-  if(slot.count <= 0){
+  if(activeType === "autofire"){
+    if(slot.count < 0) slot.count = 0;
+    if(slot.count === 0 && !player.autoFireActive){
+      slots[idx] = null;
+    }
+  }else if(slot.count <= 0){
     slots[idx] = null;
-    syncSelectedSecondary();
-  }else{
-    syncSelectedSecondary();
   }
+  syncSelectedSecondary();
   if(tourGuide) tourGuide.notify("secondary");
 }
 
@@ -4735,6 +4895,33 @@ function update(dt){
   }
 
   player.cooldown = Math.max(0, player.cooldown - dtReal);
+  if(player.autoFireActive && player.autoFireAmmo > 0){
+    if(keys.has("z") || keys.has("e")){
+      if(!player.autoFireSpinning){
+        player.autoFireSpinning = true;
+        player.autoFireSpinTimer = 0.8;
+      }
+      if(player.autoFireSpinTimer > 0){
+        player.autoFireSpinTimer = Math.max(0, player.autoFireSpinTimer - dtReal);
+      }else{
+        var autoCooldown = getAutoFireCooldown(player.autoFireMode || player.blasterMode || "single");
+        if(autoCooldown != null){
+          var didShoot = fire(autoCooldown);
+          if(didShoot){
+            player.autoFireAmmo = Math.max(0, (player.autoFireAmmo || 0) - 1);
+            if(player.autoFireAmmo === 0){
+              player.autoFireActive = false;
+              player.autoFireAmmoMax = 0;
+              cleanupAutoFireSlots();
+            }
+          }
+        }
+      }
+    }else{
+      player.autoFireSpinning = false;
+      player.autoFireSpinTimer = 0;
+    }
+  }
 
   player.invuln = Math.max(0, player.invuln - dtReal);
   player.hitFlash = Math.max(0, player.hitFlash - dtReal*3.6);
@@ -6119,6 +6306,18 @@ function drawHudPickupIcon(entry, cx, cy, size){
       ctx.restore();
       return;
     }
+    if(type === "autofire"){
+      ctx.lineWidth = 2.4;
+      for(var af=0; af<3; af++){
+        var y = -8 + af * 6;
+        ctx.beginPath();
+        ctx.moveTo(-7, y);
+        ctx.lineTo(7, y + 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+      return;
+    }
     if(type === "magnet"){
       ctx.lineWidth = 3;
       ctx.beginPath();
@@ -6195,6 +6394,18 @@ function drawHudPickupIcon(entry, cx, cy, size){
   }
 
   if(group === "offense"){
+    if(type === "autofire"){
+      ctx.lineWidth = 2.4;
+      for(var af=0; af<3; af++){
+        var y = -8 + af * 6;
+        ctx.beginPath();
+        ctx.moveTo(-7, y);
+        ctx.lineTo(7, y + 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+      return;
+    }
     if(type === "ice"){
       ctx.beginPath();
       ctx.moveTo(0, -14);
@@ -6297,6 +6508,9 @@ function drawActivePickupHud(hudFade, rightX, cy, radius, w){
   for(var s=0; s<secondaryEntries.length; s++){
     var entry = secondaryEntries[s];
     var hasType = !!entry.type && entry.count > 0;
+    if(entry.type === "autofire" && player.autoFireActive){
+      hasType = true;
+    }
     entries.push({
       type: hasType ? entry.type : "empty",
       group: "secondary",
@@ -6333,6 +6547,17 @@ function drawActivePickupHud(hudFade, rightX, cy, radius, w){
     ctx.fill();
     ctx.stroke();
     drawHudPickupIcon(entry, x + boxSize / 2, y + boxSize / 2, iconSize);
+    if(entry.type === "autofire" && player.autoFireAmmoMax > 0){
+      var ammoRatio = clamp((player.autoFireAmmo || 0) / Math.max(1, player.autoFireAmmoMax || 1), 0, 1);
+      var ringR = boxSize / 2 - 4;
+      ctx.save();
+      ctx.lineWidth = 2.4;
+      ctx.strokeStyle = "rgba(0,229,255,.65)";
+      ctx.beginPath();
+      ctx.arc(x + boxSize / 2, y + boxSize / 2, ringR, -Math.PI/2, -Math.PI/2 + Math.PI * 2 * ammoRatio);
+      ctx.stroke();
+      ctx.restore();
+    }
     if(entry.slot){
       ctx.fillStyle = "rgba(0,229,255,.9)";
       ctx.font = "700 11px Oxanium, sans-serif";
@@ -6340,7 +6565,13 @@ function drawActivePickupHud(hudFade, rightX, cy, radius, w){
       ctx.textBaseline = "top";
       ctx.fillText(String(entry.slot), x + 6, y + 5);
     }
-    if(entry.charges != null && entry.charges > 1){
+    if(entry.type === "autofire" && player.autoFireActive){
+      ctx.fillStyle = "rgba(232,236,255,.9)";
+      ctx.font = "700 11px Oxanium, sans-serif";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "bottom";
+      ctx.fillText(String(player.autoFireAmmo || 0), x + boxSize - 6, y + boxSize - 4);
+    }else if(entry.charges != null && entry.charges > 1){
       ctx.fillStyle = "rgba(232,236,255,.9)";
       ctx.font = "700 11px Oxanium, sans-serif";
       ctx.textAlign = "right";
@@ -6743,6 +6974,7 @@ function getPowerupColor(p){
       : p.type === "time" ? "rgba(175,0,111,.7)"
       : p.type === "magnet" ? "rgba(255,221,0,.7)"
       : p.type === "emp" ? "rgba(175,0,111,.7)"
+      : p.type === "autofire" ? "rgba(255,221,0,.85)"
       : "rgba(193,216,47,.7)";
   }
   if(p.type === "missile") return "rgba(255,221,0,.8)";
@@ -6831,8 +7063,33 @@ function drawPowerupIcon(p, color){
     ctx.restore();
     return;
   }
+  if(p.group === "secondary" && p.type === "autofire"){
+    ctx.save();
+    ctx.globalCompositeOperation = "source-over";
+    ctx.lineWidth = 2.4;
+    for(var af=0; af<3; af++){
+      var y = -8 + af * 6;
+      ctx.beginPath();
+      ctx.moveTo(-7, y);
+      ctx.lineTo(7, y + 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+    return;
+  }
 
   if(p.group === "offense"){
+    if(p.type === "autofire"){
+      ctx.lineWidth = 2.4;
+      for(var af=0; af<3; af++){
+        var y = -8 + af * 6;
+        ctx.beginPath();
+        ctx.moveTo(-7, y);
+        ctx.lineTo(7, y + 2);
+        ctx.stroke();
+      }
+      return;
+    }
     if(p.type === "ice"){
       ctx.beginPath();
       ctx.moveTo(0, -14);
@@ -7783,11 +8040,15 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
   ghostStyle = ghostStyle || {};
   var leftScale = clamp(1 + bank * 0.5, 0.5, 1.5);
   var rightScale = clamp(1 - bank * 0.5, 0.5, 1.5);
+  var recoil = ghost ? 0 : (player.recoil || 0);
+  var recoilShift = recoil * 4;
   var ghostBodyAlpha = (ghost && ghostStyle.thrustFocus) ? 0.35 : 1;
   var ghostFlameBoost = (ghost && ghostStyle.thrustFocus) ? 1.45 : 1;
 
   ctx.save();
   ctx.globalAlpha *= ghostBodyAlpha;
+  // Apply recoil to the whole ship, not just the guns.
+  ctx.translate(0, recoilShift * 0.8);
   ctx.fillStyle = colors.wing;
   ctx.strokeStyle = colors.outline;
   ctx.lineWidth = 2.0;
@@ -7996,9 +8257,6 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
   }
 
   ctx.shadowBlur = 0;
-
-  var recoil = ghost ? 0 : (player.recoil || 0);
-  var recoilShift = recoil * 4;
 
   ctx.fillStyle = colors.accent;
   ctx.strokeStyle = colors.outline;

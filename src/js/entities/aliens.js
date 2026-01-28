@@ -107,6 +107,38 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
     var a = aliens[i];
     a.t += dt;
     a.life += dt;
+    if(a.escapeSequence){
+      a.escapeTimer = (a.escapeTimer || 0) + dt;
+      if(a.escapePhase === "loop"){
+        var loopT = Math.min(1, a.escapeTimer / (a.escapeLoopDuration || 1.1));
+        var angle = (a.escapeAngle || 0) + dt * 10.5;
+        a.escapeAngle = angle;
+        var radius = a.escapeRadius || 18;
+        a.x = a.escapeCenterX + Math.cos(angle) * radius;
+        a.y = a.escapeCenterY + Math.sin(angle) * radius;
+        if(loopT >= 1){
+          a.escapePhase = "hold";
+          a.escapeTimer = 0;
+        }
+      }else if(a.escapePhase === "hold"){
+        if(a.escapeTimer >= (a.escapeHoldDuration || 0.35)){
+          a.escapePhase = "exit";
+          a.escapeTimer = 0;
+          a.vx = (a.escapeExitVx != null) ? a.escapeExitVx : (Math.random() < 0.5 ? -30 : 30);
+          a.vy = (a.escapeExitVy != null) ? a.escapeExitVy : 85;
+        }
+      }else if(a.escapePhase === "exit"){
+        a.x += (a.vx || 0) * dt;
+        a.y += (a.vy || 0) * dt;
+      }
+      if(a.y - a.r > view.h + 40 || a.x + a.r < -60 || a.x - a.r > view.w + 60){
+        aliens.splice(i, 1);
+        escaped++;
+        continue;
+      }
+      a.fireCooldown = Math.max(a.fireCooldown, 2.0);
+      continue;
+    }
     if(a.y - a.r > view.h + 20){
       aliens.splice(i, 1);
       escaped++;
@@ -159,11 +191,22 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
     a.x += a.vx * dt;
     a.y += a.vy * dt;
 
-    if(!a.escapeActive && a.y >= view.h * 0.75){
+    if(!a.escapeActive && a.y >= view.h * 0.7){
       a.escapeActive = true;
       a.escapeBoost = 0;
+      a.escapeSequence = true;
+      a.escapePhase = "loop";
+      a.escapeTimer = 0;
+      a.escapeLoopDuration = 1.1;
+      a.escapeHoldDuration = 0.35;
+      a.escapeRadius = 22;
+      a.escapeAngle = 0;
+      a.escapeCenterX = a.x;
+      a.escapeCenterY = a.y;
+      a.escapeExitVy = 85;
+      a.escapeExitVx = (Math.random() < 0.5 ? -30 : 30);
     }
-    if(a.escapeActive){
+    if(a.escapeActive && !a.escapeSequence){
       a.escapeBoost = Math.min(1, (a.escapeBoost || 0) + dt * 2.6);
       a.vx *= 0.25;
       a.vy = Math.max(a.vy, a.speed * (1.2 + 1.2 * a.escapeBoost));
