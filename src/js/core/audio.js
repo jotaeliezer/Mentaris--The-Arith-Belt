@@ -17,7 +17,9 @@ function initSfx(){
   sfxBank = {
     alien_kill: new Audio("sfx/alien/alien_kill.mp3"),
     alien_shooting: new Audio("sfx/alien/alien_shooting.mp3"),
-    bolt_shot: new Audio("sfx/shots/bolt_shot.mp3"),
+    electric_shot: new Audio("sfx/electric_shot.mp3"),
+    flame_shot: new Audio("sfx/flame_shot.mp3"),
+    machine_gun_load: new Audio("sfx/machine_gun_load.mp3"),
     camer_ice_shot: new Audio("sfx/shots/camer_ice_shot.mp3"),
     correct: new Audio("sfx/gameplay/correct.mp3"),
     crash: new Audio("sfx/ship/crash.mp3"),
@@ -58,7 +60,9 @@ function initSfx(){
   };
   sfxBank.alien_kill.volume = 0.5;
   sfxBank.alien_shooting.volume = 0.45;
-  sfxBank.bolt_shot.volume = 0.4;
+  sfxBank.electric_shot.volume = 0.4;
+  sfxBank.flame_shot.volume = 0.4;
+  sfxBank.machine_gun_load.volume = 0.55;
   sfxBank.camer_ice_shot.volume = 0.4;
   sfxBank.correct.volume = 0.5;
   sfxBank.crash.volume = 0.6;
