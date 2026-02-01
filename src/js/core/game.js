@@ -7,7 +7,7 @@ import { createTourGuide } from "./tourguide.js";
 import { createFx } from "../render/animations.js";
 import { createBackground } from "../render/background.js";
 import { createPhaserRenderer } from "../render/phaser_renderer.js";
-import { aliens, alienBullets, alienConfig, resetAliens, spawnAlien, updateAliens, updateAlienBullets, drawAliens, drawAlienBullets } from "../entities/aliens.js";
+import { aliens, alienBullets, alienConfig, resetAliens, setAlienUnlocked, spawnAlien, updateAliens, updateAlienBullets, drawAliens, drawAlienBullets } from "../entities/aliens.js";
 import { computeSpawnInterval } from "./levels.js";
 import { PowerupManager } from "../entities/powerups.js";
 
@@ -712,7 +712,8 @@ var powerupCatalogSecondary = [
   { id: "magnet", label: "Magnet Sweep", icon: powerupIcons.magnet.src, desc: "Grants one Magnet Sweep charge (press X to pull the correct asteroid)." },
   { id: "emp", label: "EMP Burst", icon: powerupIcons.emp.src, desc: "Triggers immediately and cascades non-answer asteroids." },
   { id: "lock", label: "Target Lock", icon: powerupIcons.lock.src, desc: "Grants one Target Lock charge (press X to steer shots to the correct asteroid)." },
-  { id: "autofire", label: "Auto-Fire", icon: powerupIcons.machinegun.src, desc: "Activates a rapid-fire magazine for the current shot type." }
+  { id: "autofire", label: "Auto-Fire", icon: powerupIcons.machinegun.src, desc: "Activates a rapid-fire magazine for the current shot type." },
+  { id: "ammo", label: "Ammo Cache", icon: powerupIcons.ammo.src, desc: "Bonus ammo pickup for special weapon handling." }
 ];
 
 var powerupCatalogDefense = [
@@ -992,6 +993,12 @@ var powerupManager = new PowerupManager(state, player);
 renderSettingsCatalogs();
 
 function configureAliensDifficulty(){
+  if(state.alienSwarm){
+    alienConfig.enabled = true;
+    alienConfig.maxOnScreen = 4;
+    alienConfig.spawnCooldown = 5.5;
+    return;
+  }
   var diff = String(state.difficulty || "normal").toLowerCase();
   if(diff === "easy"){
     alienConfig.enabled = false;
@@ -1642,6 +1649,9 @@ function buildMissionParams(config, idx){
     campaignIndex: String(idx),
     campaignId: campaignId || campaignDefaultId
   });
+  if(config.alienSwarm){
+    params.set("alienSwarm", "1");
+  }
   return params;
 }
 
@@ -2646,6 +2656,25 @@ function spawnPowerup(type, group, x, y, opts){
 function choosePowerupDrop(){
   var roll = Math.random();
   var lowHull = player.hull < 0.3;
+  if(state.alienSwarm){
+    if(lowHull && roll < 0.5){
+      var sType = Math.random() < 0.7 ? "repair" : pickSecondaryType();
+      return { type: sType, group: "secondary" };
+    }
+    if(roll < 0.75){
+      var offense = ["laser", "fire", "ice", "electric", "pierce", "plasma", "rail"];
+      if(isMissileAllowed()) offense.unshift("missile");
+      var oType = offense[Math.floor(Math.random() * offense.length)];
+      return { type: oType, group: "offense" };
+    }
+    if(roll < 0.9){
+      var dRoll = Math.random();
+      var dType = dRoll < 0.45 ? "shield" : (dRoll < 0.7 ? "armor" : "scope");
+      return { type: dType, group: "defense" };
+    }
+    var sType = pickSecondaryType();
+    return { type: sType, group: "secondary" };
+  }
   function pickSecondaryType(){
     var pool = ["time","time","emp","emp","magnet","lock","repair","autofire"];
     return pool[Math.floor(Math.random() * pool.length)];
@@ -3126,6 +3155,14 @@ function resetSession(){
   resetAliens();
 
   nextProblem();
+  if(state.alienSwarm){
+    setAlienUnlocked(true);
+    state.spawnTimer = 9999;
+    state.correctInPlay = false;
+    state.correctAsteroidId = 0;
+  }else{
+    setAlienUnlocked(false);
+  }
   syncHud();
   setDrone(state, true);
   if(tutorialActive && !state.soundtrackPrimed){
@@ -5312,7 +5349,7 @@ function update(dt){
   }
 
   state.spawnTimer -= dtSlow;
-  if(!missionBriefShowing && (!tutorialActive || tutorialSpawnUnlocked)){
+  if(!state.alienSwarm && !missionBriefShowing && (!tutorialActive || tutorialSpawnUnlocked)){
     if(state.spawnTimer <= 0){
       spawnOneFromWave();
       if(state.level >= 7 && Math.random() < 0.18) spawnDecoyOnly();
@@ -7564,7 +7601,7 @@ function drawBullets(){
   ctx.globalCompositeOperation = "lighter";
   for(var i=0;i<bullets.length;i++){
     var b = bullets[i];
-    function drawBulletImage(asset, sizeMul, offsetY, rotation){
+    function drawBulletImage(asset, sizeMul, offsetY, rotation, flip){
       if(!asset || !asset.ready) return;
       var size = b.r * sizeMul;
       var iw = asset.img.naturalWidth || asset.img.width || size;
@@ -7574,47 +7611,50 @@ function drawBullets(){
       var drawH = ih * scale;
       ctx.save();
       ctx.globalAlpha = 0.95;
-      if(rotation){
+      var spinFlip = !!flip;
+      if(rotation || spinFlip){
         ctx.translate(b.x, b.y + (offsetY || 0));
-        ctx.rotate(rotation);
+        if(rotation) ctx.rotate(rotation);
+        if(spinFlip) ctx.scale(1, -1);
         ctx.drawImage(asset.img, -drawW / 2, -drawH / 2, drawW, drawH);
       }else{
         ctx.drawImage(asset.img, b.x - drawW / 2, b.y + (offsetY || 0) - drawH / 2, drawW, drawH);
       }
       ctx.restore();
     }
+    var spinFlip = (((performance.now() + (b.id || 0) * 83) / 45) | 0) % 2 === 1;
     if(b.kind === "laser"){
-      drawBulletImage(bulletLaserImg, 12, -(b.len || 18));
+      drawBulletImage(bulletLaserImg, 12, -(b.len || 18), 0, spinFlip);
       continue;
     }
 
     if(b.kind === "rail"){
-      drawBulletImage(bulletRailImg, 12, -(b.len || 34));
+      drawBulletImage(bulletRailImg, 12, -(b.len || 34), 0, spinFlip);
       continue;
     }
 
     if(b.kind === "fire"){
-      drawBulletImage(bulletFireImg, 12, 0);
+      drawBulletImage(bulletFireImg, 12, 0, 0, spinFlip);
       continue;
     }
 
     if(b.kind === "plasma"){
-      drawBulletImage(bulletOrbImg, 12, 0);
+      drawBulletImage(bulletOrbImg, 12, 0, 0, spinFlip);
       continue;
     }
 
     if(b.kind === "ice"){
-      drawBulletImage(bulletIceImg, 12, 0);
+      drawBulletImage(bulletIceImg, 12, 0, 0, spinFlip);
       continue;
     }
 
     if(b.kind === "electric"){
-      drawBulletImage(bulletBoltImg, 18, 0);
+      drawBulletImage(bulletBoltImg, 18, 0, 0, spinFlip);
       continue;
     }
 
     if(b.kind === "pierce"){
-      drawBulletImage(bulletBolaImg, 12, 0, b.rot || 0);
+      drawBulletImage(bulletBolaImg, 12, 0, b.rot || 0, spinFlip);
       continue;
     }
 
@@ -7635,12 +7675,12 @@ function drawBullets(){
         }
         ctx.restore();
       }
-      drawBulletImage(bulletMissileImg, 12, 0, b.rot || 0);
+      drawBulletImage(bulletMissileImg, 12, 0, b.rot || 0, spinFlip);
       continue;
     }
 
     if(b.kind === "single" && bulletSingle.ready){
-      drawBulletImage(bulletSingle, 12, 0);
+      drawBulletImage(bulletSingle, 12, 0, 0, spinFlip);
       continue;
     }
 
@@ -8269,7 +8309,7 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
     centerW: 6,
     centerH: 18
   };
-  var thrusterWidth = 44;
+  var thrusterWidth = 30;
   var thrusterRadius = 6.5;
   var thrusterSeparation = 12;
   if(shipType === "mk7"){
@@ -9306,6 +9346,11 @@ function applyConfigToInputs(config){
   if(config.belt){
     setBackgroundBelt(config.belt);
   }
+  if(config.alienSwarm != null){
+    state.alienSwarm = (config.alienSwarm === true || config.alienSwarm === "1" || config.alienSwarm === 1);
+  }else{
+    state.alienSwarm = false;
+  }
 }
 
 function applyStoredConfig(){
@@ -9345,7 +9390,8 @@ function applyQueryParams(){
     questionMode: params.get("questionMode"),
     ship: params.get("ship"),
     difficulty: params.get("difficulty"),
-    belt: params.get("belt")
+    belt: params.get("belt"),
+    alienSwarm: params.get("alienSwarm")
   };
 
   var soundParam = params.get("sound");

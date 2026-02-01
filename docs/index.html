@@ -1579,6 +1579,12 @@
                   <span class="helpText">Wrong asteroid hits before mission failure.</span>
                 </label>
 
+                <label class="toggleRow">
+                  <span>Asteroids vs Aliens (Swarm)</span>
+                  <input id="alienSwarm" name="alienSwarm" type="checkbox" />
+                  <span class="helpText">Swap asteroid waves for an alien swarm session (same as the secret campaign level).</span>
+                </label>
+
                 <label>
                   TARGETED ASTEROIDS
                   <select id="targetMode" name="targetMode">
@@ -1986,6 +1992,7 @@
       sound: true,
       ship: "spire",
       belt: "dusk",
+      alienSwarm: false,
     };
 
     var campaignProfileKey = "mentaris.campaign.profile.active";
@@ -1993,7 +2000,7 @@
     var campaignActiveKeyBase = "mathsteroid.campaign.active.";
     var campaignStateKeyBase = "mathsteroid.campaign.state.";
     var campaignDataKeyBase = "mathsteroid.campaign.data.";
-    var campaignDataVersion = 5;
+    var campaignDataVersion = 6;
     var campaignMaxFailuresDefault = 5;
     var campaignDefaultId = "sector_run";
     var campaignProfileSlots = ["profile1", "profile2", "profile3"];
@@ -2022,6 +2029,12 @@
             title: "Sector 3: Classic Sweep",
             desc: "Classic answers under time.",
             config: { ship: "am2", questionMode: "classic2", difficulty: "easy", targetMode: "off", timerMode: "75", decoys: 3, decoyFunction: "units_bias", speed: 0.7, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
+          },
+          {
+            id: "m3x",
+            title: "Sector X: Alien Swarm",
+            desc: "Survive the swarm and solve alien math.",
+            config: { ship: "spire", questionMode: "classic2", difficulty: "easy", targetMode: "off", timerMode: "60", decoys: 0, speed: 0.75, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 12, alienSwarm: true }
           },
           {
             id: "m4",
@@ -2068,6 +2081,12 @@
             config: { ship: "am2", questionMode: "classic3", difficulty: "normal", targetMode: "off", timerMode: "90", decoys: 3, decoyFunction: "units_bias", speed: 0.9, lives: 15, strikes: 10, aMin: 3, aMax: 12, bMin: 3, bMax: 12 }
           },
           {
+            id: "r3x",
+            title: "Rift X: Alien Swarm",
+            desc: "Alien strike wave at rift pace.",
+            config: { ship: "classic", questionMode: "classic2", difficulty: "normal", targetMode: "off", timerMode: "70", decoys: 0, speed: 0.9, lives: 15, strikes: 10, aMin: 3, aMax: 15, bMin: 3, bMax: 15, alienSwarm: true }
+          },
+          {
             id: "r4",
             title: "Rift 4: Echo Surge",
             desc: "Addition classics at speed.",
@@ -2110,6 +2129,12 @@
             title: "Void 3: Razor Current",
             desc: "Classic answers at max pace.",
             config: { ship: "am2", questionMode: "classic3", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "units_bias", speed: 1.05, lives: 15, strikes: 10, aMin: 4, aMax: 15, bMin: 4, bMax: 15 }
+          },
+          {
+            id: "v3x",
+            title: "Void X: Alien Swarm",
+            desc: "Endure the swarm under void pressure.",
+            config: { ship: "am2", questionMode: "classic2", difficulty: "hard", targetMode: "off", timerMode: "75", decoys: 0, speed: 1.0, lives: 15, strikes: 10, aMin: 4, aMax: 18, bMin: 4, bMax: 18, alienSwarm: true }
           },
           {
             id: "v4",
@@ -2577,12 +2602,15 @@
       { id: "time", label: "Time Dilation", icon: "images/powerups/powerup_timedelay.png", desc: "Grants one Time Dilation charge (press X to slow time)." },
       { id: "magnet", label: "Magnet Sweep", icon: "images/powerups/powerup_magnet.png", desc: "Grants one Magnet Sweep charge (press X to pull the correct asteroid)." },
       { id: "emp", label: "EMP Burst", icon: "images/powerups/powerup_EMP.png", desc: "Triggers immediately and cascades non-answer asteroids." },
-      { id: "lock", label: "Target Lock", icon: "images/powerups/powerup_targetlock.png", desc: "Grants one Target Lock charge (press X to steer shots to the correct asteroid)." }
+      { id: "lock", label: "Target Lock", icon: "images/powerups/powerup_targetlock.png", desc: "Grants one Target Lock charge (press X to steer shots to the correct asteroid)." },
+      { id: "autofire", label: "Auto-Fire", icon: "images/powerups/powerup_machinegun.png", desc: "Activates a rapid-fire magazine for the current shot type." },
+      { id: "ammo", label: "Ammo Cache", icon: "images/powerups/powerup_ammo.png", desc: "Bonus ammo pickup for special weapon handling." }
     ];
 
     var homePowerupCatalogDefense = [
       { id: "shield", label: "Shield", icon: "images/powerups/powerup_shield.png", desc: "Temporary shield for 10 seconds." },
-      { id: "armor", label: "Armor", icon: "images/powerups/powerup_armor.png", desc: "Temporary armor for 12 seconds." }
+      { id: "armor", label: "Armor", icon: "images/powerups/powerup_armor.png", desc: "Temporary armor for 12 seconds." },
+      { id: "scope", label: "Scope", icon: "images/powerups/powerup_scope.png", desc: "Projects a laser guide to the nearest asteroid." }
     ];
 
     var homePowerupCatalogOffense = [
@@ -2609,9 +2637,12 @@
       { id: "gun1", label: "Gun 1", desc: "Primary blaster.", when: "Standard, missile, and fire shots.", badge: "SFX", src: "sfx/shots/gun1.mp3", category: "shots" },
       { id: "gun2", label: "Gun 2", desc: "Heavy blaster.", when: "Laser and rail shots.", badge: "SFX", src: "sfx/shots/gun2.mp3", category: "shots" },
       { id: "ice_shot", label: "Ice Shot", desc: "Ice blaster.", when: "Ice shots.", badge: "SFX", src: "sfx/shots/ice_shot.mp3", category: "shots" },
-      { id: "bolt_shot", label: "Bolt Shot", desc: "Electric blaster.", when: "Electric shots.", badge: "SFX", src: "sfx/shots/bolt_shot.mp3", category: "shots" },
+      { id: "electric_shot", label: "Electric Shot", desc: "Electric blaster.", when: "Electric shots.", badge: "SFX", src: "sfx/electric_shot.mp3", category: "shots" },
+      { id: "flame_shot", label: "Flame Shot", desc: "Fire blaster.", when: "Fire shots.", badge: "SFX", src: "sfx/flame_shot.mp3", category: "shots" },
       { id: "shot_missile", label: "Missile Shot", desc: "Missile launch.", when: "Typing the correct answer with missile shot.", badge: "SFX", src: "sfx/shots/shot_missile.mp3", category: "shots" },
       { id: "shot_orb", label: "Plasma Orb", desc: "Plasma orb shot.", when: "Plasma shots.", badge: "SFX", src: "sfx/shots/shot_orb.mp3", category: "shots" },
+      { id: "shot_railbeam", label: "Rail Beam", desc: "Rail beam shot.", when: "Rail shots.", badge: "SFX", src: "sfx/shots/shot_railbeam.mp3", category: "shots" },
+      { id: "machine_gun_load", label: "Machine Gun Load", desc: "Spooling rounds.", when: "Auto-fire spin-up.", badge: "SFX", src: "sfx/machine_gun_load.mp3", category: "shots" },
       { id: "impact", label: "Impact", desc: "Collision hit.", when: "Ship hits and alien impacts.", badge: "SFX", src: "sfx/gameplay/impact.mp3", category: "gameplay" },
       { id: "impact_thud", label: "Impact Thud", desc: "Asteroid thud.", when: "Asteroid impacts and EMP cascade hits.", badge: "SFX", src: "sfx/gameplay/impact_thud.mp3", category: "gameplay" },
       { id: "correct", label: "Correct", desc: "Correct hit cue.", when: "Correct answer asteroid destroyed.", badge: "SFX", src: "sfx/gameplay/correct.mp3", category: "gameplay" },
@@ -4004,6 +4035,7 @@
         sound: true,
         ship: selectedShip,
         belt: String(getValue("belt") || selectedBelt || "dusk"),
+        alienSwarm: data.get("alienSwarm") !== null,
       };
     }
 
@@ -4422,6 +4454,9 @@
         belt: String(config.belt || "dusk"),
         autoStart: "1",
       });
+      if(config.alienSwarm){
+        params.set("alienSwarm", "1");
+      }
       if(pendingCampaign){
         ensureCampaignData();
         var activeId = pendingCampaign.id || getActiveCampaignId();

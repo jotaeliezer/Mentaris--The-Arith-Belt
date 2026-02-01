@@ -56,6 +56,13 @@ export function resetAliens(){
   unlocked = false;
 }
 
+export function setAlienUnlocked(value){
+  unlocked = !!value;
+  if(unlocked){
+    spawnTimer = 0;
+  }
+}
+
 export function spawnAlien(typeId, question, answer, view){
   var t = alienTypes[typeId] || alienTypes.scout;
   var pad = 80;
@@ -147,6 +154,9 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
     if(a.hitShake > 0){
       a.hitShake = Math.max(0, a.hitShake - dt);
     }
+    if(a.flipTimer > 0){
+      a.flipTimer = Math.max(0, a.flipTimer - dt);
+    }
     var diff = String((state && state.difficulty) || "normal").toLowerCase();
     var brutal = diff === "brutal";
     // Keep brutal highly erratic, but calm down the default movement.
@@ -161,8 +171,13 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
     var chase = (a.strafeTarget - a.x) * 0.8;
     var wobble = Math.sin(a.t * (brutal ? 2.1 : 1.1) + a.uid) * (95 * erraticFactor)
       + Math.sin(a.t * (brutal ? 4.2 : 2.2) + a.uid * 1.7) * (40 * erraticFactor);
+    var prevVx = a.prevVx || 0;
     a.vx = (wobble + chase) * motionScale;
     a.vy = ((a.speed * 0.34) + Math.sin(a.t * (brutal ? 1.4 : 0.85) + a.uid) * (10 * erraticFactor)) * motionScale;
+    if((prevVx <= -4 && a.vx >= 4) || (prevVx >= 4 && a.vx <= -4)){
+      a.flipTimer = 0.35;
+    }
+    a.prevVx = a.vx;
     if(a.stunTimer > 0){
       a.stunTimer = Math.max(0, a.stunTimer - dt);
       a.vx *= 0.15;
@@ -288,7 +303,16 @@ export function drawAliens(ctx){
       var scale = size / Math.max(1, Math.max(iw, ih));
       var drawW = iw * scale;
       var drawH = ih * scale;
-      ctx.drawImage(sprite.img, a.x + shakeX - drawW / 2, a.y + shakeY - drawH / 2, drawW, drawH);
+      var spinFlip = a.flipTimer > 0 && (((performance.now() + a.uid * 97) / 45) | 0) % 2 === 1;
+      if(spinFlip){
+        ctx.save();
+        ctx.translate(a.x + shakeX, a.y + shakeY);
+        ctx.scale(1, -1);
+        ctx.drawImage(sprite.img, -drawW / 2, -drawH / 2, drawW, drawH);
+        ctx.restore();
+      }else{
+        ctx.drawImage(sprite.img, a.x + shakeX - drawW / 2, a.y + shakeY - drawH / 2, drawW, drawH);
+      }
     }else{
       ctx.fillStyle = "rgba(80,255,220,.7)";
       ctx.beginPath();
