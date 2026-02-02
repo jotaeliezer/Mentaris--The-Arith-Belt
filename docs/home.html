@@ -2603,23 +2603,23 @@
       { id: "magnet", label: "Magnet Sweep", icon: "images/powerups/powerup_magnet.png", desc: "Grants one Magnet Sweep charge (press X to pull the correct asteroid)." },
       { id: "emp", label: "EMP Burst", icon: "images/powerups/powerup_EMP.png", desc: "Triggers immediately and cascades non-answer asteroids." },
       { id: "lock", label: "Target Lock", icon: "images/powerups/powerup_targetlock.png", desc: "Grants one Target Lock charge (press X to steer shots to the correct asteroid)." },
+      { id: "scope", label: "Scope", icon: "images/powerups/powerup_scope.png", desc: "Projects a laser guide to the nearest asteroid." },
       { id: "autofire", label: "Auto-Fire", icon: "images/powerups/powerup_machinegun.png", desc: "Activates a rapid-fire magazine for the current shot type." },
       { id: "ammo", label: "Ammo Cache", icon: "images/powerups/powerup_ammo.png", desc: "Bonus ammo pickup for special weapon handling." }
     ];
 
     var homePowerupCatalogDefense = [
       { id: "shield", label: "Shield", icon: "images/powerups/powerup_shield.png", desc: "Temporary shield for 10 seconds." },
-      { id: "armor", label: "Armor", icon: "images/powerups/powerup_armor.png", desc: "Temporary armor for 12 seconds." },
-      { id: "scope", label: "Scope", icon: "images/powerups/powerup_scope.png", desc: "Projects a laser guide to the nearest asteroid." }
+      { id: "armor", label: "Armor", icon: "images/powerups/powerup_armor.png", desc: "Temporary armor for 12 seconds." }
     ];
 
     var homePowerupCatalogOffense = [
       { id: "missile", label: "Missile Shot", icon: "images/shots/shot_missile.png", desc: "Type the correct answer to launch a seeking missile." },
       { id: "laser", label: "Laser Burst", icon: "images/shots/shot_laser.png", desc: "High-speed laser shots for about 12 seconds." },
-      { id: "fire", label: "Fireball", icon: "images/shots/shot_fre.png", desc: "Fireball shots for about 12 seconds." },
+      { id: "fire", label: "Fireball", icon: "images/shots/shot_fire.png", desc: "Fireball shots for about 12 seconds." },
       { id: "ice", label: "Ice Shards", icon: "images/shots/shot_ice.png", desc: "Ice shots for about 12 seconds." },
       { id: "electric", label: "Electric Bolts", icon: "images/shots/shot_electric.png", desc: "Electric bolts for about 12 seconds." },
-      { id: "pierce", label: "Look Up Shot", icon: "images/shots/shot_lookup.png", desc: "Piercing shots for about 12 seconds." },
+      { id: "pierce", label: "Bola Shot", icon: "images/shots/shot_lookup.png", desc: "Piercing shots for about 12 seconds." },
       { id: "plasma", label: "Plasma Orb", icon: "images/shots/shot_plasma.png", desc: "Plasma shots for about 12 seconds." },
       { id: "rail", label: "Rail Beam", icon: "images/shots/shot_rail.png", desc: "Rail beam shots for about 12 seconds." }
     ];
@@ -2654,15 +2654,26 @@
       { id: "ship_damaged", label: "Ship Damaged", desc: "Damage alert.", when: "Player takes damage.", badge: "SFX", src: "sfx/ship/ship_damaged.mp3", category: "ship" },
       { id: "warning", label: "Warning", desc: "Warning alarm.", when: "Correct answer near escape (not in tutorial).", badge: "SFX", src: "sfx/alerts/warning.mp3", category: "alerts" },
       { id: "shot_powerup", label: "Shot Pickup", desc: "Offense pickup.", when: "Collect shot type upgrades.", badge: "SFX", src: "sfx/powerups/shot_powerup.mp3", category: "powerups" },
+      { id: "powerup_emerges", label: "Powerup Emerges", desc: "Hidden powerup reveal.", when: "Powerup emerges from a destroyed asteroid.", badge: "SFX", src: "sfx/powerups/powerup_emerges.mp3", category: "powerups" },
+      { id: "emp_activate", label: "EMP Activate", desc: "EMP discharge.", when: "Activate EMP burst.", badge: "SFX", src: "sfx/powerups/EMP_activate.mp3", category: "powerups" },
       { id: "hull_repair_pickup", label: "Hull Repair Pickup", desc: "Repair pickup.", when: "Collect hull repair.", badge: "SFX", src: "sfx/powerups/hull_repair_pickup.mp3", category: "powerups" },
       { id: "armor_pickup", label: "Armor Pickup", desc: "Armor pickup.", when: "Collect armor powerup.", badge: "SFX", src: "sfx/powerups/armor_pickup.mp3", category: "powerups" },
       { id: "shield_pickup", label: "Shield Pickup", desc: "Shield pickup.", when: "Collect shield powerup.", badge: "SFX", src: "sfx/powerups/sheld_pickup.mp3", category: "powerups" },
+      { id: "flares", label: "Flares", desc: "Verdant Spire flare burst.", when: "Press C (flares).", badge: "SFX", src: "sfx/ship/flares.mp3", category: "ship" },
+      { id: "teleport_disappear", label: "Teleport Disappear", desc: "AM2 teleport vanish.", when: "Teleport start.", badge: "SFX", src: "sfx/ship/teleport_disappear.mp3", category: "ship" },
+      { id: "teleport_reappear", label: "Teleport Reappear", desc: "AM2 teleport reappear.", when: "Teleport end.", badge: "SFX", src: "sfx/ship/teleport_reappear.mp3", category: "ship" },
+      { id: "sec_15_mark", label: "15 Sec Mark", desc: "15 seconds remaining cue.", when: "Timer reaches 15s.", badge: "SFX", src: "sfx/progress/15_sec_mark.mp3", category: "progress" },
       { id: "time_activate", label: "Time Activate", desc: "Time dilation cue.", when: "Activate time dilation.", badge: "SFX", src: "sfx/powerups/time_activate.mp3", category: "powerups" },
       { id: "powerup_collected", label: "Powerup Collected", desc: "Pickup chime.", when: "Collect magnet, EMP, or target lock.", badge: "SFX", src: "sfx/powerups/powerup_collected.mp3", category: "powerups" },
       { id: "crash", label: "Crash", desc: "Hard collision.", when: "Ship collision impact.", badge: "SFX", src: "sfx/ship/crash.mp3", category: "ship" },
       { id: "soundtrack1", label: "Soundtrack 1", desc: "Ambient drive.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack1.mp3", category: "soundtracks" },
       { id: "soundtrack2_toohottosleep", label: "Soundtrack 2", desc: "Too Hot To Sleep.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack2_toohottosleep.mp3", category: "soundtracks" },
-      { id: "soundtrack3", label: "Soundtrack 3", desc: "Synthwave drift.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack3.mp3", category: "soundtracks" }
+      { id: "soundtrack3", label: "Soundtrack 3", desc: "Synthwave drift.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack3.mp3", category: "soundtracks" },
+      { id: "soundtrack4", label: "Soundtrack 4", desc: "Dark pulse.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack4.mp3", category: "soundtracks" },
+      { id: "soundtrack5", label: "Soundtrack 5", desc: "Night run.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack5.mp3", category: "soundtracks" },
+      { id: "soundtrack6", label: "Soundtrack 6", desc: "Orbit drift.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack6.mp3", category: "soundtracks" },
+      { id: "soundtrack7", label: "Soundtrack 7", desc: "Rational flow.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack7.mp3", category: "soundtracks" },
+      { id: "soundtrack8", label: "Soundtrack 8", desc: "Void runner.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack8.mp3", category: "soundtracks" }
     ];
 
     var homePreviewPlayers = {};

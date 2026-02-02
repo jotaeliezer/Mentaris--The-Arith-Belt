@@ -40,6 +40,8 @@ export function createState(){
     powerupsCollected:0,
     powerupsMissed:0,
     powerupsUsed:0,
+    powerupsUsedByType:{},
+    aliensShotByType:{},
     specialUses:0,
     startTime:0,
     pauseAccum:0,

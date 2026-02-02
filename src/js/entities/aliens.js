@@ -346,3 +346,9 @@ export function drawAlienBullets(ctx){
   ctx.restore();
 }
 
+export function getAlienSpriteSrcFor(alien){
+  if(!alien) return null;
+  var sprite = alienSprites[alien.uid % alienSprites.length];
+  return sprite ? sprite.src : null;
+}
+

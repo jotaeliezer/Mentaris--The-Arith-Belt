@@ -139302,6 +139302,8 @@
       powerupsCollected: 0,
       powerupsMissed: 0,
       powerupsUsed: 0,
+      powerupsUsedByType: {},
+      aliensShotByType: {},
       specialUses: 0,
       startTime: 0,
       pauseAccum: 0,
@@ -141494,6 +141496,12 @@
     }
     ctx2.restore();
   }
+  function getAlienSpriteSrcFor(alien) {
+    if (!alien)
+      return null;
+    var sprite = alienSprites[alien.uid % alienSprites.length];
+    return sprite ? sprite.src : null;
+  }
 
   // src/js/core/levels.js
   function computeSpawnInterval(state2) {
@@ -141934,6 +141942,7 @@
   var endOutcome = document.getElementById("endOutcome");
   var endReasonLine = document.getElementById("endReasonLine");
   var statsList = document.getElementById("statsList");
+  var statsListSecondary = document.getElementById("statsListSecondary");
   var weakList = document.getElementById("weakList");
   var accBar = document.getElementById("accBar");
   var endGrade = document.getElementById("endGrade");
@@ -141944,6 +141953,7 @@
   var breakdownWrongValue = document.getElementById("breakdownWrongValue");
   var breakdownMissedValue = document.getElementById("breakdownMissedValue");
   var highScoresEnd = document.getElementById("highScoresEnd");
+  var btnHighScoresToggle = document.getElementById("btnHighScoresToggle");
   var endNameInput = document.getElementById("endNameInput");
   var endSequence = document.querySelector(".endSequence");
   var endScoreValue = document.getElementById("endScoreValue");
@@ -142221,7 +142231,7 @@
   var shotIcons = {
     missile: { img: new Image(), ready: false, src: "images/shots/shot_missile.png" },
     electric: { img: new Image(), ready: false, src: "images/shots/shot_electric.png" },
-    fire: { img: new Image(), ready: false, src: "images/shots/shot_fre.png" },
+    fire: { img: new Image(), ready: false, src: "images/shots/shot_fire.png" },
     ice: { img: new Image(), ready: false, src: "images/shots/shot_ice.png" },
     laser: { img: new Image(), ready: false, src: "images/shots/shot_laser.png" },
     plasma: { img: new Image(), ready: false, src: "images/shots/shot_plasma.png" },
@@ -142287,12 +142297,12 @@
     { id: "emp", label: "EMP Burst", icon: powerupIcons.emp.src, desc: "Triggers immediately and cascades non-answer asteroids." },
     { id: "lock", label: "Target Lock", icon: powerupIcons.lock.src, desc: "Grants one Target Lock charge (press X to steer shots to the correct asteroid)." },
     { id: "autofire", label: "Auto-Fire", icon: powerupIcons.machinegun.src, desc: "Activates a rapid-fire magazine for the current shot type." },
-    { id: "ammo", label: "Ammo Cache", icon: powerupIcons.ammo.src, desc: "Bonus ammo pickup for special weapon handling." }
+    { id: "ammo", label: "Ammo Cache", icon: powerupIcons.ammo.src, desc: "Bonus ammo pickup for special weapon handling." },
+    { id: "scope", label: "Scope", icon: powerupIcons.scope.src, desc: "Projects a laser guide to the nearest asteroid." }
   ];
   var powerupCatalogDefense = [
     { id: "shield", label: "Shield", icon: powerupIcons.shield.src, desc: "Temporary shield for 10 seconds." },
-    { id: "armor", label: "Armor", icon: powerupIcons.armor.src, desc: "Absorbs 5 hits before disarming." },
-    { id: "scope", label: "Scope", icon: powerupIcons.scope.src, desc: "Projects a laser guide to the nearest asteroid." }
+    { id: "armor", label: "Armor", icon: powerupIcons.armor.src, desc: "Absorbs 5 hits before disarming." }
   ];
   var powerupCatalogOffense = [
     { id: "missile", label: "Missile Shot", icon: shotIcons.missile ? shotIcons.missile.src : null, desc: "Type the correct answer to launch a seeking missile." },
@@ -142300,7 +142310,7 @@
     { id: "fire", label: "Fireball", icon: shotIcons.fire ? shotIcons.fire.src : null, desc: "Fireball shots for about 12 seconds." },
     { id: "ice", label: "Ice Shards", icon: shotIcons.ice ? shotIcons.ice.src : null, desc: "Ice shots for about 12 seconds." },
     { id: "electric", label: "Electric Bolts", icon: shotIcons.electric ? shotIcons.electric.src : null, desc: "Electric bolts for about 12 seconds." },
-    { id: "pierce", label: "Look Up Shot", icon: shotIcons.pierce ? shotIcons.pierce.src : null, desc: "Piercing shots for about 12 seconds." },
+    { id: "pierce", label: "Bola Shot", icon: shotIcons.pierce ? shotIcons.pierce.src : null, desc: "Piercing shots for about 12 seconds." },
     { id: "plasma", label: "Plasma Orb", icon: shotIcons.plasma ? shotIcons.plasma.src : null, desc: "Plasma shots for about 12 seconds." },
     { id: "rail", label: "Rail Beam", icon: shotIcons.rail ? shotIcons.rail.src : null, desc: "Rail beam shots for about 12 seconds." }
   ];
@@ -142964,7 +142974,18 @@
       return state.a + " x ? = " + product;
     }
     var op = isAdditionMode() ? "+" : "x";
-    return state.a + " " + op + " " + state.b + " = ?";
+    var left = state.a;
+    var right = state.b;
+    if (op === "x") {
+      var lenA = String(Math.abs(left || 0)).length;
+      var lenB = String(Math.abs(right || 0)).length;
+      if (lenA < lenB) {
+        var tmp = left;
+        left = right;
+        right = tmp;
+      }
+    }
+    return left + " " + op + " " + right + " = ?";
   }
   function getQuestionText() {
     return parseRepeatingText(getQuestionRawText()).display;
@@ -143273,8 +143294,10 @@
       return 0;
     if (isDigitMode()) {
       var num = parseInt(answerStr, 10);
-      if (!isFinite(num) || num < 0)
+      if (!isFinite(num))
         return 0;
+      if (num <= 0)
+        return 1;
       return num;
     }
     return 1;
@@ -143285,13 +143308,13 @@
     var dx = target.x - player.x;
     var dy = target.y - player.y;
     var dist = Math.max(1, Math.hypot(dx, dy));
-    var speed = 680;
+    var speed = 560;
     var seed = opts && typeof opts.seed === "number" ? opts.seed : Math.random() * 999;
     var delay = opts && typeof opts.delay === "number" ? opts.delay : 0;
     var offsetX = opts && typeof opts.offsetX === "number" ? opts.offsetX : 0;
     var offsetY = opts && typeof opts.offsetY === "number" ? opts.offsetY : 0;
-    var weaveAmp = opts && typeof opts.weaveAmp === "number" ? opts.weaveAmp : rand(18, 46);
-    var weaveFreq = opts && typeof opts.weaveFreq === "number" ? opts.weaveFreq : rand(2.2, 3.6);
+    var weaveAmp = opts && typeof opts.weaveAmp === "number" ? opts.weaveAmp : rand(28, 74);
+    var weaveFreq = opts && typeof opts.weaveFreq === "number" ? opts.weaveFreq : rand(1.6, 2.9);
     var avoidRadius = opts && typeof opts.avoidRadius === "number" ? opts.avoidRadius : rand(110, 150);
     var avoidStrength = opts && typeof opts.avoidStrength === "number" ? opts.avoidStrength : rand(260, 360);
     bullets.push({
@@ -143303,10 +143326,10 @@
       kind: "missile",
       targetId: target.id,
       speed,
-      accelFrom: 680,
-      accelTo: 750,
+      accelFrom: 560,
+      accelTo: 650,
       accelDelay: 1,
-      accelDuration: 0.7,
+      accelDuration: 1.1,
       accelT: 0,
       boosted: false,
       rot: 0,
@@ -143340,13 +143363,13 @@
     for (var i = 0; i < shots; i++) {
       var offsetX = (i - spread / 2) * baseOffset;
       var delay = i * 0.08;
-      var weaveAmp = shots > 1 ? rand(22, 58) : rand(16, 30);
+      var weaveAmp = shots > 1 ? rand(36, 86) : rand(24, 58);
       launchMissile(target, {
         seed: Math.random() * 999 + i * 17,
         delay,
         offsetX,
         weaveAmp,
-        weaveFreq: rand(2.2, 3.9)
+        weaveFreq: rand(1.6, 3)
       });
     }
     return true;
@@ -143988,7 +144011,7 @@
     var spawnY = -rand(26, 88);
     var baseVx = rand(-35, 35);
     if (spawnSide !== "top") {
-      var sideYMax = Math.max(80, h * 0.5);
+      var sideYMax = Math.max(80, h * 0.35);
       spawnY = rand(0, sideYMax);
       if (spawnSide === "left") {
         spawnX = -rand(20, 64);
@@ -144037,12 +144060,24 @@
         digitHits = 1;
       a.hitsRemaining = digitHits;
       a.hitsTotal = digitHits;
-    } else if (isRationalMode() && state.questionMode === "rational_frac" && isCorrect) {
+    } else if (isRationalMode() && (state.questionMode === "rational_frac" || state.questionMode === "rational_dec") && isCorrect) {
       var denHits = parseInt(state.b, 10);
       if (Number.isNaN(denHits) || denHits <= 1)
         denHits = 1;
       a.hitsRemaining = denHits;
       a.hitsTotal = denHits;
+    } else if (isCorrect && (state.questionMode === "classic" || state.questionMode === "classic2" || state.questionMode === "classic3" || state.questionMode === "add_classic2" || state.questionMode === "add_classic3")) {
+      var ansStr = String(Math.abs(state.answer || 0));
+      var maxDigit = 0;
+      for (var di = 0; di < ansStr.length; di++) {
+        var dval = ansStr.charCodeAt(di) - 48;
+        if (dval > maxDigit)
+          maxDigit = dval;
+      }
+      if (maxDigit <= 1)
+        maxDigit = 1;
+      a.hitsRemaining = maxDigit;
+      a.hitsTotal = maxDigit;
     }
     asteroids.push(a);
     if (isCorrect) {
@@ -144165,14 +144200,14 @@
       }
       if (roll < 0.9) {
         var dRoll = Math.random();
-        var dType = dRoll < 0.45 ? "shield" : dRoll < 0.7 ? "armor" : "scope";
+        var dType = dRoll < 0.55 ? "shield" : "armor";
         return { type: dType, group: "defense" };
       }
       var sType = pickSecondaryType();
       return { type: sType, group: "secondary" };
     }
     function pickSecondaryType() {
-      var pool = ["time", "time", "emp", "emp", "magnet", "lock", "repair", "autofire"];
+      var pool = ["time", "time", "emp", "emp", "magnet", "lock", "repair", "autofire", "scope"];
       return pool[Math.floor(Math.random() * pool.length)];
     }
     if (lowHull && roll < 0.75) {
@@ -144188,7 +144223,7 @@
     }
     if (roll < 0.7) {
       var dRoll = Math.random();
-      var dType = dRoll < 0.45 ? "shield" : dRoll < 0.7 ? "armor" : "scope";
+      var dType = dRoll < 0.55 ? "shield" : "armor";
       return { type: dType, group: "defense" };
     }
     var sType = pickSecondaryType();
@@ -144228,20 +144263,6 @@
     }
   }
   function applyPowerup(p) {
-    if (p.group === "defense") {
-      if (p.type === "scope") {
-        ctx.beginPath();
-        ctx.arc(0, 0, 12, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(-10, 0);
-        ctx.lineTo(10, 0);
-        ctx.moveTo(0, -10);
-        ctx.lineTo(0, 10);
-        ctx.stroke();
-        return;
-      }
-    }
     if (p.group === "offense") {
       if (p.type === "missile" && !isMissileAllowed()) {
         p.type = "laser";
@@ -144278,7 +144299,10 @@
       player.scopeTimer = Math.max(player.scopeTimer || 0, 12);
       showToast("DEFENSE -> SCOPE ONLINE");
     } else if (p.group === "secondary") {
-      if (p.type === "repair") {
+      if (p.type === "scope") {
+        player.scopeTimer = Math.max(player.scopeTimer || 0, 12);
+        showToast("SECONDARY -> SCOPE ONLINE");
+      } else if (p.type === "repair") {
         player.hull = clamp(player.hull + 0.35, 0, 1);
         spawnRing(player.x, player.y, 18);
         spawnParticles(player.x, player.y, "correct");
@@ -144554,6 +144578,8 @@
     state.powerupsCollected = 0;
     state.powerupsMissed = 0;
     state.powerupsUsed = 0;
+    state.powerupsUsedByType = {};
+    state.aliensShotByType = {};
     state.specialUses = 0;
     state.asteroidCollisions = 0;
     state.alienCollisions = 0;
@@ -145126,6 +145152,11 @@
     player.secondaryCharges = slot.count;
     player.secondaryCooldown = 1.2;
     state.powerupsUsed = (state.powerupsUsed || 0) + 1;
+    if (activeType) {
+      if (!state.powerupsUsedByType)
+        state.powerupsUsedByType = {};
+      state.powerupsUsedByType[activeType] = (state.powerupsUsedByType[activeType] || 0) + 1;
+    }
     if (activeType === "repair") {
       player.hull = clamp(player.hull + 0.35, 0, 1);
       spawnRing(player.x, player.y, 18);
@@ -146005,12 +146036,18 @@
     statsList.style.display = "grid";
     statsList.style.gridTemplateColumns = "repeat(2, minmax(0,1fr))";
     statsList.style.gap = "10px";
+    if (statsListSecondary) {
+      statsListSecondary.innerHTML = "";
+      statsListSecondary.style.display = "grid";
+      statsListSecondary.style.gridTemplateColumns = "1fr";
+      statsListSecondary.style.gap = "10px";
+    }
     function ensureEndStatsChartStyles() {
       if (document.getElementById("endStatsCharts"))
         return;
       var style = document.createElement("style");
       style.id = "endStatsCharts";
-      style.textContent = ".endStatsSection{grid-column:1/-1;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.04);}.endStatsSection h4{margin:0 0 10px;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);}.endStatsRow{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;margin:8px 0;}.endStatsIcon{width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.06);display:grid;place-items:center;overflow:hidden;border:1px solid rgba(255,255,255,.12);}.endStatsIcon img{width:20px;height:20px;object-fit:contain;}.endStatsBar{height:10px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;position:relative;}.endStatsFill{height:100%;border-radius:999px;background:linear-gradient(90deg, rgba(0,229,255,.7), rgba(0,229,255,.35));}.endStatsCount{font-size:12px;color:#e8ecff;min-width:38px;text-align:right;}.endStatsStack{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}.endStatsStack img{width:20px;height:20px;object-fit:contain;opacity:.9;}";
+      style.textContent = ".endStatsSection{grid-column:1/-1;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.04);}.endStatsSection h4{margin:0 0 10px;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);}.endStatsRow{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;margin:8px 0;}.endStatsIcon{width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.06);display:grid;place-items:center;overflow:hidden;border:1px solid rgba(255,255,255,.12);}.endStatsIcon img{width:20px;height:20px;object-fit:contain;}.endStatsBar{height:10px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;position:relative;}.endStatsFill{height:100%;border-radius:999px;background:linear-gradient(90deg, rgba(0,229,255,.7), rgba(0,229,255,.35));}.endStatsCount{font-size:12px;color:#e8ecff;min-width:38px;text-align:right;}.endStatsStack{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}.endStatsHidden{display:none;}.endStatsStack img{width:20px;height:20px;object-fit:contain;opacity:.9;}";
       document.head.appendChild(style);
     }
     ensureEndStatsChartStyles();
@@ -146028,13 +146065,13 @@
       row.innerHTML = '<span style="color: var(--muted);">' + label2 + "</span><b>" + value + "</b>";
       statsList.appendChild(row);
     }
-    function addSection(title) {
+    function addSection(title, list) {
       var section = document.createElement("div");
       section.className = "endStatsSection";
       var h = document.createElement("h4");
       h.textContent = title;
       section.appendChild(h);
-      statsList.appendChild(section);
+      (list || statsList).appendChild(section);
       return section;
     }
     function getShotIconSrc(type) {
@@ -146085,10 +146122,7 @@
     function addIconStackRow(section, label2, icons, count2) {
       var row = document.createElement("div");
       row.className = "endStatsRow";
-      var iconBox = document.createElement("div");
-      iconBox.className = "endStatsIcon";
-      iconBox.textContent = "";
-      row.appendChild(iconBox);
+      row.style.gridTemplateColumns = "1fr auto";
       var stackWrap = document.createElement("div");
       var labelEl = document.createElement("div");
       labelEl.textContent = label2;
@@ -146142,14 +146176,13 @@
         addIconBarRow(shotSection, label, getShotIconSrc(st), count, maxShot);
       }
     }
-    var alienSection = addSection("ALIENS SHOT");
-    var alienIcons = [
-      "images/aliens/alien_galaga.png",
-      "images/aliens/alien_eye.png",
-      "images/aliens/alien_saucer.png"
-    ];
+    var alienIcons = [];
+    if (state.aliensShotByType) {
+      alienIcons = Object.keys(state.aliensShotByType);
+    }
+    var alienSection = addSection("ALIENS SHOT", statsListSecondary || statsList);
     addIconStackRow(alienSection, "ALIENS SHOT", alienIcons, state.aliensShot || 0);
-    var powerupSection = addSection("POWERUPS");
+    var powerupSection = addSection("POWERUPS", statsListSecondary || statsList);
     var powerupIconsRow = [
       powerupIcons.repair && powerupIcons.repair.src,
       powerupIcons.shield && powerupIcons.shield.src,
@@ -146157,8 +146190,17 @@
       powerupIcons.emp && powerupIcons.emp.src
     ].filter(Boolean);
     addIconStackRow(powerupSection, "COLLECTED", powerupIconsRow, state.powerupsCollected || 0);
-    addIconStackRow(powerupSection, "USED", powerupIconsRow, state.powerupsUsed || 0);
-    var maneuverSection = addSection("MANEUVERS");
+    var usedIcons = [];
+    if (state.powerupsUsedByType) {
+      usedIcons = Object.keys(state.powerupsUsedByType).map(function(type) {
+        var icon = powerupIcons[type];
+        if (!icon && shotIcons && shotIcons[type])
+          icon = shotIcons[type];
+        return icon ? icon.src : null;
+      }).filter(Boolean);
+    }
+    addIconStackRow(powerupSection, "USED", usedIcons, state.powerupsUsed || 0);
+    var maneuverSection = addSection("MANEUVERS", statsListSecondary || statsList);
     var dashIcon = cooldownIcons && cooldownIcons.dash ? cooldownIcons.dash.src : null;
     var abilityKey = "shockwave";
     var profile = getShipProfile(player.shipType);
@@ -146169,6 +146211,8 @@
     var abilityIcon = cooldownIcons && cooldownIcons[abilityKey] ? cooldownIcons[abilityKey].src : null;
     addIconStackRow(maneuverSection, "DASHES", dashIcon ? [dashIcon] : [], state.dashes || 0);
     addIconStackRow(maneuverSection, "SPECIAL", abilityIcon ? [abilityIcon] : [], state.specialUses || 0);
+    if (!statsListSecondary) {
+    }
     if (accBar) {
       accBar.style.width = String(Math.round(acc * 100)) + "%";
     }
@@ -146225,6 +146269,22 @@
       }
     }
     renderHighScores(lifetime, modeInfo.key);
+    if (highScoresEnd) {
+      highScoresEnd.classList.add("endStatsHidden");
+    }
+    if (btnHighScoresToggle) {
+      btnHighScoresToggle.textContent = "SHOW SCORES";
+      btnHighScoresToggle.onclick = function() {
+        if (!highScoresEnd)
+          return;
+        var hidden = highScoresEnd.classList.contains("endStatsHidden");
+        highScoresEnd.classList.toggle("endStatsHidden", !hidden);
+        btnHighScoresToggle.textContent = hidden ? "HIDE SCORES" : "SHOW SCORES";
+        if (hidden) {
+          renderHighScores(lifetime, modeInfo.key);
+        }
+      };
+    }
     if (btnEndNext) {
       btnEndNext.style.display = campaignResult.hasNext ? "inline-flex" : "none";
     }
@@ -146833,7 +146893,54 @@
           b.noHit = false;
         }
       }
-      if (b.kind === "missile") {
+      if (b.kind === "electric") {
+        if (!b.beamInit) {
+          b.beamInit = true;
+          b.beamStartX = b.x;
+          b.beamStartY = b.y;
+          b.vx = 0;
+          b.vy = -1;
+          b.life = Math.max(b.life || 0, 0.08);
+          var dirX = 0;
+          var dirY = -1;
+          var best = null;
+          for (var aiBeam = 0; aiBeam < asteroids.length; aiBeam++) {
+            var ab = asteroids[aiBeam];
+            if (!ab || ab.ghost)
+              continue;
+            if (ab.y >= b.beamStartY)
+              continue;
+            var dxB = ab.x - b.beamStartX;
+            var dyB = ab.y - b.beamStartY;
+            var proj = dxB * dirX + dyB * dirY;
+            if (proj <= 0)
+              continue;
+            var distLine = Math.abs(dxB * -dirY + dyB * dirX);
+            if (distLine > ab.r + 10)
+              continue;
+            if (!best || proj < best.proj) {
+              best = { asteroid: ab, proj };
+            }
+          }
+          if (best && best.asteroid) {
+            b.beamTargetId = best.asteroid.id;
+            b.beamEndX = best.asteroid.x;
+            b.beamEndY = best.asteroid.y;
+            b.x = best.asteroid.x;
+            b.y = best.asteroid.y;
+          } else {
+            b.beamEndX = b.beamStartX;
+            b.beamEndY = view.hudH + 8;
+          }
+        }
+        if (b.life != null) {
+          b.life -= dtReal;
+          if (b.life <= 0) {
+            bullets.splice(bi, 1);
+            continue;
+          }
+        }
+      } else if (b.kind === "missile") {
         var target = null;
         if (b.targetId) {
           for (var mi = 0; mi < asteroids.length; mi++) {
@@ -146900,8 +147007,8 @@
             }
             var vxT = dirX * mspd + perpX * weave + avoidX;
             var vyT = dirY * mspd + perpY * weave + avoidY;
-            b.vx = (b.vx || 0) * 0.62 + vxT * 0.38;
-            b.vy = (b.vy || 0) * 0.62 + vyT * 0.38;
+            b.vx = (b.vx || 0) * 0.5 + vxT * 0.5;
+            b.vy = (b.vy || 0) * 0.5 + vyT * 0.5;
           }
           b.rot = Math.atan2(b.vy || -1, b.vx || 0) + Math.PI / 2;
         }
@@ -147248,7 +147355,7 @@
           }
           applyBulletImpactAsteroid(hitAst, bb);
           hitAst.hit = true;
-          if (hitAst.isCorrect && hitAst.hitsRemaining && hitAst.hitsRemaining > 1 && (isDigitMode() || isRationalMode() && state.questionMode === "rational_frac")) {
+          if (hitAst.isCorrect && hitAst.hitsRemaining && hitAst.hitsRemaining > 1 && (isDigitMode() || isRationalMode() && (state.questionMode === "rational_frac" || state.questionMode === "rational_dec"))) {
             var totalHits = hitAst.hitsTotal || hitAst.hitsRemaining;
             var doneHits = totalHits - hitAst.hitsRemaining + 1;
             hitAst.hitsRemaining -= 1;
@@ -147340,6 +147447,12 @@
           al.hitsTaken += 1;
           if (al.hitsTaken >= al.answer) {
             state.aliensShot += 1;
+            if (!state.aliensShotByType)
+              state.aliensShotByType = {};
+            var alienSrc = getAlienSpriteSrcFor(al);
+            if (alienSrc) {
+              state.aliensShotByType[alienSrc] = (state.aliensShotByType[alienSrc] || 0) + 1;
+            }
             state.score += al.score;
             impactDebris(al.x, al.y);
             playSfx(state, "alien_kill", 0.65);
@@ -148597,14 +148710,28 @@
     var sub = info.submode ? " (" + info.submode + ")" : "";
     var summary = op + " \u2022 " + modeName + sub + ".";
     var detail = "Shoot the correct answer asteroids before they escape. Avoid decoys and stay sharp.";
+    var hitsRule = "";
     if (modeName.indexOf("Digit Hunt") !== -1) {
       detail = "Shoot the digits in the correct order to complete the answer. Avoid decoys.";
+      hitsRule = "Each digit asteroid takes 1 hit, in order.";
     } else if (modeName.indexOf("Factor Hunt") !== -1) {
       detail = "Find the missing factor that completes the product. Avoid decoys.";
+      hitsRule = "Correct factor asteroids take 1 hit.";
     } else if (op === "Rationals") {
       detail = "Match the fraction/decimal shown. Avoid incorrect values.";
+      if (String(state.questionMode) === "rational_frac") {
+        hitsRule = "Correct fraction asteroids take hits equal to the denominator.";
+      } else {
+        hitsRule = "Correct decimal asteroids take 1 hit.";
+      }
     } else if (op === "Squares") {
       detail = "Solve the square or root and shoot the correct asteroid.";
+      hitsRule = "Correct square/root asteroids take 1 hit.";
+    } else if (String(state.questionMode).indexOf("classic") !== -1) {
+      hitsRule = "Correct answer asteroids take hits equal to the largest digit in the answer.";
+    }
+    if (hitsRule) {
+      detail += " " + hitsRule;
     }
     return summary + " " + detail;
   }
@@ -148855,6 +148982,8 @@
     }
     if (icon && icon.ready) {
       var iconSize = Math.max(64, p.r * 4.2);
+      if (p.type === "plasma")
+        iconSize *= 1.3;
       ctx.save();
       ctx.globalCompositeOperation = "source-over";
       var iw = icon.img.naturalWidth || icon.img.width || iconSize;
@@ -149044,7 +149173,20 @@
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
     for (var i = 0; i < bullets.length; i++) {
-      let drawBulletImage = function(asset, sizeMul, offsetY, rotation, flip) {
+      let getBeamEndPoint = function() {
+        if (b.beamEndX != null && b.beamEndY != null) {
+          return { x: b.beamEndX, y: b.beamEndY };
+        }
+        var dx = typeof b.vx === "number" ? b.vx : 0;
+        var dy = typeof b.vy === "number" ? b.vy : -1;
+        var mag = Math.max(1e-3, Math.hypot(dx, dy));
+        var dirX = dx / mag;
+        var dirY = dy / mag;
+        var endY = view.hudH + 8;
+        var t2 = (endY - b.y) / Math.max(-1e-3, dirY);
+        var endX = b.x + dirX * t2;
+        return { x: endX, y: endY };
+      }, drawBulletImage = function(asset, sizeMul, offsetY, rotation, flip) {
         if (!asset || !asset.ready)
           return;
         var size = b.r * sizeMul;
@@ -149061,15 +149203,62 @@
           if (rotation)
             ctx.rotate(rotation);
           if (spinFlip2)
-            ctx.scale(1, -1);
+            ctx.scale(-1, 1);
           ctx.drawImage(asset.img, -drawW / 2, -drawH / 2, drawW, drawH);
         } else {
           ctx.drawImage(asset.img, b.x - drawW / 2, b.y + (offsetY || 0) - drawH / 2, drawW, drawH);
         }
         ctx.restore();
+      }, drawElectricBeam = function(b2) {
+        var dx = typeof b2.vx === "number" ? b2.vx : 0;
+        var dy = typeof b2.vy === "number" ? b2.vy : -1;
+        var mag = Math.max(1e-3, Math.hypot(dx, dy));
+        var dirX = dx / mag;
+        var dirY = dy / mag;
+        var startX = b2.beamStartX != null ? b2.beamStartX : b2.x;
+        var startY = b2.beamStartY != null ? b2.beamStartY : b2.y;
+        var endPoint = getBeamEndPoint();
+        var endX = endPoint.x;
+        var endY = endPoint.y;
+        var perpX = -dirY;
+        var perpY = dirX;
+        var now = performance.now() * 0.01;
+        var seed = (b2.seed || b2.id || 0) * 0.37 + now;
+        var segments = 8;
+        var pts = [];
+        pts.push([startX, startY]);
+        for (var iSeg = 1; iSeg < segments; iSeg++) {
+          var t2 = iSeg / segments;
+          var baseX = startX + (endX - startX) * t2;
+          var baseY = startY + (endY - startY) * t2;
+          var wobble = Math.sin(seed + t2 * 10.8) * Math.cos(seed * 0.9 + t2 * 8.6);
+          var amp = 24 * (1 - Math.abs(0.5 - t2) * 2);
+          var jitter = Math.sin(seed * 1.7 + iSeg * 2.1) * 0.6 + Math.cos(seed * 2.2 + iSeg * 1.3) * 0.4;
+          var j = (wobble + jitter) * amp;
+          pts.push([baseX + perpX * j, baseY + perpY * j]);
+        }
+        pts.push([endX, endY]);
+        ctx.save();
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+        ctx.strokeStyle = "rgba(130,210,255,0.5)";
+        ctx.lineWidth = 9;
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0], pts[0][1]);
+        for (var pi = 1; pi < pts.length; pi++)
+          ctx.lineTo(pts[pi][0], pts[pi][1]);
+        ctx.stroke();
+        ctx.strokeStyle = "rgba(255,255,255,0.95)";
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0], pts[0][1]);
+        for (var pi2 = 1; pi2 < pts.length; pi2++)
+          ctx.lineTo(pts[pi2][0], pts[pi2][1]);
+        ctx.stroke();
+        ctx.restore();
       };
       var b = bullets[i];
-      var spinFlip = ((performance.now() + (b.id || 0) * 83) / 45 | 0) % 2 === 1;
+      var spinFlip = ((performance.now() + (b.id || 0) * 83) / 150 | 0) % 2 === 1;
       if (b.kind === "laser") {
         drawBulletImage(bulletLaserImg, 12, -(b.len || 18), 0, spinFlip);
         continue;
@@ -149083,7 +149272,7 @@
         continue;
       }
       if (b.kind === "plasma") {
-        drawBulletImage(bulletOrbImg, 12, 0, 0, spinFlip);
+        drawBulletImage(bulletOrbImg, 16, 0, 0, spinFlip);
         continue;
       }
       if (b.kind === "ice") {
@@ -149091,7 +149280,7 @@
         continue;
       }
       if (b.kind === "electric") {
-        drawBulletImage(bulletBoltImg, 18, 0, 0, spinFlip);
+        drawElectricBeam(b);
         continue;
       }
       if (b.kind === "pierce") {
