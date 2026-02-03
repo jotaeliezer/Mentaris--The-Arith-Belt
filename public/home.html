@@ -1123,6 +1123,7 @@
           <button id="btnCampaign" class="btn secondaryLabel menuExtra" type="button">Campaign <small>6 mission run</small></button>
           <button id="btnStartGame" class="btn secondaryLabel menuExtra" type="button">Single Mission <small>Custom setup</small></button>
           <button id="btnTutorial" class="btn secondaryLabel menuExtra" type="button">Tutorial <small>Guided tour</small></button>
+          <button id="btnSandbox" class="btn secondaryLabel menuExtra" type="button">Sandbox <small>Test shots & powerups</small></button>
           <button id="btnLeaderboards" class="btn secondaryLabel menuExtra" type="button">Leaderboards <small>Top runs</small></button>
           <button id="btnSettingsHome" class="btn secondaryLabel menuExtra" type="button">Settings <small>Audio levels</small></button>
           <a id="btnExitHome" class="btn secondaryLabel menuExtra" href="../../atmc.html">Exit <small>Return to hub</small></a>
@@ -3065,6 +3066,7 @@
     var btnLaunchHome = document.getElementById("btnLaunchHome");
     var btnCampaign = document.getElementById("btnCampaign");
     var btnTutorial = document.getElementById("btnTutorial");
+    var btnSandbox = document.getElementById("btnSandbox");
     var funnelOverlay = document.getElementById("funnelOverlay");
     var menuWrap = document.getElementById("menuWrap");
     var controlsOverlay = document.getElementById("controlsOverlay");
@@ -3630,6 +3632,12 @@
       btnTutorial.addEventListener("click", function(){
         playMenuBeep();
         startTutorial();
+      });
+    }
+    if(btnSandbox){
+      btnSandbox.addEventListener("click", function(){
+        playMenuBeep();
+        startSandbox();
       });
     }
     if (startBtn && funnelOverlay) {
@@ -4318,6 +4326,21 @@
       }
       campaignShipSelect = false;
       showBriefing(config);
+    }
+
+    function startSandbox(){
+      var params = new URLSearchParams({
+        autoStart: "1",
+        sandbox: "1",
+        questionMode: "classic",
+        timerMode: "off",
+        targetMode: "off",
+        ship: getSelectedShipValue() || "mk7",
+        belt: "dusk",
+        difficulty: "normal",
+        sound: "1"
+      });
+      window.location.href = "asteroid_blaster.html?" + params.toString();
     }
 
     function showBriefing(config){

@@ -17,9 +17,9 @@ function initSfx(){
   sfxBank = {
     alien_kill: new Audio("sfx/alien/alien_kill.mp3"),
     alien_shooting: new Audio("sfx/alien/alien_shooting.mp3"),
-    electric_shot: new Audio("sfx/electric_shot.mp3"),
-    flame_shot: new Audio("sfx/flame_shot.mp3"),
-    machine_gun_load: new Audio("sfx/machine_gun_load.mp3"),
+    electric_shot: new Audio("sfx/shots/electric_shot.mp3"),
+    flame_shot: new Audio("sfx/shots/flame_shot.mp3"),
+    machine_gun_load: new Audio("sfx/shots/machine_gun_load.mp3"),
     camer_ice_shot: new Audio("sfx/shots/camer_ice_shot.mp3"),
     correct: new Audio("sfx/gameplay/correct.mp3"),
     crash: new Audio("sfx/ship/crash.mp3"),

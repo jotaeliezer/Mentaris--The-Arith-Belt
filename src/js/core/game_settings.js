@@ -77,6 +77,7 @@ export function createState(){
     slowMoWaveActive:false,
     slowMoWaveY:0,
     slowMoWaveSpeed:420,
+    lightningFlash:0,
     empTimer:0,
     empCascade:null,
     empCascadeTimer:0,
@@ -104,7 +105,13 @@ export function createState(){
     timerMark15Clip:null,
     timerModeOverride:null
     ,
-    alienSwarm:false
+    alienSwarm:false,
+    alienSwarmPoolId:0,
+    alienSwarmDigitBag:[],
+    sandbox:false,
+    sandboxInfiniteLives:false,
+    sandboxNoScore:false,
+    sandboxSpawnAsteroids:true
   };
 }
 

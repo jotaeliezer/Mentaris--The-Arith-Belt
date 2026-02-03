@@ -28,6 +28,8 @@ var phaserRenderer = null;
 // Phaser renderer is now opt-in to avoid mid-session visual switches
 // when it becomes ready on slower connections (e.g., GitHub Pages).
 var usePhaserRenderer = false;
+var sandboxMode = false;
+var sandboxPanel = null;
 try{
   var phaserParam = new URLSearchParams(location.search).get("phaser");
   if(phaserParam === "1" || phaserParam === "true") usePhaserRenderer = true;
@@ -430,6 +432,7 @@ var campaignStateKeyBase = "mathsteroid.campaign.state.";
 var campaignDataKeyBase = "mathsteroid.campaign.data.";
 var campaignDefaultId = "sector_run";
 var campaignMaxFailures = 3;
+var alienSwarmDigitBag = [];
 var campaignProfileId = "";
 
 var tourGuide = null;
@@ -748,8 +751,8 @@ var sfxCatalog = [
   { id: "gun1", label: "Gun 1", desc: "Primary blaster.", when: "Standard, missile, and fire shots.", badge: "SFX", src: "sfx/shots/gun1.mp3", category: "shots" },
   { id: "gun2", label: "Gun 2", desc: "Heavy blaster.", when: "Laser and rail shots.", badge: "SFX", src: "sfx/shots/gun2.mp3", category: "shots" },
   { id: "ice_shot", label: "Ice Shot", desc: "Ice blaster.", when: "Ice shots.", badge: "SFX", src: "sfx/shots/ice_shot.mp3", category: "shots" },
-  { id: "electric_shot", label: "Electric Shot", desc: "Electric blaster.", when: "Electric shots.", badge: "SFX", src: "sfx/electric_shot.mp3", category: "shots" },
-  { id: "flame_shot", label: "Flame Shot", desc: "Fire blaster.", when: "Fire shots.", badge: "SFX", src: "sfx/flame_shot.mp3", category: "shots" },
+  { id: "electric_shot", label: "Electric Shot", desc: "Electric blaster.", when: "Electric shots.", badge: "SFX", src: "sfx/shots/electric_shot.mp3", category: "shots" },
+  { id: "flame_shot", label: "Flame Shot", desc: "Fire blaster.", when: "Fire shots.", badge: "SFX", src: "sfx/shots/flame_shot.mp3", category: "shots" },
   { id: "shot_missile", label: "Missile Shot", desc: "Missile launch.", when: "Typing the correct answer with missile shot.", badge: "SFX", src: "sfx/shots/shot_missile.mp3", category: "shots" },
   { id: "shot_orb", label: "Plasma Orb", desc: "Plasma orb shot.", when: "Plasma shots.", badge: "SFX", src: "sfx/shots/shot_orb.mp3", category: "shots" },
   { id: "shot_railbeam", label: "Rail Beam", desc: "Rail beam shot.", when: "Rail shots.", badge: "SFX", src: "sfx/shots/shot_railbeam.mp3", category: "shots" },
@@ -776,7 +779,7 @@ var sfxCatalog = [
   { id: "time_activate", label: "Time Activate", desc: "Time dilation cue.", when: "Activate time dilation.", badge: "SFX", src: "sfx/powerups/time_activate.mp3", category: "powerups" },
   { id: "powerup_collected", label: "Powerup Collected", desc: "Pickup chime.", when: "Collect magnet, EMP, or target lock.", badge: "SFX", src: "sfx/powerups/powerup_collected.mp3", category: "powerups" },
   { id: "crash", label: "Crash", desc: "Hard collision.", when: "Ship collision impact.", badge: "SFX", src: "sfx/ship/crash.mp3", category: "ship" },
-  { id: "machine_gun_load", label: "Machine Gun Load", desc: "Spooling rounds.", when: "Auto-fire spin-up.", badge: "SFX", src: "sfx/machine_gun_load.mp3", category: "shots" },
+  { id: "machine_gun_load", label: "Machine Gun Load", desc: "Spooling rounds.", when: "Auto-fire spin-up.", badge: "SFX", src: "sfx/shots/machine_gun_load.mp3", category: "shots" },
   { id: "soundtrack1", label: "Soundtrack 1", desc: "Ambient drive.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack1.mp3", category: "soundtracks" },
   { id: "soundtrack2_toohottosleep", label: "Soundtrack 2", desc: "Too Hot To Sleep.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack2_toohottosleep.mp3", category: "soundtracks" },
   { id: "soundtrack3", label: "Soundtrack 3", desc: "Synthwave drift.", when: "Background music rotation.", badge: "MUSIC", src: "sfx/soundtracks/soundtrack3.mp3", category: "soundtracks" },
@@ -1087,7 +1090,9 @@ window.addEventListener("keydown", function(e){
   if(k === "r") hardRestart();
   if(k === "m") openSettings();
   if((k === "z" || k === "e") && !e.repeat){
-    if(player.autoFireActive && player.autoFireAmmo > 0){
+    if((player.blasterMode || "single") === "missile"){
+      openMissileInput();
+    }else if(player.autoFireActive && player.autoFireAmmo > 0){
       // Auto-fire has a spin-up delay before firing.
     }else{
       fire();
@@ -1097,11 +1102,7 @@ window.addEventListener("keydown", function(e){
     playSfx(state, "ship_advance");
   }
   if(k === "x" || k === "q"){
-    if((player.blasterMode || "single") === "missile"){
-      openMissileInput();
-    }else{
-      secondaryFire();
-    }
+    secondaryFire();
   }
   if(k === "1" || code === "Digit1" || code === "Numpad1") selectSecondaryByIndex(0);
   if(k === "2" || code === "Digit2" || code === "Numpad2") selectSecondaryByIndex(1);
@@ -1212,6 +1213,10 @@ resetMousepadPadSettings();
 
 function updateCursorVisibility(){
   if(missileInputActive){
+    document.body.style.cursor = "";
+    return;
+  }
+  if(sandboxMode){
     document.body.style.cursor = "";
     return;
   }
@@ -1764,13 +1769,31 @@ function canMissileLock(target){
   return !forward;
 }
 
-function getMissileBurstCount(answerStr){
+function getMissileBurstCount(answerStr, target){
+  if(target && target.hitsRemaining != null){
+    return Math.max(1, target.hitsRemaining);
+  }
   if(!answerStr) return 0;
   if(isDigitMode()){
     var num = parseInt(answerStr, 10);
     if(!isFinite(num)) return 0;
     if(num <= 0) return 1;
     return num;
+  }
+  if(isRationalMode() && (state.questionMode === "rational_frac" || state.questionMode === "rational_dec")){
+    var den = parseInt(state.b, 10);
+    if(!isFinite(den) || den <= 0) return 1;
+    return den;
+  }
+  if(state.questionMode === "classic" || state.questionMode === "classic2" || state.questionMode === "classic3" || state.questionMode === "add_classic2" || state.questionMode === "add_classic3"){
+    var ansStr = String(Math.abs(parseInt(answerStr, 10) || 0));
+    var maxDigit = 0;
+    for(var di=0; di<ansStr.length; di++){
+      var dval = ansStr.charCodeAt(di) - 48;
+      if(dval > maxDigit) maxDigit = dval;
+    }
+    if(maxDigit <= 0) maxDigit = 1;
+    return maxDigit;
   }
   return 1;
 }
@@ -1785,9 +1808,9 @@ function launchMissile(target, opts){
   var delay = (opts && typeof opts.delay === "number") ? opts.delay : 0;
   var offsetX = (opts && typeof opts.offsetX === "number") ? opts.offsetX : 0;
   var offsetY = (opts && typeof opts.offsetY === "number") ? opts.offsetY : 0;
-  var weaveAmp = (opts && typeof opts.weaveAmp === "number") ? opts.weaveAmp : rand(28, 74);
-  var weaveFreq = (opts && typeof opts.weaveFreq === "number") ? opts.weaveFreq : rand(1.6, 2.9);
-  var avoidRadius = (opts && typeof opts.avoidRadius === "number") ? opts.avoidRadius : rand(110, 150);
+  var weaveAmp = (opts && typeof opts.weaveAmp === "number") ? opts.weaveAmp : rand(42, 96);
+  var weaveFreq = (opts && typeof opts.weaveFreq === "number") ? opts.weaveFreq : rand(1.4, 2.4);
+  var avoidRadius = (opts && typeof opts.avoidRadius === "number") ? opts.avoidRadius : rand(140, 190);
   var avoidStrength = (opts && typeof opts.avoidStrength === "number") ? opts.avoidStrength : rand(260, 360);
   bullets.push({
     x: player.x + offsetX,
@@ -1862,7 +1885,7 @@ function handleMissileInput(digit){
   if(buffer && buffer === answer){
     var target = findCorrectAsteroid();
     if(target && canMissileLock(target)){
-      launchMissileBurst(target, getMissileBurstCount(answer));
+    launchMissileBurst(target, getMissileBurstCount(answer, target));
     }
     state.missileBuffer = "";
     state.missileBufferTimer = 0;
@@ -1934,7 +1957,7 @@ function attemptMissileLaunch(){
   if(value !== missileInputAnswer) return false;
   var target = findCorrectAsteroid();
   if(target && canMissileLock(target)){
-    launchMissileBurst(target, getMissileBurstCount(missileInputAnswer));
+    launchMissileBurst(target, getMissileBurstCount(missileInputAnswer, target));
     closeMissileInput();
   }else{
     closeMissileInput("MISSILE NO LOCK");
@@ -2192,7 +2215,35 @@ function getAlienQuestion(){
     a = answer * b;
     op = "/";
   }
+  if(state.alienSwarm){
+    if(!state.alienSwarmDigitBag || !state.alienSwarmDigitBag.length){
+      resetAlienSwarmPool();
+    }
+    var digit = state.alienSwarmDigitBag.pop();
+    var correctDigit = (state.correctDigit != null) ? Number(state.correctDigit) : (Math.abs(state.answer || 0) % 10);
+    return {
+      question: a + " " + op + " " + b,
+      answer: 1,
+      digit: digit,
+      correctDigit: correctDigit,
+      poolId: state.alienSwarmPoolId || 1
+    };
+  }
   return { question: a + " " + op + " " + b, answer: answer };
+}
+
+function resetAlienSwarmPool(){
+  state.alienSwarmPoolId = (state.alienSwarmPoolId || 0) + 1;
+  state.alienSwarmDigitBag = [];
+  for(var d=0; d<=9; d++){
+    state.alienSwarmDigitBag.push(d);
+  }
+  for(var i=state.alienSwarmDigitBag.length - 1; i>0; i--){
+    var j = randi(0, i);
+    var tmp = state.alienSwarmDigitBag[i];
+    state.alienSwarmDigitBag[i] = state.alienSwarmDigitBag[j];
+    state.alienSwarmDigitBag[j] = tmp;
+  }
 }
 
 function enforceUnitsDigit(value, correct){
@@ -2431,14 +2482,15 @@ function buildClassicDecoyBag(correct, count, excludeSet){
 }
 
 function prepareWave(){
-  var decoyCount = Math.max(1, Math.round(state.decoys * 0.3));
+  var decoyScale = 0.7;
+  var decoyCount = Math.max(1, Math.round(state.decoys * 0.3 * decoyScale));
   if(isDigitMode()){
     if(state.correctDigit == null) state.correctDigit = pickCorrectDigit();
     state.waveDecoys = genDigitDecoys(state.correctDigit, decoyCount);
     state.waveDecoyBag = buildDigitDecoyBag();
   }else{
     state.waveDecoys = genDecoys(state.answer, decoyCount);
-    state.waveDecoyBag = buildClassicDecoyBag(state.answer, Math.max(6, decoyCount * 2));
+    state.waveDecoyBag = buildClassicDecoyBag(state.answer, Math.max(6, Math.round(decoyCount * 2 * decoyScale)));
   }
   state.correctInPlay = false;
   state.correctAsteroidId = 0;
@@ -2589,7 +2641,7 @@ function spawnDecoyOnly(){
     if(isDigitMode()){
       state.waveDecoyBag = buildDigitDecoyBag(activeLabels);
     }else{
-      state.waveDecoyBag = buildClassicDecoyBag(state.answer, Math.max(6, Math.round(state.decoys * 0.6)), activeLabels);
+      state.waveDecoyBag = buildClassicDecoyBag(state.answer, Math.max(6, Math.round(state.decoys * 0.6 * 0.7)), activeLabels);
     }
   }
   if(state.waveDecoyBag && state.waveDecoyBag.length){
@@ -2787,11 +2839,11 @@ function applyPowerup(p){
     player.armorBlocksRemaining = 5;
     showToast("DEFENSE -> ARMOR");
   }else if(p.group === "defense" && p.type === "scope"){
-    player.scopeTimer = Math.max(player.scopeTimer || 0, 12);
+    player.scopeTimer = 1;
     showToast("DEFENSE -> SCOPE ONLINE");
   }else if(p.group === "secondary"){
     if(p.type === "scope"){
-      player.scopeTimer = Math.max(player.scopeTimer || 0, 12);
+      player.scopeTimer = 1;
       showToast("SECONDARY -> SCOPE ONLINE");
     }else if(p.type === "repair"){
       player.hull = clamp(player.hull + 0.35, 0, 1);
@@ -3117,6 +3169,8 @@ function resetSession(){
   state.flaresActive = false;
   state.flaresTimer = 0;
   state.flaresEmitTimer = 0;
+  state.alienSwarmPoolId = 0;
+  state.alienSwarmDigitBag = [];
 
   player.cooldown = 0;
   player.vx = 0;
@@ -3174,6 +3228,7 @@ function resetSession(){
     state.spawnTimer = 9999;
     state.correctInPlay = false;
     state.correctAsteroidId = 0;
+    resetAlienSwarmPool();
   }else{
     setAlienUnlocked(false);
   }
@@ -3581,6 +3636,7 @@ function fire(cooldownOverride){
     bullets.push({ x: player.x, y: player.y - 26, vy: -880, r: 6.5, vx: 0, kind: "ice" });
   }else if(mode === "electric"){
     bullets.push({ x: player.x, y: player.y - 24, vy: -920, r: 5.6, vx: 0, kind: "electric" });
+    state.lightningFlash = Math.max(state.lightningFlash || 0, 0.12);
   }else if(mode === "pierce"){
     bullets.push({ x: player.x, y: player.y - 24, vy: -900, r: 3.8, vx: 0, kind: "pierce", speed: 900, rot: 0, spin: 6 });
   }else if(mode === "plasma"){
@@ -3666,6 +3722,9 @@ function secondaryFire(){
   }else if(activeType === "lock"){
     player.lockTimer = Math.max(player.lockTimer, 6.0);
     showToast("SECONDARY -> TARGET LOCK");
+  }else if(activeType === "scope"){
+    player.scopeTimer = 1;
+    showToast("SECONDARY -> SCOPE ONLINE");
   }
 
   if(activeType === "autofire"){
@@ -3951,6 +4010,11 @@ function shockwave(){
 }
 
 function loseLife(reason){
+  if(sandboxMode && state.sandboxInfiniteLives){
+    syncHud();
+    showToast(reason);
+    return;
+  }
   state.lives = Math.max(0, state.lives - 1);
   syncHud();
   showToast(reason);
@@ -3962,6 +4026,10 @@ function loseLife(reason){
 
 function consumeShipLife(detail){
   if(state.over) return true;
+  if(sandboxMode && state.sandboxInfiniteLives){
+    syncHud();
+    return false;
+  }
   state.lives = Math.max(0, state.lives - 1);
   syncHud();
   if(state.lives <= 0){
@@ -4952,6 +5020,9 @@ function update(dt){
   var dtReal = dt;
   var dtSlow = dtReal;
   bg.dt = dt;
+  if(state.lightningFlash > 0){
+    state.lightningFlash = Math.max(0, state.lightningFlash - dtReal);
+  }
   if(usePhaserRenderer && !tutorialActive && backgroundSprites[backgroundIndex] && backgroundReady[backgroundIndex]){
     var bgImg = backgroundSprites[backgroundIndex];
     var baseScale = Math.max(view.w / bgImg.width, view.h / bgImg.height);
@@ -5238,18 +5309,41 @@ function update(dt){
       if(!player.autoFireSpinning){
         player.autoFireSpinning = true;
         player.autoFireSpinTimer = 0.8;
-        player.autoFireSpinSfxPlayed = false;
+        player.autoFireSpinSfxPlayed = true;
+        var spinClip = playSfx(state, "machine_gun_load");
+        if(spinClip){
+          player.autoFireSpinClip = spinClip;
+          var dur = spinClip.duration;
+          if(isFinite(dur) && dur > 0){
+            player.autoFireSpinTimer = dur;
+          }else{
+            spinClip.addEventListener("loadedmetadata", function(){
+              if(isFinite(spinClip.duration) && spinClip.duration > 0 && player.autoFireSpinning){
+                player.autoFireSpinTimer = spinClip.duration;
+              }
+            }, { once: true });
+          }
+          spinClip.addEventListener("ended", function(){
+            if(player.autoFireSpinning){
+              player.autoFireSpinTimer = 0;
+            }
+          }, { once: true });
+        }
       }
       if(player.autoFireSpinTimer > 0){
         player.autoFireSpinTimer = Math.max(0, player.autoFireSpinTimer - dtReal);
-        if(!player.autoFireSpinSfxPlayed){
-          playSfx(state, "machine_gun_load");
-          player.autoFireSpinSfxPlayed = true;
-        }
       }else{
-        var autoCooldown = getAutoFireCooldown(player.autoFireMode || player.blasterMode || "single");
+        var desiredMode = player.blasterMode || "single";
+        if(desiredMode === "missile") desiredMode = "single";
+        player.autoFireMode = desiredMode;
+        var autoCooldown = getAutoFireCooldown(desiredMode);
         if(autoCooldown != null){
+          var prevMode = player.blasterMode;
+          if(desiredMode && desiredMode !== "missile"){
+            player.blasterMode = desiredMode;
+          }
           var didShoot = fire(autoCooldown);
+          player.blasterMode = prevMode;
           if(didShoot){
             player.autoFireAmmo = Math.max(0, (player.autoFireAmmo || 0) - 1);
             if(player.autoFireAmmo === 0){
@@ -5326,8 +5420,8 @@ function update(dt){
   if(player.magnetTimer > 0){
     player.magnetTimer = Math.max(0, player.magnetTimer - dtReal);
   }
-  if(player.scopeTimer > 0){
-    player.scopeTimer = Math.max(0, player.scopeTimer - dtReal);
+  if(state.sandboxNoScore){
+    state.score = 0;
   }
   if(player.lockTimer > 0){
     player.lockTimer = Math.max(0, player.lockTimer - dtReal);
@@ -5398,7 +5492,7 @@ function update(dt){
   }
 
   state.spawnTimer -= dtSlow;
-  if(!state.alienSwarm && !missionBriefShowing && (!tutorialActive || tutorialSpawnUnlocked)){
+  if(!state.alienSwarm && !missionBriefShowing && (!tutorialActive || tutorialSpawnUnlocked) && (!sandboxMode || state.sandboxSpawnAsteroids)){
     if(state.spawnTimer <= 0){
       spawnOneFromWave();
       if(state.level >= 7 && Math.random() < 0.18) spawnDecoyOnly();
@@ -5419,11 +5513,13 @@ function update(dt){
         b.beamInit = true;
         b.beamStartX = b.x;
         b.beamStartY = b.y;
+        b.beamDirX = 0;
+        b.beamDirY = -1;
         b.vx = 0;
-        b.vy = -1;
-        b.life = Math.max(b.life || 0, 0.08);
-        var dirX = 0;
-        var dirY = -1;
+        b.vy = 0;
+        b.life = Math.max(b.life || 0, 0.06);
+        var dirX = b.beamDirX;
+        var dirY = b.beamDirY;
         var best = null;
         for(var aiBeam=0; aiBeam<asteroids.length; aiBeam++){
           var ab = asteroids[aiBeam];
@@ -5447,7 +5543,10 @@ function update(dt){
           b.y = best.asteroid.y;
         }else{
           b.beamEndX = b.beamStartX;
-          b.beamEndY = view.hudH + 8;
+          b.beamEndY = 0;
+        }
+        if(b.beamEndX != null && b.beamEndY != null){
+          pushAsteroidsByBeam(b.beamStartX, b.beamStartY, b.beamEndX, b.beamEndY);
         }
       }
       if(b.life != null){
@@ -5497,13 +5596,10 @@ function update(dt){
           var mspd = b.speed || 700;
           var dirX = mdx / mdist;
           var dirY = mdy / mdist;
-          var perpX = -dirY;
-          var perpY = dirX;
-          var weave = (b.weaveAmp || 0) * Math.sin((b.weavePhase || 0) + b.age * (b.weaveFreq || 2.6));
           var avoidX = 0;
           var avoidY = 0;
-          var avoidRadius = b.avoidRadius || 120;
-          var avoidStrength = b.avoidStrength || 320;
+          var avoidRadius = b.avoidRadius || 190;
+          var avoidStrength = b.avoidStrength || 520;
           for(var aiAvoid=0; aiAvoid<asteroids.length; aiAvoid++){
             var av = asteroids[aiAvoid];
             if(!av || av.id === b.targetId || av.ghost) continue;
@@ -5512,13 +5608,31 @@ function update(dt){
             var distA = Math.hypot(dxA, dyA);
             if(distA > 0 && distA < avoidRadius){
               var forward = (dxA * dirX + dyA * dirY) / distA;
-              if(forward > -0.15){
+              if(forward > -0.3){
                 var strength = (1 - distA / avoidRadius) * avoidStrength;
                 avoidX -= (dxA / distA) * strength;
                 avoidY -= (dyA / distA) * strength;
               }
             }
           }
+          for(var aiAvoid2=0; aiAvoid2<aliens.length; aiAvoid2++){
+            var av2 = aliens[aiAvoid2];
+            if(!av2) continue;
+            var dxB = av2.x - b.x;
+            var dyB = av2.y - b.y;
+            var distB = Math.hypot(dxB, dyB);
+            if(distB > 0 && distB < avoidRadius){
+              var forwardB = (dxB * dirX + dyB * dirY) / distB;
+              if(forwardB > -0.3){
+                var strengthB = (1 - distB / avoidRadius) * (avoidStrength * 0.8);
+                avoidX -= (dxB / distB) * strengthB;
+                avoidY -= (dyB / distB) * strengthB;
+              }
+            }
+          }
+          var perpX = -dirY;
+          var perpY = dirX;
+          var weave = (b.weaveAmp || 0) * Math.sin((b.weavePhase || 0) + b.age * (b.weaveFreq || 2.2));
           var vxT = dirX * mspd + perpX * weave + avoidX;
           var vyT = dirY * mspd + perpY * weave + avoidY;
           b.vx = (b.vx || 0) * 0.5 + vxT * 0.5;
@@ -5830,7 +5944,15 @@ function update(dt){
           }else if(bb.pierce && bb.pierce > 0){
             bb.pierce -= 1;
           }else{
-            bullets.splice(bj,1);
+            if(kind === "electric"){
+              bb.noHit = true;
+              bb.noHitTimer = 0.08;
+              bb.life = Math.max(bb.life || 0, 0.06);
+              bb.beamEndX = a2.x;
+              bb.beamEndY = a2.y;
+            }else{
+              bullets.splice(bj,1);
+            }
           }
         var hitAst = a2;
         var hitIndex = ai2;
@@ -5871,8 +5993,7 @@ function update(dt){
         applyBulletImpactAsteroid(hitAst, bb);
         hitAst.hit = true;
 
-        if(hitAst.isCorrect && hitAst.hitsRemaining && hitAst.hitsRemaining > 1
-          && (isDigitMode() || (isRationalMode() && (state.questionMode === "rational_frac" || state.questionMode === "rational_dec")))){
+        if(hitAst.isCorrect && hitAst.hitsRemaining && hitAst.hitsRemaining > 1){
           var totalHits = hitAst.hitsTotal || hitAst.hitsRemaining;
           var doneHits = totalHits - hitAst.hitsRemaining + 1;
           hitAst.hitsRemaining -= 1;
@@ -5960,30 +6081,69 @@ function update(dt){
       if(bb2.pierce && bb2.pierce > 0){
         bb2.pierce -= 1;
       }else{
-        bullets.splice(bj2,1);
+        if(bb2.kind === "electric"){
+          bb2.noHit = true;
+          bb2.noHitTimer = 0.08;
+          bb2.life = Math.max(bb2.life || 0, 0.06);
+          bb2.beamEndX = al.x;
+          bb2.beamEndY = al.y;
+        }else{
+          bullets.splice(bj2,1);
+        }
+      }
+      if(state.alienSwarm){
+        al.showDigitTimer = 0.55;
+        al.hitFlashTimer = 0.3;
+        al.hitFlashDur = 0.3;
       }
       al.hitShake = 0.75;
       al.stunTimer = Math.max(al.stunTimer || 0, 0.4);
       al.hitsTaken += 1;
         if(al.hitsTaken >= al.answer){
-          state.aliensShot += 1;
-          if(!state.aliensShotByType) state.aliensShotByType = {};
-          var alienSrc = getAlienSpriteSrcFor(al);
-          if(alienSrc){
-            state.aliensShotByType[alienSrc] = (state.aliensShotByType[alienSrc] || 0) + 1;
+          if(state.alienSwarm && al.swarmDigit != null && al.swarmCorrectDigit != null && al.swarmDigit === al.swarmCorrectDigit){
+            var poolId = al.poolId;
+            var removed = 0;
+            for(var sw=aliens.length-1; sw>=0; sw--){
+              var swAlien = aliens[sw];
+              if(swAlien.poolId === poolId){
+                removed += 1;
+                state.score += swAlien.score || al.score;
+                impactDebris(swAlien.x, swAlien.y);
+                if(!state.aliensShotByType) state.aliensShotByType = {};
+                var swSrc = getAlienSpriteSrcFor(swAlien);
+                if(swSrc){
+                  state.aliensShotByType[swSrc] = (state.aliensShotByType[swSrc] || 0) + 1;
+                }
+                aliens.splice(sw, 1);
+              }
+            }
+            state.aliensShot += removed;
+            playSfx(state, "alien_kill", 0.65);
+            if(tourGuide) tourGuide.notify("alien");
+            showToast("ALIEN POOL CLEARED");
+            maybeSpawnEventPowerup(0.40, al.x, al.y);
+            resetAlienSwarmPool();
+            break;
+          }else{
+            state.aliensShot += 1;
+            if(!state.aliensShotByType) state.aliensShotByType = {};
+            var alienSrc = getAlienSpriteSrcFor(al);
+            if(alienSrc){
+              state.aliensShotByType[alienSrc] = (state.aliensShotByType[alienSrc] || 0) + 1;
+            }
+            state.score += al.score;
+            impactDebris(al.x, al.y);
+            playSfx(state, "alien_kill", 0.65);
+            if(tourGuide) tourGuide.notify("alien");
+            aliens.splice(ai3, 1);
+            if(tutorialActive){
+              alienConfig.enabled = false;
+              alienConfig.maxOnScreen = 0;
+            }
+            showToast("ALIEN CLEARED");
+            maybeSpawnEventPowerup(0.40, al.x, al.y);
+            break;
           }
-          state.score += al.score;
-          impactDebris(al.x, al.y);
-          playSfx(state, "alien_kill", 0.65);
-          if(tourGuide) tourGuide.notify("alien");
-          aliens.splice(ai3, 1);
-          if(tutorialActive){
-            alienConfig.enabled = false;
-            alienConfig.maxOnScreen = 0;
-          }
-          showToast("ALIEN CLEARED");
-          maybeSpawnEventPowerup(0.40, al.x, al.y);
-          break;
         }
       }
     }
@@ -5995,6 +6155,7 @@ function update(dt){
     var dyC = al2.y - (player.y - 4);
     if(dxC*dxC + dyC*dyC < (al2.r + 18) * (al2.r + 18)){
       if(player.invuln <= 0){
+        clearScopeOnHit();
         registerShotTypeHit(2, true);
         resetSurvivorTimer();
         state.alienCollisions += 1;
@@ -6067,6 +6228,7 @@ function update(dt){
     if(dxp*dxp + dyp*dyp < (abul.r + 16) * (abul.r + 16)){
       alienBullets.splice(ab, 1);
       if(player.invuln <= 0){
+        clearScopeOnHit();
         registerShotTypeHit(1, false);
         resetSurvivorTimer();
         state.alienShotsHit += 1;
@@ -6292,6 +6454,7 @@ function draw(){
 
   drawEmpWave();
   drawSlowMoWave();
+  drawLightningFlash();
 
   if(introActive){
     return;
@@ -7125,6 +7288,29 @@ function drawScopeLaser(){
   ctx.restore();
 }
 
+function pushAsteroidsByBeam(startX, startY, endX, endY){
+  var dx = endX - startX;
+  var dy = endY - startY;
+  var len = Math.max(1, Math.hypot(dx, dy));
+  var dirX = dx / len;
+  var dirY = dy / len;
+  var perpX = -dirY;
+  var perpY = dirX;
+  for(var i=0; i<asteroids.length; i++){
+    var a = asteroids[i];
+    if(!a || a.ghost) continue;
+    if(a.y > startY) continue;
+    var relX = a.x - startX;
+    var relY = a.y - startY;
+    var proj = relX * dirX + relY * dirY;
+    if(proj < 0 || proj > len + (a.r || 0)) continue;
+    var dist = Math.abs(relX * perpX + relY * perpY);
+    if(dist > (a.r || 16) + 14) continue;
+    var side = (relX * perpX + relY * perpY) >= 0 ? 1 : -1;
+    a.vx = (a.vx || 0) + side * 36;
+  }
+}
+
 function drawSlowMoWave(){
   if(!state.slowMoWaveActive) return;
   var y = state.slowMoWaveY || (view.h + 40);
@@ -7145,6 +7331,16 @@ function drawSlowMoWave(){
   ctx.moveTo(0, y);
   ctx.lineTo(view.w, y);
   ctx.stroke();
+  ctx.restore();
+}
+
+function drawLightningFlash(){
+  if(state.lightningFlash <= 0) return;
+  var alpha = clamp(state.lightningFlash / 0.12, 0, 1);
+  ctx.save();
+  ctx.globalCompositeOperation = "screen";
+  ctx.fillStyle = "rgba(210,235,255," + (0.32 * alpha).toFixed(3) + ")";
+  ctx.fillRect(0, 0, view.w, view.h);
   ctx.restore();
 }
 
@@ -7722,7 +7918,7 @@ function drawBullets(){
       var mag = Math.max(0.001, Math.hypot(dx, dy));
       var dirX = dx / mag;
       var dirY = dy / mag;
-      var endY = view.hudH + 8;
+      var endY = 0;
       var t = (endY - b.y) / Math.max(-0.001, dirY);
       var endX = b.x + dirX * t;
       return { x: endX, y: endY };
@@ -7749,8 +7945,8 @@ function drawBullets(){
       ctx.restore();
     }
     function drawElectricBeam(b){
-      var dx = (typeof b.vx === "number") ? b.vx : 0;
-      var dy = (typeof b.vy === "number") ? b.vy : -1;
+      var dx = (typeof b.beamDirX === "number") ? b.beamDirX : ((typeof b.vx === "number") ? b.vx : 0);
+      var dy = (typeof b.beamDirY === "number") ? b.beamDirY : ((typeof b.vy === "number") ? b.vy : -1);
       var mag = Math.max(0.001, Math.hypot(dx, dy));
       var dirX = dx / mag;
       var dirY = dy / mag;
@@ -7770,9 +7966,9 @@ function drawBullets(){
         var t = iSeg / segments;
         var baseX = startX + (endX - startX) * t;
         var baseY = startY + (endY - startY) * t;
-        var wobble = Math.sin(seed + t * 10.8) * Math.cos(seed * 0.9 + t * 8.6);
-        var amp = 24 * (1 - Math.abs(0.5 - t) * 2);
-        var jitter = (Math.sin(seed * 1.7 + iSeg * 2.1) * 0.6 + Math.cos(seed * 2.2 + iSeg * 1.3) * 0.4);
+        var wobble = Math.sin(seed + t * 12.5) * Math.cos(seed * 1.1 + t * 9.8);
+        var amp = 52 * (1 - Math.abs(0.5 - t) * 2);
+        var jitter = (Math.sin(seed * 2.4 + iSeg * 3.1) * 1.0 + Math.cos(seed * 2.9 + iSeg * 2.2) * 0.85);
         var j = (wobble + jitter) * amp;
         pts.push([baseX + perpX * j, baseY + perpY * j]);
       }
@@ -7782,37 +7978,37 @@ function drawBullets(){
       ctx.lineJoin = "round";
       ctx.lineCap = "round";
       ctx.strokeStyle = "rgba(130,210,255,0.5)";
-      ctx.lineWidth = 9;
+      ctx.lineWidth = 9.5;
       ctx.beginPath();
       ctx.moveTo(pts[0][0], pts[0][1]);
       for(var pi=1; pi<pts.length; pi++) ctx.lineTo(pts[pi][0], pts[pi][1]);
       ctx.stroke();
       ctx.strokeStyle = "rgba(255,255,255,0.95)";
-      ctx.lineWidth = 2.4;
+      ctx.lineWidth = 2.2;
       ctx.beginPath();
       ctx.moveTo(pts[0][0], pts[0][1]);
       for(var pi2=1; pi2<pts.length; pi2++) ctx.lineTo(pts[pi2][0], pts[pi2][1]);
       ctx.stroke();
       ctx.restore();
     }
-    var spinFlip = (((performance.now() + (b.id || 0) * 83) / 150) | 0) % 2 === 1;
+    var spinFlip = (((performance.now() + (b.id || 0) * 83) / 220) | 0) % 2 === 1;
     if(b.kind === "laser"){
-      drawBulletImage(bulletLaserImg, 12, -(b.len || 18), 0, spinFlip);
+      drawBulletImage(bulletLaserImg, 16, -(b.len || 18), 0, spinFlip);
       continue;
     }
 
     if(b.kind === "rail"){
-      drawBulletImage(bulletRailImg, 12, -(b.len || 34), 0, spinFlip);
+      drawBulletImage(bulletRailImg, 16, -(b.len || 34), 0, spinFlip);
       continue;
     }
 
     if(b.kind === "fire"){
-      drawBulletImage(bulletFireImg, 12, 0, 0, spinFlip);
+      drawBulletImage(bulletFireImg, 16, 0, 0, spinFlip);
       continue;
     }
 
     if(b.kind === "plasma"){
-      drawBulletImage(bulletOrbImg, 16, 0, 0, spinFlip);
+      drawBulletImage(bulletOrbImg, 12, 0, 0, spinFlip);
       continue;
     }
 
@@ -7827,7 +8023,7 @@ function drawBullets(){
     }
 
     if(b.kind === "pierce"){
-      drawBulletImage(bulletBolaImg, 12, 0, b.rot || 0, spinFlip);
+      drawBulletImage(bulletBolaImg, 14, 0, b.rot || 0, spinFlip);
       continue;
     }
 
@@ -7848,12 +8044,12 @@ function drawBullets(){
         }
         ctx.restore();
       }
-      drawBulletImage(bulletMissileImg, 12, 0, b.rot || 0, spinFlip);
+      drawBulletImage(bulletMissileImg, 14, 0, b.rot || 0, spinFlip);
       continue;
     }
 
     if(b.kind === "single" && bulletSingle.ready){
-      drawBulletImage(bulletSingle, 12, 0, 0, spinFlip);
+      drawBulletImage(bulletSingle, 14, 0, 0, spinFlip);
       continue;
     }
 
@@ -7996,6 +8192,24 @@ function drawAsteroid(a){
     ctx.beginPath();
     ctx.arc(drawX, drawY, a.r + 8, 0, Math.PI*2);
     ctx.stroke();
+    ctx.restore();
+  }
+
+  if(a.hitsTotal && a.hitsTotal > 1 && a.hitsRemaining != null && a.hitsRemaining < a.hitsTotal){
+    var barH = Math.max(18, a.r * 1.6);
+    var barW = 5;
+    var barX = drawX + a.r + 8;
+    var barY = drawY - barH / 2;
+    var ratio = clamp(a.hitsRemaining / Math.max(1, a.hitsTotal), 0, 1);
+    ctx.save();
+    ctx.globalAlpha = fadeAlpha;
+    ctx.fillStyle = "rgba(0,0,0,.35)";
+    ctx.fillRect(barX, barY, barW, barH);
+    ctx.fillStyle = "rgba(70,255,120,.9)";
+    ctx.fillRect(barX, barY + barH * (1 - ratio), barW, barH * ratio);
+    ctx.strokeStyle = "rgba(255,255,255,.2)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(barX - 0.5, barY - 0.5, barW + 1, barH + 1);
     ctx.restore();
   }
 
@@ -8146,6 +8360,12 @@ function consumeArmorBlock(){
   }
 }
 
+function clearScopeOnHit(){
+  if(player.scopeTimer > 0){
+    player.scopeTimer = 0;
+  }
+}
+
 function handleShipAsteroidCollision(a, hitX, hitY, force, noRemove){
   if(a.noDamage) return false;
   var dx = a.x - hitX;
@@ -8158,6 +8378,7 @@ function handleShipAsteroidCollision(a, hitX, hitY, force, noRemove){
   }
 
   if(force || player.invuln <= 0){
+    clearScopeOnHit();
     registerShotTypeHit(1, false);
     resetSurvivorTimer();
     if(!noRemove && a.isCorrect && a.waveId === state.waveId){
@@ -9600,6 +9821,119 @@ function applyQueryParams(){
   }
 }
 
+function initSandboxPanel(){
+  if(!gameShell || sandboxPanel) return;
+  var styleId = "sandboxPanelStyles";
+  if(!document.getElementById(styleId)){
+    var style = document.createElement("style");
+    style.id = styleId;
+    style.textContent = ".sandboxPanel{position:absolute;top:90px;left:28px;z-index:40;min-width:260px;background:rgba(6,10,18,.88);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px 14px;box-shadow:0 24px 60px rgba(0,0,0,.45);}"+
+      ".sandboxPanel h4{margin:0 0 8px;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.8);}"+
+      ".sandboxPanel .sandboxGroup{margin:8px 0;}"+
+      ".sandboxPanel .sandboxButtons{display:flex;flex-wrap:wrap;gap:6px;}"+
+      ".sandboxPanel .sandboxBtn{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e8ecff;border-radius:10px;padding:6px 8px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;}"+
+      ".sandboxPanel .sandboxBtn.active{border-color:rgba(0,229,255,.6);box-shadow:0 0 0 1px rgba(0,229,255,.25) inset;}"+
+      ".sandboxPanel .sandboxBtn:hover{transform:translateY(-1px);border-color:rgba(0,229,255,.6);box-shadow:0 8px 18px rgba(0,0,0,.25);}"+
+      ".sandboxPanel .sandboxNote{font-size:11px;color:rgba(232,236,255,.55);margin-top:6px;}";
+    document.head.appendChild(style);
+  }
+
+  sandboxPanel = document.createElement("div");
+  sandboxPanel.className = "sandboxPanel";
+  sandboxPanel.innerHTML = ""
+    + "<h4>Sandbox</h4>"
+    + "<div class='sandboxGroup'><div class='sandboxButtons' id='sandboxActions'></div></div>"
+    + "<div class='sandboxGroup'><div class='sandboxNote'>Shot Types</div><div class='sandboxButtons' id='sandboxShots'></div></div>"
+    + "<div class='sandboxGroup'><div class='sandboxNote'>Defense</div><div class='sandboxButtons' id='sandboxDefense'></div></div>"
+    + "<div class='sandboxGroup'><div class='sandboxNote'>Secondary</div><div class='sandboxButtons' id='sandboxSecondary'></div></div>";
+  gameShell.appendChild(sandboxPanel);
+
+  function addButton(container, label, onClick){
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "sandboxBtn";
+    btn.textContent = label;
+    btn.addEventListener("click", function(){
+      playSfx(state, "menu_beep");
+      onClick();
+    });
+    container.appendChild(btn);
+    return btn;
+  }
+
+  function setSandboxShot(type){
+    player.blasterMode = type;
+    if(type === "single"){
+      player.blasterHitsRemaining = 0;
+    }else{
+      player.blasterHitsRemaining = 9999;
+      player.blasterTimer = 0;
+    }
+    showToast("SHOT -> " + type.toUpperCase());
+  }
+
+  function updateSandboxToggle(btn, active){
+    if(!btn) return;
+    btn.classList.toggle("active", !!active);
+  }
+
+  function spawnSandboxTarget(){
+    if(!state.running || state.paused || state.over) return;
+    state.waveId += 1;
+    state.correctInPlay = false;
+    state.correctAsteroidId = 0;
+    spawnAsteroid(state.answer, true);
+    showToast("TARGET SPAWNED");
+  }
+
+  var actionsContainer = sandboxPanel.querySelector("#sandboxActions");
+  var btnSpawnTarget = null;
+  var btnInfLives = null;
+  var btnNoScore = null;
+  var btnReset = null;
+  var btnSpawnToggle = null;
+  if(actionsContainer){
+    btnSpawnTarget = addButton(actionsContainer, "Spawn Target", spawnSandboxTarget);
+    btnInfLives = addButton(actionsContainer, "Infinite Lives", function(){
+      state.sandboxInfiniteLives = !state.sandboxInfiniteLives;
+      updateSandboxToggle(btnInfLives, state.sandboxInfiniteLives);
+      showToast(state.sandboxInfiniteLives ? "INFINITE LIVES ON" : "INFINITE LIVES OFF");
+    });
+    btnNoScore = addButton(actionsContainer, "No Score", function(){
+      state.sandboxNoScore = !state.sandboxNoScore;
+      updateSandboxToggle(btnNoScore, state.sandboxNoScore);
+      showToast(state.sandboxNoScore ? "SCORE LOCKED" : "SCORE ACTIVE");
+    });
+    btnSpawnToggle = addButton(actionsContainer, "Asteroids On", function(){
+      state.sandboxSpawnAsteroids = !state.sandboxSpawnAsteroids;
+      updateSandboxToggle(btnSpawnToggle, state.sandboxSpawnAsteroids);
+      btnSpawnToggle.textContent = state.sandboxSpawnAsteroids ? "Asteroids On" : "Asteroids Off";
+      showToast(state.sandboxSpawnAsteroids ? "ASTEROIDS ON" : "ASTEROIDS OFF");
+    });
+    btnReset = addButton(actionsContainer, "Reset Run", function(){
+      resetSession();
+    });
+  }
+
+  var shotContainer = sandboxPanel.querySelector("#sandboxShots");
+  ["single","laser","fire","ice","electric","pierce","plasma","rail","missile"].forEach(function(type){
+    addButton(shotContainer, type, function(){ setSandboxShot(type); });
+  });
+
+  var defContainer = sandboxPanel.querySelector("#sandboxDefense");
+  addButton(defContainer, "shield", function(){ applyPowerup({ type: "shield", group: "defense" }); });
+  addButton(defContainer, "armor", function(){ applyPowerup({ type: "armor", group: "defense" }); });
+
+  var secContainer = sandboxPanel.querySelector("#sandboxSecondary");
+  ["time","emp","magnet","lock","autofire","repair","scope"].forEach(function(type){
+    addButton(secContainer, type, function(){ addSecondaryPowerup(type); showToast("SECONDARY + " + type.toUpperCase()); });
+  });
+
+  updateSandboxToggle(btnInfLives, state.sandboxInfiniteLives);
+  updateSandboxToggle(btnNoScore, state.sandboxNoScore);
+  updateSandboxToggle(btnSpawnToggle, state.sandboxSpawnAsteroids);
+}
+
 // ======= Boot
 function boot(){
   resize();
@@ -9622,6 +9956,12 @@ function boot(){
   tutorialPortalNotifyPending = false;
 
   var params = new URLSearchParams(location.search);
+  sandboxMode = params.get("sandbox") === "1" || params.get("sandbox") === "true";
+  state.sandbox = sandboxMode;
+  state.sandboxSpawnAsteroids = true;
+  if(sandboxMode){
+    initSandboxPanel();
+  }
   tutorialActive = params.get("tutorial") === "1" || params.get("tutorial") === "true";
   if(tutorialActive){
     try{

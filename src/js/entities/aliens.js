@@ -1,6 +1,6 @@
 "use strict";
 
-import { randi } from "../core/utils.js";
+import { randi, clamp } from "../core/utils.js";
 import { playSfx } from "../core/audio.js";
 
 export var aliens = [];
@@ -88,7 +88,8 @@ export function spawnAlien(typeId, question, answer, view){
     hitsTaken: 0,
     fireCooldown: 1.4 + Math.random() * 1.2,
     strafeTimer: 0.3 + Math.random() * 0.6,
-    strafeTarget: x
+    strafeTarget: x,
+    flipState: false
   };
   aliens.push(a);
   return a;
@@ -106,7 +107,13 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
   spawnTimer -= dt;
   if(unlocked && spawnTimer <= 0 && aliens.length < alienConfig.maxOnScreen){
     var q = questionFn();
-    spawnAlien("scout", q.question, q.answer, view);
+    var spawned = spawnAlien("scout", q.question, q.answer, view);
+    if(state && state.alienSwarm && spawned){
+      spawned.swarmDigit = (q && q.digit != null) ? q.digit : randi(0, 9);
+      spawned.swarmCorrectDigit = (q && q.correctDigit != null) ? q.correctDigit : null;
+      spawned.poolId = (q && q.poolId != null) ? q.poolId : 1;
+      spawned.answer = 1;
+    }
     spawnTimer = alienConfig.spawnCooldown;
   }
 
@@ -154,6 +161,12 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
     if(a.hitShake > 0){
       a.hitShake = Math.max(0, a.hitShake - dt);
     }
+    if(a.hitFlashTimer > 0){
+      a.hitFlashTimer = Math.max(0, a.hitFlashTimer - dt);
+    }
+    if(a.showDigitTimer > 0){
+      a.showDigitTimer = Math.max(0, a.showDigitTimer - dt);
+    }
     if(a.flipTimer > 0){
       a.flipTimer = Math.max(0, a.flipTimer - dt);
     }
@@ -175,7 +188,8 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
     a.vx = (wobble + chase) * motionScale;
     a.vy = ((a.speed * 0.34) + Math.sin(a.t * (brutal ? 1.4 : 0.85) + a.uid) * (10 * erraticFactor)) * motionScale;
     if((prevVx <= -4 && a.vx >= 4) || (prevVx >= 4 && a.vx <= -4)){
-      a.flipTimer = 0.35;
+      a.flipTimer = 0.25;
+      a.flipState = !a.flipState;
     }
     a.prevVx = a.vx;
     if(a.stunTimer > 0){
@@ -286,7 +300,14 @@ export function drawAliens(ctx){
     var glow = ctx.createRadialGradient(a.x, a.y, a.r * 0.2, a.x, a.y, a.r * 1.5);
     glow.addColorStop(0, "rgba(80,255,220,.35)");
     glow.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.globalAlpha = 0.9;
+    var flashAlpha = 1;
+    if(a.hitFlashTimer > 0){
+      var dur = a.hitFlashDur || 0.3;
+      var phase = 1 - clamp(a.hitFlashTimer / Math.max(0.001, dur), 0, 1);
+      var pulse = Math.sin(phase * Math.PI * 4);
+      flashAlpha = pulse > 0 ? 1.2 : 0.55;
+    }
+    ctx.globalAlpha = 0.9 * flashAlpha;
     ctx.fillStyle = glow;
     ctx.beginPath();
     ctx.arc(a.x + shakeX, a.y + shakeY, a.r * 1.35, 0, Math.PI*2);
@@ -294,7 +315,7 @@ export function drawAliens(ctx){
     var pulse = 1 + Math.sin((a.t || 0) * 3.2) * 0.08;
     var size = Math.max(20, Math.round(a.r * 1.85 * pulse));
     ctx.save();
-    ctx.globalAlpha = 0.9;
+    ctx.globalAlpha = 0.9 * flashAlpha;
     ctx.shadowColor = "rgba(80,255,220,.9)";
     ctx.shadowBlur = 26;
     if(sprite && sprite.img && sprite.img.complete && sprite.img.naturalWidth){
@@ -303,11 +324,11 @@ export function drawAliens(ctx){
       var scale = size / Math.max(1, Math.max(iw, ih));
       var drawW = iw * scale;
       var drawH = ih * scale;
-      var spinFlip = a.flipTimer > 0 && (((performance.now() + a.uid * 97) / 45) | 0) % 2 === 1;
+      var spinFlip = !!a.flipState;
       if(spinFlip){
         ctx.save();
         ctx.translate(a.x + shakeX, a.y + shakeY);
-        ctx.scale(1, -1);
+        ctx.scale(-1, 1);
         ctx.drawImage(sprite.img, -drawW / 2, -drawH / 2, drawW, drawH);
         ctx.restore();
       }else{
@@ -320,6 +341,17 @@ export function drawAliens(ctx){
       ctx.fill();
     }
     ctx.restore();
+
+    if(a.showDigitTimer > 0 && a.swarmDigit != null){
+      ctx.save();
+      ctx.globalAlpha = 0.95;
+      ctx.fillStyle = "rgba(232,236,255,.95)";
+      ctx.font = "700 18px Oxanium, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(a.swarmDigit), a.x + shakeX, a.y + shakeY);
+      ctx.restore();
+    }
 
     ctx.globalAlpha = 0.8;
     ctx.fillStyle = "rgba(255,255,255,.95)";
