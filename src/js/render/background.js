@@ -98,7 +98,7 @@ export function createBackground(ctx){
     });
   }
 
-  function drawStars(w,h){
+  function drawStars(w,h,noPlanets){
     if(!bg.stars.length || bg.lastW !== w || bg.lastH !== h) buildStarfield(w,h);
 
     var t = performance.now() * 0.001;
@@ -118,30 +118,32 @@ export function createBackground(ctx){
     ctx.save();
     ctx.globalCompositeOperation = "screen";
 
-    for(var pi=0; pi<bg.planets.length; pi++){
-      var pl = bg.planets[pi];
-      var py = (pl.y + t * pl.sp) % (h + pl.r * 2) - pl.r;
-      ctx.save();
-      ctx.globalAlpha = 0.75;
-      ctx.fillStyle = pl.glow;
-      ctx.beginPath();
-      ctx.arc(pl.x, py, pl.r * 1.12, 0, Math.PI*2);
-      ctx.fill();
-      var grad = ctx.createRadialGradient(pl.x - pl.r*0.3, py - pl.r*0.3, pl.r*0.2, pl.x, py, pl.r);
-      grad.addColorStop(0, pl.c1);
-      grad.addColorStop(1, pl.c2);
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(pl.x, py, pl.r, 0, Math.PI*2);
-      ctx.fill();
-      if(pl.ring){
-        ctx.strokeStyle = "rgba(232,236,255,.35)";
-        ctx.lineWidth = Math.max(2, pl.r * 0.08);
+    if(!noPlanets){
+      for(var pi=0; pi<bg.planets.length; pi++){
+        var pl = bg.planets[pi];
+        var py = (pl.y + t * pl.sp) % (h + pl.r * 2) - pl.r;
+        ctx.save();
+        ctx.globalAlpha = 0.75;
+        ctx.fillStyle = pl.glow;
         ctx.beginPath();
-        ctx.ellipse(pl.x, py, pl.r * pl.ringW, pl.r * 0.35, pl.ringTilt, 0, Math.PI*2);
-        ctx.stroke();
+        ctx.arc(pl.x, py, pl.r * 1.12, 0, Math.PI*2);
+        ctx.fill();
+        var grad = ctx.createRadialGradient(pl.x - pl.r*0.3, py - pl.r*0.3, pl.r*0.2, pl.x, py, pl.r);
+        grad.addColorStop(0, pl.c1);
+        grad.addColorStop(1, pl.c2);
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(pl.x, py, pl.r, 0, Math.PI*2);
+        ctx.fill();
+        if(pl.ring){
+          ctx.strokeStyle = "rgba(232,236,255,.35)";
+          ctx.lineWidth = Math.max(2, pl.r * 0.08);
+          ctx.beginPath();
+          ctx.ellipse(pl.x, py, pl.r * pl.ringW, pl.r * 0.35, pl.ringTilt, 0, Math.PI*2);
+          ctx.stroke();
+        }
+        ctx.restore();
       }
-      ctx.restore();
     }
 
     for(var i=0;i<bg.stars.length;i++){

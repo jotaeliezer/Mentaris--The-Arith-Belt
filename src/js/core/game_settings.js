@@ -23,6 +23,7 @@ export function createState(){
     sfxVolume:0.85,
     musicVolume:0.6,
     questionMode:"digits3",
+    operation:"mul",
     decoyFunction:"digit_shuffle",
     difficulty:"normal",
 
@@ -49,10 +50,12 @@ export function createState(){
     collisionSlow:0,
     timeLimitSec:0,
     questionsCompleted:0,
+    mineralsEarned:0,
 
     // current problem
     a:0, b:0,
     answer:0,
+    questionReady:false,
     waveId:0,
 
     // weak facts
@@ -78,6 +81,7 @@ export function createState(){
     slowMoWaveY:0,
     slowMoWaveSpeed:420,
     lightningFlash:0,
+    cameraFlash:0,
     empTimer:0,
     empCascade:null,
     empCascadeTimer:0,
@@ -111,7 +115,8 @@ export function createState(){
     sandbox:false,
     sandboxInfiniteLives:false,
     sandboxNoScore:false,
-    sandboxSpawnAsteroids:true
+    sandboxSpawnAsteroids:true,
+    stampedeMode:false
   };
 }
 
@@ -167,7 +172,17 @@ export function createPlayer(){
     fadeAlpha: 1,
     fadeOutActive: false,
     fadeOutT: 0,
-    fadeOutDur: 0
+    fadeOutDur: 0,
+    clawActive: false,
+    clawPhase: "",
+    clawReach: 0,
+    clawTargetId: 0,
+    clawHold: 0,
+    clawHoldRequired: 0.35,
+    clawHoldKey: false,
+    clawPromptAlpha: 0,
+    clawOpenTimer: 0,
+    clawShake: 0
   };
 }
 
@@ -243,6 +258,7 @@ export function applySettingsFromInputs(state, inputs){
     state.musicVolume = clamp(musicVol, 0, 1);
   }
   if(inputs.questionMode) state.questionMode = inputs.questionMode.value || "digits3";
+  if(inputs.stampedeMode) state.stampedeMode = !!inputs.stampedeMode.checked;
   if(inputs.decoyFunction) state.decoyFunction = inputs.decoyFunction.value || "digit_shuffle";
   state.timeLimitSec = (state.timerMode === "off") ? 0 : parseInt(state.timerMode, 10);
   if(Number.isNaN(state.timeLimitSec)) state.timeLimitSec = 0;

@@ -151,6 +151,10 @@
                     <h3>Offense Shot Upgrades</h3>
                     <ul class="list catalogList" id="powerupsOffenseList"></ul>
                   </div>
+                  <div class="panel">
+                    <h3>Ships</h3>
+                    <ul class="list catalogList" id="shipsCatalogList"></ul>
+                  </div>
                 </div>
               </div>
             </div>
@@ -304,6 +308,10 @@
               <h3>Offense Shot Upgrades</h3>
               <ul class="list catalogList" id="powerupsOffenseList"></ul>
             </div>
+            <div class="panel">
+              <h3>Ships</h3>
+              <ul class="list catalogList" id="shipsCatalogList"></ul>
+            </div>
           </div>
           <div class="row">
             <button id="btnBackPowerups" class="btn">BACK</button>
@@ -407,31 +415,35 @@
                   NAME
                   <input id="endNameInput" type="text" placeholder="Enter name to pin score" maxlength="18" />
                 </label>
+                <button id="btnHighScoresToggle" class="btn" style="align-self:end;margin-top:14px;">SHOW SCORES</button>
               </div>
             </div>
 
             <div class="endStatsWrap" id="endStatsWrap">
               <div class="panel">
-                <h3>Stats</h3>
-                <div class="monoSmall endOutcome" id="endOutcome">—</div>
+                <h3>Engagement</h3>
+                <div class="monoSmall endOutcome" id="endOutcome">-</div>
                 <div class="monoSmall endReasonLine" id="endReasonLine"></div>
-                <div class="list" id="statsList"></div>
-</div>
-
-              <div class="panel">
-                <h3>Weak Facts</h3>
                 <div class="list" id="statsListSecondary"></div>
-                <p class="monoSmall" style="margin:0;">
-                  THESE ARE THE MULTIPLICATION FACTS YOU MISSED MOST.
-                  REPEAT THESE UNTIL THEY FEEL AUTOMATIC.
-                </p>
-                <ul class="list" id="weakList"></ul>
               </div>
+            </div>
 
-              <div class="panel">
-                <h3>High Scores</h3>
-                <button id="btnHighScoresToggle" class="btn" style="margin:6px 0 10px;">SHOW SCORES</button>
-                <ul class="list" id="highScoresEnd"></ul>
+            <div class="panel endScoresPanel endStatsHidden" id="endScoresPanel">
+              <h3 id="endScoresTitle">Scores</h3>
+              <div class="endScoresTableWrap">
+                <table class="endScoresTable">
+                  <thead>
+                    <tr>
+                      <th>Position</th>
+                      <th>Pilot</th>
+                      <th>Score</th>
+                      <th>Rank</th>
+                      <th>Level</th>
+                      <th>Completed</th>
+                    </tr>
+                  </thead>
+                  <tbody id="endScoresBody"></tbody>
+                </table>
               </div>
             </div>
 

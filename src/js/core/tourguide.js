@@ -66,7 +66,7 @@ export function createTourGuide(options){
     if(document.getElementById("tourGuideStyles")) return;
     var style = document.createElement("style");
     style.id = "tourGuideStyles";
-    style.textContent = "#tourGuide{position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-start;padding:18px 18px 18px 6%;pointer-events:none;z-index:20;opacity:0;transition:opacity .4s ease;font-family:\"Oxanium\",sans-serif;}#tourGuide.show{opacity:1;}#tourGuide .tourGuide-card{pointer-events:auto;background:rgba(8,12,24,.88);border:1px solid rgba(0,229,255,.35);border-radius:18px;padding:18px 20px;max-width:420px;width:min(420px,92%);box-shadow:0 18px 48px rgba(0,0,0,.5);font-family:\"Oxanium\",sans-serif;opacity:0;transform:translateY(12px);transition:opacity .45s ease, transform .45s ease;}#tourGuide.show .tourGuide-card{opacity:1;transform:translateY(0);}#tourGuide .tourGuide-card.is-fading{opacity:0;transform:translateY(8px);}#tourGuide .tourGuide-title{font-size:14px;letter-spacing:1.4px;text-transform:uppercase;color:#e8ecff;margin:0 0 8px;min-height:18px;}#tourGuide .tourGuide-body{font-size:13px;color:rgba(232,236,255,.82);line-height:1.6;margin:0 0 10px;min-height:32px;}#tourGuide .tourGuide-progress{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:rgba(232,236,255,.6);}#tourGuide .tourGuide-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;}#tourGuide .tourGuide-skip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);color:#e8ecff;border-radius:12px;padding:6px 10px;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:\"Oxanium\",sans-serif;}";
+    style.textContent = "#tourGuide{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:0 18px 28px;pointer-events:none;z-index:20;opacity:0;transition:opacity .4s ease;font-family:\"Oxanium\",sans-serif;}#tourGuide.show{opacity:1;}#tourGuide .tourGuide-wrap{display:flex;align-items:flex-end;gap:18px;}#tourGuide .tourGuide-avatarWrap{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:220px;}#tourGuide .tourGuide-avatar{width:230px;height:230px;object-fit:contain;filter:drop-shadow(0 12px 26px rgba(0,0,0,.45));}#tourGuide .tourGuide-avatarName{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.85);}#tourGuide .tourGuide-card{pointer-events:auto;background:rgba(8,12,24,.88);border:1px solid rgba(0,229,255,.35);border-radius:18px;padding:18px 20px;max-width:520px;width:min(520px,92%);box-shadow:0 18px 48px rgba(0,0,0,.5);font-family:\"Oxanium\",sans-serif;opacity:0;transform:translateY(12px);transition:opacity .45s ease, transform .45s ease;}#tourGuide.show .tourGuide-card{opacity:1;transform:translateY(0);}#tourGuide .tourGuide-card.is-fading{opacity:0;transform:translateY(8px);}#tourGuide .tourGuide-title{font-size:14px;letter-spacing:1.4px;text-transform:uppercase;color:#e8ecff;margin:0 0 8px;min-height:18px;}#tourGuide .tourGuide-body{font-size:13px;color:rgba(232,236,255,.82);line-height:1.6;margin:0 0 10px;min-height:32px;}#tourGuide .tourGuide-progress{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:rgba(232,236,255,.6);}#tourGuide .tourGuide-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;}#tourGuide .tourGuide-skip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);color:#e8ecff;border-radius:12px;padding:6px 10px;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:\"Oxanium\",sans-serif;}";
     document.head.appendChild(style);
   }
 
@@ -74,13 +74,19 @@ export function createTourGuide(options){
     if(overlay) return;
     overlay = document.createElement("div");
     overlay.id = "tourGuide";
-    overlay.innerHTML = "<div class=\"tourGuide-card\"><div class=\"tourGuide-title\"></div><div class=\"tourGuide-body\"></div><div class=\"tourGuide-progress\"></div><div class=\"tourGuide-actions\"><button class=\"tourGuide-skip\" type=\"button\">Skip Tutorial</button></div></div>";
+    overlay.innerHTML = "<div class=\"tourGuide-wrap\"><div class=\"tourGuide-avatarWrap\"><img class=\"tourGuide-avatar\" alt=\"Commander\"/><div class=\"tourGuide-avatarName\">COMMANDER SOLVER</div></div><div class=\"tourGuide-card\"><div class=\"tourGuide-title\"></div><div class=\"tourGuide-body\"></div><div class=\"tourGuide-progress\"></div><div class=\"tourGuide-actions\"><button class=\"tourGuide-skip\" type=\"button\">Skip Tutorial</button></div></div></div>";
     gameShell.appendChild(overlay);
     cardEl = overlay.querySelector(".tourGuide-card");
     titleEl = overlay.querySelector(".tourGuide-title");
     bodyEl = overlay.querySelector(".tourGuide-body");
     progressEl = overlay.querySelector(".tourGuide-progress");
     skipBtn = overlay.querySelector(".tourGuide-skip");
+    var avatarEl = overlay.querySelector(".tourGuide-avatar");
+    if(avatarEl){
+      avatarEl.src = "images/characters/commander1.png";
+      avatarEl.dataset.closed = "images/characters/commander1.png";
+      avatarEl.dataset.open = "images/characters/commander2.png";
+    }
     if(skipBtn){
       skipBtn.addEventListener("click", function(){
         finish(true);
@@ -95,6 +101,16 @@ export function createTourGuide(options){
     }
     typeTimers.length = 0;
     stopTypeAudio();
+    setCommanderTalking(false);
+  }
+
+  function setCommanderTalking(isTalking){
+    if(!overlay) return;
+    var avatarEl = overlay.querySelector(".tourGuide-avatar");
+    if(!avatarEl) return;
+    var closed = avatarEl.dataset.closed || "images/characters/commander1.png";
+    var open = avatarEl.dataset.open || "images/characters/commander2.png";
+    avatarEl.src = isTalking ? open : closed;
   }
 
   function showOverlay(){
@@ -103,6 +119,7 @@ export function createTourGuide(options){
     overlay.style.display = "flex";
     overlay.classList.add("show");
     if(cardEl) cardEl.classList.remove("is-fading");
+    setCommanderTalking(false);
   }
 
   function hideOverlay(){
@@ -110,6 +127,7 @@ export function createTourGuide(options){
     overlay.classList.remove("show");
     if(cardEl) cardEl.classList.add("is-fading");
     stopTypeAudio();
+    setCommanderTalking(false);
   }
 
   function startTypeAudio(){
@@ -147,9 +165,17 @@ export function createTourGuide(options){
     var timer = setInterval(function(){
       i += 1;
       el.textContent = text.slice(0, i);
+      var lastChar = text.charAt(i - 1);
+      if(lastChar && lastChar.trim().length > 0){
+        var phase = i % 8;
+        setCommanderTalking(phase < 4);
+      }else{
+        setCommanderTalking(false);
+      }
       if(i >= text.length){
         clearInterval(timer);
         stopTypeAudio();
+        setCommanderTalking(false);
         if(done) done();
       }
     }, safeSpeed);

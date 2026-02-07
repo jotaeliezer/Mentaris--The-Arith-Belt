@@ -321,6 +321,8 @@
     }
     .funnelOverlay .card{
       width:min(1200px, 96%);
+      transform: scale(1.06);
+      transform-origin: top center;
     }
 
     .menuWrap.hidden{
@@ -425,6 +427,31 @@
       padding:10px 12px;
       background: rgba(8,12,22,.65);
     }
+    .briefingFooter{
+      display:flex;
+      gap:16px;
+      align-items:flex-end;
+      margin-top:16px;
+    }
+    .briefingCommander{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:6px;
+      min-width:140px;
+    }
+    .briefingCommanderAvatar{
+      width:170px;
+      height:170px;
+      object-fit:contain;
+      filter:drop-shadow(0 12px 24px rgba(0,0,0,.45));
+    }
+    .briefingCommanderName{
+      font-size:11px;
+      letter-spacing:1.6px;
+      text-transform:uppercase;
+      color:rgba(232,236,255,.85);
+    }
     .briefingTutorial{
       margin-top:16px;
       border:1px solid rgba(255,255,255,.08);
@@ -520,6 +547,20 @@
       transform:none;
       border-color: rgba(255,255,255,.12);
       box-shadow:none;
+    }
+    .costTag{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-weight:700;
+    }
+    .costTag::before{
+      content:"";
+      width:13px;
+      height:13px;
+      background:url('images/asteroids/mineral.png') center/contain no-repeat;
+      filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.35));
+      flex:0 0 13px;
     }
     .beltLockTag{
       position:absolute;
@@ -653,6 +694,13 @@
       font-size:13px;
     }
 
+    #campaignOverlay .card,
+    #campaignConfirmOverlay .card,
+    #campaignEraseOverlay .card{
+      transform: scale(1.06);
+      transform-origin: top center;
+    }
+
     .campaignListItem .campaignStatus{
       display:inline-flex;
       align-items:center;
@@ -726,6 +774,27 @@
       align-items:center;
       justify-content:flex-end;
       margin-bottom:10px;
+    }
+
+    .panelHeaderRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .optionsToggle{
+      font-size:11px;
+      padding:6px 10px;
+      border-radius:10px;
+    }
+
+    .optionsPanel .optionsBody{
+      margin-top:6px;
+    }
+
+    .optionsPanel.collapsed .optionsBody{
+      display:none;
     }
 
     .toggleRow{
@@ -1029,6 +1098,15 @@
       width:min(130px, 62%);
       filter: drop-shadow(0 0 16px rgba(0,229,255,.3));
     }
+    .shipImagePreview{
+      width:min(150px, 74%);
+      height:auto;
+      object-fit:contain;
+      filter: drop-shadow(0 0 16px rgba(0,229,255,.3));
+      image-rendering:auto;
+      position:relative;
+      z-index:1;
+    }
 
     .menuButtons button[disabled],
     .menuButtons a[disabled]{
@@ -1109,7 +1187,7 @@
     }
   </style>
 </head>
-<body>
+<body class="showLaunch">
   <div class="starDrift" aria-hidden="true"></div>
   <div class="menuWrap noselect" id="menuWrap">
     <div class="menuShell">
@@ -1179,6 +1257,10 @@
             </div>
           </div>
 
+          
+
+
+
           <div class="step" data-step="1">
             <div class="panel">
               <h3>Mode</h3>
@@ -1192,6 +1274,10 @@
                   <h4>Classic Answer</h4>
                   <p>Shoot the full answer to each problem.</p>
                 </div>
+                <div class="choiceCard" data-mode="stampede">
+                  <h4>Stampede</h4>
+                  <p>Shoot wrong asteroids. Absorb the correct.</p>
+                </div>
                 <div class="choiceCard" data-mode="factor">
                   <h4>Factor Hunt</h4>
                   <p>Find the missing factor to complete the product.</p>
@@ -1200,282 +1286,27 @@
             </div>
           </div>
 
+          
+
           <div class="step" data-step="2">
             <div class="panel">
-              <h3>Sub Mode</h3>
+              <h3>Submode</h3>
               <div class="choiceGrid" id="submodeChoices">
                 <div class="choiceCard selected" data-sub="2">
                   <h4>2 by 1</h4>
-                  <p>Two-digit by two-digit problems.</p>
+                  <p>Two-digit by one-digit problems.</p>
                 </div>
                 <div class="choiceCard" data-sub="3">
                   <h4>3 by 1</h4>
-                  <p>Three-digit by three-digit problems.</p>
+                  <p>Three-digit by one-digit problems.</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="step" data-step="3">
-            <div class="panel" id="shipPanel">
-              <h3>Ship Frame</h3>
-              <div class="shipChooser">
-              <div class="shipGrid" id="shipGrid">
-              <div class="shipTrack" id="shipTrack">
-                <label class="shipOption" data-ship="classic" style="--ship-body: rgba(255,180,60,.92); --ship-wing: rgba(200,120,40,.9); --ship-canopy: rgba(90,240,230,.85); --ship-accent: rgba(255,80,200,.9); --ship-highlight: rgba(255,230,120,.9); --ship-thruster: rgba(22,18,28,.85); --ship-flame: rgba(255,140,90,.85); --ship-icon: rgba(255,255,255,.9);">
-                  <input type="radio" name="ship" value="classic" />
-                  <div class="shipCard">
-                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
-                      <polygon class="shipWing" points="98,80 54,110 40,136 58,146 118,130 88,104" />
-                      <polygon class="shipWing" points="122,80 166,110 180,136 162,146 102,130 132,104" />
-                      <polygon class="shipBody" points="110,6 144,50 180,84 172,124 146,146 136,172 84,172 74,146 48,124 40,84 76,50" />
-                      <polygon class="shipBody" points="110,18 126,60 122,150 110,174 98,150 94,60" />
-                      <rect class="shipStripe" x="58" y="92" width="104" height="6" rx="3" />
-                      <rect class="shipStripe" x="72" y="70" width="76" height="5" rx="3" />
-                      <polygon class="shipAccent" points="110,4 126,30 94,30" />
-                      <path class="shipCanopy" d="M96,52 Q110,36 124,52 L128,100 Q110,114 92,100 Z" />
-                      <rect class="shipIcon" x="106" y="120" width="8" height="18" rx="2" />
-                      <polygon class="shipAccent" points="26,104 54,104 46,126 18,126" />
-                      <rect class="shipAccent" x="30" y="82" width="8" height="24" rx="2" />
-                      <polygon class="shipAccent" points="166,104 194,104 202,126 174,126" />
-                      <rect class="shipAccent" x="182" y="82" width="8" height="24" rx="2" />
-                      <rect class="shipThruster" x="86" y="166" width="48" height="10" rx="4" />
-                      <circle class="shipThruster" cx="94" cy="172" r="9" />
-                      <circle class="shipThruster" cx="126" cy="172" r="9" />
-                      <polygon class="shipFlame" points="94,182 102,196 86,196" />
-                      <polygon class="shipFlame" points="126,182 134,196 118,196" />
-                    </svg>
-                    <div class="shipLabel">SCARLET CLASSIC</div>
-                  </div>
-                </label>
-                <label class="shipOption" data-ship="spire" style="--ship-body: rgba(120,90,255,.9); --ship-wing: rgba(80,60,220,.9); --ship-canopy: rgba(90,255,240,.85); --ship-accent: rgba(255,230,90,.95); --ship-highlight: rgba(255,80,200,.9); --ship-thruster: rgba(22,18,32,.85); --ship-flame: rgba(255,180,110,.85); --ship-icon: rgba(255,255,255,.9);">
-                  <input type="radio" name="ship" value="spire" />
-                  <div class="shipCard">
-                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
-                      <polygon class="shipWing" points="104,96 66,120 42,144 68,152 116,136 98,116" />
-                      <polygon class="shipWing" points="116,96 154,120 178,144 152,152 104,136 122,116" />
-                      <polygon class="shipBody" points="110,4 130,50 150,88 146,132 122,158 126,176 94,176 98,158 74,132 70,88 90,50" />
-                      <polygon class="shipBody" points="110,18 124,60 120,150 110,170 100,150 96,60" />
-                      <rect class="shipStripe" x="68" y="92" width="84" height="9" rx="4" />
-                      <rect class="shipStripe" x="78" y="70" width="64" height="7" rx="3" />
-                      <path class="shipAccent" d="M102 14 Q110 2 118 14 L124 32 Q110 40 96 32 Z" />
-                      <path class="shipCanopy" d="M98,56 Q110,38 122,56 L128,98 Q110,112 92,98 Z" />
-                      <polygon class="shipIcon" points="110,122 116,134 110,146 104,134" />
-                      <polygon class="shipAccent" points="26,118 56,118 48,142 18,142" />
-                      <rect class="shipAccent" x="34" y="92" width="7" height="26" rx="2" />
-                      <polygon class="shipAccent" points="164,118 194,118 202,142 172,142" />
-                      <rect class="shipAccent" x="178" y="92" width="7" height="26" rx="2" />
-                      <circle class="shipThruster" cx="92" cy="174" r="8" />
-                      <circle class="shipThruster" cx="128" cy="174" r="8" />
-                      <polygon class="shipFlame" points="92,182 98,196 86,196" />
-                      <polygon class="shipFlame" points="128,182 134,196 122,196" />
-                    </svg>
-                    <div class="shipLabel">VERDANT SPIRE</div>
-                  </div>
-                </label>
-                <label class="shipOption" data-ship="am2" style="--ship-body: rgba(235,190,210,.9); --ship-wing: rgba(190,130,170,.9); --ship-canopy: rgba(180,90,200,.9); --ship-accent: rgba(255,110,130,.95); --ship-highlight: rgba(120,90,255,.9); --ship-thruster: rgba(20,24,36,.85); --ship-flame: rgba(120,220,255,.9); --ship-icon: rgba(255,255,255,.9);">
-                  <input type="radio" name="ship" value="am2" />
-                  <div class="shipCard">
-                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
-                      <polygon class="shipWing" points="102,88 86,96 66,110 88,124 108,126 96,98" />
-                      <polygon class="shipWing" points="118,88 134,96 154,110 132,124 112,126 124,98" />
-                      <polygon class="shipBody" points="110,6 124,40 138,82 134,130 110,186 86,130 82,82 96,40" />
-                      <polygon class="shipBody" points="110,18 120,54 118,150 110,174 102,150 100,54" />
-                      <polygon class="shipHighlight" points="84,84 68,120 92,136 102,108" />
-                      <polygon class="shipHighlight" points="136,84 152,120 128,136 118,108" />
-                      <rect class="shipStripe" x="98" y="92" width="24" height="8" rx="3" />
-                      <path class="shipAccent" d="M104 10 Q110 2 116 10 L118 26 Q110 30 102 26 Z" />
-                      <path class="shipCanopy" d="M102,52 Q110,36 118,52 L124,98 Q110,112 96,98 Z" />
-                      <rect class="shipIcon" x="108" y="118" width="4" height="18" rx="2" />
-                      <circle class="shipThruster" cx="98" cy="172" r="6" />
-                      <circle class="shipThruster" cx="122" cy="172" r="6" />
-                      <circle class="shipThruster" cx="110" cy="176" r="5" />
-                      <polygon class="shipFlame" points="98,180 104,192 92,192" />
-                      <polygon class="shipFlame" points="122,180 128,192 116,192" />
-                      <polygon class="shipFlame" points="110,184 114,198 106,198" />
-                    </svg>
-                    <div class="shipLabel">AM2 SCOUT</div>
-                  </div>
-                </label>
-                <label class="shipOption locked" data-ship="mk7" data-locked="true" style="--ship-body: rgba(30,200,140,.9); --ship-wing: rgba(12,140,120,.9); --ship-canopy: rgba(40,255,210,.85); --ship-accent: rgba(255,230,120,.95); --ship-highlight: rgba(255,80,200,.9); --ship-thruster: rgba(18,22,32,.85); --ship-flame: rgba(255,190,80,.8); --ship-icon: rgba(255,255,255,.9);">
-                  <input type="radio" name="ship" value="mk7" disabled />
-                  <div class="shipCard">
-                    <div class="shipLockTag">Unlocked Lv 7</div>
-                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
-                      <polygon class="shipWing" points="98,78 60,58 42,34 58,26 112,40 92,66" />
-                      <polygon class="shipWing" points="122,78 160,58 178,34 162,26 108,40 128,66" />
-                      <polygon class="shipBody" points="110,18 140,46 170,82 164,124 142,148 132,170 88,170 78,148 56,124 50,82 80,46" />
-                      <polygon class="shipBody" points="110,26 124,62 120,148 110,166 100,148 96,62" />
-                      <rect class="shipStripe" x="58" y="92" width="104" height="6" rx="3" />
-                      <rect class="shipStripe" x="72" y="70" width="76" height="5" rx="3" />
-                      <polygon class="shipAccent" points="110,4 126,30 94,30" />
-                      <path class="shipCanopy" d="M94,52 Q110,34 126,52 L132,102 Q110,120 88,102 Z" />
-                      <circle class="shipIcon" cx="110" cy="136" r="7" />
-                      <polygon class="shipAccent" points="46,104 70,104 62,126 38,126" />
-                      <rect class="shipAccent" x="50" y="82" width="8" height="24" rx="2" />
-                      <polygon class="shipAccent" points="150,104 174,104 182,126 158,126" />
-                      <rect class="shipAccent" x="162" y="82" width="8" height="24" rx="2" />
-                      <rect class="shipThruster" x="86" y="166" width="48" height="10" rx="4" />
-                      <circle class="shipThruster" cx="94" cy="172" r="9" />
-                      <circle class="shipThruster" cx="126" cy="172" r="9" />
-                      <polygon class="shipFlame" points="94,182 102,196 86,196" />
-                      <polygon class="shipFlame" points="126,182 134,196 118,196" />
-                    </svg>
-                    <div class="shipLabel">CRIMSON MK-7</div>
-                  </div>
-                </label>
-                <label class="shipOption locked" data-ship="fizard" data-locked="true" style="--ship-body: rgba(90,180,255,.92); --ship-wing: rgba(45,120,220,.92); --ship-canopy: rgba(120,240,255,.9); --ship-accent: rgba(255,190,100,.95); --ship-highlight: rgba(120,255,220,.9); --ship-thruster: rgba(18,22,32,.85); --ship-flame: rgba(255,200,120,.85); --ship-icon: rgba(255,255,255,.9);">
-                  <input type="radio" name="ship" value="fizard" disabled />
-                  <div class="shipCard">
-                    <div class="shipLockTag">Unlocked Lv 8</div>
-                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
-                      <polygon class="shipWing" points="96,86 70,104 52,120 72,126 108,118 90,98" />
-                      <polygon class="shipWing" points="124,86 150,104 168,120 148,126 112,118 130,98" />
-                      <polygon class="shipBody" points="110,4 132,46 150,82 146,120 132,148 124,172 96,172 88,148 74,120 70,82 88,46" />
-                      <polygon class="shipBody" points="110,18 122,56 118,146 110,172 102,146 98,56" />
-                      <rect class="shipStripe" x="70" y="92" width="80" height="6" rx="3" />
-                      <rect class="shipStripe" x="80" y="70" width="60" height="5" rx="3" />
-                      <polygon class="shipAccent" points="110,2 122,26 98,26" />
-                      <path class="shipCanopy" d="M98,50 Q110,34 122,50 L128,96 Q110,110 92,96 Z" />
-                      <polygon class="shipIcon" points="110,120 116,134 110,148 104,134" />
-                      <polygon class="shipAccent" points="36,106 52,106 46,124 30,124" />
-                      <rect class="shipAccent" x="40" y="86" width="7" height="18" rx="2" />
-                      <polygon class="shipAccent" points="168,106 184,106 190,124 174,124" />
-                      <rect class="shipAccent" x="173" y="86" width="7" height="18" rx="2" />
-                      <rect class="shipThruster" x="90" y="166" width="40" height="10" rx="4" />
-                      <circle class="shipThruster" cx="96" cy="172" r="8" />
-                      <circle class="shipThruster" cx="124" cy="172" r="8" />
-                      <polygon class="shipFlame" points="96,182 102,196 90,196" />
-                      <polygon class="shipFlame" points="124,182 130,196 118,196" />
-                    </svg>
-                    <div class="shipLabel">AURORA DART</div>
-                  </div>
-                </label>
-                <label class="shipOption locked" data-ship="ember" data-locked="true" style="--ship-body: rgba(255,80,190,.92); --ship-wing: rgba(160,40,130,.9); --ship-canopy: rgba(120,255,230,.85); --ship-accent: rgba(255,230,90,.95); --ship-highlight: rgba(60,255,230,.85); --ship-thruster: rgba(22,18,28,.85); --ship-flame: rgba(255,200,90,.85); --ship-icon: rgba(255,255,255,.9);">
-                  <input type="radio" name="ship" value="ember" disabled />
-                  <div class="shipCard">
-                    <div class="shipLockTag">Unlocked Lv 9</div>
-                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
-                      <polygon class="shipWing" points="98,80 38,110 20,138 44,150 118,130 88,104" />
-                      <polygon class="shipWing" points="122,80 182,110 200,138 176,150 102,130 132,104" />
-                      <polygon class="shipBody" points="110,6 144,50 180,84 172,124 146,146 136,172 84,172 74,146 48,124 40,84 76,50" />
-                      <polygon class="shipBody" points="110,18 126,60 122,150 110,174 98,150 94,60" />
-                      <rect class="shipStripe" x="58" y="92" width="104" height="6" rx="3" />
-                      <rect class="shipStripe" x="70" y="68" width="80" height="5" rx="3" />
-                      <polygon class="shipAccent" points="110,4 126,30 94,30" />
-                      <path class="shipCanopy" d="M92,52 Q110,34 128,52 L134,102 Q110,122 86,102 Z" />
-                      <polygon class="shipIcon" points="110,122 120,140 110,156 100,140" />
-                      <polygon class="shipAccent" points="26,104 54,104 46,126 18,126" />
-                      <rect class="shipAccent" x="30" y="82" width="8" height="24" rx="2" />
-                      <polygon class="shipAccent" points="166,104 194,104 202,126 174,126" />
-                      <rect class="shipAccent" x="182" y="82" width="8" height="24" rx="2" />
-                      <rect class="shipThruster" x="86" y="166" width="48" height="10" rx="4" />
-                      <circle class="shipThruster" cx="94" cy="172" r="9" />
-                      <circle class="shipThruster" cx="126" cy="172" r="9" />
-                      <polygon class="shipFlame" points="94,182 102,196 86,196" />
-                      <polygon class="shipFlame" points="126,182 134,196 118,196" />
-                    </svg>
-                    <div class="shipLabel">RUBY STRIKE</div>
-                  </div>
-                </label>
-                <label class="shipOption locked" data-ship="azure" data-locked="true" style="--ship-body: rgba(70,180,255,.92); --ship-wing: rgba(30,130,200,.92); --ship-canopy: rgba(255,160,70,.9); --ship-accent: rgba(255,240,120,.95); --ship-highlight: rgba(90,255,230,.9); --ship-thruster: rgba(22,26,36,.85); --ship-flame: rgba(255,190,90,.85); --ship-icon: rgba(255,255,255,.9);">
-                  <input type="radio" name="ship" value="azure" disabled />
-                  <div class="shipCard">
-                    <div class="shipLockTag">Unlocked Lv 10</div>
-                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
-                      <polygon class="shipWing" points="100,94 46,122 18,162 50,172 118,150 92,118" />
-                      <polygon class="shipWing" points="120,94 174,122 202,162 170,172 100,150 128,118" />
-                      <polygon class="shipBody" points="110,10 140,54 170,90 164,128 140,150 132,172 88,172 80,150 56,128 50,90 80,54" />
-                      <polygon class="shipBody" points="110,20 124,64 120,150 110,170 100,150 96,64" />
-                      <rect class="shipStripe" x="62" y="98" width="96" height="6" rx="3" />
-                      <rect class="shipStripe" x="76" y="76" width="68" height="5" rx="3" />
-                      <polygon class="shipAccent" points="110,8 124,30 96,30" />
-                      <path class="shipCanopy" d="M96,54 Q110,38 124,54 L130,102 Q110,120 90,102 Z" />
-                      <rect class="shipIcon" x="105" y="122" width="10" height="16" rx="2" />
-                      <polygon class="shipAccent" points="22,124 48,124 40,148 14,148" />
-                      <rect class="shipAccent" x="28" y="94" width="8" height="28" rx="2" />
-                      <polygon class="shipAccent" points="172,124 198,124 206,148 180,148" />
-                      <rect class="shipAccent" x="184" y="94" width="8" height="28" rx="2" />
-                      <rect class="shipThruster" x="86" y="168" width="48" height="10" rx="4" />
-                      <circle class="shipThruster" cx="94" cy="174" r="9" />
-                      <circle class="shipThruster" cx="126" cy="174" r="9" />
-                      <polygon class="shipFlame" points="94,184 102,198 86,198" />
-                      <polygon class="shipFlame" points="126,184 134,198 118,198" />
-                    </svg>
-                    <div class="shipLabel">AZURE LANCER</div>
-                  </div>
-                </label>
-              </div>
-              </div>
-              <div class="shipDetails" aria-live="polite">
-                <div class="shipDetailsHeader">
-                  <span class="shipDetailsName" id="shipDetailsName">Crimson MK-7</span>
-                  <span class="shipDetailsStyle" id="shipDetailsStyle">Synthwave Interceptor</span>
-                </div>
-                <div class="shipDetailsBody" id="shipDetailsBody">
-                  Balanced frame with broad wings, medium hull height, and dual midrange cannons.
-                </div>
-                <div class="shipDetailsStats">
-                  <div class="shipDetailsStat">
-                    <span>Flight</span>
-                    <span id="shipStatHull">Medium</span>
-                  </div>
-                  <div class="shipDetailsStat">
-                    <span>Wings</span>
-                    <span id="shipStatWings">Wide</span>
-                  </div>
-                  <div class="shipDetailsStat" id="shipStatSpecialCard">
-                    <span>Special</span>
-                    <span id="shipStatGuns">Twin</span>
-                  </div>
-                  <div class="shipDetailsStat">
-                    <span>Thrusters</span>
-                    <span id="shipStatThrusters">Dual</span>
-                  </div>
-                </div>
-              </div>
-              </div>
-            </div>
-          </div>
 
-          <div class="step" data-step="4">
-            <div class="panel">
-              <h3>Cluster Selector</h3>
-              <input type="hidden" id="belt" name="belt" value="dusk" />
-              <div class="choiceGrid" id="beltChoices">
-                <div class="choiceCard beltChoice selected" data-belt="dusk" style="background-image:url('images/backgrounds/background8.png');">
-                  <h4>Dusk Cluster</h4>
-                  <p>Default training field with deep stars.</p>
-                </div>
-                <div class="choiceCard beltChoice" data-belt="ember" style="background-image:url('images/backgrounds/background1.png');">
-                  <h4>Ember Cluster</h4>
-                  <p>Warm glow with scattered dust lanes.</p>
-                </div>
-                <div class="choiceCard beltChoice locked" data-belt="aurora" data-locked="true" style="background-image:url('images/backgrounds/background2.png');">
-                  <h4>Aurora Cluster</h4>
-                  <span class="beltLockTag">Locked</span>
-                  <p>Cool nebula haze and icy highlights.</p>
-                </div>
-                <div class="choiceCard beltChoice locked" data-belt="rift" data-locked="true" style="background-image:url('images/backgrounds/background3.png');">
-                  <h4>Rift Cluster</h4>
-                  <span class="beltLockTag">Locked</span>
-                  <p>Dense field with higher contrast drift.</p>
-                </div>
-                <div class="choiceCard beltChoice locked" data-belt="vega" data-locked="true" style="background-image:url('images/backgrounds/background7.png');">
-                  <h4>Vega Cluster</h4>
-                  <span class="beltLockTag">Locked</span>
-                  <p>Wide galaxy wash with soft flares.</p>
-                </div>
-                <div class="choiceCard beltChoice locked" data-belt="void" data-locked="true" style="background-image:url('images/backgrounds/background9.png');">
-                  <h4>Void Cluster</h4>
-                  <span class="beltLockTag">Locked</span>
-                  <p>Deep space with faint starlight.</p>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          <div class="step" data-step="5">
+<div class="step" data-step="3">
             <div class="panel">
               <h3>Difficulty</h3>
               <div class="choiceGrid" id="difficultyChoices">
@@ -1497,15 +1328,19 @@
                 </div>
               </div>
             </div>
-            <div class="panel">
-              <h3>Options</h3>
-              <div class="helpToggle">
-                <label class="toggleRow">
-                  <input id="helpToggle" type="checkbox" />
-                  Show helper text
-                </label>
+            <div class="panel optionsPanel collapsed" id="difficultyOptionsPanel">
+              <div class="panelHeaderRow">
+                <h3>Options</h3>
+                <button type="button" class="btn optionsToggle" id="difficultyOptionsToggle">Show Options</button>
               </div>
-              <div class="grid">
+              <div class="optionsBody">
+                <div class="helpToggle">
+                  <label class="toggleRow">
+                    <input id="helpToggle" type="checkbox" />
+                    Show helper text
+                  </label>
+                </div>
+                <div class="grid">
                 <label title="First number range (A). Example: A 2–12 means A can be 2 through 12.">
                   FIRST NUMBER MIN (A)
                   <input id="aMin" name="aMin" type="number" min="0" max="99" value="2" />
@@ -1585,6 +1420,11 @@
                   <input id="alienSwarm" name="alienSwarm" type="checkbox" />
                   <span class="helpText">Swap asteroid waves for an alien swarm session (same as the secret campaign level).</span>
                 </label>
+                <label class="toggleRow">
+                  <span>Stampede Mode</span>
+                  <input id="stampedeMode" name="stampedeMode" type="checkbox" />
+                  <span class="helpText">Shoot wrong asteroids, absorb the correct answer asteroid.</span>
+                </label>
 
                 <label>
                   TARGETED ASTEROIDS
@@ -1612,17 +1452,378 @@
                   <span class="helpText">End the run after a fixed number of seconds.</span>
                 </label>
 
+                </div>
+              </div>
+            </div>
+          </div>
+          
+
+
+
+<div class="step" data-step="4">
+            <div class="panel">
+              <h3>Cluster Selector</h3>
+              <input type="hidden" id="belt" name="belt" value="dusk" />
+              <div class="choiceGrid" id="beltChoices">
+                <div class="choiceCard beltChoice selected" data-belt="dusk" style="background-image:url('images/backgrounds/background8.png');">
+                  <h4>Dusk Cluster</h4>
+                  <p>Default training field with deep stars.</p>
+                </div>
+                <div class="choiceCard beltChoice" data-belt="ember" style="background-image:url('images/backgrounds/background1.png');">
+                  <h4>Ember Cluster</h4>
+                  <p>Warm glow with scattered dust lanes.</p>
+                </div>
+                <div class="choiceCard beltChoice locked" data-belt="aurora" data-locked="true" style="background-image:url('images/backgrounds/background2.png');">
+                  <h4>Aurora Cluster</h4>
+                  <span class="beltLockTag costTag">250</span>
+                  <p>Cool nebula haze and icy highlights.</p>
+                </div>
+                <div class="choiceCard beltChoice locked" data-belt="rift" data-locked="true" style="background-image:url('images/backgrounds/background3.png');">
+                  <h4>Rift Cluster</h4>
+                  <span class="beltLockTag costTag">450</span>
+                  <p>Dense field with higher contrast drift.</p>
+                </div>
+                <div class="choiceCard beltChoice locked" data-belt="vega" data-locked="true" style="background-image:url('images/backgrounds/background7.png');">
+                  <h4>Vega Cluster</h4>
+                  <span class="beltLockTag costTag">700</span>
+                  <p>Wide galaxy wash with soft flares.</p>
+                </div>
+                <div class="choiceCard beltChoice locked" data-belt="void" data-locked="true" style="background-image:url('images/backgrounds/background9.png');">
+                  <h4>Void Cluster</h4>
+                  <span class="beltLockTag costTag">1000</span>
+                  <p>Deep space with faint starlight.</p>
+                </div>
               </div>
             </div>
           </div>
         </div>
+          <div class="step" data-step="5">
+            <div class="panel" id="shipPanel">
+              <h3>Ship Frame</h3>
+              <div class="shipChooser">
+              <div class="shipGrid" id="shipGrid">
+              <div class="shipTrack" id="shipTrack">
+                <label class="shipOption" data-ship="classic" style="--ship-body: rgba(255,180,60,.92); --ship-wing: rgba(200,120,40,.9); --ship-canopy: rgba(90,240,230,.85); --ship-accent: rgba(255,80,200,.9); --ship-highlight: rgba(255,230,120,.9); --ship-thruster: rgba(22,18,28,.85); --ship-flame: rgba(255,140,90,.85); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="classic" />
+                  <div class="shipCard">
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="98,80 54,110 40,136 58,146 118,130 88,104" />
+                      <polygon class="shipWing" points="122,80 166,110 180,136 162,146 102,130 132,104" />
+                      <polygon class="shipBody" points="110,6 144,50 180,84 172,124 146,146 136,172 84,172 74,146 48,124 40,84 76,50" />
+                      <polygon class="shipBody" points="110,18 126,60 122,150 110,174 98,150 94,60" />
+                      <rect class="shipStripe" x="58" y="92" width="104" height="6" rx="3" />
+                      <rect class="shipStripe" x="72" y="70" width="76" height="5" rx="3" />
+                      <polygon class="shipAccent" points="110,4 126,30 94,30" />
+                      <path class="shipCanopy" d="M96,52 Q110,36 124,52 L128,100 Q110,114 92,100 Z" />
+                      <rect class="shipIcon" x="106" y="120" width="8" height="18" rx="2" />
+                      <polygon class="shipAccent" points="26,104 54,104 46,126 18,126" />
+                      <rect class="shipAccent" x="30" y="82" width="8" height="24" rx="2" />
+                      <polygon class="shipAccent" points="166,104 194,104 202,126 174,126" />
+                      <rect class="shipAccent" x="182" y="82" width="8" height="24" rx="2" />
+                      <rect class="shipThruster" x="86" y="166" width="48" height="10" rx="4" />
+                      <circle class="shipThruster" cx="94" cy="172" r="9" />
+                      <circle class="shipThruster" cx="126" cy="172" r="9" />
+                      <polygon class="shipFlame" points="94,182 102,196 86,196" />
+                      <polygon class="shipFlame" points="126,182 134,196 118,196" />
+                    </svg>
+                    <div class="shipLabel">SCARLET CLASSIC</div>
+                  </div>
+                </label>
+                <label class="shipOption" data-ship="spire" style="--ship-body: rgba(120,90,255,.9); --ship-wing: rgba(80,60,220,.9); --ship-canopy: rgba(90,255,240,.85); --ship-accent: rgba(255,230,90,.95); --ship-highlight: rgba(255,80,200,.9); --ship-thruster: rgba(22,18,32,.85); --ship-flame: rgba(255,180,110,.85); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="spire" />
+                  <div class="shipCard">
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="104,96 66,120 42,144 68,152 116,136 98,116" />
+                      <polygon class="shipWing" points="116,96 154,120 178,144 152,152 104,136 122,116" />
+                      <polygon class="shipBody" points="110,4 130,50 150,88 146,132 122,158 126,176 94,176 98,158 74,132 70,88 90,50" />
+                      <polygon class="shipBody" points="110,18 124,60 120,150 110,170 100,150 96,60" />
+                      <rect class="shipStripe" x="68" y="92" width="84" height="9" rx="4" />
+                      <rect class="shipStripe" x="78" y="70" width="64" height="7" rx="3" />
+                      <path class="shipAccent" d="M102 14 Q110 2 118 14 L124 32 Q110 40 96 32 Z" />
+                      <path class="shipCanopy" d="M98,56 Q110,38 122,56 L128,98 Q110,112 92,98 Z" />
+                      <polygon class="shipIcon" points="110,122 116,134 110,146 104,134" />
+                      <polygon class="shipAccent" points="26,118 56,118 48,142 18,142" />
+                      <rect class="shipAccent" x="34" y="92" width="7" height="26" rx="2" />
+                      <polygon class="shipAccent" points="164,118 194,118 202,142 172,142" />
+                      <rect class="shipAccent" x="178" y="92" width="7" height="26" rx="2" />
+                      <circle class="shipThruster" cx="92" cy="174" r="8" />
+                      <circle class="shipThruster" cx="128" cy="174" r="8" />
+                      <polygon class="shipFlame" points="92,182 98,196 86,196" />
+                      <polygon class="shipFlame" points="128,182 134,196 122,196" />
+                    </svg>
+                    <div class="shipLabel">VERDANT SPIRE</div>
+                  </div>
+                </label>
+                <label class="shipOption" data-ship="am2" style="--ship-body: rgba(235,190,210,.9); --ship-wing: rgba(190,130,170,.9); --ship-canopy: rgba(180,90,200,.9); --ship-accent: rgba(255,110,130,.95); --ship-highlight: rgba(120,90,255,.9); --ship-thruster: rgba(20,24,36,.85); --ship-flame: rgba(120,220,255,.9); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="am2" />
+                  <div class="shipCard">
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="102,88 86,96 66,110 88,124 108,126 96,98" />
+                      <polygon class="shipWing" points="118,88 134,96 154,110 132,124 112,126 124,98" />
+                      <polygon class="shipBody" points="110,6 124,40 138,82 134,130 110,186 86,130 82,82 96,40" />
+                      <polygon class="shipBody" points="110,18 120,54 118,150 110,174 102,150 100,54" />
+                      <polygon class="shipHighlight" points="84,84 68,120 92,136 102,108" />
+                      <polygon class="shipHighlight" points="136,84 152,120 128,136 118,108" />
+                      <rect class="shipStripe" x="98" y="92" width="24" height="8" rx="3" />
+                      <path class="shipAccent" d="M104 10 Q110 2 116 10 L118 26 Q110 30 102 26 Z" />
+                      <path class="shipCanopy" d="M102,52 Q110,36 118,52 L124,98 Q110,112 96,98 Z" />
+                      <rect class="shipIcon" x="108" y="118" width="4" height="18" rx="2" />
+                      <circle class="shipThruster" cx="98" cy="172" r="6" />
+                      <circle class="shipThruster" cx="122" cy="172" r="6" />
+                      <circle class="shipThruster" cx="110" cy="176" r="5" />
+                      <polygon class="shipFlame" points="98,180 104,192 92,192" />
+                      <polygon class="shipFlame" points="122,180 128,192 116,192" />
+                      <polygon class="shipFlame" points="110,184 114,198 106,198" />
+                    </svg>
+                    <div class="shipLabel">AM3 SCOUT</div>
+                  </div>
+                </label>
+                <label class="shipOption locked" data-ship="mk7" data-locked="true" style="--ship-body: rgba(30,200,140,.9); --ship-wing: rgba(12,140,120,.9); --ship-canopy: rgba(40,255,210,.85); --ship-accent: rgba(255,230,120,.95); --ship-highlight: rgba(255,80,200,.9); --ship-thruster: rgba(18,22,32,.85); --ship-flame: rgba(255,190,80,.8); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="mk7" disabled />
+                  <div class="shipCard">
+                    <div class="shipLockTag costTag">300</div>
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="98,78 60,58 42,34 58,26 112,40 92,66" />
+                      <polygon class="shipWing" points="122,78 160,58 178,34 162,26 108,40 128,66" />
+                      <polygon class="shipBody" points="110,18 140,46 170,82 164,124 142,148 132,170 88,170 78,148 56,124 50,82 80,46" />
+                      <polygon class="shipBody" points="110,26 124,62 120,148 110,166 100,148 96,62" />
+                      <rect class="shipStripe" x="58" y="92" width="104" height="6" rx="3" />
+                      <rect class="shipStripe" x="72" y="70" width="76" height="5" rx="3" />
+                      <polygon class="shipAccent" points="110,4 126,30 94,30" />
+                      <path class="shipCanopy" d="M94,52 Q110,34 126,52 L132,102 Q110,120 88,102 Z" />
+                      <circle class="shipIcon" cx="110" cy="136" r="7" />
+                      <polygon class="shipAccent" points="46,104 70,104 62,126 38,126" />
+                      <rect class="shipAccent" x="50" y="82" width="8" height="24" rx="2" />
+                      <polygon class="shipAccent" points="150,104 174,104 182,126 158,126" />
+                      <rect class="shipAccent" x="162" y="82" width="8" height="24" rx="2" />
+                      <rect class="shipThruster" x="86" y="166" width="48" height="10" rx="4" />
+                      <circle class="shipThruster" cx="94" cy="172" r="9" />
+                      <circle class="shipThruster" cx="126" cy="172" r="9" />
+                      <polygon class="shipFlame" points="94,182 102,196 86,196" />
+                      <polygon class="shipFlame" points="126,182 134,196 118,196" />
+                    </svg>
+                    <div class="shipLabel">CRIMSON MK-7</div>
+                  </div>
+                </label>
+                <label class="shipOption locked" data-ship="bu2x" data-locked="true" style="--ship-body: rgba(80,120,200,.92); --ship-wing: rgba(40,70,160,.92); --ship-canopy: rgba(90,200,255,.85); --ship-accent: rgba(255,200,120,.95); --ship-highlight: rgba(120,160,255,.9); --ship-thruster: rgba(18,22,32,.85); --ship-flame: rgba(120,220,255,.9); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="bu2x" disabled />
+                  <div class="shipCard">
+                    <div class="shipLockTag costTag">1200</div>
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="98,78 60,58 42,34 58,26 112,40 92,66" />
+                      <polygon class="shipWing" points="122,78 160,58 178,34 162,26 108,40 128,66" />
+                      <polygon class="shipBody" points="110,18 140,46 170,82 164,124 142,148 132,170 88,170 78,148 56,124 50,82 80,46" />
+                      <polygon class="shipBody" points="110,26 124,62 120,148 110,166 100,148 96,62" />
+                      <rect class="shipStripe" x="58" y="92" width="104" height="6" rx="3" />
+                      <rect class="shipStripe" x="72" y="70" width="76" height="5" rx="3" />
+                      <polygon class="shipAccent" points="110,4 126,30 94,30" />
+                      <path class="shipCanopy" d="M94,52 Q110,34 126,52 L132,102 Q110,120 88,102 Z" />
+                      <circle class="shipIcon" cx="110" cy="136" r="7" />
+                      <polygon class="shipAccent" points="46,104 70,104 62,126 38,126" />
+                      <rect class="shipAccent" x="50" y="82" width="8" height="24" rx="2" />
+                      <polygon class="shipAccent" points="150,104 174,104 182,126 158,126" />
+                      <rect class="shipAccent" x="162" y="82" width="8" height="24" rx="2" />
+                      <rect class="shipThruster" x="86" y="166" width="48" height="10" rx="4" />
+                      <circle class="shipThruster" cx="94" cy="172" r="9" />
+                      <circle class="shipThruster" cx="126" cy="172" r="9" />
+                      <polygon class="shipFlame" points="94,182 102,196 86,196" />
+                      <polygon class="shipFlame" points="126,182 134,196 118,196" />
+                    </svg>
+                    <div class="shipLabel">BU2X</div>
+                  </div>
+                </label>
+                <label class="shipOption locked" data-ship="fizard" data-locked="true" style="--ship-body: rgba(90,180,255,.92); --ship-wing: rgba(45,120,220,.92); --ship-canopy: rgba(120,240,255,.9); --ship-accent: rgba(255,190,100,.95); --ship-highlight: rgba(120,255,220,.9); --ship-thruster: rgba(18,22,32,.85); --ship-flame: rgba(255,200,120,.85); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="fizard" disabled />
+                  <div class="shipCard">
+                    <div class="shipLockTag costTag">450</div>
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="96,86 70,104 52,120 72,126 108,118 90,98" />
+                      <polygon class="shipWing" points="124,86 150,104 168,120 148,126 112,118 130,98" />
+                      <polygon class="shipBody" points="110,4 132,46 150,82 146,120 132,148 124,172 96,172 88,148 74,120 70,82 88,46" />
+                      <polygon class="shipBody" points="110,18 122,56 118,146 110,172 102,146 98,56" />
+                      <rect class="shipStripe" x="70" y="92" width="80" height="6" rx="3" />
+                      <rect class="shipStripe" x="80" y="70" width="60" height="5" rx="3" />
+                      <polygon class="shipAccent" points="110,2 122,26 98,26" />
+                      <path class="shipCanopy" d="M98,50 Q110,34 122,50 L128,96 Q110,110 92,96 Z" />
+                      <polygon class="shipIcon" points="110,120 116,134 110,148 104,134" />
+                      <polygon class="shipAccent" points="36,106 52,106 46,124 30,124" />
+                      <rect class="shipAccent" x="40" y="86" width="7" height="18" rx="2" />
+                      <polygon class="shipAccent" points="168,106 184,106 190,124 174,124" />
+                      <rect class="shipAccent" x="173" y="86" width="7" height="18" rx="2" />
+                      <rect class="shipThruster" x="90" y="166" width="40" height="10" rx="4" />
+                      <circle class="shipThruster" cx="96" cy="172" r="8" />
+                      <circle class="shipThruster" cx="124" cy="172" r="8" />
+                      <polygon class="shipFlame" points="96,182 102,196 90,196" />
+                      <polygon class="shipFlame" points="124,182 130,196 118,196" />
+                    </svg>
+                    <div class="shipLabel">AURORA DART</div>
+                  </div>
+                </label>
+                <label class="shipOption locked" data-ship="ember" data-locked="true" style="--ship-body: rgba(255,80,190,.92); --ship-wing: rgba(160,40,130,.9); --ship-canopy: rgba(120,255,230,.85); --ship-accent: rgba(255,230,90,.95); --ship-highlight: rgba(60,255,230,.85); --ship-thruster: rgba(22,18,28,.85); --ship-flame: rgba(255,200,90,.85); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="ember" disabled />
+                  <div class="shipCard">
+                    <div class="shipLockTag costTag">650</div>
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="98,80 38,110 20,138 44,150 118,130 88,104" />
+                      <polygon class="shipWing" points="122,80 182,110 200,138 176,150 102,130 132,104" />
+                      <polygon class="shipBody" points="110,6 144,50 180,84 172,124 146,146 136,172 84,172 74,146 48,124 40,84 76,50" />
+                      <polygon class="shipBody" points="110,18 126,60 122,150 110,174 98,150 94,60" />
+                      <rect class="shipStripe" x="58" y="92" width="104" height="6" rx="3" />
+                      <rect class="shipStripe" x="70" y="68" width="80" height="5" rx="3" />
+                      <polygon class="shipAccent" points="110,4 126,30 94,30" />
+                      <path class="shipCanopy" d="M92,52 Q110,34 128,52 L134,102 Q110,122 86,102 Z" />
+                      <polygon class="shipIcon" points="110,122 120,140 110,156 100,140" />
+                      <polygon class="shipAccent" points="26,104 54,104 46,126 18,126" />
+                      <rect class="shipAccent" x="30" y="82" width="8" height="24" rx="2" />
+                      <polygon class="shipAccent" points="166,104 194,104 202,126 174,126" />
+                      <rect class="shipAccent" x="182" y="82" width="8" height="24" rx="2" />
+                      <rect class="shipThruster" x="86" y="166" width="48" height="10" rx="4" />
+                      <circle class="shipThruster" cx="94" cy="172" r="9" />
+                      <circle class="shipThruster" cx="126" cy="172" r="9" />
+                      <polygon class="shipFlame" points="94,182 102,196 86,196" />
+                      <polygon class="shipFlame" points="126,182 134,196 118,196" />
+                    </svg>
+                    <div class="shipLabel">RUBY STRIKE</div>
+                  </div>
+                </label>
+                <label class="shipOption locked" data-ship="azure" data-locked="true" style="--ship-body: rgba(70,180,255,.92); --ship-wing: rgba(30,130,200,.92); --ship-canopy: rgba(255,160,70,.9); --ship-accent: rgba(255,240,120,.95); --ship-highlight: rgba(90,255,230,.9); --ship-thruster: rgba(22,26,36,.85); --ship-flame: rgba(255,190,90,.85); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="azure" disabled />
+                  <div class="shipCard">
+                    <div class="shipLockTag costTag">900</div>
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="100,94 46,122 18,162 50,172 118,150 92,118" />
+                      <polygon class="shipWing" points="120,94 174,122 202,162 170,172 100,150 128,118" />
+                      <polygon class="shipBody" points="110,10 140,54 170,90 164,128 140,150 132,172 88,172 80,150 56,128 50,90 80,54" />
+                      <polygon class="shipBody" points="110,20 124,64 120,150 110,170 100,150 96,64" />
+                      <rect class="shipStripe" x="62" y="98" width="96" height="6" rx="3" />
+                      <rect class="shipStripe" x="76" y="76" width="68" height="5" rx="3" />
+                      <polygon class="shipAccent" points="110,8 124,30 96,30" />
+                      <path class="shipCanopy" d="M96,54 Q110,38 124,54 L130,102 Q110,120 90,102 Z" />
+                      <rect class="shipIcon" x="105" y="122" width="10" height="16" rx="2" />
+                      <polygon class="shipAccent" points="22,124 48,124 40,148 14,148" />
+                      <rect class="shipAccent" x="28" y="94" width="8" height="28" rx="2" />
+                      <polygon class="shipAccent" points="172,124 198,124 206,148 180,148" />
+                      <rect class="shipAccent" x="184" y="94" width="8" height="28" rx="2" />
+                      <rect class="shipThruster" x="86" y="168" width="48" height="10" rx="4" />
+                      <circle class="shipThruster" cx="94" cy="174" r="9" />
+                      <circle class="shipThruster" cx="126" cy="174" r="9" />
+                      <polygon class="shipFlame" points="94,184 102,198 86,198" />
+                      <polygon class="shipFlame" points="126,184 134,198 118,198" />
+                    </svg>
+                    <div class="shipLabel">AZURE LANCER</div>
+                  </div>
+                </label>
+                <label class="shipOption locked" data-ship="mantas" data-locked="true" style="--ship-body: rgba(120,95,255,.92); --ship-wing: rgba(74,58,210,.9); --ship-canopy: rgba(120,235,255,.9); --ship-accent: rgba(255,195,95,.95); --ship-highlight: rgba(255,95,205,.9); --ship-thruster: rgba(24,22,36,.85); --ship-flame: rgba(130,220,255,.9); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="mantas" disabled />
+                  <div class="shipCard">
+                    <div class="shipLockTag costTag">1450</div>
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="98,80 38,110 20,138 44,150 118,130 88,104" />
+                      <polygon class="shipWing" points="122,80 182,110 200,138 176,150 102,130 132,104" />
+                      <polygon class="shipBody" points="110,6 144,50 180,84 172,124 146,146 136,172 84,172 74,146 48,124 40,84 76,50" />
+                      <polygon class="shipBody" points="110,18 126,60 122,150 110,174 98,150 94,60" />
+                      <rect class="shipStripe" x="58" y="92" width="104" height="6" rx="3" />
+                      <rect class="shipStripe" x="70" y="68" width="80" height="5" rx="3" />
+                      <polygon class="shipAccent" points="110,4 126,30 94,30" />
+                      <path class="shipCanopy" d="M92,52 Q110,34 128,52 L134,102 Q110,122 86,102 Z" />
+                      <polygon class="shipIcon" points="110,122 120,140 110,156 100,140" />
+                      <rect class="shipThruster" x="86" y="166" width="48" height="10" rx="4" />
+                      <circle class="shipThruster" cx="94" cy="172" r="9" />
+                      <circle class="shipThruster" cx="126" cy="172" r="9" />
+                      <polygon class="shipFlame" points="94,182 102,196 86,196" />
+                      <polygon class="shipFlame" points="126,182 134,196 118,196" />
+                    </svg>
+                    <div class="shipLabel">MANTAS ARC-5</div>
+                  </div>
+                </label>
+                <label class="shipOption locked" data-ship="cyan" data-locked="true" style="--ship-body: rgba(78,210,255,.92); --ship-wing: rgba(42,130,220,.9); --ship-canopy: rgba(165,245,255,.9); --ship-accent: rgba(255,225,120,.95); --ship-highlight: rgba(95,255,225,.9); --ship-thruster: rgba(22,26,36,.85); --ship-flame: rgba(135,225,255,.9); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="cyan" disabled />
+                  <div class="shipCard">
+                    <div class="shipLockTag costTag">1650</div>
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="100,94 46,122 18,162 50,172 118,150 92,118" />
+                      <polygon class="shipWing" points="120,94 174,122 202,162 170,172 100,150 128,118" />
+                      <polygon class="shipBody" points="110,10 140,54 170,90 164,128 140,150 132,172 88,172 80,150 56,128 50,90 80,54" />
+                      <polygon class="shipBody" points="110,20 124,64 120,150 110,170 100,150 96,64" />
+                      <rect class="shipStripe" x="62" y="98" width="96" height="6" rx="3" />
+                      <rect class="shipStripe" x="76" y="76" width="68" height="5" rx="3" />
+                      <polygon class="shipAccent" points="110,8 124,30 96,30" />
+                      <path class="shipCanopy" d="M96,54 Q110,38 124,54 L130,102 Q110,120 90,102 Z" />
+                      <rect class="shipIcon" x="105" y="122" width="10" height="16" rx="2" />
+                      <rect class="shipThruster" x="86" y="168" width="48" height="10" rx="4" />
+                      <circle class="shipThruster" cx="94" cy="174" r="9" />
+                      <circle class="shipThruster" cx="126" cy="174" r="9" />
+                      <polygon class="shipFlame" points="94,184 102,198 86,198" />
+                      <polygon class="shipFlame" points="126,184 134,198 118,198" />
+                    </svg>
+                    <div class="shipLabel">CYAN VECTOR 7</div>
+                  </div>
+                </label>
+                <label class="shipOption locked" data-ship="veloz" data-locked="true" style="--ship-body: rgba(255,120,75,.92); --ship-wing: rgba(210,82,54,.9); --ship-canopy: rgba(255,215,150,.9); --ship-accent: rgba(255,240,125,.95); --ship-highlight: rgba(255,145,95,.9); --ship-thruster: rgba(30,24,24,.85); --ship-flame: rgba(255,170,95,.9); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="veloz" disabled />
+                  <div class="shipCard">
+                    <div class="shipLockTag costTag">1900</div>
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="98,78 60,58 42,34 58,26 112,40 92,66" />
+                      <polygon class="shipWing" points="122,78 160,58 178,34 162,26 108,40 128,66" />
+                      <polygon class="shipBody" points="110,18 140,46 170,82 164,124 142,148 132,170 88,170 78,148 56,124 50,82 80,46" />
+                      <polygon class="shipBody" points="110,26 124,62 120,148 110,166 100,148 96,62" />
+                      <rect class="shipStripe" x="58" y="92" width="104" height="6" rx="3" />
+                      <rect class="shipStripe" x="72" y="70" width="76" height="5" rx="3" />
+                      <polygon class="shipAccent" points="110,4 126,30 94,30" />
+                      <path class="shipCanopy" d="M94,52 Q110,34 126,52 L132,102 Q110,120 88,102 Z" />
+                      <circle class="shipIcon" cx="110" cy="136" r="7" />
+                      <rect class="shipThruster" x="86" y="166" width="48" height="10" rx="4" />
+                      <circle class="shipThruster" cx="94" cy="172" r="9" />
+                      <circle class="shipThruster" cx="126" cy="172" r="9" />
+                      <polygon class="shipFlame" points="94,182 102,196 86,196" />
+                      <polygon class="shipFlame" points="126,182 134,196 118,196" />
+                    </svg>
+                    <div class="shipLabel">VELOZ MAS</div>
+                  </div>
+                </label>
+              </div>
+              </div>
+              <div class="shipDetails" aria-live="polite">
+                <div class="shipDetailsHeader">
+                  <span class="shipDetailsName" id="shipDetailsName">Crimson MK-7</span>
+                  <span class="shipDetailsStyle" id="shipDetailsStyle">Synthwave Interceptor</span>
+                </div>
+                <div class="shipDetailsBody" id="shipDetailsBody">
+                  Balanced frame with broad wings, medium hull height, and dual midrange cannons.
+                </div>
+                <div class="shipDetailsStats">
+                  <div class="shipDetailsStat">
+                    <span>Flight</span>
+                    <span id="shipStatHull">Medium</span>
+                  </div>
+                  <div class="shipDetailsStat">
+                    <span>Wings</span>
+                    <span id="shipStatWings">Wide</span>
+                  </div>
+                  <div class="shipDetailsStat" id="shipStatSpecialCard">
+                    <span>Special</span>
+                    <span id="shipStatGuns">Twin</span>
+                  </div>
+                  <div class="shipDetailsStat">
+                    <span>Thrusters</span>
+                    <span id="shipStatThrusters">Dual</span>
+                  </div>
+                </div>
+              </div>
+              </div>
+            </div>
+          </div>
+
+          
+        
         <div class="row">
           <div class="stepActions">
             <button id="btnReset" class="btn" type="button">RESET</button>
             <button id="btnStepBack" class="btn" type="button">Back</button>
-            <button id="btnStepNext" class="btn" type="button">Next</button>
+            <button id="btnStepNext" class="btn" type="button">Continue</button>
             <button id="btnSaveFunnel" class="btn" type="submit">Save</button>
-            <button id="btnLaunchGame" class="btn" type="button" style="border-color: rgba(193,216,47,.35); background: rgba(193,216,47,.14);">Launch Game</button>
+            <button id="btnLaunchGame" class="btn" type="button" style="border-color: rgba(193,216,47,.35); background: rgba(193,216,47,.14);">Pilot Ship</button>
           </div>
         </div>
       </form>
@@ -1768,6 +1969,10 @@
                 <h3>Offense Shot Upgrades</h3>
                 <ul class="list catalogList" id="powerupsOffenseListHome"></ul>
               </div>
+              <div class="panel">
+                <h3>Ships</h3>
+                <ul class="list catalogList" id="shipsCatalogListHome"></ul>
+              </div>
             </div>
           </div>
         </div>
@@ -1787,27 +1992,47 @@
       </div>
       <div class="cardBody">
         <div class="leaderboardsMain">
-          <div class="panel">
-            <h3>High Scores</h3>
-            <div class="monoSmall" style="margin:0 0 6px;">TOP 5</div>
-            <ul class="list" id="homeHighScoresTop"></ul>
-            <div class="monoSmall" style="margin:12px 0 6px;">MORE</div>
-            <ul class="list" id="homeHighScoresRest"></ul>
-          </div>
-          <div class="panel">
-            <h3>Lifetime</h3>
-            <ul class="list" id="homeLifetimeStats"></ul>
-          </div>
-        </div>
-        <div class="panel leaderboardDetail" id="homeScoreDetail">
-          <div class="cardHead" style="padding:0 0 10px; border:none;">
-            <div>
-              <h3>Run Details</h3>
-              <p class="monoSmall" id="homeScoreDetailTitle" style="margin:4px 0 0;">—</p>
+          <div class="leaderboardsFilters">
+            <div class="filterRow">
+              <label>Operation
+                <select id="lbFilterOperation"></select>
+              </label>
+              <label>Mode
+                <select id="lbFilterMode"></select>
+              </label>
+              <label>Submode
+                <select id="lbFilterSubmode"></select>
+              </label>
+              <label>Difficulty
+                <select id="lbFilterDifficulty"></select>
+              </label>
+              <label>Timer
+                <select id="lbFilterTimer"></select>
+              </label>
+              <button id="lbClearFilters" class="btn btnTiny" type="button" style="align-self:flex-end;">Clear Filters</button>
             </div>
-            <button id="btnScoreBack" class="btn">Back</button>
           </div>
-          <ul class="list" id="homeScoreDetailList"></ul>
+          <div class="leaderboardsTableWrap">
+            <div class="leaderboardsLoading" id="leaderboardsLoading" aria-live="polite">
+              <span class="loadingSpinner" aria-hidden="true"></span>
+              <span>Loading scores...</span>
+            </div>
+            <table class="leaderboardsTable">
+              <thead>
+                <tr>
+                  <th>Position</th>
+                  <th>Pilot</th>
+                  <th>Score</th>
+                  <th>Rank</th>
+                  <th>Level</th>
+                  <th>Duration</th>
+                  <th>Timer</th>
+                  <th>Completed</th>
+                </tr>
+              </thead>
+              <tbody id="homeLeaderboardsBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -1847,23 +2072,15 @@
         <div class="briefingStat"><span>Targeted Asteroids</span><b id="briefingTargeted">—</b></div>
         <div class="briefingStat"><span>Timer</span><b id="briefingTimer">—</b></div>
       </div>
-      <div class="briefingTutorial">
-        <div class="briefingTutorialTitle">Operator Tutorial</div>
-        <div class="briefingTutorialList">
-          <div><b>WASD / ARROWS</b> Move ship</div>
-          <div><b>Z</b> Fire primary</div>
-          <div><b>X</b> Secondary ability</div>
-          <div><b>C</b> Ship special</div>
-          <div><b>SPACE</b> Dash</div>
-          <div><b>P</b> Pause / Resume</div>
-          <div><b>B</b> Mousepad toggle</div>
-          <div><b>R</b> Restart</div>
-          <div><b>M</b> Settings</div>
+      <div class="briefingFooter">
+        <div class="briefingCommander">
+          <img class="briefingCommanderAvatar" src="images/characters/commander1.png" alt="Commander Solver" />
+          <div class="briefingCommanderName">COMMANDER SOLVER</div>
         </div>
-      </div>
-      <div class="briefingHints">
-        <div class="briefingHintLabel">Command Directive</div>
-        <div class="briefingHintText" id="briefingHintText">—</div>
+        <div class="briefingHints">
+          <div class="briefingHintLabel">Command Directive</div>
+          <div class="briefingHintText" id="briefingHintText">—</div>
+        </div>
       </div>
     </div>
   </div>
@@ -2032,6 +2249,12 @@
             config: { ship: "am2", questionMode: "classic2", difficulty: "easy", targetMode: "off", timerMode: "75", decoys: 3, decoyFunction: "units_bias", speed: 0.7, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
           },
           {
+            id: "m3s",
+            title: "Sector 3B: Stampede",
+            desc: "Shoot wrong asteroids, absorb the correct.",
+            config: { ship: "spire", questionMode: "stampede2", difficulty: "easy", targetMode: "off", timerMode: "60", decoys: 3, decoyFunction: "units_bias", speed: 0.85, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
+          },
+          {
             id: "m3x",
             title: "Sector X: Alien Swarm",
             desc: "Survive the swarm and solve alien math.",
@@ -2080,6 +2303,12 @@
             title: "Rift 3: Phase Lock",
             desc: "Classic answers under pressure.",
             config: { ship: "am2", questionMode: "classic3", difficulty: "normal", targetMode: "off", timerMode: "90", decoys: 3, decoyFunction: "units_bias", speed: 0.9, lives: 15, strikes: 10, aMin: 3, aMax: 12, bMin: 3, bMax: 12 }
+          },
+          {
+            id: "r3s",
+            title: "Rift 3B: Stampede Run",
+            desc: "Stampede flow at rift speed.",
+            config: { ship: "classic", questionMode: "stampede3", difficulty: "normal", targetMode: "off", timerMode: "75", decoys: 3, decoyFunction: "units_bias", speed: 0.95, lives: 15, strikes: 10, aMin: 3, aMax: 12, bMin: 3, bMax: 12 }
           },
           {
             id: "r3x",
@@ -2578,6 +2807,17 @@
       });
     }
 
+    var diffOptionsPanel = document.getElementById("difficultyOptionsPanel");
+    var diffOptionsToggle = document.getElementById("difficultyOptionsToggle");
+    if(diffOptionsPanel && diffOptionsToggle){
+      diffOptionsPanel.classList.add("collapsed");
+      diffOptionsToggle.textContent = "Show Options";
+      diffOptionsToggle.addEventListener("click", function(){
+        var collapsed = diffOptionsPanel.classList.toggle("collapsed");
+        diffOptionsToggle.textContent = collapsed ? "Show Options" : "Hide Options";
+      });
+    }
+
     var volumeInput = document.getElementById("volume");
     if(volumeInput){
       volumeInput.addEventListener("input", function(){
@@ -2624,6 +2864,19 @@
       { id: "plasma", label: "Plasma Orb", icon: "images/shots/shot_plasma.png", desc: "Plasma shots for about 12 seconds." },
       { id: "rail", label: "Rail Beam", icon: "images/shots/shot_rail.png", desc: "Rail beam shots for about 12 seconds." }
     ];
+    var homeShipCatalog = [
+      { id: "classic", label: "Scarlet Classic", icon: "images/ships/Scarlet%20Classic.png", desc: "Retro heavy fighter with stable handling." },
+      { id: "spire", label: "Verdant Spire", icon: "images/ships/Verdant%20Spire.png", desc: "Fast scout with flare support and single-center exhaust." },
+      { id: "am2", label: "AM3 Scout", icon: "images/ships/AM3%20Scout.png", desc: "High mobility frame with teleport spin capability." },
+      { id: "mk7", label: "Crimson MK-7", icon: "images/ships/Crimson%20MK-7.png", desc: "Balanced interceptor with broad wing profile." },
+      { id: "fizard", label: "Aurora Dart", icon: "images/ships/Aurora%20Dart.png", desc: "Sleek dart frame tuned for precise movement." },
+      { id: "ember", label: "Ruby Strike", icon: "images/ships/Ruby%20Strike.png", desc: "Neon striker with aggressive profile." },
+      { id: "azure", label: "Azure Lancer", icon: "images/ships/Azure%20Lancer.png", desc: "Aero spear frame with steady control." },
+      { id: "bu2x", label: "BU2X", icon: "images/ships/BU2X.png", desc: "Experimental frame awaiting unlock clearance." },
+      { id: "mantas", label: "Mantas Arc-5", icon: "images/ships/Mantas%20-%20Arc%205.png", desc: "Advanced sweep-frame built for high-speed slalom." },
+      { id: "cyan", label: "Cyan Vector 7", icon: "images/ships/Cyan%20Vector%207.png", desc: "High-precision vector craft with balanced handling." },
+      { id: "veloz", label: "Veloz Mas", icon: "images/ships/Veloz%20Mas.png", desc: "Aggressive chase frame tuned for offensive runs." }
+    ];
 
     var homeSfxCatalog = [
       { id: "menu_beep", label: "Menu Beep", desc: "UI blip.", when: "Menu and overlay buttons.", badge: "SFX", src: "sfx/ui/menu_beep.mp3", category: "menu" },
@@ -2638,12 +2891,12 @@
       { id: "gun1", label: "Gun 1", desc: "Primary blaster.", when: "Standard, missile, and fire shots.", badge: "SFX", src: "sfx/shots/gun1.mp3", category: "shots" },
       { id: "gun2", label: "Gun 2", desc: "Heavy blaster.", when: "Laser and rail shots.", badge: "SFX", src: "sfx/shots/gun2.mp3", category: "shots" },
       { id: "ice_shot", label: "Ice Shot", desc: "Ice blaster.", when: "Ice shots.", badge: "SFX", src: "sfx/shots/ice_shot.mp3", category: "shots" },
-      { id: "electric_shot", label: "Electric Shot", desc: "Electric blaster.", when: "Electric shots.", badge: "SFX", src: "sfx/electric_shot.mp3", category: "shots" },
-      { id: "flame_shot", label: "Flame Shot", desc: "Fire blaster.", when: "Fire shots.", badge: "SFX", src: "sfx/flame_shot.mp3", category: "shots" },
+      { id: "electric_shot", label: "Electric Shot", desc: "Electric blaster.", when: "Electric shots.", badge: "SFX", src: "sfx/shots/electric_shot.mp3", category: "shots" },
+      { id: "flame_shot", label: "Flame Shot", desc: "Fire blaster.", when: "Fire shots.", badge: "SFX", src: "sfx/shots/flame_shot.mp3", category: "shots" },
       { id: "shot_missile", label: "Missile Shot", desc: "Missile launch.", when: "Typing the correct answer with missile shot.", badge: "SFX", src: "sfx/shots/shot_missile.mp3", category: "shots" },
       { id: "shot_orb", label: "Plasma Orb", desc: "Plasma orb shot.", when: "Plasma shots.", badge: "SFX", src: "sfx/shots/shot_orb.mp3", category: "shots" },
       { id: "shot_railbeam", label: "Rail Beam", desc: "Rail beam shot.", when: "Rail shots.", badge: "SFX", src: "sfx/shots/shot_railbeam.mp3", category: "shots" },
-      { id: "machine_gun_load", label: "Machine Gun Load", desc: "Spooling rounds.", when: "Auto-fire spin-up.", badge: "SFX", src: "sfx/machine_gun_load.mp3", category: "shots" },
+      { id: "machine_gun_load", label: "Machine Gun Load", desc: "Spooling rounds.", when: "Auto-fire spin-up.", badge: "SFX", src: "sfx/shots/machine_gun_load.mp3", category: "shots" },
       { id: "impact", label: "Impact", desc: "Collision hit.", when: "Ship hits and alien impacts.", badge: "SFX", src: "sfx/gameplay/impact.mp3", category: "gameplay" },
       { id: "impact_thud", label: "Impact Thud", desc: "Asteroid thud.", when: "Asteroid impacts and EMP cascade hits.", badge: "SFX", src: "sfx/gameplay/impact_thud.mp3", category: "gameplay" },
       { id: "correct", label: "Correct", desc: "Correct hit cue.", when: "Correct answer asteroid destroyed.", badge: "SFX", src: "sfx/gameplay/correct.mp3", category: "gameplay" },
@@ -2878,6 +3131,7 @@
       renderCatalogListHome(powerupsSecondaryListHome, homePowerupCatalogSecondary);
       renderCatalogListHome(powerupsDefenseListHome, homePowerupCatalogDefense);
       renderCatalogListHome(powerupsOffenseListHome, homePowerupCatalogOffense);
+      renderCatalogListHome(shipsCatalogListHome, homeShipCatalog);
       renderCatalogListHome(sfxListHome, homeSfxCatalog, function(item){
         return activeSfxCategoryHome === "all" || item.category === activeSfxCategoryHome;
       });
@@ -2912,6 +3166,36 @@
 
     var shipRadios = Array.prototype.slice.call(document.querySelectorAll('input[name="ship"]'));
     var shipOptions = Array.prototype.slice.call(document.querySelectorAll('.shipOption'));
+    var shipCardImageByShip = {
+      classic: "images/ships/Scarlet%20Classic.png",
+      spire: "images/ships/Verdant%20Spire.png",
+      am2: "images/ships/AM3%20Scout.png",
+      mk7: "images/ships/Crimson%20MK-7.png",
+      fizard: "images/ships/Aurora%20Dart.png",
+      bu2x: "images/ships/BU2X.png",
+      ember: "images/ships/Ruby%20Strike.png",
+      azure: "images/ships/Azure%20Lancer.png",
+      mantas: "images/ships/Mantas%20-%20Arc%205.png",
+      cyan: "images/ships/Cyan%20Vector%207.png",
+      veloz: "images/ships/Veloz%20Mas.png"
+    };
+    shipOptions.forEach(function(option){
+      var key = option.getAttribute("data-ship") || "";
+      var src = shipCardImageByShip[key];
+      if(!src) return;
+      var card = option.querySelector(".shipCard");
+      if(!card) return;
+      var oldSvg = card.querySelector(".shipSvg");
+      if(oldSvg) oldSvg.style.display = "none";
+      var img = card.querySelector(".shipImagePreview");
+      if(!img){
+        img = document.createElement("img");
+        img.className = "shipImagePreview";
+        img.alt = "";
+        card.insertBefore(img, card.firstChild);
+      }
+      img.src = src;
+    });
     var shipTrack = document.getElementById("shipTrack");
     var shipGrid = document.getElementById("shipGrid");
     var launchSetupSpinner = document.getElementById("launchSetupSpinner");
@@ -2981,13 +3265,49 @@
         thrusters: "Dual"
       },
       am2: {
-        name: "AM2 Scout",
+        name: "AM3 Scout",
         style: "Arcade Relic",
         body: "Classic silhouette with a slim spine, flared wings, and triple thrusters.",
         flight: "Responsive",
         wings: "Flared",
         special: "Teleport",
         thrusters: "Triple"
+      },
+      bu2x: {
+        name: "BU2X",
+        style: "Prototype Core",
+        body: "Experimental hull with reinforced frame and unclassified drive systems.",
+        flight: "Balanced",
+        wings: "Angular",
+        special: "Shockwave",
+        thrusters: "Dual"
+      },
+      mantas: {
+        name: "Mantas Arc-5",
+        style: "Sweep Hunter",
+        body: "Wide sweep profile with reinforced nacelles and high drift control.",
+        flight: "Aggressive",
+        wings: "Wide",
+        special: "Shockwave",
+        thrusters: "Dual"
+      },
+      cyan: {
+        name: "Cyan Vector 7",
+        style: "Vector Precision",
+        body: "Balanced pursuit frame with smooth nose geometry and stable recoil profile.",
+        flight: "Balanced",
+        wings: "Swept",
+        special: "Shockwave",
+        thrusters: "Dual"
+      },
+      veloz: {
+        name: "Veloz Mas",
+        style: "Rapid Pursuit",
+        body: "Forward-leaning interceptor with aggressive center mass and quick recovery.",
+        flight: "Responsive",
+        wings: "Angular",
+        special: "Shockwave",
+        thrusters: "Dual"
       }
     };
     function updateShipCarousel(value){
@@ -3112,6 +3432,7 @@
     var powerupsSecondaryListHome = document.getElementById("powerupsSecondaryListHome");
     var powerupsDefenseListHome = document.getElementById("powerupsDefenseListHome");
     var powerupsOffenseListHome = document.getElementById("powerupsOffenseListHome");
+    var shipsCatalogListHome = document.getElementById("shipsCatalogListHome");
     var sfxListHome = document.getElementById("sfxListHome");
     var btnFullscreenHome = document.getElementById("btnFullscreenHome");
     var toggleWideGameplayHome = document.getElementById("toggleWideGameplayHome");
@@ -3121,7 +3442,9 @@
     var btnStepNext = document.getElementById("btnStepNext");
     var btnSaveFunnel = document.getElementById("btnSaveFunnel");
     var stepperText = document.getElementById("stepperText");
-    var steps = Array.prototype.slice.call(document.querySelectorAll(".step"));
+    var steps = Array.prototype.slice.call(document.querySelectorAll(".step")).sort(function(a, b){
+      return parseInt(a.getAttribute("data-step") || "0", 10) - parseInt(b.getAttribute("data-step") || "0", 10);
+    });
     var stepIndex = 0;
     var pendingConfig = null;
     var pendingCampaign = null;
@@ -3137,6 +3460,7 @@
     var beltInput = document.getElementById("belt");
     var questionModeInput = document.getElementById("questionMode");
     var decoyFunctionInput = document.getElementById("decoyFunction");
+    var stampedeToggle = document.getElementById("stampedeMode");
 
     var selectedMode = "digit";
     var selectedOperation = "mul";
@@ -3150,6 +3474,7 @@
         selectChoice(difficultyChoices, selectedDifficulty, "data-diff");
       }
     }
+    setSubmodeFromDifficulty(selectedDifficulty);
     if(saved.belt){
       selectedBelt = saved.belt;
       if(beltChoices && beltChoices.length){
@@ -3171,6 +3496,14 @@
       });
     }
 
+    function submodeForDifficulty(diff){
+      return (diff === "hard" || diff === "brutal") ? "3" : "2";
+    }
+
+    function setSubmodeFromDifficulty(diff){
+      selectedSubmode = submodeForDifficulty(diff || selectedDifficulty);
+    }
+
     function setFromQuestionMode(mode){
       if(!mode) return;
       if(mode.indexOf("square_") === 0){
@@ -3185,24 +3518,31 @@
         selectedSubmode = (mode === "rational_dec") ? "3" : "2";
         return;
       }
-      if(mode.indexOf("factor") === 0){
+      if(mode.indexOf("add_factor") === 0){
+        selectedOperation = "add";
+        selectedMode = "factor";
+      }else if(mode.indexOf("factor") === 0){
         selectedOperation = "mul";
         selectedMode = "factor";
+      }else if(mode.indexOf("stampede") !== -1){
+        selectedMode = "stampede";
       }else if(mode.indexOf("add_") === 0){
         selectedOperation = "add";
       }else{
         selectedOperation = "mul";
       }
-      if(mode.indexOf("classic") !== -1){
+      if(mode.indexOf("stampede") !== -1){
+        selectedMode = "stampede";
+      }else if(mode.indexOf("classic") !== -1){
         selectedMode = "classic";
       }else if(mode.indexOf("factor") !== -1){
         selectedMode = "factor";
       }else{
         selectedMode = "digit";
       }
-      if(mode === "digits2" || mode === "add_digits2" || mode === "add_classic2" || mode === "classic2" || mode === "factor2"){
+      if(mode === "digits2" || mode === "add_digits2" || mode === "add_classic2" || mode === "classic2" || mode === "factor2" || mode === "add_factor2" || mode === "stampede2" || mode === "add_stampede2"){
         selectedSubmode = "2";
-      }else if(mode === "digits3" || mode === "add_digits3" || mode === "add_classic3" || mode === "classic3" || mode === "factor3"){
+      }else if(mode === "digits3" || mode === "add_digits3" || mode === "add_classic3" || mode === "classic3" || mode === "factor3" || mode === "add_factor3" || mode === "stampede3" || mode === "add_stampede3"){
         selectedSubmode = "3";
       }
     }
@@ -3212,7 +3552,9 @@
       var mode = String(questionModeInput.value || "");
       var isClassic = (mode === "classic" || mode === "classic2" || mode === "classic3"
         || mode === "add_classic2" || mode === "add_classic3"
-        || mode === "factor2" || mode === "factor3"
+        || mode === "factor2" || mode === "factor3" || mode === "add_factor2" || mode === "add_factor3"
+        || mode === "stampede2" || mode === "stampede3"
+        || mode === "add_stampede2" || mode === "add_stampede3"
         || mode === "square_shoot" || mode === "square_root"
         || mode === "rational_frac" || mode === "rational_dec");
       decoyFunctionInput.disabled = !isClassic;
@@ -3227,11 +3569,18 @@
       }
       if(selectedOperation === "mul"){
         if(selectedMode === "classic") return selectedSubmode === "2" ? "classic2" : "classic3";
+        if(selectedMode === "stampede") return selectedSubmode === "2" ? "stampede2" : "stampede3";
         if(selectedMode === "factor") return selectedSubmode === "2" ? "factor2" : "factor3";
         return selectedSubmode === "2" ? "digits2" : "digits3";
       }
       if(selectedMode === "classic"){
         return selectedSubmode === "3" ? "add_classic3" : "add_classic2";
+      }
+      if(selectedMode === "stampede"){
+        return selectedSubmode === "3" ? "add_stampede3" : "add_stampede2";
+      }
+      if(selectedMode === "factor"){
+        return selectedSubmode === "3" ? "add_factor3" : "add_factor2";
       }
       return selectedSubmode === "3" ? "add_digits3" : "add_digits2";
     }
@@ -3258,15 +3607,27 @@
         }
         if(selectedOperation === "add"){
           if(title) title.textContent = sub + " + " + sub;
-          if(desc) desc.textContent = (sub === "3")
-            ? "Three-digit plus three-digit problems."
-            : "Two-digit plus two-digit problems.";
+          if(desc){
+            if(selectedMode === "stampede"){
+              desc.textContent = (sub === "3")
+                ? "Stampede addition: shoot wrong, absorb correct."
+                : "Stampede addition: shoot wrong, absorb correct.";
+            }else{
+              desc.textContent = (sub === "3")
+                ? "Three-digit plus three-digit problems."
+                : "Two-digit plus two-digit problems.";
+            }
+          }
         }else{
           if(title) title.textContent = sub + " by 1";
           if(selectedMode === "factor"){
             if(desc) desc.textContent = (sub === "3")
               ? "Find the missing factor for 3-digit products."
               : "Find the missing factor for 2-digit products.";
+          }else if(selectedMode === "stampede"){
+            if(desc) desc.textContent = (sub === "3")
+              ? "Stampede: shoot wrong, absorb correct."
+              : "Stampede: shoot wrong, absorb correct.";
           }else{
             if(desc) desc.textContent = (sub === "3")
               ? "One-digit by three-digit problems."
@@ -3278,7 +3639,10 @@
 
     function syncModeUi(){
       if(selectedOperation === "square" || selectedOperation === "rational") selectedMode = "classic";
-      if(selectedOperation !== "mul" && selectedMode === "factor") selectedMode = "classic";
+      if((selectedOperation === "square" || selectedOperation === "rational") && selectedMode === "stampede"){
+        selectedMode = "classic";
+      }
+      setSubmodeFromDifficulty(selectedDifficulty);
       var qm = computeQuestionMode();
       if(questionModeInput) questionModeInput.value = qm;
       selectChoice(modeChoices, selectedMode, "data-mode");
@@ -3286,12 +3650,24 @@
       selectChoice(submodeChoices, selectedSubmode, "data-sub");
       updateSubmodeLabels();
       updateDecoyFunctionAvailability();
+      if(stampedeToggle) stampedeToggle.checked = (selectedMode === "stampede");
       if(modeChoices.length){
         modeChoices.forEach(function(card){
           var isDigit = card.getAttribute("data-mode") === "digit";
           var isFactor = card.getAttribute("data-mode") === "factor";
           card.classList.toggle("disabled", (selectedOperation === "square" || selectedOperation === "rational") && isDigit);
-          card.classList.toggle("disabled", isFactor && selectedOperation !== "mul");
+          card.classList.toggle("disabled", isFactor && (selectedOperation === "square" || selectedOperation === "rational"));
+          if(isFactor){
+            var title = card.querySelector("h4");
+            var desc = card.querySelector("p");
+            if(selectedOperation === "add"){
+              if(title) title.textContent = "Partial Sums";
+              if(desc) desc.textContent = "Find the missing addend to complete the sum.";
+            }else{
+              if(title) title.textContent = "Factor Hunt";
+              if(desc) desc.textContent = "Find the missing factor to complete the product.";
+            }
+          }
         });
       }
     }
@@ -3322,6 +3698,8 @@
       if(form.strikes) form.strikes.value = preset.strikes;
       selectedDifficulty = key;
       selectChoice(difficultyChoices, key, "data-diff");
+      setSubmodeFromDifficulty(key);
+      syncModeUi();
     }
 
     function isBeltLocked(key){
@@ -3429,49 +3807,68 @@
       }, hintCycleMs);
     }
 
+    function usesModeStep(){
+      return !(selectedOperation === "rational" || selectedOperation === "square");
+    }
+
+    function getStepSequence(){
+      if(selectedOperation === "rational" || selectedOperation === "square"){
+        return [0,2,3,4,5];
+      }
+      return [0,1,3,4,5];
+    }
+
+    function resolveStepIndex(idx){
+      var seq = getStepSequence();
+      if(seq.indexOf(idx) !== -1) return idx;
+      if(idx <= seq[0]) return seq[0];
+      if(idx >= seq[seq.length - 1]) return seq[seq.length - 1];
+      for(var i=0; i<seq.length; i++){
+        if(seq[i] > idx) return seq[i];
+      }
+      return seq[seq.length - 1];
+    }
+
     function setStep(idx){
       if(!steps.length) return;
-      var hideModeStep = (selectedOperation === "square" || selectedOperation === "rational") && !campaignShipSelect;
       stepIndex = Math.max(0, Math.min(idx, steps.length - 1));
-      if(hideModeStep && stepIndex === 1) stepIndex = 2;
-      if(campaignShipSelect) stepIndex = 3;
+      stepIndex = resolveStepIndex(stepIndex);
+      if(campaignShipSelect) stepIndex = 5;
       steps.forEach(function(step, i){
-        if(i === 1) step.classList.toggle("hidden", hideModeStep);
         step.classList.toggle("active", i === stepIndex);
       });
       if(stepperText){
         var label = stepIndex === 0 ? "Operation"
           : stepIndex === 1 ? "Mode"
-          : stepIndex === 2 ? "Sub Mode"
-          : stepIndex === 3 ? "Ship"
+          : stepIndex === 2 ? "Submode"
+          : stepIndex === 3 ? "Difficulty"
           : stepIndex === 4 ? "Cluster"
-          : "Difficulty";
-        var totalSteps = hideModeStep ? (steps.length - 1) : steps.length;
-        var displayIndex = hideModeStep && stepIndex > 1 ? stepIndex - 1 : stepIndex;
+          : "Ship";
+        var seq = getStepSequence();
+        var displayIndex = Math.max(0, seq.indexOf(stepIndex));
+        var totalSteps = seq.length;
         stepperText.textContent = campaignShipSelect
           ? "Campaign Ship Select"
           : "Step " + (displayIndex + 1) + " of " + totalSteps + " - " + label;
       }
-      var lastStepIndex = hideModeStep ? (steps.length - 1) : (steps.length - 1);
+      var seq = getStepSequence();
+      var lastStepIndex = seq[seq.length - 1];
       if(btnStepBack) btnStepBack.style.visibility = (stepIndex === 0 || campaignShipSelect) ? "hidden" : "visible";
       if(btnStepNext) btnStepNext.style.display = (stepIndex === lastStepIndex || campaignShipSelect) ? "none" : "inline-flex";
       if(btnSaveFunnel) btnSaveFunnel.style.display = (stepIndex === lastStepIndex && !campaignShipSelect) ? "inline-flex" : "none";
       if(btnLaunchGame) btnLaunchGame.style.display = (stepIndex === lastStepIndex || campaignShipSelect) ? "inline-flex" : "none";
-      if(stepIndex === 3){
+      if(stepIndex === 5){
         if(launchSetupSpinner) launchSetupSpinner.classList.add("isLoading");
         scheduleShipCarouselSync();
       }
     }
 
     function advanceFromChoice(){
-      var hideModeStep = (selectedOperation === "square" || selectedOperation === "rational") && !campaignShipSelect;
-      var lastStepIndex = hideModeStep ? (steps.length - 1) : (steps.length - 1);
-      if(stepIndex >= lastStepIndex || campaignShipSelect) return;
-      if((selectedOperation === "square" || selectedOperation === "rational") && stepIndex === 0){
-        setStep(2);
-        return;
-      }
-      setStep(stepIndex + 1);
+      var seq = getStepSequence();
+      var pos = seq.indexOf(stepIndex);
+      if(pos < 0) pos = 0;
+      if(pos >= seq.length - 1 || campaignShipSelect) return;
+      setStep(seq[pos + 1]);
     }
 
     function getHomeVolume(){
@@ -3529,16 +3926,20 @@
       return false;
     }
 
-    if(menuWrap){
+    function applyMenuState(){
+      if(!menuWrap) return;
       var tutorialComplete = hasCompletedTutorial();
+      document.body.classList.toggle("tutorialComplete", tutorialComplete);
+      document.body.classList.toggle("tutorialLocked", !tutorialComplete);
+      document.body.classList.add("showLaunch");
       if(tutorialComplete){
-        document.body.classList.add("tutorialComplete");
-        setTimeout(function(){ document.body.classList.add("showExtras"); }, 600);
+        document.body.classList.add("showExtras");
       }else{
-        document.body.classList.add("tutorialLocked");
-        setTimeout(function(){ document.body.classList.add("showLaunch"); }, 600);
+        document.body.classList.remove("showExtras");
       }
     }
+    applyMenuState();
+    setTimeout(applyMenuState, 600);
     if (btnHowToPlay && controlsOverlay) {
       btnHowToPlay.addEventListener("click", function(){
         playMenuBeep();
@@ -3846,7 +4247,19 @@
       btnCampaignEraseConfirm.addEventListener("click", function(){
         playMenuBeep();
         if(pendingEraseProfileId){
+          var profiles = loadCampaignProfiles();
+          for(var i=0; i<profiles.length; i++){
+            if(profiles[i] && profiles[i].id === pendingEraseProfileId){
+              profiles[i].name = "";
+              profiles[i].createdAt = null;
+              break;
+            }
+          }
+          saveCampaignProfiles(profiles);
           resetCampaignProgressForProfile(pendingEraseProfileId);
+          if(getActiveProfileId() === pendingEraseProfileId){
+            setActiveProfileId(pendingEraseProfileId);
+          }
         }
         closeCampaignEraseConfirm();
         renderCampaignProfiles();
@@ -3943,22 +4356,22 @@
 
     if (btnStepBack) btnStepBack.addEventListener("click", function(){
       playMenuBeep();
-      if((selectedOperation === "square" || selectedOperation === "rational") && stepIndex === 2){
-        setStep(0);
-      }else{
-        setStep(stepIndex - 1);
-      }
+      var seq = getStepSequence();
+      var pos = seq.indexOf(stepIndex);
+      if(pos < 0) pos = 0;
+      setStep(seq[Math.max(0, pos - 1)]);
     });
     if (btnStepNext) btnStepNext.addEventListener("click", function(){
       playMenuBeep();
-      if(stepIndex === 3 && isLockedShipSelected()){
+      if(stepIndex === 5 && isLockedShipSelected()){
         showToast("LEVEL TOO LOW. PILOT ONE OF THE AVAILABLE SHIPS.");
         return;
       }
-      if(selectedOperation === "square" && stepIndex === 0){
-        setStep(2);
-      }else{
-        setStep(stepIndex + 1);
+      var seq = getStepSequence();
+      var pos = seq.indexOf(stepIndex);
+      if(pos < 0) pos = 0;
+      if(pos < seq.length - 1){
+        setStep(seq[pos + 1]);
       }
     });
     setStep(0);
@@ -3972,6 +4385,17 @@
         advanceFromChoice();
       });
     });
+    if(stampedeToggle){
+      stampedeToggle.addEventListener("change", function(){
+        playMenuBeep();
+        if(stampedeToggle.checked){
+          selectedMode = "stampede";
+        }else if(selectedMode === "stampede"){
+          selectedMode = "digit";
+        }
+        syncModeUi();
+      });
+    }
 
     operationChoices.forEach(function(card){
       card.addEventListener("click", function(){
@@ -4034,6 +4458,7 @@
         return val === null ? "" : val;
       }
       var selectedShip = getSelectedShipValue();
+      var computedMode = computeQuestionMode();
       return {
         aMin: Number(getValue("aMin")),
         aMax: Number(getValue("aMax")),
@@ -4049,12 +4474,14 @@
         musicVolume: Number(getValue("musicVolume")),
         targetMode: String(getValue("targetMode")),
         timerMode: String(getValue("timerMode")),
-        questionMode: String(getValue("questionMode")),
+        operation: String(selectedOperation || "mul"),
+        questionMode: String(computedMode || getValue("questionMode")),
         decoyFunction: String(getValue("decoyFunction") || "units_bias"),
         sound: true,
         ship: selectedShip,
         belt: String(getValue("belt") || selectedBelt || "dusk"),
         alienSwarm: data.get("alienSwarm") !== null,
+        stampede: data.get("stampedeMode") !== null,
       };
     }
 
@@ -4140,10 +4567,16 @@
         classic: "Classic Answer",
         classic2: "Classic Answer 1x2",
         classic3: "Classic Answer 1x3",
+        stampede2: "Stampede 1x2",
+        stampede3: "Stampede 1x3",
         factor2: "Factor Hunt 1x2",
         factor3: "Factor Hunt 1x3",
+        add_factor2: "Partial Sums 2x2",
+        add_factor3: "Partial Sums 3x3",
         add_digits2: "Addition Digit Hunt 2x2",
         add_digits3: "Addition Digit Hunt 3x3",
+        add_stampede2: "Addition Stampede 2x2",
+        add_stampede3: "Addition Stampede 3x3",
         add_classic2: "Addition Classic 2x2",
         add_classic3: "Addition Classic 3x3",
         square_shoot: "Perfect Squares",
@@ -4158,7 +4591,10 @@
         ember: "Ruby Strike",
         azure: "Azure Lancer",
         spire: "Verdant Spire",
-        am2: "AM2 Scout"
+        am2: "AM3 Scout",
+        mantas: "Mantas Arc-5",
+        cyan: "Cyan Vector 7",
+        veloz: "Veloz Mas"
       };
       var modeLabel = String(cfg.questionMode || "classic");
       var isAdd = modeLabel.indexOf("add_") === 0;
@@ -4256,7 +4692,7 @@
       campaignShipSelect = true;
       if(menuWrap) menuWrap.classList.add("hidden");
       if(funnelOverlay) funnelOverlay.classList.add("show");
-      setStep(3);
+      setStep(5);
       scheduleShipCarouselSync();
     }
 
@@ -4369,7 +4805,10 @@
         ember: "Ruby Strike",
         azure: "Azure Lancer",
         spire: "Verdant Spire",
-        am2: "AM2 Scout"
+        am2: "AM3 Scout",
+        mantas: "Mantas Arc-5",
+        cyan: "Cyan Vector 7",
+        veloz: "Veloz Mas"
       };
       if(briefingShip) briefingShip.textContent = "Ship: " + (shipNameMap[shipKey] || shipKey.toUpperCase());
       var modeLabel = String(config.questionMode || "classic");
@@ -4380,10 +4819,16 @@
           classic: "Classic Answer",
           classic2: "Classic Answer 1x2",
           classic3: "Classic Answer 1x3",
+          stampede2: "Stampede 1x2",
+          stampede3: "Stampede 1x3",
           factor2: "Factor Hunt 1x2",
           factor3: "Factor Hunt 1x3",
+          add_factor2: "Partial Sums 2x2",
+          add_factor3: "Partial Sums 3x3",
           add_digits2: "Addition Digit Hunt 2x2",
           add_digits3: "Addition Digit Hunt 3x3",
+          add_stampede2: "Addition Stampede 2x2",
+          add_stampede3: "Addition Stampede 3x3",
           add_classic2: "Addition Classic 2x2",
           add_classic3: "Addition Classic 3x3",
           square_shoot: "Perfect Squares",
@@ -4467,6 +4912,9 @@
       if(briefingHintTimer) clearInterval(briefingHintTimer);
       if(briefingHintTypeTimer) clearInterval(briefingHintTypeTimer);
       var config = pendingConfig || buildConfigFromForm();
+      if(!pendingCampaign){
+        config.questionMode = computeQuestionMode();
+      }
       var params = new URLSearchParams({
         aMin: String(config.aMin),
         aMax: String(config.aMax),
@@ -4482,6 +4930,7 @@
         musicVolume: String(config.musicVolume),
         targetMode: config.targetMode,
         timerMode: config.timerMode,
+        operation: String(config.operation || selectedOperation || "mul"),
         questionMode: config.questionMode,
         sound: "1",
         ship: config.ship,
@@ -4490,6 +4939,9 @@
       });
       if(config.alienSwarm){
         params.set("alienSwarm", "1");
+      }
+      if(config.stampede){
+        params.set("stampede", "1");
       }
       if(pendingCampaign){
         ensureCampaignData();
@@ -4553,20 +5005,29 @@
       });
     }
 
+    var lbRenderTimer = null;
     function renderHomeStats(){
-      var card = document.querySelector(".leaderboardsCard");
-      var hsTopEl = document.getElementById("homeHighScoresTop");
-      var hsRestEl = document.getElementById("homeHighScoresRest");
-      var ltEl = document.getElementById("homeLifetimeStats");
-      var detailPanel = document.getElementById("homeScoreDetail");
-      var detailTitle = document.getElementById("homeScoreDetailTitle");
-      var detailList = document.getElementById("homeScoreDetailList");
-      if(!hsTopEl || !hsRestEl || !ltEl) return;
-      hsTopEl.innerHTML = "";
-      hsRestEl.innerHTML = "";
-      ltEl.innerHTML = "";
-      if(detailList) detailList.innerHTML = "";
-      if(card) card.classList.remove("showDetail");
+      var tableBody = document.getElementById("homeLeaderboardsBody");
+      var filterOperation = document.getElementById("lbFilterOperation");
+      var filterMode = document.getElementById("lbFilterMode");
+      var filterSubmode = document.getElementById("lbFilterSubmode");
+      var filterDifficulty = document.getElementById("lbFilterDifficulty");
+      var filterTimer = document.getElementById("lbFilterTimer");
+      var clearFiltersBtn = document.getElementById("lbClearFilters");
+      var loadingEl = document.getElementById("leaderboardsLoading");
+      function setLoading(on){
+        if(!loadingEl) return;
+        var wrap = loadingEl.parentElement;
+        if(wrap) wrap.classList.toggle("loading", Boolean(on));
+      }
+      if(!tableBody) return;
+      function getLetterRank(acc){
+        if(acc >= 0.9) return "S";
+        if(acc >= 0.8) return "A";
+        if(acc >= 0.7) return "B";
+        if(acc >= 0.6) return "D";
+        return "E";
+      }
       var stats = null;
       try{
         var raw = localStorage.getItem("mathsteroid.stats");
@@ -4575,85 +5036,251 @@
         stats = null;
       }
 
-      var hs = stats && stats.highScores ? stats.highScores : [];
-      var top = hs.slice(0,5);
-      var rest = hs.slice(5);
-
-      function buildRow(item, rank){
-        var row = document.createElement("li");
-        var name = item.name ? (" • " + item.name) : "";
-        row.innerHTML = "<span>#" + rank + " • " + item.score + " pts" + name + "</span><b>Lv " + item.level + "</b>";
-        row.dataset.scoreId = item.id || "";
-        row.style.cursor = "pointer";
-        row.addEventListener("click", function(){
-          if(!detailPanel || !detailList || !card) return;
-          detailList.innerHTML = "";
-          var date = item.date ? new Date(item.date) : null;
-          var title = (item.name ? item.name + " • " : "") + item.score + " pts";
-          if(detailTitle) detailTitle.textContent = title;
-          var rows = [
-            ["SCORE", item.score],
-            ["LEVEL", item.level],
-            ["CORRECT", item.correct],
-            ["MODE", item.mode || "—"],
-            ["DATE", date ? date.toLocaleString() : "—"]
-          ];
-          for(var r=0;r<rows.length;r++){
-            var li = document.createElement("li");
-            li.innerHTML = "<span>" + rows[r][0] + "</span><b>" + rows[r][1] + "</b>";
-            detailList.appendChild(li);
-          }
-          card.classList.add("showDetail");
-        });
-        return row;
-      }
-
-      if(!hs.length){
-        var liEmpty = document.createElement("li");
-        liEmpty.innerHTML = "<span>NO SCORES YET</span><b class=\"pillGood\">PLAY</b>";
-        hsTopEl.appendChild(liEmpty);
-      }else{
-        for(var i=0;i<top.length;i++){
-          hsTopEl.appendChild(buildRow(top[i], i + 1));
-        }
-        if(!rest.length){
-          var liRest = document.createElement("li");
-          liRest.innerHTML = "<span>NO MORE SCORES</span><b class=\"pillGood\">—</b>";
-          hsRestEl.appendChild(liRest);
+      function describeMode(modeLabel){
+        var label = String(modeLabel || "classic");
+        var isAdd = label.indexOf("add_") === 0;
+        var isSquare = label.indexOf("square_") === 0;
+        var isRational = label.indexOf("rational_") === 0;
+        var operation = isRational ? "Rationals" : (isSquare ? "Squares" : (isAdd ? "Addition" : "Multiplication"));
+        var base = label.replace(/^add_/, "");
+        var mode = "";
+        if(isRational){
+          mode = "Target";
+        }else if(isSquare){
+          mode = "Shoot";
+        }else if(base.indexOf("digits") === 0){
+          mode = "Digit Hunt";
+        }else if(base.indexOf("classic") === 0){
+          mode = "Classic Answer";
+        }else if(base.indexOf("stampede") === 0){
+          mode = "Stampede";
+        }else if(base.indexOf("factor") === 0){
+          mode = isAdd ? "Partial Sums" : "Factor Hunt";
         }else{
-          for(var j=0;j<rest.length;j++){
-            hsRestEl.appendChild(buildRow(rest[j], j + 6));
+          mode = base.toUpperCase();
+        }
+        var submode = "";
+        if(isRational){
+          submode = (label === "rational_dec") ? "Target Decimal" : "Target Fraction";
+        }else if(isSquare){
+          submode = (label === "square_root") ? "Shoot Roots" : "Shoot Squares";
+        }else{
+          var sub = (label.indexOf("3") !== -1) ? "3" : "2";
+          submode = isAdd ? (sub + "x" + sub) : ("1x" + sub);
+        }
+        return { operation: operation, mode: mode, submode: submode };
+      }
+
+      function formatDurationLocal(sec){
+        var total = Math.max(0, Math.round(sec || 0));
+        var m = Math.floor(total / 60);
+        var s = total % 60;
+        return m + ":" + (s < 10 ? "0" : "") + s;
+      }
+
+      function normalizeTimer(timerMode){
+        var tm = String(timerMode || "").trim();
+        if(!tm || tm === "off" || tm === "endless") return "Endless";
+        var num = parseInt(tm, 10);
+        if(!isNaN(num)) return num + "s";
+        return tm;
+      }
+
+      function parseCsvLine(line){
+        var out = [];
+        var cur = "";
+        var inQuotes = false;
+        for(var i=0;i<line.length;i++){
+          var ch = line[i];
+          if(ch === '"'){
+            if(inQuotes && line[i+1] === '"'){
+              cur += '"';
+              i++;
+            }else{
+              inQuotes = !inQuotes;
+            }
+          }else if(ch === ',' && !inQuotes){
+            out.push(cur);
+            cur = "";
+          }else{
+            cur += ch;
           }
         }
+        out.push(cur);
+        return out;
       }
 
-      if(!stats){
-        var li2 = document.createElement("li");
-        li2.innerHTML = "<span>SESSIONS</span><b>0</b>";
-        ltEl.appendChild(li2);
+      function entriesFromCsv(){
+        var csv = "";
+        try{ csv = localStorage.getItem("mathsteroid.leaderboardCSV") || ""; }catch(e){ csv = ""; }
+        if(!csv) return [];
+        var lines = csv.trim().split(/\r?\n/);
+        if(lines.length < 2) return [];
+        var header = parseCsvLine(lines.shift());
+        var out = [];
+        for(var i=0;i<lines.length;i++){
+          var row = parseCsvLine(lines[i]);
+          if(!row.length) continue;
+          var obj = {};
+          for(var h=0; h<header.length; h++){
+            obj[header[h]] = row[h] || "";
+          }
+          var modeKey = obj.question_mode || obj.mode || "classic";
+          var info = describeMode(modeKey);
+          out.push({
+            id: obj.timestamp || obj.datetime || String(i),
+            name: obj.name || "",
+            score: parseInt(obj.score || 0, 10) || 0,
+            level: parseInt(obj.level || 0, 10) || 0,
+            rank: obj.rank || "",
+            operation: info.operation,
+            modeLabel: info.mode,
+            submode: info.submode,
+            difficulty: obj.difficulty || "",
+            timerMode: normalizeTimer(obj.timer_mode),
+            duration: parseInt(obj.session_seconds || 0, 10) || 0,
+            date: obj.datetime ? Date.parse(obj.datetime) : (parseInt(obj.timestamp || 0, 10) || 0)
+          });
+        }
+        return out;
+      }
+
+      var entries = [];
+      if(stats && Array.isArray(stats.allScores) && stats.allScores.length){
+        entries = stats.allScores.slice();
+      }else if(stats && Array.isArray(stats.highScores) && stats.highScores.length){
+        entries = stats.highScores.slice();
       }else{
-        var rows = [
-          ["SESSIONS", stats.sessions],
-          ["BEST SCORE", stats.bestScore],
-          ["BEST STREAK", stats.bestStreak],
-          ["TOTAL CORRECT", stats.totalCorrect]
-        ];
-        for(var r=0;r<rows.length;r++){
-          var li3 = document.createElement("li");
-          li3.innerHTML = "<span>" + rows[r][0] + "</span><b>" + rows[r][1] + "</b>";
-          ltEl.appendChild(li3);
+        entries = entriesFromCsv();
+      }
+
+      entries.forEach(function(entry){
+        var info = describeMode(entry.mode || entry.modeKey || entry.questionMode || entry.question_mode);
+        entry.operation = entry.operation || info.operation;
+        entry.modeLabel = entry.modeLabel || info.mode;
+        entry.submode = entry.submode || info.submode;
+        entry.difficulty = entry.difficulty || entry.diff || "";
+        entry.timerMode = normalizeTimer(entry.timerMode || entry.timer_mode || entry.timeLimitSec);
+      });
+
+      function unique(list){
+        var map = {};
+        var out = [];
+        list.forEach(function(item){ if(!item) return; if(!map[item]){ map[item]=true; out.push(item); } });
+        return out;
+      }
+
+      function setOptions(select, values){
+        if(!select) return;
+        var current = select.value || "All";
+        select.innerHTML = "";
+        var allOpt = document.createElement("option");
+        allOpt.value = "All";
+        allOpt.textContent = "All";
+        select.appendChild(allOpt);
+        values.forEach(function(v){
+          var opt = document.createElement("option");
+          opt.value = v;
+          opt.textContent = v;
+          select.appendChild(opt);
+        });
+        select.value = values.indexOf(current) !== -1 ? current : "All";
+      }
+
+      var ops = unique(entries.map(function(e){ return e.operation; })).sort();
+      var modes = unique(entries.map(function(e){ return e.modeLabel; })).sort();
+      var submodes = unique(entries.map(function(e){ return e.submode; })).sort();
+      var diffs = unique(entries.map(function(e){ return String(e.difficulty || "").toUpperCase(); })).sort();
+      var timers = unique(entries.map(function(e){ return normalizeTimer(e.timerMode); })).sort();
+      var diffDefaults = ["EASY", "NORMAL", "HARD", "BRUTAL"];
+      diffDefaults.forEach(function(d){ if(diffs.indexOf(d) === -1) diffs.push(d); });
+      diffs = diffs.sort();
+      var timerDefaults = ["Endless", "60s", "90s", "120s", "180s"];
+      timerDefaults.forEach(function(t){ if(timers.indexOf(t) === -1) timers.push(t); });
+      timers = timers.sort(function(a,b){
+        if(a === "Endless") return -1;
+        if(b === "Endless") return 1;
+        var na = parseInt(a, 10) || 0;
+        var nb = parseInt(b, 10) || 0;
+        return na - nb;
+      });
+      setOptions(filterOperation, ops);
+      setOptions(filterMode, modes);
+      setOptions(filterSubmode, submodes);
+      setOptions(filterDifficulty, diffs);
+      setOptions(filterTimer, timers);
+
+      function applyFilters(withLoading){
+        if(withLoading){
+          setLoading(true);
+          clearTimeout(lbRenderTimer);
+          lbRenderTimer = setTimeout(function(){ applyFilters(false); }, 180);
+          return;
+        }
+        setLoading(false);
+        var opVal = filterOperation ? filterOperation.value : "All";
+        var modeVal = filterMode ? filterMode.value : "All";
+        var subVal = filterSubmode ? filterSubmode.value : "All";
+        var diffVal = filterDifficulty ? filterDifficulty.value : "All";
+        var timerVal = filterTimer ? filterTimer.value : "All";
+        var filtered = entries.filter(function(e){
+          if(opVal !== "All" && e.operation !== opVal) return false;
+          if(modeVal !== "All" && e.modeLabel !== modeVal) return false;
+          if(subVal !== "All" && e.submode !== subVal) return false;
+          if(diffVal !== "All" && String(e.difficulty || "").toUpperCase() !== diffVal) return false;
+          if(timerVal !== "All" && normalizeTimer(e.timerMode) !== timerVal) return false;
+          return true;
+        });
+        filtered.sort(function(a,b){
+          if(b.score !== a.score) return b.score - a.score;
+          return (b.date || 0) - (a.date || 0);
+        });
+        tableBody.innerHTML = "";
+        if(!filtered.length){
+          var empty = document.createElement("tr");
+          empty.innerHTML = '<td colspan="8" style="color: var(--muted); padding:12px 10px;">No scores yet.</td>';
+          tableBody.appendChild(empty);
+          return;
+        }
+        for(var i=0;i<filtered.length;i++){
+          var item = filtered[i];
+          var rank = item.rank || (item.accuracy != null ? getLetterRank(item.accuracy) : "");
+          var completed = item.date ? new Date(item.date).toLocaleString() : "?";
+          var duration = item.duration ? formatDurationLocal(item.duration) : (item.session_seconds ? formatDurationLocal(item.session_seconds) : "?");
+          var timerText = normalizeTimer(item.timerMode);
+          var tr = document.createElement("tr");
+          tr.innerHTML = '<td>#' + (i+1) + '</td>' +
+            '<td>' + (item.name || '?') + '</td>' +
+            '<td>' + (item.score || 0) + '</td>' +
+            '<td>' + (rank || '?') + '</td>' +
+            '<td>' + (item.level || 0) + '</td>' +
+            '<td>' + duration + '</td>' +
+            '<td>' + timerText + '</td>' +
+            '<td>' + completed + '</td>';
+          tableBody.appendChild(tr);
         }
       }
-    }
 
-    var btnScoreBack = document.getElementById("btnScoreBack");
-    if(btnScoreBack){
-      btnScoreBack.addEventListener("click", function(){
-        var card = document.querySelector(".leaderboardsCard");
-        if(card) card.classList.remove("showDetail");
+      [filterOperation, filterMode, filterSubmode, filterDifficulty, filterTimer].forEach(function(sel){
+        if(!sel) return;
+        if(sel.dataset.bound) return;
+        sel.addEventListener('change', function(){ applyFilters(true); });
+        sel.dataset.bound = 'true';
       });
-    }
+      if(clearFiltersBtn && !clearFiltersBtn.dataset.bound){
+        clearFiltersBtn.addEventListener('click', function(){
+          if(filterOperation) filterOperation.value = "All";
+          if(filterMode) filterMode.value = "All";
+          if(filterSubmode) filterSubmode.value = "All";
+          if(filterDifficulty) filterDifficulty.value = "All";
+          if(filterTimer) filterTimer.value = "All";
+          applyFilters(true);
+        });
+        clearFiltersBtn.dataset.bound = "true";
+      }
 
+      applyFilters(true);
+    }
     function playHomeDrone(){
       try{
         var drone = new Audio("sfx/ship/ship_drone.mp3");

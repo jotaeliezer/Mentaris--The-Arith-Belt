@@ -1925,6 +1925,14 @@ function renderShipPreviewMatched(ctx, ship, x, y, alpha, ghost, overrideVX, ove
     renderShipPreview(ctx, ship, w/2, h/2 + 8, alpha == null ? 1 : alpha, false, ship.vx, ship.vy, {});
   }
 
+  function drawImageShipPreviewFx(item, now){
+    var img = item.img;
+    if(!img) return;
+    var t = (now / 1000) + item.phase;
+    var bob = Math.sin(t * 2.4) * 2.4;
+    img.style.transform = "translateY(" + bob.toFixed(2) + "px)";
+  }
+
   function easeInOut(p){
     return 0.5 - Math.cos(Math.PI * p) / 2;
   }
@@ -1957,12 +1965,33 @@ function renderShipPreviewMatched(ctx, ship, x, y, alpha, ghost, overrideVX, ove
   function initShipPreviews(){
     var cards = Array.prototype.slice.call(document.querySelectorAll(".shipCard"));
     var animated = [];
+    var imageAnimated = [];
     var animateShips = { classic: true, spire: true, am2: true };
     var speedMap = { classic: 480, spire: 560, am2: 660 };
     cards.forEach(function(card){
       var option = card.closest(".shipOption");
       if(!option) return;
       var shipType = option.getAttribute("data-ship") || "mk7";
+      var imagePreview = card.querySelector(".shipImagePreview");
+      if(imagePreview){
+        var oldProcedural = card.querySelector(".shipCanvas");
+        if(oldProcedural){
+          oldProcedural.remove();
+        }
+        var svgFallback = card.querySelector(".shipSvg");
+        if(svgFallback){
+          svgFallback.style.display = "none";
+        }
+        imagePreview.style.position = "relative";
+        imagePreview.style.zIndex = "2";
+        imageAnimated.push({
+          card: card,
+          img: imagePreview,
+          shipType: shipType,
+          phase: Math.random() * Math.PI * 2
+        });
+        return;
+      }
       var svg = card.querySelector(".shipSvg");
       var canvas = document.createElement("canvas");
       canvas.className = "shipCanvas";
@@ -2002,7 +2031,7 @@ function renderShipPreviewMatched(ctx, ship, x, y, alpha, ghost, overrideVX, ove
       }
     });
 
-    if(animated.length){
+    if(animated.length || imageAnimated.length){
       var lastAt = performance.now();
       var loop = function(){
         var now = performance.now();
@@ -2031,6 +2060,9 @@ function renderShipPreviewMatched(ctx, ship, x, y, alpha, ghost, overrideVX, ove
           updatePreviewRings(item.rings, dt);
           updatePreviewParticles(item.particles, dt);
           drawShipPreview(item.canvas, item.ship, now, item.rings, item.particles, alpha);
+        }
+        for(var j = 0; j < imageAnimated.length; j++){
+          drawImageShipPreviewFx(imageAnimated[j], now);
         }
         requestAnimationFrame(loop);
       };

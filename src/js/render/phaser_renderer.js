@@ -174,14 +174,24 @@ export function createPhaserRenderer(opts){
     return sprite;
   }
 
+  var starScroll = 0;
+
   function syncBackground(data){
     if(!sceneRef || !backgroundSprite) return;
     var view = data.view;
     if(!view) return;
     var w = view.w;
     var h = view.h;
-    // Always prefer the authored background images; the starfield was
-    // a temporary tutorial-only fallback and diverges from canvas parity.
+    if(data.tutorialActive){
+      if(starfield){
+        starfield.setVisible(true);
+        starScroll += 0.35;
+        starfield.setTilePosition(0, starScroll);
+      }
+      backgroundSprite.setVisible(false);
+      return;
+    }
+    // Always prefer the authored background images outside tutorial.
     if(starfield) starfield.setVisible(false);
     var idx = data.backgroundIndex || 0;
     var key = BACKGROUND_KEYS[(idx % BACKGROUND_KEYS.length + BACKGROUND_KEYS.length) % BACKGROUND_KEYS.length];
