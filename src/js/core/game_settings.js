@@ -240,10 +240,12 @@ export function applySettingsFromInputs(state, inputs){
   if(state.timerModeOverride){
     if(inputs.timerMode){
       var hasOverride = false;
-      for(var ti=0; ti<inputs.timerMode.options.length; ti++){
-        if(inputs.timerMode.options[ti].value === String(state.timerModeOverride)){
-          hasOverride = true;
-          break;
+      if(inputs.timerMode.options && inputs.timerMode.options.length){
+        for(var ti=0; ti<inputs.timerMode.options.length; ti++){
+          if(inputs.timerMode.options[ti].value === String(state.timerModeOverride)){
+            hasOverride = true;
+            break;
+          }
         }
       }
       if(hasOverride && timerVal && timerVal !== state.timerModeOverride){

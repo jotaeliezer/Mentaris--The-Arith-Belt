@@ -139507,10 +139507,12 @@
     if (state2.timerModeOverride) {
       if (inputs2.timerMode) {
         var hasOverride = false;
-        for (var ti = 0; ti < inputs2.timerMode.options.length; ti++) {
-          if (inputs2.timerMode.options[ti].value === String(state2.timerModeOverride)) {
-            hasOverride = true;
-            break;
+        if (inputs2.timerMode.options && inputs2.timerMode.options.length) {
+          for (var ti = 0; ti < inputs2.timerMode.options.length; ti++) {
+            if (inputs2.timerMode.options[ti].value === String(state2.timerModeOverride)) {
+              hasOverride = true;
+              break;
+            }
           }
         }
         if (hasOverride && timerVal && timerVal !== state2.timerModeOverride) {
@@ -142107,8 +142109,6 @@
     }
     setFullscreenLabel(btnFullscreenToggle, !!document.fullscreenElement);
   }
-  loadKeyBindings();
-  updateKeybindButtons();
   var inputs = {
     aMin: document.getElementById("aMin"),
     aMax: document.getElementById("aMax"),
@@ -142135,6 +142135,10 @@
   var endReason = document.getElementById("endReason");
   var endOutcome = document.getElementById("endOutcome");
   var endReasonLine = document.getElementById("endReasonLine");
+  var campaignBanner = document.getElementById("campaignBanner");
+  var campaignBannerTitle = document.getElementById("campaignBannerTitle");
+  var campaignBannerSubtitle = document.getElementById("campaignBannerSubtitle");
+  var campaignBannerMeta = document.getElementById("campaignBannerMeta");
   var statsList = document.getElementById("statsList");
   var statsListSecondary = document.getElementById("statsListSecondary");
   var weakList = document.getElementById("weakList");
@@ -142516,7 +142520,9 @@
     azure: { img: new Image(), ready: false, src: "images/ships/Azure%20Lancer.png" },
     mantas: { img: new Image(), ready: false, src: "images/ships/Mantas%20-%20Arc%205.png" },
     cyan: { img: new Image(), ready: false, src: "images/ships/Cyan%20Vector%207.png" },
-    veloz: { img: new Image(), ready: false, src: "images/ships/Veloz%20Mas.png" }
+    veloz: { img: new Image(), ready: false, src: "images/ships/Veloz%20Mas.png" },
+    verde9: { img: new Image(), ready: false, src: "images/ships/VER-DE-9.png" },
+    whiteflame8: { img: new Image(), ready: false, src: "images/ships/White%20Flame%208.png" }
   };
   Object.keys(shipSprites).forEach(function(key) {
     var sprite = shipSprites[key];
@@ -142937,7 +142943,7 @@
     }
   }
   function updateKeybindButtons() {
-    if (!keybindButtons.length)
+    if (!keybindButtons || !keybindButtons.length)
       return;
     keybindButtons.forEach(function(btn) {
       var action = btn.getAttribute("data-bind");
@@ -142947,6 +142953,8 @@
       btn.classList.toggle("listening", keybindCapture === action);
     });
   }
+  loadKeyBindings();
+  updateKeybindButtons();
   function setKeyBinding(action, key) {
     if (!action || !key)
       return;
@@ -143363,7 +143371,7 @@
     }
   }
   function pickAlternateShipType(primary) {
-    var order = ["classic", "spire", "am2", "mk7", "fizard", "ember", "azure", "bu2x", "mantas", "cyan", "veloz"];
+    var order = ["classic", "spire", "am2", "mk7", "fizard", "ember", "azure", "bu2x", "mantas", "cyan", "veloz", "verde9", "whiteflame8"];
     var idx = order.indexOf(primary);
     if (idx < 0)
       idx = 0;
@@ -143708,10 +143716,7 @@
       var terms = Array.isArray(state.seriesTerms) ? state.seriesTerms : [];
       if (terms.length < 3)
         return "?";
-      var sumSeries = terms.reduce(function(sum2, val) {
-        return sum2 + val;
-      }, 0);
-      return terms.join(" + ") + " = " + sumSeries;
+      return terms.join(" + ") + " = ?";
     }
     var op = isAdditionMode() ? "+" : "x";
     var left = state.a;
@@ -143837,6 +143842,35 @@
     }
     campaignProfileId = stored || "profile1";
     return campaignProfileId;
+  }
+  var campaignProfilesKey = "mentaris.campaign.profiles";
+  var campaignProfileSlots = ["profile1", "profile2", "profile3"];
+  function loadCampaignProfiles() {
+    var profiles = null;
+    try {
+      var raw = localStorage.getItem(campaignProfilesKey);
+      if (raw)
+        profiles = JSON.parse(raw);
+    } catch (e) {
+      profiles = null;
+    }
+    if (!Array.isArray(profiles) || !profiles.length) {
+      profiles = campaignProfileSlots.map(function(id) {
+        return { id, name: "" };
+      });
+    }
+    return profiles;
+  }
+  function getActiveProfileName() {
+    var pid = getActiveProfileId();
+    var profiles = loadCampaignProfiles();
+    for (var i = 0; i < profiles.length; i++) {
+      var profile = profiles[i];
+      if (profile && profile.id === pid && profile.name) {
+        return profile.name;
+      }
+    }
+    return "Pilot";
   }
   function getCampaignActiveKey() {
     return campaignActiveKeyBase + getActiveProfileId();
@@ -144901,7 +144935,7 @@
     return pool;
   }
   function buildClassicDecoyBag(correct, count, excludeSet) {
-    var target = Math.max(6, count || 0);
+    var target = Math.max(4, count || 0);
     var exclude = excludeSet || /* @__PURE__ */ new Set();
     var pool = [];
     var attempts = 0;
@@ -144952,7 +144986,7 @@
         divisorSet.add(String(state.divisorAnswers[i]));
       }
     }
-    var target = Math.max(6, targetCount || 0) * 3;
+    var target = Math.max(4, targetCount || 0) * 2;
     var guard = 0;
     while (pool.length < target && guard < 240) {
       var cand = randi(2, 99);
@@ -144981,12 +145015,16 @@
   }
   function prepareWave() {
     var diff = String(state.difficulty || "normal").toLowerCase();
-    var decoyScale = 0.7;
+    var decoyScale = 0.55;
     if (diff === "easy")
-      decoyScale = 0.5;
+      decoyScale = 0.35;
     else if (diff === "normal")
-      decoyScale = 0.6;
-    var decoyCount = Math.max(1, Math.round(state.decoys * 0.3 * decoyScale));
+      decoyScale = 0.45;
+    else if (diff === "hard")
+      decoyScale = 0.55;
+    else if (diff === "brutal")
+      decoyScale = 0.65;
+    var decoyCount = Math.max(1, Math.round(state.decoys * 0.2 * decoyScale));
     if (isDivisorsMode()) {
       state.waveDecoys = buildDivisorDecoyPool(decoyCount);
       state.waveDecoyBag = state.waveDecoys.slice();
@@ -145003,12 +145041,12 @@
       state.waveDecoyBag = buildDigitDecoyBag();
     } else {
       state.waveDecoys = genDecoys(state.answer, decoyCount);
-      state.waveDecoyBag = buildClassicDecoyBag(state.answer, Math.max(4, Math.round(decoyCount * 1.6 * decoyScale)));
+      state.waveDecoyBag = buildClassicDecoyBag(state.answer, Math.max(3, Math.round(decoyCount * 1.1 * decoyScale)));
     }
     state.correctInPlay = false;
     state.correctAsteroidId = 0;
-    var minDecoysFirst = 2;
-    var maxDecoysFirst = Math.min(5, 2 + decoyCount);
+    var minDecoysFirst = 1;
+    var maxDecoysFirst = Math.min(4, 1 + decoyCount);
     state.correctDelayRemaining = randi(minDecoysFirst, maxDecoysFirst);
     state.spawnTimer = 0;
   }
@@ -145183,7 +145221,7 @@
     }
     if (isDivisorsMode()) {
       if (!state.waveDecoyBag || !state.waveDecoyBag.length) {
-        state.waveDecoyBag = buildDivisorDecoyPool(Math.max(2, Math.round(state.decoys * 0.6))).slice();
+        state.waveDecoyBag = buildDivisorDecoyPool(Math.max(2, Math.round(state.decoys * 0.35))).slice();
       }
       var dLabel = null;
       if (state.waveDecoyBag && state.waveDecoyBag.length) {
@@ -145227,7 +145265,7 @@
       if (isDigitMode()) {
         state.waveDecoyBag = buildDigitDecoyBag(activeLabels);
       } else {
-        state.waveDecoyBag = buildClassicDecoyBag(getCurrentCorrectTargetValue(), Math.max(4, Math.round(state.decoys * 0.6 * 0.55)), activeLabels);
+        state.waveDecoyBag = buildClassicDecoyBag(getCurrentCorrectTargetValue(), Math.max(3, Math.round(state.decoys * 0.35 * 0.45)), activeLabels);
       }
     }
     if (state.waveDecoyBag && state.waveDecoyBag.length) {
@@ -146509,6 +146547,28 @@
       syncSelectedSecondaryForPilot(pilot);
       return;
     }
+    if (activeType === "autofire") {
+      if (pilot.autoFireActive) {
+        pilot.autoFireActive = false;
+        pilot.autoFireAmmo = 0;
+        pilot.autoFireAmmoMax = 0;
+        pilot.autoFireMode = "single";
+        pilot.autoFireSpinning = false;
+        pilot.autoFireSpinTimer = 0;
+        pilot.autoFireSpinSfxPlayed = false;
+        pilot.secondaryCooldown = 0.35;
+        showToast("SECONDARY -> AUTO-FIRE OFF");
+        return;
+      }
+      if (pilot.blasterMode === "missile" && pilot.blasterHitsRemaining > 0) {
+        pilot.blasterMode = "single";
+        pilot.blasterHitsRemaining = 0;
+        pilot.blasterTimer = 0;
+        pilot.secondaryCooldown = 0.35;
+        showToast("SECONDARY -> MISSILE OFF");
+        return;
+      }
+    }
     slot.count = Math.max(0, (slot.count || 0) - 1);
     pilot.secondaryCharges = slot.count;
     pilot.secondaryCooldown = 1.2;
@@ -147697,7 +147757,7 @@
     };
     var lifetime = updateLifetimeStats(session);
     state.lastSessionId = sessionId;
-    var campaignResult = { active: false, success: false, failures: 0, failed: false, hasNext: false, last: false };
+    var campaignResult = { active: false, success: false, failures: 0, failed: false, hasNext: false, last: false, name: "", pilot: "", minerals: 0 };
     if (campaignActive) {
       var cState = loadCampaignState() || { index: 0, failures: 0, completed: [], active: true, failed: false };
       var cData = loadCampaignData() || { missions: [], maxFailures: campaignMaxFailures };
@@ -147716,6 +147776,11 @@
         cState.active = true;
         cState.failed = false;
       }
+      var earned = Number(state.mineralsEarned || 0);
+      if (!Number.isFinite(earned))
+        earned = 0;
+      cState.mineralsEarned = Number.isFinite(cState.mineralsEarned) ? cState.mineralsEarned : 0;
+      cState.mineralsEarned += earned;
       saveCampaignState(cState);
       campaignResult.active = true;
       campaignResult.success = reason !== "destroyed";
@@ -147723,6 +147788,9 @@
       campaignResult.failed = !!cState.failed;
       campaignResult.last = campaignIndex + 1 >= (cData.missions && cData.missions.length || 0);
       campaignResult.hasNext = campaignResult.success && !campaignResult.failed && !campaignResult.last;
+      campaignResult.name = cData && cData.name ? cData.name : "Campaign";
+      campaignResult.pilot = getActiveProfileName();
+      campaignResult.minerals = cState.mineralsEarned || 0;
     }
     var endReasonText = "";
     if (reason === "destroyed") {
@@ -147780,6 +147848,20 @@
       endReasonLine.textContent = endReasonText;
     if (endModeSummary) {
       endModeSummary.textContent = "Operation: " + modeInfo.operation + " / Mode: " + modeInfo.modeLabel + " / Submode: " + modeInfo.submode;
+    }
+    if (campaignBanner) {
+      var showBanner = campaignResult.active && campaignResult.success && campaignResult.last;
+      campaignBanner.style.display = showBanner ? "flex" : "none";
+      if (showBanner) {
+        var pilotName = campaignResult.pilot || "Pilot";
+        var campaignName = campaignResult.name || "Campaign";
+        if (campaignBannerTitle)
+          campaignBannerTitle.textContent = "CONGRATULATIONS " + pilotName.toUpperCase();
+        if (campaignBannerSubtitle)
+          campaignBannerSubtitle.textContent = campaignName.toUpperCase() + " COMPLETE. NEXT CAMPAIGN UNLOCKED.";
+        if (campaignBannerMeta)
+          campaignBannerMeta.textContent = "MINERALS EARNED: " + (campaignResult.minerals || 0);
+      }
     }
     var canRenderStats = !!(statsListSecondary || statsList);
     if (canRenderStats) {
@@ -150558,7 +150640,7 @@
       var mineralCount = state.mineralsEarned || 0;
       if (mineralIconImg.ready && (isStampedeMode() || mineralCount > 0)) {
         var mSize = 62;
-        var mX = leftX - radius * 2 - 176;
+        var mX = leftX - radius * 2 - 120;
         var mY = cy - mSize / 2;
         ctx.save();
         ctx.globalAlpha = 0.95 * hudFade;
@@ -152635,7 +152717,9 @@
       bu2x: 0.98,
       mantas: 0.98,
       cyan: 0.98,
-      veloz: 0.98
+      veloz: 0.98,
+      verde9: 0.98,
+      whiteflame8: 0.98
     };
     var scale = scaleMap[shipType] || 0.9;
     if (typeof scaleMul === "number")
@@ -153379,9 +153463,9 @@
     if (flash > 0) {
       ctx.save();
       ctx.globalAlpha = baseAlpha * Math.min(1, flash);
-      ctx.strokeStyle = colors.accent;
+      ctx.strokeStyle = "rgba(242,240,230,0.95)";
       ctx.lineWidth = 2.4;
-      ctx.shadowColor = colors.accent;
+      ctx.shadowColor = "rgba(255,250,230,0.9)";
       ctx.shadowBlur = 12;
       var muzzleX = gun.centerX + gun.centerW / 2;
       var muzzleY = gun.barrelY - recoilShift - 14;
@@ -153553,8 +153637,8 @@
           nozzleLengthScale: [1.02, 1.02]
         },
         fizard: {
-          flameColor: "rgba(124,228,255,.9)",
-          flameCore: "rgba(210,255,255,.92)",
+          flameColor: "rgba(255,130,52,.92)",
+          flameCore: "rgba(255,220,165,.92)",
           baseYOffset: -1,
           nozzleOffsets: [-11, 11],
           nozzleWidth: 6.4,
@@ -153571,12 +153655,75 @@
           nozzleLengthScale: [0.9, 0.9]
         },
         bu2x: {
-          flameColor: "rgba(128,210,255,.9)",
-          flameCore: "rgba(214,248,255,.9)",
+          flameColor: "rgba(80,255,160,.92)",
+          flameCore: "rgba(190,255,220,.95)",
           baseYOffset: -1,
           nozzleOffsets: [-12, 12],
           nozzleWidth: 6.6,
           plumeLengthMul: 1.05,
+          nozzleLengthScale: [0.98, 0.98]
+        },
+        ember: {
+          flameColor: "rgba(220,230,235,.92)",
+          flameCore: "rgba(255,255,255,.98)",
+          baseYOffset: -1,
+          nozzleOffsets: [-12, 12],
+          nozzleWidth: 6.6,
+          plumeLengthMul: 1.02,
+          nozzleLengthScale: [0.98, 0.98]
+        },
+        azure: {
+          flameColor: "rgba(220,230,235,.92)",
+          flameCore: "rgba(255,255,255,.98)",
+          baseYOffset: -1,
+          nozzleOffsets: [-12, 12],
+          nozzleWidth: 6.6,
+          plumeLengthMul: 1.02,
+          nozzleLengthScale: [0.98, 0.98]
+        },
+        cyan: {
+          flameColor: "rgba(255,130,52,.92)",
+          flameCore: "rgba(255,220,165,.92)",
+          baseYOffset: -1,
+          nozzleOffsets: [-12, 12],
+          nozzleWidth: 6.6,
+          plumeLengthMul: 1.02,
+          nozzleLengthScale: [0.98, 0.98]
+        },
+        veloz: {
+          flameColor: "rgba(255,130,52,.92)",
+          flameCore: "rgba(255,220,165,.92)",
+          baseYOffset: -1,
+          nozzleOffsets: [-12, 12],
+          nozzleWidth: 6.6,
+          plumeLengthMul: 1.02,
+          nozzleLengthScale: [0.98, 0.98]
+        },
+        verde9: {
+          flameColor: "rgba(80,255,160,.92)",
+          flameCore: "rgba(190,255,220,.95)",
+          baseYOffset: -1,
+          nozzleOffsets: [-12, 12],
+          nozzleWidth: 6.6,
+          plumeLengthMul: 1.02,
+          nozzleLengthScale: [0.98, 0.98]
+        },
+        mantas: {
+          flameColor: "rgba(170,90,255,.92)",
+          flameCore: "rgba(220,190,255,.96)",
+          baseYOffset: -1,
+          nozzleOffsets: [-12, 12],
+          nozzleWidth: 6.6,
+          plumeLengthMul: 1.02,
+          nozzleLengthScale: [0.98, 0.98]
+        },
+        whiteflame8: {
+          flameColor: "rgba(255,70,60,.95)",
+          flameCore: "rgba(90,200,255,.95)",
+          baseYOffset: -1,
+          nozzleOffsets: [-12, 12],
+          nozzleWidth: 6.6,
+          plumeLengthMul: 1.02,
           nozzleLengthScale: [0.98, 0.98]
         }
       };
@@ -154096,6 +154243,8 @@
   function selectHasValue(select, value) {
     if (!select)
       return false;
+    if (!select.options || !select.options.length)
+      return false;
     var target = String(value);
     for (var i = 0; i < select.options.length; i++) {
       if (select.options[i].value === target)
@@ -154481,13 +154630,34 @@
       });
     }
     function setSandboxQuestionMode(mode, operation) {
-      if (inputs.questionMode)
-        inputs.questionMode.value = mode;
-      state.questionMode = mode;
+      var modeLabel = String(mode || "");
+      var info = describeQuestionMode(modeLabel);
+      if (inputs.questionMode) {
+        var hasOption = false;
+        var qmOptions = inputs.questionMode.options;
+        if (qmOptions && qmOptions.length) {
+          for (var oi = 0; oi < qmOptions.length; oi++) {
+            if (qmOptions[oi].value === modeLabel) {
+              hasOption = true;
+              break;
+            }
+          }
+        }
+        if (!hasOption) {
+          var opt = document.createElement("option");
+          opt.value = modeLabel;
+          var label = info.operation + ": " + info.modeLabel;
+          if (info.submode)
+            label += " (" + info.submode + ")";
+          opt.textContent = label.toUpperCase();
+          inputs.questionMode.appendChild(opt);
+        }
+        inputs.questionMode.value = modeLabel;
+      }
+      state.questionMode = modeLabel;
       if (operation) {
         state.operation = operation;
       } else {
-        var modeLabel = String(mode || "");
         if (modeLabel.indexOf("add_") === 0)
           state.operation = "add";
         else if (modeLabel.indexOf("square_") === 0)
@@ -154498,8 +154668,8 @@
           state.operation = "mul";
       }
       applySettings();
+      state.questionMode = modeLabel;
       resetSession();
-      var info = describeQuestionMode(mode);
       showToast("MODE -> " + info.operation.toUpperCase() + " / " + info.modeLabel.toUpperCase());
     }
     function setSandboxOperation(op) {

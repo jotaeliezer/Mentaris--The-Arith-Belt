@@ -354,9 +354,18 @@
       box-shadow: 0 30px 80px rgba(0,0,0,.6);
     }
     .briefingShipRow{
-display:flex;
+      display:flex;
       align-items:center;
       gap:16px;
+    }
+    .briefingBeltCard{
+      width:120px;
+      height:120px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(8,12,22,.6);
+      object-fit: cover;
+      box-shadow: inset 0 0 24px rgba(0,0,0,.35);
     }
     .briefingShipCard{
       width:120px;
@@ -586,6 +595,54 @@ display:flex;
       background: rgba(8,12,24,.75);
       border:1px solid rgba(255,255,255,.2);
       color: rgba(232,236,255,.75);
+    }
+    .buyButton{
+      position:absolute;
+      top:10px;
+      left:10px;
+      font-size:10px;
+      letter-spacing:0.18em;
+      text-transform:uppercase;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid rgba(80,220,120,.45);
+      background: rgba(80,220,120,.18);
+      color:rgba(220,255,235,.95);
+      z-index:3;
+      box-shadow: 0 6px 18px rgba(0,0,0,.35);
+    }
+    .buyButton.hidden{ display:none; }
+
+    .purchaseCard{
+      width:min(440px, 92vw);
+    }
+    .purchaseMeta{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0,1fr));
+      gap:12px;
+      margin-bottom:14px;
+    }
+    .purchaseRow{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(8,12,22,.65);
+      text-transform:uppercase;
+      letter-spacing:0.12em;
+      font-size:11px;
+    }
+    .purchaseRow b{
+      font-size:15px;
+      color:rgba(240,250,255,.95);
+      letter-spacing:0.1em;
+    }
+    .btnConfirm{
+      border-color: rgba(80,220,120,.55);
+      background: rgba(80,220,120,.2);
+      color: rgba(220,255,235,.98);
     }
 
     .choiceCard h4{
@@ -2088,6 +2145,33 @@ display:flex;
       </div>
     </div>
   </div>
+  <div id="purchaseOverlay" class="overlay">
+    <div class="card purchaseCard">
+      <div class="cardHead">
+        <div>
+          <h2 class="title">Unlock Item</h2>
+          <p class="subtitle" id="purchaseItemLabel">—</p>
+        </div>
+        <button id="btnPurchaseClose" class="btn">Close</button>
+      </div>
+      <div class="cardBody">
+        <div class="purchaseMeta">
+          <div class="purchaseRow">
+            <span>Minerals</span>
+            <b id="purchaseMinerals">0</b>
+          </div>
+          <div class="purchaseRow">
+            <span>Cost</span>
+            <b id="purchaseCost">0</b>
+          </div>
+        </div>
+        <div class="row">
+          <button id="btnPurchaseConfirm" class="btn btnConfirm" type="button">Confirm</button>
+          <button id="btnPurchaseCancel" class="btn" type="button">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
   <div id="settingsOverlay" class="overlay">
     <div class="card">
       <div class="cardHead settingsHead">
@@ -2296,6 +2380,7 @@ display:flex;
             <p class="monoSmall" id="briefingOperation" style="margin:0;">Operation: �?"</p>
             <p class="monoSmall" id="briefingSubmode" style="margin:0;">Submode: �?"</p>
           </div>
+          <img class="briefingBeltCard" id="briefingBeltCard" src="images/backgrounds/background8.png" alt="" />
         </div>
       </div>
       <div class="briefingGrid">
@@ -3472,6 +3557,13 @@ display:flex;
     var shotTypeTrack = document.getElementById("shotTypeTrack");
     var btnCloseShotType = document.getElementById("btnCloseShotType");
     var shotTypeOptions = Array.prototype.slice.call(document.querySelectorAll(".shotTypeOption"));
+    var purchaseOverlay = document.getElementById("purchaseOverlay");
+    var purchaseItemLabel = document.getElementById("purchaseItemLabel");
+    var purchaseMinerals = document.getElementById("purchaseMinerals");
+    var purchaseCost = document.getElementById("purchaseCost");
+    var btnPurchaseConfirm = document.getElementById("btnPurchaseConfirm");
+    var btnPurchaseCancel = document.getElementById("btnPurchaseCancel");
+    var btnPurchaseClose = document.getElementById("btnPurchaseClose");
     var shipLoadingStart = 0;
     var shipPanel = document.getElementById("shipPanel");
     var shotTypeLabels = {
@@ -3604,6 +3696,209 @@ display:flex;
         thrusters: "Dual"
       }
     };
+    var unlockKeys = {
+      ship: "mentaris.unlocks.ships",
+      shot: "mentaris.unlocks.shots",
+      belt: "mentaris.unlocks.belts"
+    };
+    var unlockStore = {
+      ship: loadUnlockList(unlockKeys.ship),
+      shot: loadUnlockList(unlockKeys.shot),
+      belt: loadUnlockList(unlockKeys.belt)
+    };
+    var pendingPurchase = null;
+
+    function loadUnlockList(key){
+      try{
+        var raw = localStorage.getItem(key);
+        if(raw){
+          var list = JSON.parse(raw);
+          if(Array.isArray(list)) return list.slice();
+        }
+      }catch(e){}
+      return [];
+    }
+    function saveUnlockList(key, list){
+      try{ localStorage.setItem(key, JSON.stringify(list || [])); }catch(e){}
+    }
+    function isUnlocked(type, id){
+      var list = unlockStore[type] || [];
+      return list.indexOf(id) !== -1;
+    }
+    function markUnlocked(type, id){
+      var list = unlockStore[type];
+      if(!list) return;
+      if(list.indexOf(id) === -1){
+        list.push(id);
+        saveUnlockList(unlockKeys[type], list);
+      }
+    }
+    function getMineralsTotal(){
+      var raw = null;
+      try{ raw = localStorage.getItem("mentaris.minerals"); }catch(e){}
+      var val = parseInt(raw, 10);
+      return Number.isFinite(val) ? val : 0;
+    }
+    function setMineralsTotal(val){
+      var safe = Math.max(0, Math.floor(val || 0));
+      try{ localStorage.setItem("mentaris.minerals", String(safe)); }catch(e){}
+      return safe;
+    }
+    function parseCost(el){
+      if(!el) return 0;
+      var tag = el.querySelector(".costTag");
+      if(!tag) return 0;
+      var text = (tag.textContent || "").replace(/[^\d]/g, "");
+      var val = parseInt(text, 10);
+      return Number.isFinite(val) ? val : 0;
+    }
+    function unlockShipOption(option){
+      if(!option) return;
+      option.classList.remove("locked");
+      option.removeAttribute("data-locked");
+      var input = option.querySelector("input");
+      if(input) input.disabled = false;
+      var costTag = option.querySelector(".costTag");
+      if(costTag) costTag.remove();
+      var buyBtn = option.querySelector(".buyButton");
+      if(buyBtn) buyBtn.remove();
+    }
+    function unlockShotOption(option){
+      if(!option) return;
+      option.classList.remove("locked");
+      option.removeAttribute("data-locked");
+      var costTag = option.querySelector(".costTag");
+      if(costTag) costTag.remove();
+      var buyBtn = option.querySelector(".buyButton");
+      if(buyBtn) buyBtn.remove();
+    }
+    function unlockBeltOption(option){
+      if(!option) return;
+      option.classList.remove("locked");
+      option.removeAttribute("data-locked");
+      var costTag = option.querySelector(".costTag");
+      if(costTag) costTag.remove();
+      var buyBtn = option.querySelector(".buyButton");
+      if(buyBtn) buyBtn.remove();
+    }
+    function applyStoredUnlocks(){
+      shipOptions.forEach(function(option){
+        var key = option.getAttribute("data-ship");
+        if(key && isUnlocked("ship", key)) unlockShipOption(option);
+      });
+      shotTypeOptions.forEach(function(option){
+        var key = option.getAttribute("data-shot");
+        if(key && isUnlocked("shot", key)) unlockShotOption(option);
+      });
+      if(typeof beltChoices !== "undefined" && beltChoices && beltChoices.length){
+        beltChoices.forEach(function(option){
+          var key = option.getAttribute("data-belt");
+          if(key && isUnlocked("belt", key)) unlockBeltOption(option);
+        });
+      }
+    }
+    function ensureBuyButton(el, type, id){
+      var btn = el.querySelector(".buyButton");
+      if(!btn){
+        btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn buyButton";
+        btn.textContent = "BUY";
+        btn.addEventListener("click", function(e){
+          e.preventDefault();
+          e.stopPropagation();
+          openPurchaseOverlay(el, type, id);
+        });
+        el.appendChild(btn);
+      }
+      return btn;
+    }
+    function getPurchaseLabel(type, id, el){
+      if(type === "ship"){
+        var info = shipDetailsMap[id];
+        return info ? info.name : String(id || "").toUpperCase();
+      }
+      if(type === "shot"){
+        return (shotTypeLabels[id] || id || "").toUpperCase();
+      }
+      if(type === "belt"){
+        var h4 = el ? el.querySelector("h4") : null;
+        return h4 ? h4.textContent : String(id || "").toUpperCase();
+      }
+      return String(id || "").toUpperCase();
+    }
+    function refreshBuyButtons(){
+      var minerals = getMineralsTotal();
+      shipOptions.forEach(function(option){
+        if(option.getAttribute("data-locked") !== "true") return;
+        var id = option.getAttribute("data-ship");
+        var cost = parseCost(option);
+        if(cost > 0 && minerals >= cost){
+          var btn = ensureBuyButton(option, "ship", id);
+          btn.classList.remove("hidden");
+        }else{
+          var existing = option.querySelector(".buyButton");
+          if(existing) existing.classList.add("hidden");
+        }
+      });
+      shotTypeOptions.forEach(function(option){
+        if(option.getAttribute("data-locked") !== "true") return;
+        var id = option.getAttribute("data-shot");
+        var cost = parseCost(option);
+        if(cost > 0 && minerals >= cost){
+          var btn = ensureBuyButton(option, "shot", id);
+          btn.classList.remove("hidden");
+        }else{
+          var existing = option.querySelector(".buyButton");
+          if(existing) existing.classList.add("hidden");
+        }
+      });
+      if(typeof beltChoices !== "undefined" && beltChoices && beltChoices.length){
+        beltChoices.forEach(function(option){
+          if(option.getAttribute("data-locked") !== "true") return;
+          var id = option.getAttribute("data-belt");
+          var cost = parseCost(option);
+          if(cost > 0 && minerals >= cost){
+            var btn = ensureBuyButton(option, "belt", id);
+            btn.classList.remove("hidden");
+          }else{
+            var existing = option.querySelector(".buyButton");
+            if(existing) existing.classList.add("hidden");
+          }
+        });
+      }
+    }
+    function openPurchaseOverlay(el, type, id){
+      if(!purchaseOverlay) return;
+      var cost = parseCost(el);
+      pendingPurchase = { el: el, type: type, id: id, cost: cost };
+      if(purchaseItemLabel) purchaseItemLabel.textContent = getPurchaseLabel(type, id, el);
+      if(purchaseMinerals) purchaseMinerals.textContent = String(getMineralsTotal());
+      if(purchaseCost) purchaseCost.textContent = String(cost);
+      purchaseOverlay.classList.add("show");
+    }
+    function closePurchaseOverlay(){
+      pendingPurchase = null;
+      if(purchaseOverlay) purchaseOverlay.classList.remove("show");
+    }
+    function completePurchase(){
+      if(!pendingPurchase) return;
+      var minerals = getMineralsTotal();
+      if(minerals < pendingPurchase.cost){
+        showToast("NOT ENOUGH MINERALS");
+        closePurchaseOverlay();
+        refreshBuyButtons();
+        return;
+      }
+      minerals = setMineralsTotal(minerals - pendingPurchase.cost);
+      markUnlocked(pendingPurchase.type, pendingPurchase.id);
+      if(pendingPurchase.type === "ship") unlockShipOption(pendingPurchase.el);
+      if(pendingPurchase.type === "shot") unlockShotOption(pendingPurchase.el);
+      if(pendingPurchase.type === "belt") unlockBeltOption(pendingPurchase.el);
+      showToast("UNLOCKED");
+      closePurchaseOverlay();
+      refreshBuyButtons();
+    }
     function updateShipCarousel(value){
       if(!shipTrack) return;
       var container = shipTrack.parentElement;
@@ -3703,6 +3998,8 @@ display:flex;
         });
       });
     }
+    applyStoredUnlocks();
+    refreshBuyButtons();
     syncShipSelection(saved.ship || "spire");
     shipRadios.forEach(function(radio){
       radio.addEventListener('change', function(){
@@ -3738,6 +4035,29 @@ display:flex;
     if(shotTypeOverlay){
       shotTypeOverlay.addEventListener("click", function(e){
         if(e.target === shotTypeOverlay) closeShotTypeOverlay();
+      });
+    }
+    if(btnPurchaseConfirm){
+      btnPurchaseConfirm.addEventListener("click", function(){
+        playMenuBeep();
+        completePurchase();
+      });
+    }
+    if(btnPurchaseCancel){
+      btnPurchaseCancel.addEventListener("click", function(){
+        playMenuBeep();
+        closePurchaseOverlay();
+      });
+    }
+    if(btnPurchaseClose){
+      btnPurchaseClose.addEventListener("click", function(){
+        playMenuBeep();
+        closePurchaseOverlay();
+      });
+    }
+    if(purchaseOverlay){
+      purchaseOverlay.addEventListener("click", function(e){
+        if(e.target === purchaseOverlay) closePurchaseOverlay();
       });
     }
     shotTypeOptions.forEach(function(option){
@@ -3845,6 +4165,9 @@ display:flex;
     var questionModeInput = document.getElementById("questionMode");
     var decoyFunctionInput = document.getElementById("decoyFunction");
     var stampedeToggle = document.getElementById("stampedeMode");
+
+    applyStoredUnlocks();
+    refreshBuyButtons();
 
     var selectedMode = "digit";
     var selectedOperation = "mul";
@@ -4169,6 +4492,7 @@ display:flex;
     var briefingSubmode = document.getElementById("briefingSubmode");
     var briefingShotType = document.getElementById("briefingShotType");
     var briefingBelt = document.getElementById("briefingBelt");
+    var briefingBeltCard = document.getElementById("briefingBeltCard");
     var briefingLives = document.getElementById("briefingLives");
     var briefingStrikes = document.getElementById("briefingStrikes");
     var briefingTargeted = document.getElementById("briefingTargeted");
@@ -5281,7 +5605,18 @@ display:flex;
           vega: "Vega",
           void: "Void"
         };
+        var beltImages = {
+          dusk: "images/backgrounds/background8.png",
+          ember: "images/backgrounds/background1.png",
+          aurora: "images/backgrounds/background2.png",
+          rift: "images/backgrounds/background3.png",
+          vega: "images/backgrounds/background7.png",
+          void: "images/backgrounds/background9.png"
+        };
         briefingBelt.textContent = beltLabels[beltKey] || beltKey.toUpperCase();
+        if(briefingBeltCard){
+          briefingBeltCard.src = beltImages[beltKey] || beltImages.dusk;
+        }
       }
       var modeLabel = String(config.questionMode || "classic");
       if(briefingMode){
