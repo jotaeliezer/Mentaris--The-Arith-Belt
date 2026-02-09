@@ -139429,6 +139429,9 @@
       armorBlocksRemaining: 0,
       scopeTimer: 0,
       magnetTimer: 0,
+      overflightTimer: 0,
+      phaseTimer: 0,
+      compassTimer: 0,
       dashCooldown: 0,
       shockwaveCooldown: 0,
       bankHold: 0,
@@ -139904,11 +139907,11 @@
       { id: "move_arrows", title: "Step 1: Flight Controls (Arrows)", body: "Use the Up, Down, Left, and Right arrow keys to guide the ship through dots 1-4 in order.", event: "move_arrows", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Formation clean, cadet.", praiseBody: "Arrow control confirmed. Smooth tracking." },
       { id: "move_wasd", title: "Step 2: Flight Controls (WASD)", body: "Now use W, A, S, and D to guide the ship through the same dots again.", event: "move_wasd", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "WASD verified.", praiseBody: "Sharp handling. You fly like you mean it." },
       { id: "mousepad_hybrid", title: "Step 3: Mousepad", body: "Press B to enable mousepad. Fly to dots 1-4 in order.", event: "mousepad_hybrid", hideDuringAction: true, actionPauseMs: 700 },
-      { id: "fire_once", title: "Step 4: Fire Once", body: "Press E (or click) to fire a single shot.", event: "fire", count: 1 },
-      { id: "fire_again", title: "Step 5: Fire Again", body: "Press E again to fire another shot.", event: "fire", count: 1 },
+      { id: "fire_once", title: "Step 4: Fire Once", body: "Press Space (or click) to fire a single shot.", event: "fire", count: 1 },
+      { id: "fire_again", title: "Step 5: Fire Again", body: "Press Space again to fire another shot.", event: "fire", count: 1 },
       { id: "correct", title: "Step 6: Correct Hit", body: "Hit the asteroid with the correct answer.", event: "correct" },
       { id: "powerup", title: "Step 7: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
-      { id: "dash", title: "Step 8: Dash", body: "Press Space to dash through danger.", event: "dash" },
+      { id: "dash", title: "Step 8: Dash", body: "Press Shift to dash through danger.", event: "dash" },
       { id: "ability", title: "Step 9: Ability", body: "Press Q to use your ship ability.", event: "ability" },
       { id: "secondary_aid", title: "Step 10: Aid Weapon", body: "Press F to trigger your aid weapon (Time Dilation).", event: "secondary" },
       { id: "secondary_slots", title: "Step 11: Aid Slots", body: "You have 3 aid slots on the top-right. Press 1, 2, or 3 (or numpad 1-3) to select a slot.", event: "secondary_slot", count: 1 },
@@ -142104,6 +142107,8 @@
     }
     setFullscreenLabel(btnFullscreenToggle, !!document.fullscreenElement);
   }
+  loadKeyBindings();
+  updateKeybindButtons();
   var inputs = {
     aMin: document.getElementById("aMin"),
     aMax: document.getElementById("aMax"),
@@ -142250,6 +142255,7 @@
   var tutorialRecoveryResumeStepId = null;
   var tutorialRespawnActive = false;
   var tutorialRespawnTargetY = 0;
+  var tutorialHullRecoveryShown = false;
   var answerHitsSincePowerup = 0;
   var hiddenPowerupActive = false;
   var survivorTimer = 0;
@@ -142569,7 +142575,9 @@
     { id: "azure", label: "Azure Lancer", icon: "images/ships/Azure%20Lancer.png", desc: "Aero spear frame with steady control." },
     { id: "mantas", label: "Mantas Arc-5", icon: "images/ships/Mantas%20-%20Arc%205.png", desc: "Advanced sweep-frame built for high-speed slalom." },
     { id: "cyan", label: "Cyan Vector 7", icon: "images/ships/Cyan%20Vector%207.png", desc: "High-precision vector craft with balanced handling." },
-    { id: "veloz", label: "Veloz Mas", icon: "images/ships/Veloz%20Mas.png", desc: "Aggressive chase frame tuned for offensive runs." }
+    { id: "veloz", label: "Veloz Mas", icon: "images/ships/Veloz%20Mas.png", desc: "Aggressive chase frame tuned for offensive runs." },
+    { id: "verde9", label: "VER-DE-9", icon: "images/ships/VER-DE-9.png", desc: "Emerald vanguard frame with reinforced lanes and steady recoil control." },
+    { id: "whiteflame8", label: "White Flame 8", icon: "images/ships/White%20Flame%208.png", desc: "Lumen spear chassis with a bright exhaust signature and clean lines." }
   ];
   var sfxCatalog = [
     { id: "menu_beep", label: "Menu Beep", desc: "UI blip.", when: "Menu and overlay buttons.", badge: "SFX", src: "sfx/ui/menu_beep.mp3", category: "menu" },
@@ -142829,7 +142837,17 @@
   var shipProfiles = {
     classic: { speed: 440, response: 8, dashDist: 200, dashCooldown: 1.3, shockwaveRadius: 220, shockwaveStrength: 760, shockwaveCooldown: 3.5, ability: "shockwave", accelUp: 4.2, accelDown: 6.5 },
     spire: { speed: 520, response: 14, dashDist: 130, dashCooldown: 1.3, shockwaveRadius: 150, shockwaveStrength: 480, shockwaveCooldown: 3.5, ability: "flares", accelUp: 6, accelDown: 8 },
-    am2: { speed: 600, response: 17, dashDist: 130, dashCooldown: 1.9, shockwaveRadius: 160, shockwaveStrength: 520, shockwaveCooldown: 4.2, ability: "spin", accelUp: 7.2, accelDown: 9 }
+    am2: { speed: 600, response: 17, dashDist: 130, dashCooldown: 1.9, shockwaveRadius: 160, shockwaveStrength: 520, shockwaveCooldown: 4.2, ability: "spin", accelUp: 7.2, accelDown: 9 },
+    mk7: { ability: "downshock" },
+    ember: { ability: "overflight" },
+    azure: { ability: "overflight" },
+    fizard: { ability: "phase" },
+    bu2x: { ability: "knock3" },
+    verde9: { ability: "knock3" },
+    mantas: { ability: "shockwave" },
+    cyan: { ability: "compass" },
+    veloz: { ability: "compass" },
+    whiteflame8: { ability: "frontclear" }
   };
   function getShipProfile(shipType) {
     var base = { speed: 560, response: 14, dashDist: 130, dashCooldown: 1.3, shockwaveRadius: 160, shockwaveStrength: 520, shockwaveCooldown: 3.5, ability: "shockwave" };
@@ -142861,6 +142879,81 @@
   var keys = /* @__PURE__ */ new Set();
   var audioPrimed = false;
   var screenshotMode = false;
+  var keybindStorageKey = "mentaris.keybinds";
+  var keyBindings = {
+    shoot: "space",
+    secondary: "e",
+    special: "q",
+    dash: "shiftleft"
+  };
+  var keybindCapture = null;
+  var keybindButtons = Array.prototype.slice.call(document.querySelectorAll(".keyBindBtn"));
+  var reservedKeys = /* @__PURE__ */ new Set(["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"]);
+  function normalizeKeyEvent(e) {
+    var code = e.code || "";
+    if (code === "Space")
+      return "space";
+    if (code === "ShiftLeft")
+      return "shiftleft";
+    if (code === "ShiftRight")
+      return "shiftright";
+    var k = (e.key || "").toLowerCase();
+    if (k === " ")
+      return "space";
+    return k;
+  }
+  function displayKeyName(key) {
+    if (key === "space")
+      return "SPACE";
+    if (key === "shiftleft" || key === "shiftright")
+      return "SHIFT";
+    if (key === "escape")
+      return "ESC";
+    return String(key || "").toUpperCase();
+  }
+  function loadKeyBindings() {
+    try {
+      var raw = localStorage.getItem(keybindStorageKey);
+      if (!raw)
+        return;
+      var parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        if (typeof parsed.shoot === "string")
+          keyBindings.shoot = parsed.shoot.toLowerCase();
+        if (typeof parsed.secondary === "string")
+          keyBindings.secondary = parsed.secondary.toLowerCase();
+        if (typeof parsed.special === "string")
+          keyBindings.special = parsed.special.toLowerCase();
+        if (typeof parsed.dash === "string")
+          keyBindings.dash = parsed.dash.toLowerCase();
+      }
+    } catch (e) {
+    }
+  }
+  function saveKeyBindings() {
+    try {
+      localStorage.setItem(keybindStorageKey, JSON.stringify(keyBindings));
+    } catch (e) {
+    }
+  }
+  function updateKeybindButtons() {
+    if (!keybindButtons.length)
+      return;
+    keybindButtons.forEach(function(btn) {
+      var action = btn.getAttribute("data-bind");
+      if (!action || !keyBindings[action])
+        return;
+      btn.textContent = displayKeyName(keyBindings[action]);
+      btn.classList.toggle("listening", keybindCapture === action);
+    });
+  }
+  function setKeyBinding(action, key) {
+    if (!action || !key)
+      return;
+    keyBindings[action] = key;
+    saveKeyBindings();
+    updateKeybindButtons();
+  }
   function isTextInput(el) {
     if (!el)
       return false;
@@ -142868,14 +142961,46 @@
     return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable;
   }
   window.addEventListener("keydown", function(e) {
+    if (keybindCapture) {
+      e.preventDefault();
+      var captureKey = normalizeKeyEvent(e);
+      if (captureKey === "escape") {
+        keybindCapture = null;
+        updateKeybindButtons();
+        return;
+      }
+      if (reservedKeys.has(captureKey)) {
+        showToast("KEY RESERVED FOR MOVEMENT");
+        return;
+      }
+      setKeyBinding(keybindCapture, captureKey);
+      keybindCapture = null;
+      updateKeybindButtons();
+      return;
+    }
     if (isTextInput(document.activeElement))
       return;
     var k = (e.key || "").toLowerCase();
     var code = e.code || "";
-    var prevent = ["arrowleft", "arrowright", "arrowup", "arrowdown", "a", "d", "w", "s", "p", "r", "m", "e", "q", "f", "b", "1", "2", "3", " ", "spacebar"];
-    if (prevent.indexOf(k) !== -1 || code === "Digit1" || code === "Digit2" || code === "Digit3" || code === "Numpad1" || code === "Numpad2" || code === "Numpad3")
+    var keyNorm = normalizeKeyEvent(e);
+    var prevent = ["arrowleft", "arrowright", "arrowup", "arrowdown", "a", "d", "w", "s", "p", "r", "m", "b", "1", "2", "3", "0"];
+    if (keyBindings.shoot) {
+      prevent.push(keyBindings.shoot);
+      if (keyBindings.shoot === "space")
+        prevent.push(" ", "spacebar");
+    }
+    if (keyBindings.secondary)
+      prevent.push(keyBindings.secondary);
+    if (keyBindings.special)
+      prevent.push(keyBindings.special);
+    if (keyBindings.dash) {
+      prevent.push(keyBindings.dash);
+      if (keyBindings.dash === "shiftleft" || keyBindings.dash === "shiftright")
+        prevent.push("shift");
+    }
+    if (prevent.indexOf(k) !== -1 || prevent.indexOf(keyNorm) !== -1 || code === "Digit1" || code === "Digit2" || code === "Digit3" || code === "Numpad1" || code === "Numpad2" || code === "Numpad3")
       e.preventDefault();
-    keys.add(k);
+    keys.add(keyNorm);
     if (!audioPrimed) {
       unlockSfx(state);
       audioPrimed = true;
@@ -142888,7 +143013,7 @@
       hardRestart();
     if (k === "m")
       openSettings();
-    if (k === "e" && !e.repeat) {
+    if (keyNorm === keyBindings.shoot && !e.repeat) {
       if ((player.blasterMode || "single") === "missile") {
         openMissileInput();
       } else if (player.autoFireActive && player.autoFireAmmo > 0) {
@@ -142899,7 +143024,7 @@
     if ((k === "w" || k === "arrowup") && !e.repeat && state.running && !state.paused && !state.over) {
       playSfx(state, "ship_advance");
     }
-    if (k === "f") {
+    if (keyNorm === keyBindings.secondary) {
       secondaryFire();
     }
     if (k === "1" || code === "Digit1" || code === "Numpad1")
@@ -142908,7 +143033,7 @@
       selectSecondaryByIndex(1);
     if (k === "3" || code === "Digit3" || code === "Numpad3")
       selectSecondaryByIndex(2);
-    if (k === "q") {
+    if (keyNorm === keyBindings.special) {
       if (isStampedeMode()) {
         player.clawHoldKey = true;
         player.clawHold = 0;
@@ -142930,15 +143055,15 @@
         }
       }
     }
-    if ((k === " " || code === "Space") && !e.repeat)
+    if (keyNorm === keyBindings.dash && !e.repeat)
       dash();
   }, { passive: false });
   window.addEventListener("keyup", function(e) {
     if (isTextInput(document.activeElement))
       return;
-    var k = (e.key || "").toLowerCase();
-    keys.delete(k);
-    if (k === "q" && isStampedeMode()) {
+    var keyNorm = normalizeKeyEvent(e);
+    keys.delete(keyNorm);
+    if (keyNorm === keyBindings.special && isStampedeMode()) {
       player.clawHoldKey = false;
       player.clawHold = 0;
     }
@@ -143581,9 +143706,12 @@
     }
     if (state.questionMode === "add_series3" || state.questionMode === "add_series4") {
       var terms = Array.isArray(state.seriesTerms) ? state.seriesTerms : [];
-      if (!terms.length)
+      if (terms.length < 3)
         return "?";
-      return terms.join(" + ") + " = ?";
+      var sumSeries = terms.reduce(function(sum2, val) {
+        return sum2 + val;
+      }, 0);
+      return terms.join(" + ") + " = " + sumSeries;
     }
     var op = isAdditionMode() ? "+" : "x";
     var left = state.a;
@@ -144852,7 +144980,12 @@
     return pool;
   }
   function prepareWave() {
+    var diff = String(state.difficulty || "normal").toLowerCase();
     var decoyScale = 0.7;
+    if (diff === "easy")
+      decoyScale = 0.5;
+    else if (diff === "normal")
+      decoyScale = 0.6;
     var decoyCount = Math.max(1, Math.round(state.decoys * 0.3 * decoyScale));
     if (isDivisorsMode()) {
       state.waveDecoys = buildDivisorDecoyPool(decoyCount);
@@ -145197,36 +145330,44 @@
     } else {
       spawnDecoyOnly();
     }
-    if (state.level >= 4 && Math.random() < 0.28) {
-      var r = canvas.getBoundingClientRect();
-      var w = r.width;
-      var baseVy = (92 + state.level * 10) * getDifficultySpeedFactor();
-      var speedScale = state.baseSpeed * (1 + state.ddSpeedBonus);
-      var ambLane = isSandboxSplitMode() ? Math.random() < 0.5 ? 1 : 2 : 0;
-      var ambBounds = getLaneBounds(ambLane);
-      asteroids.push({
-        id: ++state.asteroidId,
-        x: rand(ambBounds.minX, ambBounds.maxX),
-        y: -rand(220, 520),
-        vx: rand(-25, 25),
-        vy: baseVy * speedScale * rand(0.75, 1),
-        baseVy: baseVy * speedScale,
-        r: rand(14, 22),
-        label: null,
-        isCorrect: false,
-        waveId: -1,
-        laneId: ambLane,
-        spin: rand(-3.2, 3.2),
-        rot: rand(0, Math.PI * 2),
-        seed: Math.random() * 1e3,
-        hit: false,
-        ghost: true,
-        ambient: true,
-        driftAmp: rand(6, 14),
-        driftRate: rand(0.6, 1.5),
-        driftPhase: rand(0, Math.PI * 2),
-        spriteIndex: randi(0, asteroidSprites.length - 1)
-      });
+    if (state.level >= 4) {
+      var diff = String(state.difficulty || "normal").toLowerCase();
+      var extraChance = 0.28;
+      if (diff === "easy")
+        extraChance = 0.12;
+      else if (diff === "normal")
+        extraChance = 0.18;
+      if (Math.random() < extraChance) {
+        var r = canvas.getBoundingClientRect();
+        var w = r.width;
+        var baseVy = (92 + state.level * 10) * getDifficultySpeedFactor();
+        var speedScale = state.baseSpeed * (1 + state.ddSpeedBonus);
+        var ambLane = isSandboxSplitMode() ? Math.random() < 0.5 ? 1 : 2 : 0;
+        var ambBounds = getLaneBounds(ambLane);
+        asteroids.push({
+          id: ++state.asteroidId,
+          x: rand(ambBounds.minX, ambBounds.maxX),
+          y: -rand(220, 520),
+          vx: rand(-25, 25),
+          vy: baseVy * speedScale * rand(0.75, 1),
+          baseVy: baseVy * speedScale,
+          r: rand(14, 22),
+          label: null,
+          isCorrect: false,
+          waveId: -1,
+          laneId: ambLane,
+          spin: rand(-3.2, 3.2),
+          rot: rand(0, Math.PI * 2),
+          seed: Math.random() * 1e3,
+          hit: false,
+          ghost: true,
+          ambient: true,
+          driftAmp: rand(6, 14),
+          driftRate: rand(0.6, 1.5),
+          driftPhase: rand(0, Math.PI * 2),
+          spriteIndex: randi(0, asteroidSprites.length - 1)
+        });
+      }
     }
   }
   function spawnPowerup(type, group, x, y, opts) {
@@ -145547,9 +145688,10 @@
     }
   }
   function triggerTutorialRecovery(reason) {
-    if (!tutorialActive || !tourGuide || tutorialRecoveryActive)
+    if (!tutorialActive || !tourGuide || tutorialRecoveryActive || tutorialHullRecoveryShown)
       return false;
     tutorialRecoveryActive = true;
+    tutorialHullRecoveryShown = true;
     tutorialRecoveryResumeStepId = tutorialStepId || null;
     player.hidden = true;
     player.vx = 0;
@@ -145842,6 +145984,9 @@
     player.defenseTimer = 0;
     player.armorBlocksRemaining = 0;
     player.scopeTimer = 0;
+    player.overflightTimer = 0;
+    player.phaseTimer = 0;
+    player.compassTimer = 0;
     player.magnetTimer = 0;
     player.autoFireActive = false;
     player.autoFireAmmo = 0;
@@ -146714,6 +146859,160 @@
         tourGuide.notify("ability");
       return;
     }
+    if (profile.ability === "overflight") {
+      player.overflightTimer = Math.max(player.overflightTimer || 0, 6);
+      player.invuln = Math.max(player.invuln || 0, 0.25);
+      playSfx(state, "dash");
+      showToast("OVERFLIGHT");
+      if (tourGuide)
+        tourGuide.notify("ability");
+      return;
+    }
+    if (profile.ability === "phase") {
+      player.phaseTimer = Math.max(player.phaseTimer || 0, 6);
+      player.invuln = Math.max(player.invuln || 0, 0.4);
+      playSfx(state, "teleport_disappear");
+      showToast("INTANGIBLE");
+      if (tourGuide)
+        tourGuide.notify("ability");
+      return;
+    }
+    if (profile.ability === "compass") {
+      player.compassTimer = Math.max(player.compassTimer || 0, 6);
+      playSfx(state, "dash");
+      showToast("COMPASS ONLINE");
+      if (tourGuide)
+        tourGuide.notify("ability");
+      return;
+    }
+    if (profile.ability === "knock3") {
+      player.phaseTimer = Math.max(player.phaseTimer || 0, 0.9);
+      player.invuln = Math.max(player.invuln || 0, 0.6);
+      var knockRadius = 220;
+      var knockTargets = [];
+      for (var i = 0; i < asteroids.length; i++) {
+        var a = asteroids[i];
+        if (!a || a.ghost || a.noDamage || a.grabbedByClaw)
+          continue;
+        if (isSandboxSplitMode() && getLaneIdForX(a.x) !== 1)
+          continue;
+        var dx = a.x - player.x;
+        var dy = a.y - (player.y - 6);
+        var dist = Math.hypot(dx, dy);
+        if (dist <= knockRadius) {
+          knockTargets.push({ a, d: dist, dx, dy });
+        }
+      }
+      knockTargets.sort(function(p1, p2) {
+        return p1.d - p2.d;
+      });
+      for (var k = 0; k < Math.min(3, knockTargets.length); k++) {
+        var t = knockTargets[k];
+        var ast = t.a;
+        var distN = Math.max(1, t.d);
+        var nx = t.dx / distN;
+        var ny = t.dy / distN;
+        markAsteroidEffect(ast, "fade", 0.9);
+        ast.noDamage = true;
+        ast.ghost = true;
+        ast.ghostFade = true;
+        ast.vx = (ast.vx || 0) + nx * 360;
+        ast.vy = Math.max(ast.vy || 0, 420) + Math.abs(ny) * 320;
+      }
+      playSfx(state, "dash");
+      showToast("KNOCKBACK");
+      if (tourGuide)
+        tourGuide.notify("ability");
+      return;
+    }
+    if (profile.ability === "frontclear") {
+      var cleared = 0;
+      var stampedeActive = isStampedeMode();
+      var targets = [];
+      for (var f = 0; f < asteroids.length; f++) {
+        var fa = asteroids[f];
+        if (!fa || fa.ghost || fa.label === null || fa.grabbedByClaw)
+          continue;
+        if (isSandboxSplitMode() && getLaneIdForX(fa.x) !== 1)
+          continue;
+        if (fa.y < player.y - 10) {
+          targets.push(fa);
+        }
+      }
+      for (var tIdx = 0; tIdx < targets.length; tIdx++) {
+        var target = targets[tIdx];
+        var idx = asteroids.indexOf(target);
+        if (idx === -1)
+          continue;
+        var wasCorrect = target.isCorrect && target.waveId === state.waveId;
+        if (isPartialSumsMode()) {
+          var expectedValue = Number(getCurrentCorrectTargetValue());
+          var hitValue = Number(target.label);
+          wasCorrect = Number.isFinite(expectedValue) && Number.isFinite(hitValue) && hitValue === expectedValue;
+        }
+        if (isDivisorsMode()) {
+          if (isDivisorLabel(target.label)) {
+            var divisorNew = markDivisorHit(target.label);
+            if (divisorNew) {
+              handleDivisorCorrectHit(target);
+              impactCorrect(target.x, target.y, target.r);
+            } else {
+              impactDebris(target.x, target.y);
+            }
+          } else {
+            impactDebris(target.x, target.y);
+          }
+        } else if (wasCorrect) {
+          var wid = state.waveId;
+          state.correctInPlay = false;
+          state.correctAsteroidId = 0;
+          retireWave(wid);
+          if (stampedeActive) {
+            onStampedeCorrect(target);
+          } else {
+            onCorrectHit(target);
+          }
+          impactCorrect(target.x, target.y, target.r);
+        } else {
+          impactDebris(target.x, target.y);
+        }
+        asteroids.splice(idx, 1);
+        cleared += 1;
+      }
+      if (cleared) {
+        kickShake(14, 0.12);
+        triggerCameraFlash(0.12);
+      }
+      playSfx(state, "dash");
+      showToast("CLEAR FRONT");
+      if (tourGuide)
+        tourGuide.notify("ability");
+      return;
+    }
+    if (profile.ability === "downshock") {
+      var downRadius = profile.shockwaveRadius || 160;
+      var downStrength = profile.shockwaveStrength || 520;
+      for (var di = 0; di < asteroids.length; di++) {
+        var da = asteroids[di];
+        if (da.ghost || da.label === null)
+          continue;
+        var dxD = da.x - player.x;
+        var dyD = da.y - (player.y - 6);
+        if (dyD <= 0)
+          continue;
+        var distD = Math.hypot(dxD, dyD);
+        if (distD > downRadius)
+          continue;
+        var push = (1 - distD / downRadius) * downStrength;
+        da.vy = (da.vy || 0) + push * 0.85;
+      }
+      kickShake(10, 0.1);
+      playSfx(state, "dash");
+      showToast("DOWNBURST");
+      if (tourGuide)
+        tourGuide.notify("ability");
+      return;
+    }
     var radius = profile.shockwaveRadius || 160;
     var strength = profile.shockwaveStrength || 520;
     for (var i = 0; i < asteroids.length; i++) {
@@ -146740,7 +147039,12 @@
   }
   function loseLife(reason) {
     if (tutorialActive) {
-      triggerTutorialRecovery(reason || "HULL CRITICAL");
+      if (player.hull <= 0) {
+        triggerTutorialRecovery(reason || "HULL CRITICAL");
+      } else {
+        syncHud();
+        showToast(reason || "HULL CRITICAL");
+      }
       return;
     }
     if (sandboxMode && state.sandboxInfiniteLives) {
@@ -146760,7 +147064,12 @@
     if (state.over)
       return true;
     if (tutorialActive) {
-      triggerTutorialRecovery(detail || "HULL CRITICAL");
+      if (player.hull <= 0) {
+        triggerTutorialRecovery(detail || "HULL CRITICAL");
+      } else {
+        syncHud();
+        showToast(detail || "HULL CRITICAL");
+      }
       return true;
     }
     if (sandboxMode && state.sandboxInfiniteLives) {
@@ -147497,7 +147806,7 @@
       document.head.appendChild(style);
     }
     ensureEndStatsChartStyles();
-    function addStatTile(label2, value) {
+    function addStatTile(label, value) {
       var row = document.createElement("div");
       row.style.display = "flex";
       row.style.alignItems = "center";
@@ -147508,7 +147817,7 @@
       row.style.borderRadius = "12px";
       row.style.background = "rgba(255,255,255,.05)";
       row.style.fontSize = "12px";
-      row.innerHTML = '<span style="color: var(--muted);">' + label2 + "</span><b>" + value + "</b>";
+      row.innerHTML = '<span style="color: var(--muted);">' + label + "</span><b>" + value + "</b>";
       statsList.appendChild(row);
     }
     function addSection(title, list, extraClass) {
@@ -147531,7 +147840,7 @@
         return shotIcons.missile.src;
       return null;
     }
-    function addIconBarRow(section, label2, iconSrc, count2, max) {
+    function addIconBarRow(section, label, iconSrc, count2, max) {
       var row = document.createElement("div");
       row.className = "endStatsRow";
       var icon = document.createElement("div");
@@ -147539,7 +147848,7 @@
       if (iconSrc) {
         var img = document.createElement("img");
         img.src = iconSrc;
-        img.alt = label2;
+        img.alt = label;
         icon.appendChild(img);
       } else {
         icon.textContent = "--";
@@ -147558,7 +147867,7 @@
       var textWrap = document.createElement("div");
       textWrap.style.display = "grid";
       var labelEl = document.createElement("div");
-      labelEl.textContent = label2;
+      labelEl.textContent = label;
       labelEl.style.fontSize = "11px";
       labelEl.style.color = "var(--muted)";
       textWrap.appendChild(labelEl);
@@ -147567,7 +147876,7 @@
       row.appendChild(countEl);
       section.appendChild(row);
     }
-    function addIconStackRow(section, label2, entries) {
+    function addIconStackRow(section, label, entries) {
       var list = Array.isArray(entries) ? entries.filter(function(entry2) {
         return entry2 && entry2.src && entry2.count > 0;
       }) : [];
@@ -147576,7 +147885,7 @@
       var row = document.createElement("div");
       row.className = "endStatsStackRow";
       var labelEl = document.createElement("div");
-      labelEl.textContent = label2;
+      labelEl.textContent = label;
       labelEl.style.fontSize = "11px";
       labelEl.style.color = "var(--muted)";
       var stack = document.createElement("div");
@@ -147589,7 +147898,7 @@
         icon.className = "endStatsStackIcon";
         var img = document.createElement("img");
         img.src = entry.src;
-        img.alt = label2;
+        img.alt = label;
         icon.appendChild(img);
         var countEl = document.createElement("div");
         countEl.className = "endStatsStackCount";
@@ -147604,25 +147913,6 @@
     }
     if (canRenderStats) {
       var listTarget = statsListSecondary || statsList;
-      var shotSection = addSection("SHOTS FIRED", listTarget);
-      var shotCounts = state.shotCounts || {};
-      var shotTypes = ["single", "laser", "fire", "ice", "electric", "pierce", "plasma", "rail", "missile"];
-      var maxShot = 0;
-      for (var si = 0; si < shotTypes.length; si++) {
-        maxShot = Math.max(maxShot, shotCounts[shotTypes[si]] || 0);
-      }
-      if (maxShot === 0) {
-        addIconBarRow(shotSection, "NO SHOTS", null, 0, 1);
-      } else {
-        for (var si2 = 0; si2 < shotTypes.length; si2++) {
-          var st = shotTypes[si2];
-          var count = shotCounts[st] || 0;
-          if (count <= 0)
-            continue;
-          var label = st === "pierce" ? "BOLA" : st.toUpperCase();
-          addIconBarRow(shotSection, label, getShotIconSrc(st), count, maxShot);
-        }
-      }
       var alienEntries = [];
       if (state.aliensShotByType) {
         alienEntries = Object.keys(state.aliensShotByType).map(function(key2) {
@@ -147640,9 +147930,19 @@
       var powerupSection = addSection("POWERUPS", listTarget, "endStatsCompact");
       var collectedEntries = [];
       var collectedMap = state.powerupsCollectedByType || state.powerupsCollectedByTypeAlt || {};
+      var activatableTypes = {
+        time: true,
+        magnet: true,
+        emp: true,
+        lock: true,
+        autofire: true,
+        scope: true
+      };
       collectedEntries = Object.keys(collectedMap).map(function(type) {
         var count2 = collectedMap[type] || 0;
         if (count2 <= 0)
+          return null;
+        if (activatableTypes[type])
           return null;
         var icon = powerupIcons[type];
         if (!icon && shotIcons && shotIcons[type])
@@ -147757,6 +148057,9 @@
     if (endScoresPanel) {
       endScoresPanel.classList.add("endStatsHidden");
     }
+    if (endStatsWrap) {
+      endStatsWrap.classList.remove("endStatsHidden");
+    }
     if (btnHighScoresToggle) {
       btnHighScoresToggle.textContent = "SHOW SCORES";
       btnHighScoresToggle.onclick = function() {
@@ -147764,6 +148067,9 @@
           return;
         var hidden = endScoresPanel.classList.contains("endStatsHidden");
         endScoresPanel.classList.toggle("endStatsHidden", !hidden);
+        if (endStatsWrap) {
+          endStatsWrap.classList.toggle("endStatsHidden", hidden);
+        }
         btnHighScoresToggle.textContent = hidden ? "HIDE SCORES" : "SHOW SCORES";
         if (hidden) {
           renderHighScores(lifetime, modeInfo.key, modeInfo);
@@ -148248,7 +148554,8 @@
     }
     player.cooldown = Math.max(0, player.cooldown - dtReal2);
     if (player.autoFireActive && player.autoFireAmmo > 0) {
-      if (keys.has(" ") || keys.has("spacebar")) {
+      var shootHeld = keys.has(keyBindings.shoot) || pointerDown;
+      if (shootHeld) {
         if (!player.autoFireSpinning) {
           player.autoFireSpinning = true;
           player.autoFireSpinTimer = 0.8;
@@ -148308,6 +148615,15 @@
     player.hitFlash = Math.max(0, player.hitFlash - dtReal2 * 3.6);
     player.shipShake = Math.max(0, (player.shipShake || 0) - dtReal2 * 3.2);
     state.collisionSlow = Math.max(0, (state.collisionSlow || 0) - dtReal2);
+    if (player.overflightTimer > 0) {
+      player.overflightTimer = Math.max(0, player.overflightTimer - dtReal2);
+    }
+    if (player.phaseTimer > 0) {
+      player.phaseTimer = Math.max(0, player.phaseTimer - dtReal2);
+    }
+    if (player.compassTimer > 0) {
+      player.compassTimer = Math.max(0, player.compassTimer - dtReal2);
+    }
     if (player.teleportHide > 0) {
       player.teleportHide = Math.max(0, player.teleportHide - dtReal2);
     }
@@ -148409,9 +148725,9 @@
         }
       }
     }
-    if (keys.has("f") && !isStampedeMode())
+    if (keys.has(keyBindings.secondary) && !isStampedeMode())
       secondaryFire();
-    if (keys.has("q"))
+    if (keys.has(keyBindings.special))
       shockwave();
     if (state.flaresActive) {
       state.flaresTimer = Math.max(0, state.flaresTimer - dtReal2);
@@ -149331,6 +149647,13 @@
       var dxC = al2.x - player.x;
       var dyC = al2.y - (player.y - 4);
       if (dxC * dxC + dyC * dyC < (al2.r + 18) * (al2.r + 18)) {
+        if (player.phaseTimer > 0) {
+          alienBullets.splice(ab, 1);
+          continue;
+        }
+        if (player.phaseTimer > 0) {
+          continue;
+        }
         if (player.invuln <= 0) {
           clearScopeOnHit();
           registerShotTypeHit(2, true);
@@ -149377,7 +149700,12 @@
             if (player.hull <= 0 && tutorialActive) {
               player.hull = Math.max(player.hull, 0.12);
               syncHud();
-              triggerTutorialRecovery("HULL CRITICAL");
+              if (!tutorialHullRecoveryShown) {
+                triggerTutorialRecovery("HULL CRITICAL");
+              } else {
+                player.invuln = Math.max(player.invuln, 1.2);
+                showToast("HULL CRITICAL");
+              }
               return;
             }
             if (consumeShipLife("OUT OF LIVES (ALIEN COLLISION)"))
@@ -149526,7 +149854,12 @@
             if (player.hull <= 0 && tutorialActive) {
               player.hull = Math.max(player.hull, 0.12);
               syncHud();
-              triggerTutorialRecovery("HULL CRITICAL");
+              if (!tutorialHullRecoveryShown) {
+                triggerTutorialRecovery("HULL CRITICAL");
+              } else {
+                player.invuln = Math.max(player.invuln, 1.2);
+                showToast("HULL CRITICAL");
+              }
               return;
             }
             if (consumeShipLife("OUT OF LIVES (ALIEN SHOT)"))
@@ -150169,9 +150502,9 @@
       var shockMax = profile.shockwaveCooldown || 3.5;
       var dashFrac = clamp(1 - dashLeft / dashMax, 0, 1);
       var shockFrac = clamp(1 - shockLeft / shockMax, 0, 1);
-      var radius = 20;
-      var gap = 30;
-      var rightMargin = 24;
+      var radius = 30;
+      var gap = 40;
+      var rightMargin = 30;
       var rightX = w - rightMargin - radius;
       var leftX = rightX - (radius * 2 + gap);
       var cy = view.hudH + radius + 8;
@@ -150604,7 +150937,10 @@
     var entries = [];
     var mode = player.blasterMode || "single";
     if (mode !== "single" && player.blasterHitsRemaining > 0) {
-      entries.push({ type: mode, group: "offense", charges: player.blasterHitsRemaining });
+      var shotCharges = player.blasterHitsRemaining;
+      if (shotCharges >= 9999)
+        shotCharges = null;
+      entries.push({ type: mode, group: "offense", charges: shotCharges });
     }
     if (player.defenseMode && player.defenseMode !== "none") {
       if (player.defenseMode === "armor" ? player.armorBlocksRemaining > 0 : player.defenseTimer > 0) {
@@ -150640,11 +150976,11 @@
     }
     if (!entries.length)
       return;
-    var iconSize = Math.max(38, radius * 1.7);
-    var pad = 10;
+    var iconSize = Math.max(56, radius * 1.9);
+    var pad = 12;
     var boxSize = iconSize + pad;
-    var gap = 10;
-    var rightMargin = 28;
+    var gap = 14;
+    var rightMargin = 30;
     var x = w - rightMargin - boxSize;
     var startY = cy + radius + 34;
     if (player.secondaryMode === "time" && player.secondaryCharges > 0) {
@@ -150688,7 +151024,7 @@
         ctx.textAlign = "right";
         ctx.textBaseline = "bottom";
         ctx.fillText(String(player.autoFireAmmo || 0), x + boxSize - 6, y + boxSize - 4);
-      } else if (entry.charges != null && entry.charges > 1) {
+      } else if (entry.charges != null && entry.charges > 1 && entry.charges < 9999) {
         ctx.fillStyle = "rgba(232,236,255,.9)";
         ctx.font = "700 11px Oxanium, sans-serif";
         ctx.textAlign = "right";
@@ -150981,7 +151317,7 @@
     var hitsRule = "";
     if (modeName.indexOf("Digit Hunt") !== -1) {
       detail = "Shoot the digits in the correct order to complete the answer. Avoid decoys.";
-      hitsRule = "Each digit asteroid takes 1 hit, in order.";
+      hitsRule = "Each digit asteroid takes hits equal to its digit, in order.";
     } else if (modeName.indexOf("Partial Sums") !== -1) {
       detail = "Find the missing addend that completes the sum. Avoid decoys.";
       hitsRule = "Correct addend asteroids take hits equal to the largest digit in the answer.";
@@ -151809,7 +152145,11 @@
     var shake = baseShake + collisionShake;
     var sx = shake ? Math.sin(performance.now() * 0.05) * shake : 0;
     var sy = shake ? Math.cos(performance.now() * 0.045) * shake : 0;
-    renderShip(player.x + sx, player.y + sy, fadeAlpha, false);
+    var overScale = player.overflightTimer > 0 ? 1.18 : 1;
+    renderShip(player.x + sx, player.y + sy, fadeAlpha, false, void 0, void 0, null, overScale);
+    if (player.compassTimer > 0) {
+      drawCompassArrow();
+    }
   }
   function drawPilotShip(pilot) {
     if (!pilot || pilot.hidden)
@@ -151986,6 +152326,9 @@
     if (dist >= a.r + 16)
       return false;
     if (!force && player.invuln > 0) {
+      return false;
+    }
+    if (player.phaseTimer > 0 || player.overflightTimer > 0) {
       return false;
     }
     if (isStampedeMode() && a.isCorrect && a.waveId === state.waveId) {
@@ -152943,19 +153286,19 @@
         }
       };
       ctx.save();
-      ctx.globalAlpha = baseAlpha * 0.95;
+      ctx.globalAlpha = baseAlpha;
       ctx.shadowBlur = 0;
       ctx.shadowColor = "rgba(0,0,0,0)";
-      ctx.strokeStyle = "rgba(255,255,255,.95)";
-      ctx.lineWidth = 4.6;
+      ctx.strokeStyle = "rgba(245,250,255,1)";
+      ctx.lineWidth = 8.4;
       drawArmorStroke();
       ctx.restore();
       ctx.save();
-      ctx.globalAlpha = baseAlpha * 0.95;
-      ctx.shadowColor = "rgba(215,235,255,1)";
-      ctx.shadowBlur = 70;
-      ctx.strokeStyle = "rgba(225,235,250,.98)";
-      ctx.lineWidth = 7.2;
+      ctx.globalAlpha = baseAlpha;
+      ctx.shadowColor = "rgba(225,245,255,1)";
+      ctx.shadowBlur = 120;
+      ctx.strokeStyle = "rgba(235,245,255,1)";
+      ctx.lineWidth = 12.5;
       drawArmorStroke();
       ctx.restore();
       ctx.restore();
@@ -153464,6 +153807,61 @@
       setMousepadAutoStart(toggleMousepadAuto.checked);
     });
   }
+  function getCompassTarget() {
+    if (state.correctAsteroidId) {
+      for (var i = 0; i < asteroids.length; i++) {
+        var a = asteroids[i];
+        if (a.id === state.correctAsteroidId)
+          return a;
+      }
+    }
+    for (var j = 0; j < asteroids.length; j++) {
+      var a2 = asteroids[j];
+      if (a2.isCorrect && a2.waveId === state.waveId)
+        return a2;
+    }
+    return null;
+  }
+  function drawCompassArrow() {
+    if (player.hidden)
+      return;
+    var target = getCompassTarget();
+    if (!target)
+      return;
+    var dx = target.x - player.x;
+    var dy = target.y - player.y;
+    var ang = Math.atan2(dy, dx);
+    var baseX = player.x;
+    var baseY = player.y + 28;
+    var len = 18;
+    ctx.save();
+    ctx.globalAlpha = 0.85;
+    ctx.translate(baseX, baseY);
+    ctx.rotate(ang);
+    ctx.fillStyle = "rgba(0,229,255,.9)";
+    ctx.strokeStyle = "rgba(0,0,0,.35)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(len, 0);
+    ctx.lineTo(-8, -6);
+    ctx.lineTo(-8, 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+  if (keybindButtons && keybindButtons.length) {
+    keybindButtons.forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        var action = btn.getAttribute("data-bind");
+        if (!action)
+          return;
+        keybindCapture = action;
+        updateKeybindButtons();
+        showToast("PRESS A KEY TO BIND");
+      });
+    });
+  }
   if (btnResume) {
     btnResume.addEventListener("click", function() {
       playSfx(state, "menu_beep");
@@ -153911,7 +154309,7 @@
     }
     sandboxPanel = document.createElement("div");
     sandboxPanel.className = "sandboxPanel";
-    sandboxPanel.innerHTML = "<div class='sandboxHeader'><h4>Sandbox</h4><button class='sandboxToggle' id='sandboxToggle' type='button'>Hide</button></div><div class='sandboxBody'><div class='sandboxGroup'><div class='sandboxButtons' id='sandboxActions'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Two Pilots</div><div class='sandboxButtons' id='sandboxMultiplayer'></div><div class='sandboxButtons' id='sandboxMultiplayerMode'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Shot Types</div><div class='sandboxButtons' id='sandboxShots'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Defense</div><div class='sandboxButtons' id='sandboxDefense'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Secondary</div><div class='sandboxButtons' id='sandboxSecondary'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Ships</div><div class='sandboxButtons' id='sandboxShips'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Clusters</div><div class='sandboxButtons' id='sandboxBelts'></div></div></div>";
+    sandboxPanel.innerHTML = "<div class='sandboxHeader'><h4>Sandbox</h4><button class='sandboxToggle' id='sandboxToggle' type='button'>Hide</button></div><div class='sandboxBody'><div class='sandboxGroup'><div class='sandboxButtons' id='sandboxActions'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Two Pilots</div><div class='sandboxButtons' id='sandboxMultiplayer'></div><div class='sandboxButtons' id='sandboxMultiplayerMode'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Operations</div><div class='sandboxButtons' id='sandboxOperations'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Modes: Multiplication</div><div class='sandboxButtons' id='sandboxModesMul'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Modes: Addition</div><div class='sandboxButtons' id='sandboxModesAdd'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Modes: Squares</div><div class='sandboxButtons' id='sandboxModesSquare'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Modes: Rationals</div><div class='sandboxButtons' id='sandboxModesRational'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Shot Types</div><div class='sandboxButtons' id='sandboxShots'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Defense</div><div class='sandboxButtons' id='sandboxDefense'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Secondary</div><div class='sandboxButtons' id='sandboxSecondary'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Ships</div><div class='sandboxButtons' id='sandboxShips'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Clusters</div><div class='sandboxButtons' id='sandboxBelts'></div></div></div>";
     document.body.appendChild(sandboxPanel);
     var sandboxToggleBtn = sandboxPanel.querySelector("#sandboxToggle");
     if (sandboxToggleBtn) {
@@ -154082,6 +154480,104 @@
         showToast("MODE -> SPLIT ARENA");
       });
     }
+    function setSandboxQuestionMode(mode, operation) {
+      if (inputs.questionMode)
+        inputs.questionMode.value = mode;
+      state.questionMode = mode;
+      if (operation) {
+        state.operation = operation;
+      } else {
+        var modeLabel = String(mode || "");
+        if (modeLabel.indexOf("add_") === 0)
+          state.operation = "add";
+        else if (modeLabel.indexOf("square_") === 0)
+          state.operation = "square";
+        else if (modeLabel.indexOf("rational_") === 0)
+          state.operation = "rational";
+        else
+          state.operation = "mul";
+      }
+      applySettings();
+      resetSession();
+      var info = describeQuestionMode(mode);
+      showToast("MODE -> " + info.operation.toUpperCase() + " / " + info.modeLabel.toUpperCase());
+    }
+    function setSandboxOperation(op) {
+      var fallback = "classic";
+      if (op === "add")
+        fallback = "add_classic2";
+      else if (op === "square")
+        fallback = "square_shoot";
+      else if (op === "rational")
+        fallback = "rational_frac";
+      setSandboxQuestionMode(fallback, op);
+    }
+    var opContainer = sandboxPanel.querySelector("#sandboxOperations");
+    var modeMulContainer = sandboxPanel.querySelector("#sandboxModesMul");
+    var modeAddContainer = sandboxPanel.querySelector("#sandboxModesAdd");
+    var modeSquareContainer = sandboxPanel.querySelector("#sandboxModesSquare");
+    var modeRationalContainer = sandboxPanel.querySelector("#sandboxModesRational");
+    var opButtons = [];
+    if (opContainer) {
+      [
+        { id: "mul", label: "Multiplication" },
+        { id: "add", label: "Addition" },
+        { id: "square", label: "Squares" },
+        { id: "rational", label: "Rationals" }
+      ].forEach(function(info) {
+        var btn = addButton(opContainer, info.label, function() {
+          setSandboxOperation(info.id);
+          for (var i = 0; i < opButtons.length; i++) {
+            updateSandboxToggle(opButtons[i].btn, opButtons[i].id === state.operation);
+          }
+        });
+        opButtons.push({ id: info.id, btn });
+      });
+    }
+    function bindModeButtons(container, entries) {
+      if (!container)
+        return [];
+      var list = [];
+      entries.forEach(function(entry) {
+        var btn = addButton(container, entry.label, function() {
+          setSandboxQuestionMode(entry.mode, entry.operation);
+          for (var i = 0; i < list.length; i++) {
+            updateSandboxToggle(list[i].btn, list[i].mode === state.questionMode);
+          }
+        });
+        list.push({ mode: entry.mode, btn });
+      });
+      return list;
+    }
+    var modeButtons = [].concat(bindModeButtons(modeMulContainer, [
+      { mode: "classic", label: "Classic 1x1", operation: "mul" },
+      { mode: "classic2", label: "Classic 1x2", operation: "mul" },
+      { mode: "classic3", label: "Classic 1x3", operation: "mul" },
+      { mode: "digits2", label: "Digit Hunt 1x2", operation: "mul" },
+      { mode: "digits3", label: "Digit Hunt 1x3", operation: "mul" },
+      { mode: "factor2", label: "Factor Hunt 1x2", operation: "mul" },
+      { mode: "factor3", label: "Factor Hunt 1x3", operation: "mul" },
+      { mode: "stampede2", label: "Stampede 1x2", operation: "mul" },
+      { mode: "stampede3", label: "Stampede 1x3", operation: "mul" },
+      { mode: "divisors", label: "Divisors", operation: "mul" }
+    ])).concat(bindModeButtons(modeAddContainer, [
+      { mode: "add_classic2", label: "Classic 1x2", operation: "add" },
+      { mode: "add_classic3", label: "Classic 1x3", operation: "add" },
+      { mode: "add_digits2", label: "Digit Hunt 1x2", operation: "add" },
+      { mode: "add_digits3", label: "Digit Hunt 1x3", operation: "add" },
+      { mode: "add_factor2", label: "Partial Sums 1x2", operation: "add" },
+      { mode: "add_factor3", label: "Partial Sums 1x3", operation: "add" },
+      { mode: "add_series3", label: "Series 3-term", operation: "add" },
+      { mode: "add_series4", label: "Series 4-term", operation: "add" },
+      { mode: "add_stampede2", label: "Stampede 1x2", operation: "add" },
+      { mode: "add_stampede3", label: "Stampede 1x3", operation: "add" }
+    ])).concat(bindModeButtons(modeSquareContainer, [
+      { mode: "square_shoot", label: "Perfect Squares", operation: "square" },
+      { mode: "square_root", label: "Square Roots", operation: "square" }
+    ])).concat(bindModeButtons(modeRationalContainer, [
+      { mode: "rational_frac", label: "Target Fraction", operation: "rational" },
+      { mode: "rational_dec", label: "Target Decimal", operation: "rational" }
+    ]));
     var shotContainer = sandboxPanel.querySelector("#sandboxShots");
     ["single", "laser", "fire", "ice", "electric", "pierce", "plasma", "rail", "missile"].forEach(function(type) {
       addButton(shotContainer, type, function() {
@@ -154115,7 +154611,9 @@
       { id: "bu2x", label: "BU2X" },
       { id: "mantas", label: "Mantas" },
       { id: "cyan", label: "Cyan V7" },
-      { id: "veloz", label: "Veloz" }
+      { id: "veloz", label: "Veloz" },
+      { id: "verde9", label: "VER-DE-9" },
+      { id: "whiteflame8", label: "White Flame 8" }
     ].forEach(function(info) {
       var btn = addButton(shipContainer, info.label, function() {
         setSandboxShip(info.id);
@@ -154159,6 +154657,12 @@
     }
     sandboxMultiplayer.enabled = state.sandboxTwoPilots;
     sandboxMultiplayer.mode = state.sandboxTwoPilotsMode;
+    for (var ob = 0; ob < opButtons.length; ob++) {
+      updateSandboxToggle(opButtons[ob].btn, opButtons[ob].id === state.operation);
+    }
+    for (var mb = 0; mb < modeButtons.length; mb++) {
+      updateSandboxToggle(modeButtons[mb].btn, modeButtons[mb].mode === state.questionMode);
+    }
     for (var sb = 0; sb < shipButtons.length; sb++) {
       updateSandboxToggle(shipButtons[sb].btn, shipButtons[sb].id === player.shipType);
     }
@@ -154200,6 +154704,7 @@
         tutorialPowerupUnlocked = false;
         tutorialAlienUnlocked = false;
         tutorialAlienDelayRemaining = 0;
+        tutorialHullRecoveryShown = false;
         tutorialPortalActive = false;
         tutorialPortalT = 0;
         tutorialPortalLock = false;

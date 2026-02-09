@@ -354,7 +354,19 @@
       box-shadow: 0 30px 80px rgba(0,0,0,.6);
     }
     .briefingShipRow{
-      display:block;
+display:flex;
+      align-items:center;
+      gap:16px;
+    }
+    .briefingShipCard{
+      width:120px;
+      height:120px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(8,12,22,.6);
+      object-fit: contain;
+      padding:10px;
+      box-shadow: inset 0 0 24px rgba(0,0,0,.35);
     }
 
     .briefingStatus{
@@ -1045,17 +1057,26 @@
       justify-content:center;
       letter-spacing:0.12em;
     }
-    .shotTypeGrid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
-      gap:14px;
+    .shotTypeCarousel{
+      --shot-card: 260px;
+      --shot-gap: 16px;
+      position:relative;
+      overflow:hidden;
+      padding: 10px 6px 6px;
+    }
+    .shotTypeTrack{
+      display:flex;
+      gap: var(--shot-gap);
+      align-items: stretch;
+      transition: transform .35s ease;
+      will-change: transform;
     }
     .shotTypeOption{
       display:flex;
       flex-direction:column;
       align-items:flex-start;
       gap:10px;
-      padding:16px;
+      padding:18px;
       background:rgba(8,12,22,.7);
       border:1px solid rgba(255,255,255,.08);
       border-radius:16px;
@@ -1063,6 +1084,9 @@
       text-align:left;
       cursor:pointer;
       transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+      position:relative;
+      min-width: var(--shot-card);
+      min-height: 190px;
     }
     .shotTypeOption:hover{
       border-color: rgba(0,229,255,.45);
@@ -1072,10 +1096,23 @@
       border-color: rgba(0,229,255,.8);
       box-shadow: 0 0 0 1px rgba(0,229,255,.35), 0 16px 30px rgba(0,0,0,.35);
     }
+    .shotTypeOption.locked{
+      opacity:0.55;
+      cursor:pointer;
+    }
+    .shotTypeOption.locked .shotTypeIcon img{
+      filter: grayscale(0.6) contrast(0.9);
+    }
+    .shotTypeCost{
+      position:absolute;
+      top:12px;
+      right:12px;
+      font-size:10px;
+    }
     .shotTypeIcon{
-      width:68px;
-      height:68px;
-      border-radius:14px;
+      width:92px;
+      height:92px;
+      border-radius:20px;
       background:rgba(0,0,0,.45);
       border:1px solid rgba(255,255,255,.1);
       display:flex;
@@ -1083,8 +1120,8 @@
       justify-content:center;
     }
     .shotTypeIcon img{
-      width:44px;
-      height:44px;
+      width:62px;
+      height:62px;
       object-fit:contain;
       filter: drop-shadow(0 0 10px rgba(0,0,0,.5));
     }
@@ -1852,6 +1889,52 @@
                     <div class="shipLabel">VELOZ MAS</div>
                   </div>
                 </label>
+                <label class="shipOption locked" data-ship="verde9" data-locked="true" style="--ship-body: rgba(90,255,170,.9); --ship-wing: rgba(40,200,130,.9); --ship-canopy: rgba(140,255,220,.9); --ship-accent: rgba(255,230,120,.95); --ship-highlight: rgba(120,255,200,.9); --ship-thruster: rgba(20,26,30,.85); --ship-flame: rgba(120,255,210,.85); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="verde9" disabled />
+                  <div class="shipCard">
+                    <div class="shipLockTag costTag">2200</div>
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="98,80 54,110 40,136 58,146 118,130 88,104" />
+                      <polygon class="shipWing" points="122,80 166,110 180,136 162,146 102,130 132,104" />
+                      <polygon class="shipBody" points="110,6 144,50 180,84 172,124 146,146 136,172 84,172 74,146 48,124 40,84 76,50" />
+                      <polygon class="shipBody" points="110,18 126,60 122,150 110,174 98,150 94,60" />
+                      <rect class="shipStripe" x="58" y="92" width="104" height="6" rx="3" />
+                      <rect class="shipStripe" x="72" y="70" width="76" height="5" rx="3" />
+                      <polygon class="shipAccent" points="110,4 126,30 94,30" />
+                      <path class="shipCanopy" d="M94,52 Q110,34 126,52 L132,102 Q110,120 88,102 Z" />
+                      <circle class="shipIcon" cx="110" cy="136" r="7" />
+                      <rect class="shipThruster" x="86" y="166" width="48" height="10" rx="4" />
+                      <circle class="shipThruster" cx="94" cy="172" r="9" />
+                      <circle class="shipThruster" cx="126" cy="172" r="9" />
+                      <polygon class="shipFlame" points="94,182 102,196 86,196" />
+                      <polygon class="shipFlame" points="126,182 134,196 118,196" />
+                    </svg>
+                    <div class="shipLabel">VER-DE-9</div>
+                  </div>
+                </label>
+                <label class="shipOption locked" data-ship="whiteflame8" data-locked="true" style="--ship-body: rgba(245,245,255,.92); --ship-wing: rgba(210,210,230,.9); --ship-canopy: rgba(200,240,255,.9); --ship-accent: rgba(255,200,120,.95); --ship-highlight: rgba(255,255,255,.9); --ship-thruster: rgba(24,26,36,.85); --ship-flame: rgba(255,240,200,.9); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="whiteflame8" disabled />
+                  <div class="shipCard">
+                    <div class="shipLockTag costTag">2600</div>
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="100,94 46,122 18,162 50,172 118,150 92,118" />
+                      <polygon class="shipWing" points="120,94 174,122 202,162 170,172 100,150 128,118" />
+                      <polygon class="shipBody" points="110,10 140,54 170,90 164,128 140,150 132,172 88,172 80,150 56,128 50,90 80,54" />
+                      <polygon class="shipBody" points="110,20 124,64 120,150 110,170 100,150 96,64" />
+                      <rect class="shipStripe" x="62" y="98" width="96" height="6" rx="3" />
+                      <rect class="shipStripe" x="76" y="76" width="68" height="5" rx="3" />
+                      <polygon class="shipAccent" points="110,8 124,30 96,30" />
+                      <path class="shipCanopy" d="M96,54 Q110,38 124,54 L130,102 Q110,120 90,102 Z" />
+                      <rect class="shipIcon" x="105" y="122" width="10" height="16" rx="2" />
+                      <rect class="shipThruster" x="86" y="168" width="48" height="10" rx="4" />
+                      <circle class="shipThruster" cx="94" cy="174" r="9" />
+                      <circle class="shipThruster" cx="126" cy="174" r="9" />
+                      <polygon class="shipFlame" points="94,184 102,198 86,198" />
+                      <polygon class="shipFlame" points="126,184 134,198 118,198" />
+                    </svg>
+                    <div class="shipLabel">WHITE FLAME 8</div>
+                  </div>
+                </label>
               </div>
               </div>
               <div class="shipDetails" aria-live="polite">
@@ -1916,10 +1999,10 @@
           <h3>Flight</h3>
           <ul class="list">
             <li><span>Move</span><b>W A S D / Arrow Keys</b></li>
-            <li><span>Fire</span><b>E</b></li>
-            <li><span>Secondary</span><b>F</b></li>
+            <li><span>Fire</span><b>Space / Click</b></li>
+            <li><span>Secondary</span><b>E</b></li>
             <li><span>Special</span><b>Q</b></li>
-            <li><span>Dash</span><b>Space</b></li>
+            <li><span>Dash</span><b>Shift</b></li>
             <li><span>Pause</span><b>P</b></li>
             <li><span>Mousepad</span><b>B</b></li>
             <li><span>Restart</span><b>R</b></li>
@@ -1943,7 +2026,8 @@
         <button id="btnCloseShotType" class="btn">Close</button>
       </div>
       <div class="cardBody">
-        <div class="shotTypeGrid" id="shotTypeGrid">
+        <div class="shotTypeCarousel" id="shotTypeCarousel">
+          <div class="shotTypeTrack" id="shotTypeTrack">
           <button type="button" class="shotTypeOption" data-shot="single">
             <div class="shotTypeIcon"><img src="images/bullets/bullet_single.png" alt="" /></div>
             <div class="shotTypeLabel">Single</div>
@@ -1954,6 +2038,52 @@
             <div class="shotTypeLabel">Laser</div>
             <div class="shotTypeDesc">Fast burst beam shots.</div>
           </button>
+          <button type="button" class="shotTypeOption locked" data-shot="fire" data-locked="true">
+            <div class="shotTypeCost costTag">450</div>
+            <div class="shotTypeIcon"><img src="images/shots/shot_fire.png" alt="" /></div>
+            <div class="shotTypeLabel">Fire</div>
+            <div class="shotTypeDesc">Fireball shots for about 12 seconds.</div>
+          </button>
+          <button type="button" class="shotTypeOption locked" data-shot="ice" data-locked="true">
+            <div class="shotTypeCost costTag">450</div>
+            <div class="shotTypeIcon"><img src="images/shots/shot_ice.png" alt="" /></div>
+            <div class="shotTypeLabel">Ice</div>
+            <div class="shotTypeDesc">Ice shards for about 12 seconds.</div>
+          </button>
+          <button type="button" class="shotTypeOption locked" data-shot="electric" data-locked="true">
+            <div class="shotTypeCost costTag">550</div>
+            <div class="shotTypeIcon"><img src="images/shots/shot_electric.png" alt="" /></div>
+            <div class="shotTypeLabel">Electric</div>
+            <div class="shotTypeDesc">Electric bolts for about 12 seconds.</div>
+          </button>
+          <button type="button" class="shotTypeOption locked" data-shot="pierce" data-locked="true">
+            <div class="shotTypeCost costTag">600</div>
+            <div class="shotTypeIcon"><img src="images/shots/shot_lookup.png" alt="" /></div>
+            <div class="shotTypeLabel">Bola</div>
+            <div class="shotTypeDesc">Piercing shots for about 12 seconds.</div>
+          </button>
+          <button type="button" class="shotTypeOption locked" data-shot="plasma" data-locked="true">
+            <div class="shotTypeCost costTag">700</div>
+            <div class="shotTypeIcon"><img src="images/shots/shot_plasma.png" alt="" /></div>
+            <div class="shotTypeLabel">Plasma</div>
+            <div class="shotTypeDesc">Plasma shots for about 12 seconds.</div>
+          </button>
+          <button type="button" class="shotTypeOption locked" data-shot="rail" data-locked="true">
+            <div class="shotTypeCost costTag">800</div>
+            <div class="shotTypeIcon"><img src="images/shots/shot_rail.png" alt="" /></div>
+            <div class="shotTypeLabel">Rail</div>
+            <div class="shotTypeDesc">Rail beam shots for about 12 seconds.</div>
+          </button>
+          <button type="button" class="shotTypeOption locked" data-shot="missile" data-locked="true">
+            <div class="shotTypeCost costTag">900</div>
+            <div class="shotTypeIcon"><img src="images/shots/shot_missile.png" alt="" /></div>
+            <div class="shotTypeLabel">Missile</div>
+            <div class="shotTypeDesc">Type the correct answer to launch a seeking missile.</div>
+          </button>
+          </div>
+        </div>
+        <div class="row" style="margin-top:12px;">
+          <button id="btnUseShotType" class="btn" type="button">USE SHOT</button>
         </div>
       </div>
     </div>
@@ -2037,14 +2167,14 @@
 
           <div class="panel settingsPanel" data-settings-panel="controls">
             <h3>Controls</h3>
-            <div class="settingsCommands">
-              <div class="kbd">MOVE: <b>WASD</b> OR <b>ARROWS</b></div>
-              <div class="kbd">FIRE: <b>E</b></div>
-              <div class="kbd">SECONDARY: <b>F</b></div>
-              <div class="kbd">SPECIAL: <b>Q</b></div>
-              <div class="kbd">DASH: <b>SPACE</b></div>
-              <div class="kbd">PAUSE: <b>P</b> <b>|</b> MENU: <b>M</b></div>
-            </div>
+              <div class="settingsCommands">
+                <div class="kbd">MOVE: <b>WASD</b> OR <b>ARROWS</b></div>
+                <div class="kbd">FIRE: <b>SPACE</b> OR <b>CLICK</b></div>
+                <div class="kbd">SECONDARY: <b>E</b></div>
+                <div class="kbd">SPECIAL: <b>Q</b></div>
+                <div class="kbd">DASH: <b>SHIFT</b></div>
+                <div class="kbd">PAUSE: <b>P</b> <b>|</b> MENU: <b>M</b></div>
+              </div>
             <label class="toggleRow">
               <span>Auto-enable Mousepad (B) on mission start</span>
               <input id="toggleMousepadAutoHome" type="checkbox" />
@@ -2158,6 +2288,7 @@
         </div>
       <div class="panel" style="margin-top:10px;">
         <div class="briefingShipRow">
+          <img class="briefingShipCard" id="briefingShipCard" src="images/ships/Crimson%20MK-7.png" alt="" />
           <div class="briefingShipMeta">
             <h3 id="briefingShip">Ship: �?"</h3>
             <p class="monoSmall" id="briefingMode" style="margin:0;">Mode: �?"</p>
@@ -2168,10 +2299,6 @@
         </div>
       </div>
       <div class="briefingGrid">
-        <div class="briefingStat"><span>A Range</span><b id="briefingARange">—</b></div>
-        <div class="briefingStat"><span>B Range</span><b id="briefingBRange">—</b></div>
-        <div class="briefingStat"><span>Decoys</span><b id="briefingDecoys">—</b></div>
-        <div class="briefingStat"><span>Asteroid Speed</span><b id="briefingSpeed">—</b></div>
         <div class="briefingStat"><span>Lives</span><b id="briefingLives">—</b></div>
         <div class="briefingStat"><span>Strikes</span><b id="briefingStrikes">—</b></div>
         <div class="briefingStat"><span>Targeted Asteroids</span><b id="briefingTargeted">—</b></div>
@@ -2981,7 +3108,9 @@
       { id: "bu2x", label: "BU2X", icon: "images/ships/BU2X.png", desc: "Experimental frame awaiting unlock clearance." },
       { id: "mantas", label: "Mantas Arc-5", icon: "images/ships/Mantas%20-%20Arc%205.png", desc: "Advanced sweep-frame built for high-speed slalom." },
       { id: "cyan", label: "Cyan Vector 7", icon: "images/ships/Cyan%20Vector%207.png", desc: "High-precision vector craft with balanced handling." },
-      { id: "veloz", label: "Veloz Mas", icon: "images/ships/Veloz%20Mas.png", desc: "Aggressive chase frame tuned for offensive runs." }
+      { id: "veloz", label: "Veloz Mas", icon: "images/ships/Veloz%20Mas.png", desc: "Aggressive chase frame tuned for offensive runs." },
+      { id: "verde9", label: "VER-DE-9", icon: "images/ships/VER-DE-9.png", desc: "Emerald vanguard frame with reinforced lanes and steady recoil control." },
+      { id: "whiteflame8", label: "White Flame 8", icon: "images/ships/White%20Flame%208.png", desc: "Lumen spear chassis with a bright exhaust signature and clean lines." }
     ];
 
     var homeSfxCatalog = [
@@ -3303,7 +3432,9 @@
       azure: "images/ships/Azure%20Lancer.png",
       mantas: "images/ships/Mantas%20-%20Arc%205.png",
       cyan: "images/ships/Cyan%20Vector%207.png",
-      veloz: "images/ships/Veloz%20Mas.png"
+      veloz: "images/ships/Veloz%20Mas.png",
+      verde9: "images/ships/VER-DE-9.png",
+      whiteflame8: "images/ships/White%20Flame%208.png"
     };
     shipOptions.forEach(function(option){
       var key = option.getAttribute("data-ship") || "";
@@ -3335,14 +3466,24 @@
     var shipStatSpecialCard = document.getElementById("shipStatSpecialCard");
     var shotTypeInput = document.getElementById("shotType");
     var btnShotType = document.getElementById("btnShotType");
+    var btnUseShotType = document.getElementById("btnUseShotType");
     var shotTypeOverlay = document.getElementById("shotTypeOverlay");
+    var shotTypeCarousel = document.getElementById("shotTypeCarousel");
+    var shotTypeTrack = document.getElementById("shotTypeTrack");
     var btnCloseShotType = document.getElementById("btnCloseShotType");
     var shotTypeOptions = Array.prototype.slice.call(document.querySelectorAll(".shotTypeOption"));
     var shipLoadingStart = 0;
     var shipPanel = document.getElementById("shipPanel");
     var shotTypeLabels = {
       single: "Single",
-      laser: "Laser"
+      laser: "Laser",
+      fire: "Fire",
+      ice: "Ice",
+      electric: "Electric",
+      pierce: "Bola",
+      plasma: "Plasma",
+      rail: "Rail",
+      missile: "Missile"
     };
     var shipDetailsMap = {
       mk7: {
@@ -3443,6 +3584,24 @@
         wings: "Angular",
         special: "Shockwave",
         thrusters: "Dual"
+      },
+      verde9: {
+        name: "VER-DE-9",
+        style: "Emerald Vanguard",
+        body: "Reinforced hull with balanced thrust channels and steady recoil control.",
+        flight: "Balanced",
+        wings: "Wide",
+        special: "Shockwave",
+        thrusters: "Dual"
+      },
+      whiteflame8: {
+        name: "White Flame 8",
+        style: "Lumen Spear",
+        body: "High-clarity frame with a clean nose profile and bright exhaust signature.",
+        flight: "Smooth",
+        wings: "Swept",
+        special: "Shockwave",
+        thrusters: "Dual"
       }
     };
     function updateShipCarousel(value){
@@ -3475,20 +3634,55 @@
       if(shipStatThrusters) shipStatThrusters.textContent = details.thrusters;
       updateShipCarousel(value);
     }
+    function isShotTypeLocked(value){
+      var opt = shotTypeOptions.find(function(option){
+        return option.getAttribute("data-shot") === value;
+      });
+      return !!(opt && opt.getAttribute("data-locked") === "true");
+    }
+    var pendingShotType = null;
     function setShotType(value, persist){
       var selected = shotTypeLabels[value] ? value : "single";
+      if(isShotTypeLocked(selected)) selected = "single";
       if(shotTypeInput) shotTypeInput.value = selected;
       if(btnShotType) btnShotType.textContent = "Shot Type: " + (shotTypeLabels[selected] || "Single");
       shotTypeOptions.forEach(function(option){
         option.classList.toggle("selected", option.getAttribute("data-shot") === selected);
       });
+      updateShotTypeCarousel(selected);
       if(persist){
         saved.shotType = selected;
         persistSessionConfig("asteroidConfig", Object.assign({}, saved, { shotType: selected }));
       }
     }
+    function setShotTypePreview(value){
+      var selected = shotTypeLabels[value] ? value : "single";
+      if(isShotTypeLocked(selected)) selected = "single";
+      pendingShotType = selected;
+      shotTypeOptions.forEach(function(option){
+        option.classList.toggle("selected", option.getAttribute("data-shot") === selected);
+      });
+      updateShotTypeCarousel(selected);
+    }
+    function updateShotTypeCarousel(selected){
+      if(!shotTypeCarousel || !shotTypeTrack) return;
+      var index = shotTypeOptions.findIndex(function(option){
+        return option.getAttribute("data-shot") === selected;
+      });
+      if(index < 0) index = 0;
+      var styles = getComputedStyle(shotTypeCarousel);
+      var cardW = parseFloat(styles.getPropertyValue("--shot-card")) || 300;
+      var gap = parseFloat(styles.getPropertyValue("--shot-gap")) || 16;
+      var total = cardW + gap;
+      var center = (shotTypeCarousel.clientWidth - cardW) / 2;
+      var offset = center - (index * total);
+      shotTypeTrack.style.transform = "translateX(" + offset + "px)";
+    }
     function openShotTypeOverlay(){
       if(shotTypeOverlay) shotTypeOverlay.classList.add("show");
+      requestAnimationFrame(function(){
+        setShotTypePreview((shotTypeInput && shotTypeInput.value) || "single");
+      });
     }
     function closeShotTypeOverlay(){
       if(shotTypeOverlay) shotTypeOverlay.classList.remove("show");
@@ -3528,6 +3722,13 @@
         openShotTypeOverlay();
       });
     }
+    if(btnUseShotType){
+      btnUseShotType.addEventListener("click", function(){
+        playMenuBeep();
+        setShotType(pendingShotType || (shotTypeInput ? shotTypeInput.value : "single"), true);
+        closeShotTypeOverlay();
+      });
+    }
     if(btnCloseShotType){
       btnCloseShotType.addEventListener("click", function(){
         playMenuBeep();
@@ -3542,9 +3743,12 @@
     shotTypeOptions.forEach(function(option){
       option.addEventListener("click", function(){
         var choice = option.getAttribute("data-shot") || "single";
+        if(option.getAttribute("data-locked") === "true"){
+          showToast("SHOT TYPE LOCKED");
+          return;
+        }
         playMenuBeep();
-        setShotType(choice, true);
-        closeShotTypeOverlay();
+        setShotTypePreview(choice);
       });
     });
     if(shipStatSpecialCard){
@@ -3560,6 +3764,7 @@
     window.addEventListener("resize", function(){
       var selected = (document.querySelector('input[name=\"ship\"]:checked') || {}).value || "mk7";
       updateShipCarousel(selected);
+      updateShotTypeCarousel((shotTypeInput && shotTypeInput.value) || "single");
     });
     var startBtn = document.getElementById("btnStartGame");
     var btnLaunchHome = document.getElementById("btnLaunchHome");
@@ -3868,6 +4073,12 @@
           var isFactor = card.getAttribute("data-mode") === "factor";
           var isSeries = card.getAttribute("data-mode") === "series";
           var isDivisors = card.getAttribute("data-mode") === "divisors";
+          if(isSeries){
+            card.style.display = (selectedOperation === "add") ? "" : "none";
+          }
+          if(isDivisors){
+            card.style.display = (selectedOperation === "mul") ? "" : "none";
+          }
           card.classList.toggle("disabled", (selectedOperation === "square" || selectedOperation === "rational") && isDigit);
           card.classList.toggle("disabled", isFactor && (selectedOperation === "square" || selectedOperation === "rational"));
           card.classList.toggle("disabled", isSeries && selectedOperation !== "add");
@@ -3956,10 +4167,8 @@
     var briefingDifficulty = document.getElementById("briefingDifficulty");
     var briefingOperation = document.getElementById("briefingOperation");
     var briefingSubmode = document.getElementById("briefingSubmode");
-    var briefingARange = document.getElementById("briefingARange");
-    var briefingBRange = document.getElementById("briefingBRange");
-    var briefingDecoys = document.getElementById("briefingDecoys");
-    var briefingSpeed = document.getElementById("briefingSpeed");
+    var briefingShotType = document.getElementById("briefingShotType");
+    var briefingBelt = document.getElementById("briefingBelt");
     var briefingLives = document.getElementById("briefingLives");
     var briefingStrikes = document.getElementById("briefingStrikes");
     var briefingTargeted = document.getElementById("briefingTargeted");
@@ -3978,6 +4187,26 @@
     ];
     var hintCycleMs = 5200;
     var hintTypeMs = 28;
+
+    function ensureBriefingStat(id, label){
+      var el = document.getElementById(id);
+      if(el) return el;
+      var grid = document.querySelector(".briefingGrid");
+      if(!grid) return null;
+      var stat = document.createElement("div");
+      stat.className = "briefingStat";
+      var span = document.createElement("span");
+      span.textContent = label;
+      var b = document.createElement("b");
+      b.id = id;
+      b.textContent = "\u2014";
+      stat.appendChild(span);
+      stat.appendChild(b);
+      grid.insertBefore(stat, grid.firstChild);
+      return b;
+    }
+    if(!briefingShotType) briefingShotType = ensureBriefingStat("briefingShotType", "Shot Type");
+    if(!briefingBelt) briefingBelt = ensureBriefingStat("briefingBelt", "Cluster");
 
     function shuffleArray(list){
       var arr = list.slice();
@@ -4813,7 +5042,9 @@
         am2: "AM3 Scout",
         mantas: "Mantas Arc-5",
         cyan: "Cyan Vector 7",
-        veloz: "Veloz Mas"
+        veloz: "Veloz Mas",
+        verde9: "VER-DE-9",
+        whiteflame8: "White Flame 8"
       };
       var modeLabel = String(cfg.questionMode || "classic");
       var isAdd = modeLabel.indexOf("add_") === 0;
@@ -5027,9 +5258,31 @@
         am2: "AM3 Scout",
         mantas: "Mantas Arc-5",
         cyan: "Cyan Vector 7",
-        veloz: "Veloz Mas"
+        veloz: "Veloz Mas",
+        verde9: "VER-DE-9",
+        whiteflame8: "White Flame 8"
       };
+      if(briefingShipCard && shipCardImageByShip && shipCardImageByShip[shipKey]){
+        briefingShipCard.src = shipCardImageByShip[shipKey];
+      }
       if(briefingShip) briefingShip.textContent = "Ship: " + (shipNameMap[shipKey] || shipKey.toUpperCase());
+      if(briefingShotType){
+        var shotKey = String(config.shotType || "single");
+        var shotLabel = shotTypeLabels[shotKey] || shotKey;
+        briefingShotType.textContent = shotLabel.toUpperCase();
+      }
+      if(briefingBelt){
+        var beltKey = String(config.belt || selectedBelt || "dusk");
+        var beltLabels = {
+          dusk: "Dusk",
+          ember: "Ember",
+          aurora: "Aurora",
+          rift: "Rift",
+          vega: "Vega",
+          void: "Void"
+        };
+        briefingBelt.textContent = beltLabels[beltKey] || beltKey.toUpperCase();
+      }
       var modeLabel = String(config.questionMode || "classic");
       if(briefingMode){
         var modeMap = {
@@ -5087,10 +5340,6 @@
           }
         }
       }
-      if(briefingARange) briefingARange.textContent = config.aMin + " - " + config.aMax;
-      if(briefingBRange) briefingBRange.textContent = config.bMin + " - " + config.bMax;
-      if(briefingDecoys) briefingDecoys.textContent = String(config.decoys);
-      if(briefingSpeed) briefingSpeed.textContent = String(config.speed);
       if(briefingLives) briefingLives.textContent = String(config.lives);
       if(briefingStrikes) briefingStrikes.textContent = String(config.strikes);
       if(briefingTargeted){

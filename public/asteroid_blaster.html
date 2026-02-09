@@ -122,11 +122,17 @@
                 <h3>Controls</h3>
                 <div class="settingsCommands">
                   <div class="kbd">MOVE: <b>WASD</b> OR <b>ARROWS</b></div>
-                  <div class="kbd">FIRE: <b>E</b></div>
-                  <div class="kbd">SECONDARY: <b>F</b></div>
+                  <div class="kbd">FIRE: <b>SPACE</b> OR <b>CLICK</b></div>
+                  <div class="kbd">SECONDARY: <b>E</b></div>
                   <div class="kbd">SPECIAL: <b>Q</b></div>
-                  <div class="kbd">DASH: <b>SPACE</b></div>
+                  <div class="kbd">DASH: <b>SHIFT</b></div>
                   <div class="kbd">PAUSE: <b>P</b> <b>|</b> MENU: <b>M</b></div>
+                </div>
+                <div class="settingsCommands">
+                  <div class="kbd">REMAP SHOOT: <button type="button" class="btn keyBindBtn" data-bind="shoot">SPACE</button> <span class="monoSmall">+ CLICK</span></div>
+                  <div class="kbd">REMAP SECONDARY: <button type="button" class="btn keyBindBtn" data-bind="secondary">E</button></div>
+                  <div class="kbd">REMAP SPECIAL: <button type="button" class="btn keyBindBtn" data-bind="special">Q</button></div>
+                  <div class="kbd">REMAP DASH: <button type="button" class="btn keyBindBtn" data-bind="dash">SHIFT</button></div>
                 </div>
                 <label class="toggleRow">
                   <span>Auto-enable Mousepad (B) on mission start</span>
@@ -247,10 +253,10 @@
               <h3>Flight</h3>
               <ul class="list">
                 <li><span>Move</span><b>W A S D / Arrow Keys</b></li>
-                <li><span>Fire</span><b>E</b></li>
-                <li><span>Secondary</span><b>F</b></li>
+                <li><span>Fire</span><b>Space / Click</b></li>
+                <li><span>Secondary</span><b>E</b></li>
                 <li><span>Special</span><b>Q</b></li>
-                <li><span>Dash</span><b>Space</b></li>
+                <li><span>Dash</span><b>Shift</b></li>
                 <li><span>Pause</span><b>P</b></li>
                 <li><span>Mousepad</span><b>B</b></li>
                 <li><span>Restart</span><b>R</b></li>
@@ -289,6 +295,8 @@
                     <option value="azure">AZURE LANCER</option>
                     <option value="spire">VERDANT SPIRE</option>
                     <option value="am2">AM2 SCOUT</option>
+                    <option value="verde9">VER-DE-9</option>
+                    <option value="whiteflame8">WHITE FLAME 8</option>
                   </select>
                 </label>
                 <input type="hidden" id="shotType" value="single" />
@@ -392,7 +400,7 @@
               <p class="subtitle" id="endReason">—</p>
             </div>
             <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
-              <div class="kbd">RESTART: <b>R</b> • SETTINGS: <b>M</b> • SECONDARY: <b>F</b> • SPECIAL: <b>Q</b> • DASH: <b>SPACE</b></div>
+              <div class="kbd">RESTART: <b>R</b> • SETTINGS: <b>M</b> • SECONDARY: <b>E</b> • SPECIAL: <b>Q</b> • DASH: <b>SHIFT</b></div>
             </div>
           </div>
 

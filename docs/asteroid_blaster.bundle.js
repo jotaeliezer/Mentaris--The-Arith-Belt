@@ -139904,11 +139904,11 @@
       { id: "move_arrows", title: "Step 1: Flight Controls (Arrows)", body: "Use the Up, Down, Left, and Right arrow keys to guide the ship through dots 1-4 in order.", event: "move_arrows", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Formation clean, cadet.", praiseBody: "Arrow control confirmed. Smooth tracking." },
       { id: "move_wasd", title: "Step 2: Flight Controls (WASD)", body: "Now use W, A, S, and D to guide the ship through the same dots again.", event: "move_wasd", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "WASD verified.", praiseBody: "Sharp handling. You fly like you mean it." },
       { id: "mousepad_hybrid", title: "Step 3: Mousepad", body: "Press B to enable mousepad. Fly to dots 1-4 in order.", event: "mousepad_hybrid", hideDuringAction: true, actionPauseMs: 700 },
-      { id: "fire_once", title: "Step 4: Fire Once", body: "Press E (or click) to fire a single shot.", event: "fire", count: 1 },
-      { id: "fire_again", title: "Step 5: Fire Again", body: "Press E again to fire another shot.", event: "fire", count: 1 },
+      { id: "fire_once", title: "Step 4: Fire Once", body: "Press Space (or click) to fire a single shot.", event: "fire", count: 1 },
+      { id: "fire_again", title: "Step 5: Fire Again", body: "Press Space again to fire another shot.", event: "fire", count: 1 },
       { id: "correct", title: "Step 6: Correct Hit", body: "Hit the asteroid with the correct answer.", event: "correct" },
       { id: "powerup", title: "Step 7: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
-      { id: "dash", title: "Step 8: Dash", body: "Press Space to dash through danger.", event: "dash" },
+      { id: "dash", title: "Step 8: Dash", body: "Press Shift to dash through danger.", event: "dash" },
       { id: "ability", title: "Step 9: Ability", body: "Press Q to use your ship ability.", event: "ability" },
       { id: "secondary_aid", title: "Step 10: Aid Weapon", body: "Press F to trigger your aid weapon (Time Dilation).", event: "secondary" },
       { id: "secondary_slots", title: "Step 11: Aid Slots", body: "You have 3 aid slots on the top-right. Press 1, 2, or 3 (or numpad 1-3) to select a slot.", event: "secondary_slot", count: 1 },
@@ -142030,7 +142030,6 @@
     }
   }
   function setSplitGameplay(isSplit) {
-    document.body.classList.toggle("splitGameplay", !!isSplit);
   }
   function loadWideGameplay() {
     var stored = null;
@@ -142105,6 +142104,8 @@
     }
     setFullscreenLabel(btnFullscreenToggle, !!document.fullscreenElement);
   }
+  loadKeyBindings();
+  updateKeybindButtons();
   var inputs = {
     aMin: document.getElementById("aMin"),
     aMax: document.getElementById("aMax"),
@@ -142570,7 +142571,9 @@
     { id: "azure", label: "Azure Lancer", icon: "images/ships/Azure%20Lancer.png", desc: "Aero spear frame with steady control." },
     { id: "mantas", label: "Mantas Arc-5", icon: "images/ships/Mantas%20-%20Arc%205.png", desc: "Advanced sweep-frame built for high-speed slalom." },
     { id: "cyan", label: "Cyan Vector 7", icon: "images/ships/Cyan%20Vector%207.png", desc: "High-precision vector craft with balanced handling." },
-    { id: "veloz", label: "Veloz Mas", icon: "images/ships/Veloz%20Mas.png", desc: "Aggressive chase frame tuned for offensive runs." }
+    { id: "veloz", label: "Veloz Mas", icon: "images/ships/Veloz%20Mas.png", desc: "Aggressive chase frame tuned for offensive runs." },
+    { id: "verde9", label: "VER-DE-9", icon: "images/ships/VER-DE-9.png", desc: "Emerald vanguard frame with reinforced lanes and steady recoil control." },
+    { id: "whiteflame8", label: "White Flame 8", icon: "images/ships/White%20Flame%208.png", desc: "Lumen spear chassis with a bright exhaust signature and clean lines." }
   ];
   var sfxCatalog = [
     { id: "menu_beep", label: "Menu Beep", desc: "UI blip.", when: "Menu and overlay buttons.", badge: "SFX", src: "sfx/ui/menu_beep.mp3", category: "menu" },
@@ -142862,6 +142865,81 @@
   var keys = /* @__PURE__ */ new Set();
   var audioPrimed = false;
   var screenshotMode = false;
+  var keybindStorageKey = "mentaris.keybinds";
+  var keyBindings = {
+    shoot: "space",
+    secondary: "e",
+    special: "q",
+    dash: "shiftleft"
+  };
+  var keybindCapture = null;
+  var keybindButtons = Array.prototype.slice.call(document.querySelectorAll(".keyBindBtn"));
+  var reservedKeys = /* @__PURE__ */ new Set(["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"]);
+  function normalizeKeyEvent(e) {
+    var code = e.code || "";
+    if (code === "Space")
+      return "space";
+    if (code === "ShiftLeft")
+      return "shiftleft";
+    if (code === "ShiftRight")
+      return "shiftright";
+    var k = (e.key || "").toLowerCase();
+    if (k === " ")
+      return "space";
+    return k;
+  }
+  function displayKeyName(key) {
+    if (key === "space")
+      return "SPACE";
+    if (key === "shiftleft" || key === "shiftright")
+      return "SHIFT";
+    if (key === "escape")
+      return "ESC";
+    return String(key || "").toUpperCase();
+  }
+  function loadKeyBindings() {
+    try {
+      var raw = localStorage.getItem(keybindStorageKey);
+      if (!raw)
+        return;
+      var parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        if (typeof parsed.shoot === "string")
+          keyBindings.shoot = parsed.shoot.toLowerCase();
+        if (typeof parsed.secondary === "string")
+          keyBindings.secondary = parsed.secondary.toLowerCase();
+        if (typeof parsed.special === "string")
+          keyBindings.special = parsed.special.toLowerCase();
+        if (typeof parsed.dash === "string")
+          keyBindings.dash = parsed.dash.toLowerCase();
+      }
+    } catch (e) {
+    }
+  }
+  function saveKeyBindings() {
+    try {
+      localStorage.setItem(keybindStorageKey, JSON.stringify(keyBindings));
+    } catch (e) {
+    }
+  }
+  function updateKeybindButtons() {
+    if (!keybindButtons.length)
+      return;
+    keybindButtons.forEach(function(btn) {
+      var action = btn.getAttribute("data-bind");
+      if (!action || !keyBindings[action])
+        return;
+      btn.textContent = displayKeyName(keyBindings[action]);
+      btn.classList.toggle("listening", keybindCapture === action);
+    });
+  }
+  function setKeyBinding(action, key) {
+    if (!action || !key)
+      return;
+    keyBindings[action] = key;
+    saveKeyBindings();
+    updateKeybindButtons();
+  }
   function isTextInput(el) {
     if (!el)
       return false;
@@ -142869,14 +142947,46 @@
     return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable;
   }
   window.addEventListener("keydown", function(e) {
+    if (keybindCapture) {
+      e.preventDefault();
+      var captureKey = normalizeKeyEvent(e);
+      if (captureKey === "escape") {
+        keybindCapture = null;
+        updateKeybindButtons();
+        return;
+      }
+      if (reservedKeys.has(captureKey)) {
+        showToast("KEY RESERVED FOR MOVEMENT");
+        return;
+      }
+      setKeyBinding(keybindCapture, captureKey);
+      keybindCapture = null;
+      updateKeybindButtons();
+      return;
+    }
     if (isTextInput(document.activeElement))
       return;
     var k = (e.key || "").toLowerCase();
     var code = e.code || "";
-    var prevent = ["arrowleft", "arrowright", "arrowup", "arrowdown", "a", "d", "w", "s", "p", "r", "m", "e", "q", "f", "b", "1", "2", "3", " ", "spacebar"];
-    if (prevent.indexOf(k) !== -1 || code === "Digit1" || code === "Digit2" || code === "Digit3" || code === "Numpad1" || code === "Numpad2" || code === "Numpad3")
+    var keyNorm = normalizeKeyEvent(e);
+    var prevent = ["arrowleft", "arrowright", "arrowup", "arrowdown", "a", "d", "w", "s", "p", "r", "m", "b", "1", "2", "3", "0"];
+    if (keyBindings.shoot) {
+      prevent.push(keyBindings.shoot);
+      if (keyBindings.shoot === "space")
+        prevent.push(" ", "spacebar");
+    }
+    if (keyBindings.secondary)
+      prevent.push(keyBindings.secondary);
+    if (keyBindings.special)
+      prevent.push(keyBindings.special);
+    if (keyBindings.dash) {
+      prevent.push(keyBindings.dash);
+      if (keyBindings.dash === "shiftleft" || keyBindings.dash === "shiftright")
+        prevent.push("shift");
+    }
+    if (prevent.indexOf(k) !== -1 || prevent.indexOf(keyNorm) !== -1 || code === "Digit1" || code === "Digit2" || code === "Digit3" || code === "Numpad1" || code === "Numpad2" || code === "Numpad3")
       e.preventDefault();
-    keys.add(k);
+    keys.add(keyNorm);
     if (!audioPrimed) {
       unlockSfx(state);
       audioPrimed = true;
@@ -142889,7 +142999,7 @@
       hardRestart();
     if (k === "m")
       openSettings();
-    if (k === "e" && !e.repeat) {
+    if (keyNorm === keyBindings.shoot && !e.repeat) {
       if ((player.blasterMode || "single") === "missile") {
         openMissileInput();
       } else if (player.autoFireActive && player.autoFireAmmo > 0) {
@@ -142900,13 +143010,8 @@
     if ((k === "w" || k === "arrowup") && !e.repeat && state.running && !state.paused && !state.over) {
       playSfx(state, "ship_advance");
     }
-    if (k === "f") {
-      if (isStampedeMode()) {
-        player.clawHoldKey = true;
-        player.clawHold = 0;
-      } else {
-        secondaryFire();
-      }
+    if (keyNorm === keyBindings.secondary) {
+      secondaryFire();
     }
     if (k === "1" || code === "Digit1" || code === "Numpad1")
       selectSecondaryByIndex(0);
@@ -142914,8 +143019,14 @@
       selectSecondaryByIndex(1);
     if (k === "3" || code === "Digit3" || code === "Numpad3")
       selectSecondaryByIndex(2);
-    if (k === "q")
-      shockwave();
+    if (keyNorm === keyBindings.special) {
+      if (isStampedeMode()) {
+        player.clawHoldKey = true;
+        player.clawHold = 0;
+      } else {
+        shockwave();
+      }
+    }
     if (k === "b") {
       if (isSandboxMultiplayer()) {
         var p2 = ensurePilot2();
@@ -142930,15 +143041,15 @@
         }
       }
     }
-    if ((k === " " || code === "Space") && !e.repeat)
+    if (keyNorm === keyBindings.dash && !e.repeat)
       dash();
   }, { passive: false });
   window.addEventListener("keyup", function(e) {
     if (isTextInput(document.activeElement))
       return;
-    var k = (e.key || "").toLowerCase();
-    keys.delete(k);
-    if (k === "f" && isStampedeMode()) {
+    var keyNorm = normalizeKeyEvent(e);
+    keys.delete(keyNorm);
+    if (keyNorm === keyBindings.special && isStampedeMode()) {
       player.clawHoldKey = false;
       player.clawHold = 0;
     }
@@ -143428,6 +143539,9 @@
     if (isSandboxSplitMode()) {
       clampPilotToLane(player, 1);
     }
+    if (isSandboxSplitMode()) {
+      clampPilotToLane(player, 1);
+    }
     if (isSandboxMultiplayer()) {
       var p2 = ensurePilot2();
       var p2Profile = getShipProfile(p2.shipType);
@@ -143578,9 +143692,12 @@
     }
     if (state.questionMode === "add_series3" || state.questionMode === "add_series4") {
       var terms = Array.isArray(state.seriesTerms) ? state.seriesTerms : [];
-      if (!terms.length)
+      if (terms.length < 3)
         return "?";
-      return terms.join(" + ") + " = ?";
+      var sumSeries = terms.reduce(function(sum2, val) {
+        return sum2 + val;
+      }, 0);
+      return terms.join(" + ") + " = " + sumSeries;
     }
     var op = isAdditionMode() ? "+" : "x";
     var left = state.a;
@@ -145371,7 +145488,7 @@
       else if (p.type === "electric")
         showToast("OFFENSE -> ELECTRIC BOLTS");
       else if (p.type === "pierce")
-        showToast("OFFENSE -> LOOK UP SHOT");
+        showToast("OFFENSE -> BOLA");
       else if (p.type === "plasma")
         showToast("OFFENSE -> PLASMA ORB");
       else if (p.type === "rail")
@@ -145400,15 +145517,15 @@
       } else {
         addSecondaryPowerup(p.type);
         if (p.type === "time")
-          showToast("SECONDARY -> TIME DILATION (X/Q)");
+          showToast("SECONDARY -> TIME DILATION (F)");
         else if (p.type === "magnet")
-          showToast("SECONDARY -> MAGNET SWEEP (X/Q)");
+          showToast("SECONDARY -> MAGNET SWEEP (F)");
         else if (p.type === "emp")
-          showToast("SECONDARY -> EMP BURST (X/Q)");
+          showToast("SECONDARY -> EMP BURST (F)");
         else if (p.type === "lock")
-          showToast("SECONDARY -> TARGET LOCK (X/Q)");
+          showToast("SECONDARY -> TARGET LOCK (F)");
         else if (p.type === "autofire")
-          showToast("SECONDARY -> AUTO-FIRE (Q)");
+          showToast("SECONDARY -> AUTO-FIRE (F)");
       }
     }
   }
@@ -145432,7 +145549,7 @@
       else if (p.type === "electric")
         showToast("OFFENSE -> ELECTRIC BOLTS");
       else if (p.type === "pierce")
-        showToast("OFFENSE -> LOOK UP SHOT");
+        showToast("OFFENSE -> BOLA");
       else if (p.type === "plasma")
         showToast("OFFENSE -> PLASMA ORB");
       else if (p.type === "rail")
@@ -145461,15 +145578,15 @@
       } else {
         addSecondaryPowerupForPilot(pilot, p.type);
         if (p.type === "time")
-          showToast("SECONDARY -> TIME DILATION (X/Q)");
+          showToast("SECONDARY -> TIME DILATION (F)");
         else if (p.type === "magnet")
-          showToast("SECONDARY -> MAGNET SWEEP (X/Q)");
+          showToast("SECONDARY -> MAGNET SWEEP (F)");
         else if (p.type === "emp")
-          showToast("SECONDARY -> EMP BURST (X/Q)");
+          showToast("SECONDARY -> EMP BURST (F)");
         else if (p.type === "lock")
-          showToast("SECONDARY -> TARGET LOCK (X/Q)");
+          showToast("SECONDARY -> TARGET LOCK (F)");
         else if (p.type === "autofire")
-          showToast("SECONDARY -> AUTO-FIRE (Q)");
+          showToast("SECONDARY -> AUTO-FIRE (F)");
       }
     }
   }
@@ -145525,6 +145642,23 @@
     player.blasterMode = "single";
     player.blasterHitsRemaining = 0;
     player.blasterTimer = 0;
+  }
+  function applySelectedShotType() {
+    if (sandboxMode || !inputs.shotType)
+      return;
+    var selected = String(inputs.shotType.value || "single");
+    if (selected !== "single" && selected !== "missile" && !shotIcons[selected]) {
+      selected = "single";
+    }
+    if (selected === "missile" && !isMissileAllowed())
+      selected = "single";
+    player.blasterMode = selected;
+    if (selected === "single") {
+      player.blasterHitsRemaining = 0;
+    } else {
+      player.blasterHitsRemaining = 9999;
+      player.blasterTimer = 0;
+    }
   }
   function triggerTutorialRecovery(reason) {
     if (!tutorialActive || !tourGuide || tutorialRecoveryActive)
@@ -145830,6 +145964,7 @@
     player.autoFireSpinning = false;
     player.autoFireSpinTimer = 0;
     player.autoFireSpinSfxPlayed = false;
+    applySelectedShotType();
     player.hull = 1;
     player.invuln = 0;
     player.hitFlash = 0;
@@ -146591,6 +146726,10 @@
       var stopT = Math.max(0, tHit - 0.04);
       endX = startX + segX * stopT;
       endY = startY + segY * stopT;
+    }
+    if (isSandboxSplitMode()) {
+      var lane = getLaneBounds(1);
+      endX = clamp(endX, lane.minX + player.w / 2 + 2, lane.maxX - player.w / 2 - 2);
     }
     player.x = clamp(endX, 40, view.w - 40);
     player.y = clamp(endY, 80, view.h - 58);
@@ -147468,11 +147607,11 @@
         return;
       var style = document.createElement("style");
       style.id = "endStatsCharts";
-      style.textContent = ".endStatsSection{grid-column:1/-1;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.04);}.endStatsSection h4{margin:0 0 10px;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);}.endStatsRow{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;margin:8px 0;}.endStatsIcon{width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.06);display:grid;place-items:center;overflow:hidden;border:1px solid rgba(255,255,255,.12);}.endStatsIcon img{width:20px;height:20px;object-fit:contain;}.endStatsBar{height:10px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;position:relative;}.endStatsFill{height:100%;border-radius:999px;background:linear-gradient(90deg, rgba(0,229,255,.7), rgba(0,229,255,.35));}.endStatsCount{font-size:12px;color:#e8ecff;min-width:38px;text-align:right;}.endStatsStackRow{display:flex;flex-direction:column;gap:6px;}.endStatsStack{display:flex;gap:12px 16px;align-items:center;flex-wrap:wrap;justify-content:flex-start;}.endStatsStackItem{display:flex;align-items:center;gap:8px;}.endStatsStackIcon{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.06);display:grid;place-items:center;overflow:hidden;border:1px solid rgba(255,255,255,.12);}.endStatsStackIcon img{width:30px;height:30px;object-fit:contain;}.endStatsStackCount{font-size:14px;font-weight:600;color:#e8ecff;line-height:1;margin-left:0;text-align:left;}.endStatsHidden{display:none;}";
+      style.textContent = ".endStatsSection{grid-column:1/-1;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.04);}.endStatsSection h4{margin:0 0 10px;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);}.endStatsRow{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;margin:8px 0;}.endStatsIcon{width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.06);display:grid;place-items:center;overflow:hidden;border:1px solid rgba(255,255,255,.12);}.endStatsIcon img{width:20px;height:20px;object-fit:contain;}.endStatsBar{height:10px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;position:relative;}.endStatsFill{height:100%;border-radius:999px;background:linear-gradient(90deg, rgba(0,229,255,.7), rgba(0,229,255,.35));}.endStatsCount{font-size:12px;color:#e8ecff;min-width:38px;text-align:right;}.endStatsStackRow{display:flex;flex-direction:column;gap:6px;}.endStatsStack{display:flex;gap:18px 22px;align-items:center;flex-wrap:wrap;justify-content:flex-start;}.endStatsStackItem{display:flex;align-items:center;gap:12px;}.endStatsStackIcon{width:136px;height:136px;border-radius:16px;background:rgba(255,255,255,.06);display:grid;place-items:center;overflow:hidden;border:1px solid rgba(255,255,255,.12);}.endStatsStackIcon img{width:120px;height:120px;object-fit:contain;}.endStatsStackCount{font-size:14px;font-weight:600;color:#e8ecff;line-height:1;margin-left:0;text-align:left;}.endStatsHidden{display:none;}";
       document.head.appendChild(style);
     }
     ensureEndStatsChartStyles();
-    function addStatTile(label2, value) {
+    function addStatTile(label, value) {
       var row = document.createElement("div");
       row.style.display = "flex";
       row.style.alignItems = "center";
@@ -147483,7 +147622,7 @@
       row.style.borderRadius = "12px";
       row.style.background = "rgba(255,255,255,.05)";
       row.style.fontSize = "12px";
-      row.innerHTML = '<span style="color: var(--muted);">' + label2 + "</span><b>" + value + "</b>";
+      row.innerHTML = '<span style="color: var(--muted);">' + label + "</span><b>" + value + "</b>";
       statsList.appendChild(row);
     }
     function addSection(title, list, extraClass) {
@@ -147506,7 +147645,7 @@
         return shotIcons.missile.src;
       return null;
     }
-    function addIconBarRow(section, label2, iconSrc, count2, max) {
+    function addIconBarRow(section, label, iconSrc, count2, max) {
       var row = document.createElement("div");
       row.className = "endStatsRow";
       var icon = document.createElement("div");
@@ -147514,7 +147653,7 @@
       if (iconSrc) {
         var img = document.createElement("img");
         img.src = iconSrc;
-        img.alt = label2;
+        img.alt = label;
         icon.appendChild(img);
       } else {
         icon.textContent = "--";
@@ -147533,7 +147672,7 @@
       var textWrap = document.createElement("div");
       textWrap.style.display = "grid";
       var labelEl = document.createElement("div");
-      labelEl.textContent = label2;
+      labelEl.textContent = label;
       labelEl.style.fontSize = "11px";
       labelEl.style.color = "var(--muted)";
       textWrap.appendChild(labelEl);
@@ -147542,7 +147681,7 @@
       row.appendChild(countEl);
       section.appendChild(row);
     }
-    function addIconStackRow(section, label2, entries) {
+    function addIconStackRow(section, label, entries) {
       var list = Array.isArray(entries) ? entries.filter(function(entry2) {
         return entry2 && entry2.src && entry2.count > 0;
       }) : [];
@@ -147551,7 +147690,7 @@
       var row = document.createElement("div");
       row.className = "endStatsStackRow";
       var labelEl = document.createElement("div");
-      labelEl.textContent = label2;
+      labelEl.textContent = label;
       labelEl.style.fontSize = "11px";
       labelEl.style.color = "var(--muted)";
       var stack = document.createElement("div");
@@ -147564,7 +147703,7 @@
         icon.className = "endStatsStackIcon";
         var img = document.createElement("img");
         img.src = entry.src;
-        img.alt = label2;
+        img.alt = label;
         icon.appendChild(img);
         var countEl = document.createElement("div");
         countEl.className = "endStatsStackCount";
@@ -147579,25 +147718,6 @@
     }
     if (canRenderStats) {
       var listTarget = statsListSecondary || statsList;
-      var shotSection = addSection("SHOTS FIRED", listTarget);
-      var shotCounts = state.shotCounts || {};
-      var shotTypes = ["single", "laser", "fire", "ice", "electric", "pierce", "plasma", "rail", "missile"];
-      var maxShot = 0;
-      for (var si = 0; si < shotTypes.length; si++) {
-        maxShot = Math.max(maxShot, shotCounts[shotTypes[si]] || 0);
-      }
-      if (maxShot === 0) {
-        addIconBarRow(shotSection, "NO SHOTS", null, 0, 1);
-      } else {
-        for (var si2 = 0; si2 < shotTypes.length; si2++) {
-          var st = shotTypes[si2];
-          var count = shotCounts[st] || 0;
-          if (count <= 0)
-            continue;
-          var label = st === "pierce" ? "PIERCING" : st.toUpperCase();
-          addIconBarRow(shotSection, label, getShotIconSrc(st), count, maxShot);
-        }
-      }
       var alienEntries = [];
       if (state.aliensShotByType) {
         alienEntries = Object.keys(state.aliensShotByType).map(function(key2) {
@@ -147615,9 +147735,19 @@
       var powerupSection = addSection("POWERUPS", listTarget, "endStatsCompact");
       var collectedEntries = [];
       var collectedMap = state.powerupsCollectedByType || state.powerupsCollectedByTypeAlt || {};
+      var activatableTypes = {
+        time: true,
+        magnet: true,
+        emp: true,
+        lock: true,
+        autofire: true,
+        scope: true
+      };
       collectedEntries = Object.keys(collectedMap).map(function(type) {
         var count2 = collectedMap[type] || 0;
         if (count2 <= 0)
+          return null;
+        if (activatableTypes[type])
           return null;
         var icon = powerupIcons[type];
         if (!icon && shotIcons && shotIcons[type])
@@ -147732,6 +147862,9 @@
     if (endScoresPanel) {
       endScoresPanel.classList.add("endStatsHidden");
     }
+    if (endStatsWrap) {
+      endStatsWrap.classList.remove("endStatsHidden");
+    }
     if (btnHighScoresToggle) {
       btnHighScoresToggle.textContent = "SHOW SCORES";
       btnHighScoresToggle.onclick = function() {
@@ -147739,6 +147872,9 @@
           return;
         var hidden = endScoresPanel.classList.contains("endStatsHidden");
         endScoresPanel.classList.toggle("endStatsHidden", !hidden);
+        if (endStatsWrap) {
+          endStatsWrap.classList.toggle("endStatsHidden", hidden);
+        }
         btnHighScoresToggle.textContent = hidden ? "HIDE SCORES" : "SHOW SCORES";
         if (hidden) {
           renderHighScores(lifetime, modeInfo.key, modeInfo);
@@ -148190,6 +148326,9 @@
         tutorialRespawnActive = false;
       }
     }
+    if (isSandboxSplitMode() && isSandboxMultiplayer() && pilot2) {
+      clampPilotToLane(pilot2, 2);
+    }
     if (tourGuide && tutorialActive) {
       var dxMove = player.x - tutorialLastPos.x;
       var dyMove = player.y - tutorialLastPos.y;
@@ -148220,7 +148359,8 @@
     }
     player.cooldown = Math.max(0, player.cooldown - dtReal2);
     if (player.autoFireActive && player.autoFireAmmo > 0) {
-      if (keys.has(" ") || keys.has("spacebar")) {
+      var shootHeld = keys.has(keyBindings.shoot) || pointerDown;
+      if (shootHeld) {
         if (!player.autoFireSpinning) {
           player.autoFireSpinning = true;
           player.autoFireSpinTimer = 0.8;
@@ -148381,9 +148521,9 @@
         }
       }
     }
-    if (keys.has("f") && !isStampedeMode())
+    if (keys.has(keyBindings.secondary) && !isStampedeMode())
       secondaryFire();
-    if (keys.has("q"))
+    if (keys.has(keyBindings.special))
       shockwave();
     if (state.flaresActive) {
       state.flaresTimer = Math.max(0, state.flaresTimer - dtReal2);
@@ -150953,7 +151093,7 @@
     var hitsRule = "";
     if (modeName.indexOf("Digit Hunt") !== -1) {
       detail = "Shoot the digits in the correct order to complete the answer. Avoid decoys.";
-      hitsRule = "Each digit asteroid takes 1 hit, in order.";
+      hitsRule = "Each digit asteroid takes hits equal to its digit, in order.";
     } else if (modeName.indexOf("Partial Sums") !== -1) {
       detail = "Find the missing addend that completes the sum. Avoid decoys.";
       hitsRule = "Correct addend asteroids take hits equal to the largest digit in the answer.";
@@ -152871,52 +153011,65 @@
     ctx.restore();
     if (player.defenseMode === "armor" && !ghost) {
       ctx.save();
-      ctx.globalAlpha = baseAlpha * 0.85;
       ctx.globalCompositeOperation = "destination-over";
-      ctx.shadowColor = "rgba(215,225,240,.95)";
-      ctx.shadowBlur = 30;
-      ctx.strokeStyle = "rgba(225,235,250,.9)";
-      ctx.lineWidth = 3.6;
       ctx.translate(0, recoilShift * 1.15);
-      if (useShipSprite) {
-        var iwArmor = shipSprite.img.naturalWidth || shipSprite.img.width || 1;
-        var ihArmor = shipSprite.img.naturalHeight || shipSprite.img.height || 1;
-        var targetHArmor = 120;
-        var targetWArmor = targetHArmor * (iwArmor / ihArmor);
-        var halfWArmor = targetWArmor / 2;
-        var halfIWArmor = iwArmor / 2;
-        var topYArmor = -targetHArmor / 2;
-        var overlapPxArmor = Math.max(2, Math.round(iwArmor * 4e-3));
-        var destOverlapArmor = overlapPxArmor * (targetWArmor / iwArmor);
-        ctx.save();
-        ctx.imageSmoothingEnabled = true;
-        try {
-          ctx.imageSmoothingQuality = "high";
-        } catch (e) {
-        }
-        ctx.save();
-        ctx.scale(leftScale, 1);
-        ctx.drawImage(shipSprite.img, 0, 0, halfIWArmor + overlapPxArmor, ihArmor, -halfWArmor, topYArmor, halfWArmor + destOverlapArmor, targetHArmor);
-        ctx.restore();
-        ctx.save();
-        ctx.scale(rightScale, 1);
-        ctx.drawImage(shipSprite.img, halfIWArmor - overlapPxArmor, 0, halfIWArmor + overlapPxArmor, ihArmor, -destOverlapArmor, topYArmor, halfWArmor + destOverlapArmor, targetHArmor);
-        ctx.restore();
-        ctx.restore();
-      } else {
-        var drawPoly = function(points) {
-          ctx.beginPath();
-          ctx.moveTo(points[0], points[1]);
-          for (var pi = 2; pi < points.length; pi += 2) {
-            ctx.lineTo(points[pi], points[pi + 1]);
+      var drawArmorStroke = function() {
+        if (useShipSprite) {
+          var iwArmor = shipSprite.img.naturalWidth || shipSprite.img.width || 1;
+          var ihArmor = shipSprite.img.naturalHeight || shipSprite.img.height || 1;
+          var targetHArmor = 120;
+          var targetWArmor = targetHArmor * (iwArmor / ihArmor);
+          var halfWArmor = targetWArmor / 2;
+          var halfIWArmor = iwArmor / 2;
+          var topYArmor = -targetHArmor / 2;
+          var overlapPxArmor = Math.max(2, Math.round(iwArmor * 4e-3));
+          var destOverlapArmor = overlapPxArmor * (targetWArmor / iwArmor);
+          ctx.save();
+          ctx.imageSmoothingEnabled = true;
+          try {
+            ctx.imageSmoothingQuality = "high";
+          } catch (e) {
           }
-          ctx.closePath();
-          ctx.stroke();
-        };
-        drawPoly(wingLeft);
-        drawPoly(wingRight);
-        drawPoly(bodyOuter);
-      }
+          ctx.save();
+          ctx.scale(leftScale, 1);
+          ctx.drawImage(shipSprite.img, 0, 0, halfIWArmor + overlapPxArmor, ihArmor, -halfWArmor, topYArmor, halfWArmor + destOverlapArmor, targetHArmor);
+          ctx.restore();
+          ctx.save();
+          ctx.scale(rightScale, 1);
+          ctx.drawImage(shipSprite.img, halfIWArmor - overlapPxArmor, 0, halfIWArmor + overlapPxArmor, ihArmor, -destOverlapArmor, topYArmor, halfWArmor + destOverlapArmor, targetHArmor);
+          ctx.restore();
+          ctx.restore();
+        } else {
+          var drawPoly = function(points) {
+            ctx.beginPath();
+            ctx.moveTo(points[0], points[1]);
+            for (var pi = 2; pi < points.length; pi += 2) {
+              ctx.lineTo(points[pi], points[pi + 1]);
+            }
+            ctx.closePath();
+            ctx.stroke();
+          };
+          drawPoly(wingLeft);
+          drawPoly(wingRight);
+          drawPoly(bodyOuter);
+        }
+      };
+      ctx.save();
+      ctx.globalAlpha = baseAlpha;
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = "rgba(0,0,0,0)";
+      ctx.strokeStyle = "rgba(245,250,255,1)";
+      ctx.lineWidth = 8.4;
+      drawArmorStroke();
+      ctx.restore();
+      ctx.save();
+      ctx.globalAlpha = baseAlpha;
+      ctx.shadowColor = "rgba(225,245,255,1)";
+      ctx.shadowBlur = 120;
+      ctx.strokeStyle = "rgba(235,245,255,1)";
+      ctx.lineWidth = 12.5;
+      drawArmorStroke();
+      ctx.restore();
       ctx.restore();
     }
     ctx.save();
@@ -153036,41 +153189,26 @@
       flame *= hoverBoost;
       var flameLengthScale = shipType === "mk7" ? 0.7 : 0.78;
       flame *= flameLengthScale;
-      var bloom = 0.35 + speedMag * 0.5 + forwardBoost * 0.6 + Math.sin(t * 0.02) * 0.08;
+      var bloom = 0.7 + speedMag * 0.75 + forwardBoost * 0.9 + Math.sin(t * 0.02) * 0.12;
       bloom *= ghostFlameBoost;
       var flameWiggle = (Math.sin(t * 0.06) + Math.sin(t * 0.11 + 1.4)) * 0.6 * (0.6 + speedMag);
       var flameColor = colors.flame || "rgba(0,229,255,.35)";
       if (shipType === "spire")
         flameColor = "rgba(120,220,255,.9)";
-      ctx.save();
-      ctx.globalAlpha = baseAlpha * (0.2 + bloom * 0.22) * flameAlphaMul;
-      ctx.fillStyle = flameColor;
-      ctx.shadowColor = flameColor;
-      ctx.shadowBlur = 20 + bloom * 14;
-      ctx.beginPath();
-      if (isSpire) {
-        ctx.arc(thrusterOffsetX, thrusterBaseY + 7, 7 + bloom * 5, 0, Math.PI * 2);
-      } else {
-        ctx.arc(-thrSep + thrusterOffsetX, thrusterBaseY + 6, 5 + bloom * 4, 0, Math.PI * 2);
-        ctx.arc(thrSep + thrusterOffsetX, thrusterBaseY + 6, 5 + bloom * 4, 0, Math.PI * 2);
-        if (isAm2) {
-          ctx.arc(thrusterOffsetX, thrusterBaseY + 8, 4.5 + bloom * 3.5, 0, Math.PI * 2);
-        }
-      }
-      ctx.fill();
-      ctx.restore();
       var flameWidthScale = 1.18 * (idleHover ? 1.15 : 1) * (1 + forwardBoost * 0.18);
       ctx.save();
       ctx.globalCompositeOperation = idleHover ? "lighter" : "source-over";
       ctx.translate(thrusterOffsetX, 0);
       ctx.scale(flameWidthScale, 1);
       ctx.translate(-thrusterOffsetX, 0);
-      ctx.globalAlpha = baseAlpha * (0.85 + forwardBoost * 0.35) * flameAlphaMul;
+      ctx.globalAlpha = baseAlpha * (0.98 + forwardBoost * 0.45) * flameAlphaMul;
+      ctx.shadowColor = flameColor;
+      ctx.shadowBlur = 28 + bloom * 18;
       var outerFlameGrad = ctx.createLinearGradient(0, thrusterBaseY - 1, 0, thrusterBaseY + flame * 1.28);
       outerFlameGrad.addColorStop(0, "rgba(0,0,0,0)");
       outerFlameGrad.addColorStop(0.18, colorWithAlpha(flameColor, 0.12));
-      outerFlameGrad.addColorStop(0.62, colorWithAlpha(flameColor, 0.74));
-      outerFlameGrad.addColorStop(1, colorWithAlpha(flameColor, 0.96));
+      outerFlameGrad.addColorStop(0.62, colorWithAlpha(flameColor, 0.82));
+      outerFlameGrad.addColorStop(1, colorWithAlpha(flameColor, 1));
       ctx.fillStyle = outerFlameGrad;
       ctx.beginPath();
       if (isSpire) {
@@ -153087,12 +153225,12 @@
       }
       ctx.closePath();
       ctx.fill();
-      ctx.globalAlpha = baseAlpha * (0.22 + forwardBoost * 0.25) * flameAlphaMul;
+      ctx.globalAlpha = baseAlpha * (0.32 + forwardBoost * 0.3) * flameAlphaMul;
       var midFlameGrad = ctx.createLinearGradient(0, thrusterBaseY - 1, 0, thrusterBaseY + flame * 1.22);
       midFlameGrad.addColorStop(0, "rgba(0,0,0,0)");
-      midFlameGrad.addColorStop(0.24, "rgba(180,255,255,.12)");
-      midFlameGrad.addColorStop(0.68, "rgba(180,255,255,.62)");
-      midFlameGrad.addColorStop(1, "rgba(180,255,255,.9)");
+      midFlameGrad.addColorStop(0.24, "rgba(200,255,255,.18)");
+      midFlameGrad.addColorStop(0.68, "rgba(200,255,255,.72)");
+      midFlameGrad.addColorStop(1, "rgba(200,255,255,.98)");
       ctx.fillStyle = midFlameGrad;
       ctx.beginPath();
       if (isSpire) {
@@ -153109,7 +153247,7 @@
       }
       ctx.closePath();
       ctx.fill();
-      ctx.globalAlpha = baseAlpha * 0.8 * flameAlphaMul;
+      ctx.globalAlpha = baseAlpha * 0.9 * flameAlphaMul;
       var innerFlameGrad = ctx.createLinearGradient(0, thrusterBaseY - 2, 0, thrusterBaseY + flame * 0.9);
       innerFlameGrad.addColorStop(0, "rgba(0,0,0,0)");
       innerFlameGrad.addColorStop(0.28, "rgba(220,255,255,.2)");
@@ -153152,7 +153290,7 @@
       var flame = 12 + speedMag * 18 + Math.sin(t * 0.03) * 2.6 + forwardBoost * 16;
       flame *= ghostFlameBoost;
       flame *= hoverBoost;
-      var bloom = 0.35 + speedMag * 0.5 + forwardBoost * 0.6 + Math.sin(t * 0.02) * 0.08;
+      var bloom = 0.7 + speedMag * 0.75 + forwardBoost * 0.9 + Math.sin(t * 0.02) * 0.12;
       bloom *= ghostFlameBoost;
       var flameWiggle = (Math.sin(t * 0.06) + Math.sin(t * 0.11 + 1.4)) * 0.6 * (0.6 + speedMag);
       var flameProfiles = {
@@ -153232,18 +153370,13 @@
       var plumeLen = flame * plumeLengthMul;
       ctx.save();
       ctx.globalCompositeOperation = idleHover ? "lighter" : "source-over";
-      ctx.globalAlpha = baseAlpha * (0.25 + bloom * 0.25) * flameAlphaMul;
+      ctx.globalAlpha = baseAlpha * (0.3 + bloom * 0.3) * flameAlphaMul;
       ctx.fillStyle = flameColor;
       ctx.shadowColor = flameColor;
-      ctx.shadowBlur = 24 + bloom * 16;
-      ctx.beginPath();
-      for (var n = 0; n < nozzleOffsets.length; n++) {
-        ctx.arc(thrusterOffsetX + nozzleOffsets[n], baseY + 6, 5.4 + bloom * 3.2, 0, Math.PI * 2);
-      }
-      ctx.fill();
+      ctx.shadowBlur = 30 + bloom * 20;
       ctx.restore();
       ctx.save();
-      ctx.globalAlpha = baseAlpha * (0.85 + forwardBoost * 0.35) * flameAlphaMul;
+      ctx.globalAlpha = baseAlpha * (0.98 + forwardBoost * 0.45) * flameAlphaMul;
       var plumeOuterGrad = ctx.createLinearGradient(0, baseY - 1, 0, baseY + plumeLen * 1.25);
       plumeOuterGrad.addColorStop(0, "rgba(0,0,0,0)");
       plumeOuterGrad.addColorStop(0.2, "rgba(170,245,255,.12)");
@@ -153441,6 +153574,18 @@
     toggleMousepadAuto.addEventListener("change", function() {
       playSfx(state, "menu_beep");
       setMousepadAutoStart(toggleMousepadAuto.checked);
+    });
+  }
+  if (keybindButtons && keybindButtons.length) {
+    keybindButtons.forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        var action = btn.getAttribute("data-bind");
+        if (!action)
+          return;
+        keybindCapture = action;
+        updateKeybindButtons();
+        showToast("PRESS A KEY TO BIND");
+      });
     });
   }
   if (btnResume) {

@@ -1514,23 +1514,6 @@ input[type="checkbox"]{ transform: translateY(1px); }
   transform: translateX(-50%);
 }
 
-.splitGameplay #wrap{
-  justify-content:flex-start;
-  overflow-x:auto;
-}
-
-.splitGameplay #gameShell{
-  width:2240px;
-  max-width:none;
-}
-
-.splitGameplay #hud{
-  width:100%;
-  left:0;
-  right:0;
-  transform:none;
-}
-
 /* Settings title + actions */
 #overlayMenu .settingsTitle{
   display:flex;
