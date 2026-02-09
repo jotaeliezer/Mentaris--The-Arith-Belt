@@ -1037,6 +1037,67 @@
       color:rgba(255,255,255,.85);
       letter-spacing:0.12em;
     }
+    .shipDetailsActions{
+      margin-top:14px;
+    }
+    .shipDetailsActions .btn{
+      width:100%;
+      justify-content:center;
+      letter-spacing:0.12em;
+    }
+    .shotTypeGrid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+      gap:14px;
+    }
+    .shotTypeOption{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      gap:10px;
+      padding:16px;
+      background:rgba(8,12,22,.7);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:16px;
+      color:rgba(235,245,255,.9);
+      text-align:left;
+      cursor:pointer;
+      transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+    }
+    .shotTypeOption:hover{
+      border-color: rgba(0,229,255,.45);
+      transform: translateY(-2px);
+    }
+    .shotTypeOption.selected{
+      border-color: rgba(0,229,255,.8);
+      box-shadow: 0 0 0 1px rgba(0,229,255,.35), 0 16px 30px rgba(0,0,0,.35);
+    }
+    .shotTypeIcon{
+      width:68px;
+      height:68px;
+      border-radius:14px;
+      background:rgba(0,0,0,.45);
+      border:1px solid rgba(255,255,255,.1);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .shotTypeIcon img{
+      width:44px;
+      height:44px;
+      object-fit:contain;
+      filter: drop-shadow(0 0 10px rgba(0,0,0,.5));
+    }
+    .shotTypeLabel{
+      font-size:14px;
+      text-transform:uppercase;
+      letter-spacing:0.2em;
+    }
+    .shotTypeDesc{
+      font-size:12px;
+      color:rgba(190,210,235,.85);
+      line-height:1.4;
+    }
     @media (max-width: 960px){
       .shipChooser{
         grid-template-columns:1fr;
@@ -1274,6 +1335,10 @@
                   <h4>Classic Answer</h4>
                   <p>Shoot the full answer to each problem.</p>
                 </div>
+                <div class="choiceCard" data-mode="series">
+                  <h4>Series</h4>
+                  <p>Add multiple numbers and shoot the sum.</p>
+                </div>
                 <div class="choiceCard" data-mode="stampede">
                   <h4>Stampede</h4>
                   <p>Shoot wrong asteroids. Absorb the correct.</p>
@@ -1281,6 +1346,10 @@
                 <div class="choiceCard" data-mode="factor">
                   <h4>Factor Hunt</h4>
                   <p>Find the missing factor to complete the product.</p>
+                </div>
+                <div class="choiceCard" data-mode="divisors">
+                  <h4>Divisors</h4>
+                  <p>Shoot every divisor of the number.</p>
                 </div>
               </div>
             </div>
@@ -1500,6 +1569,7 @@
           <div class="step" data-step="5">
             <div class="panel" id="shipPanel">
               <h3>Ship Frame</h3>
+              <input type="hidden" id="shotType" name="shotType" value="single" />
               <div class="shipChooser">
               <div class="shipGrid" id="shipGrid">
               <div class="shipTrack" id="shipTrack">
@@ -1810,6 +1880,9 @@
                     <span id="shipStatThrusters">Dual</span>
                   </div>
                 </div>
+                <div class="shipDetailsActions">
+                  <button id="btnShotType" class="btn secondaryLabel" type="button">Shot Type: Single</button>
+                </div>
               </div>
               </div>
             </div>
@@ -1843,9 +1916,9 @@
           <h3>Flight</h3>
           <ul class="list">
             <li><span>Move</span><b>W A S D / Arrow Keys</b></li>
-            <li><span>Fire</span><b>Z</b></li>
-            <li><span>Secondary</span><b>X</b></li>
-            <li><span>Shockwave</span><b>C</b></li>
+            <li><span>Fire</span><b>E</b></li>
+            <li><span>Secondary</span><b>F</b></li>
+            <li><span>Special</span><b>Q</b></li>
             <li><span>Dash</span><b>Space</b></li>
             <li><span>Pause</span><b>P</b></li>
             <li><span>Mousepad</span><b>B</b></li>
@@ -1856,6 +1929,31 @@
         <div class="panel">
           <h3>Tips</h3>
           <p class="monoSmall" style="margin:0;">Use secondary powerups to control the field when the screen gets crowded.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="shotTypeOverlay" class="overlay">
+    <div class="card">
+      <div class="cardHead">
+        <div>
+          <h2 class="title">Shot Type</h2>
+          <p class="subtitle">Choose your starting blaster.</p>
+        </div>
+        <button id="btnCloseShotType" class="btn">Close</button>
+      </div>
+      <div class="cardBody">
+        <div class="shotTypeGrid" id="shotTypeGrid">
+          <button type="button" class="shotTypeOption" data-shot="single">
+            <div class="shotTypeIcon"><img src="images/bullets/bullet_single.png" alt="" /></div>
+            <div class="shotTypeLabel">Single</div>
+            <div class="shotTypeDesc">Standard blaster shot.</div>
+          </button>
+          <button type="button" class="shotTypeOption" data-shot="laser">
+            <div class="shotTypeIcon"><img src="images/shots/shot_laser.png" alt="" /></div>
+            <div class="shotTypeLabel">Laser</div>
+            <div class="shotTypeDesc">Fast burst beam shots.</div>
+          </button>
         </div>
       </div>
     </div>
@@ -1941,9 +2039,9 @@
             <h3>Controls</h3>
             <div class="settingsCommands">
               <div class="kbd">MOVE: <b>WASD</b> OR <b>ARROWS</b></div>
-              <div class="kbd">FIRE: <b>Z</b></div>
-              <div class="kbd">SECONDARY: <b>X</b></div>
-              <div class="kbd">SHOCKWAVE: <b>C</b></div>
+              <div class="kbd">FIRE: <b>E</b></div>
+              <div class="kbd">SECONDARY: <b>F</b></div>
+              <div class="kbd">SPECIAL: <b>Q</b></div>
               <div class="kbd">DASH: <b>SPACE</b></div>
               <div class="kbd">PAUSE: <b>P</b> <b>|</b> MENU: <b>M</b></div>
             </div>
@@ -1956,20 +2054,27 @@
 
           <div class="panel settingsPanel" data-settings-panel="catalogs">
             <h3>Catalogs</h3>
+            <div class="catalogFilterRow">
+              <button type="button" class="btn catalogFilterBtn active" data-catalog-filter="secondary">Secondary</button>
+              <button type="button" class="btn catalogFilterBtn" data-catalog-filter="defense">Defense</button>
+              <button type="button" class="btn catalogFilterBtn" data-catalog-filter="offense">Offense</button>
+              <button type="button" class="btn catalogFilterBtn" data-catalog-filter="ships">Ships</button>
+              <button type="button" class="btn catalogFilterBtn" data-catalog-filter="all">All</button>
+            </div>
             <div class="catalogGrid">
-              <div class="panel">
+              <div class="panel" data-catalog-section="secondary">
                 <h3>Secondary Powerups</h3>
                 <ul class="list catalogList" id="powerupsSecondaryListHome"></ul>
               </div>
-              <div class="panel">
+              <div class="panel" data-catalog-section="defense">
                 <h3>Defense Powerups</h3>
                 <ul class="list catalogList" id="powerupsDefenseListHome"></ul>
               </div>
-              <div class="panel">
+              <div class="panel" data-catalog-section="offense">
                 <h3>Offense Shot Upgrades</h3>
                 <ul class="list catalogList" id="powerupsOffenseListHome"></ul>
               </div>
-              <div class="panel">
+              <div class="panel" data-catalog-section="ships">
                 <h3>Ships</h3>
                 <ul class="list catalogList" id="shipsCatalogListHome"></ul>
               </div>
@@ -2209,6 +2314,7 @@
       questionMode: "digits3",
       sound: true,
       ship: "spire",
+      shotType: "single",
       belt: "dusk",
       alienSwarm: false,
     };
@@ -2240,7 +2346,7 @@
             id: "m2",
             title: "Sector 2: Drift Line",
             desc: "Faster digit hunt.",
-            config: { ship: "classic", questionMode: "add_digits3", difficulty: "easy", targetMode: "q10", timerMode: "off", decoys: 3, speed: 0.7, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 9 }
+            config: { ship: "classic", questionMode: "add_digits2", difficulty: "easy", targetMode: "q10", timerMode: "off", decoys: 3, speed: 0.7, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 9 }
           },
           {
             id: "m3",
@@ -2290,25 +2396,25 @@
             id: "r1",
             title: "Rift 1: Vector Burn",
             desc: "Rapid digit hunt.",
-            config: { ship: "spire", questionMode: "digits3", difficulty: "normal", targetMode: "q10", timerMode: "off", decoys: 3, speed: 0.8, lives: 15, strikes: 10, aMin: 2, aMax: 9, bMin: 2, bMax: 9 }
+            config: { ship: "spire", questionMode: "digits2", difficulty: "normal", targetMode: "q10", timerMode: "off", decoys: 3, speed: 0.8, lives: 15, strikes: 10, aMin: 2, aMax: 9, bMin: 2, bMax: 9 }
           },
           {
             id: "r2",
             title: "Rift 2: Split Signal",
             desc: "Dense addition fields.",
-            config: { ship: "classic", questionMode: "add_digits3", difficulty: "normal", targetMode: "q12", timerMode: "off", decoys: 3, speed: 0.85, lives: 15, strikes: 10, aMin: 5, aMax: 15, bMin: 5, bMax: 15 }
+            config: { ship: "classic", questionMode: "add_digits2", difficulty: "normal", targetMode: "q12", timerMode: "off", decoys: 3, speed: 0.85, lives: 15, strikes: 10, aMin: 5, aMax: 15, bMin: 5, bMax: 15 }
           },
           {
             id: "r3",
             title: "Rift 3: Phase Lock",
             desc: "Classic answers under pressure.",
-            config: { ship: "am2", questionMode: "classic3", difficulty: "normal", targetMode: "off", timerMode: "90", decoys: 3, decoyFunction: "units_bias", speed: 0.9, lives: 15, strikes: 10, aMin: 3, aMax: 12, bMin: 3, bMax: 12 }
+            config: { ship: "am2", questionMode: "classic2", difficulty: "normal", targetMode: "off", timerMode: "90", decoys: 3, decoyFunction: "units_bias", speed: 0.9, lives: 15, strikes: 10, aMin: 3, aMax: 12, bMin: 3, bMax: 12 }
           },
           {
             id: "r3s",
             title: "Rift 3B: Stampede Run",
             desc: "Stampede flow at rift speed.",
-            config: { ship: "classic", questionMode: "stampede3", difficulty: "normal", targetMode: "off", timerMode: "75", decoys: 3, decoyFunction: "units_bias", speed: 0.95, lives: 15, strikes: 10, aMin: 3, aMax: 12, bMin: 3, bMax: 12 }
+            config: { ship: "classic", questionMode: "stampede2", difficulty: "normal", targetMode: "off", timerMode: "75", decoys: 3, decoyFunction: "units_bias", speed: 0.95, lives: 15, strikes: 10, aMin: 3, aMax: 12, bMin: 3, bMax: 12 }
           },
           {
             id: "r3x",
@@ -2997,6 +3103,105 @@
       activeHomePreview = null;
     }
 
+    var catalogDetailOverlayHome = null;
+    var catalogDetailIconHome = null;
+    var catalogDetailTitleHome = null;
+    var catalogDetailDescHome = null;
+    var catalogDetailMetaHome = null;
+    var catalogDetailWhenHome = null;
+    var catalogDetailBadgeHome = null;
+
+    function ensureCatalogDetailOverlayHome(){
+      if(catalogDetailOverlayHome) return;
+      catalogDetailOverlayHome = document.createElement("div");
+      catalogDetailOverlayHome.id = "catalogDetailOverlayHome";
+      catalogDetailOverlayHome.className = "overlay catalogDetailOverlay";
+      catalogDetailOverlayHome.innerHTML = ""
+        + "<div class=\"catalogDetailCard\">"
+        + "  <button class=\"btn catalogDetailClose\" type=\"button\">Close</button>"
+        + "  <div class=\"catalogDetailIcon\"></div>"
+        + "  <div class=\"catalogDetailTitle\"></div>"
+        + "  <div class=\"catalogDetailDesc\"></div>"
+        + "  <div class=\"catalogDetailMeta\"></div>"
+        + "  <div class=\"catalogDetailWhen\"></div>"
+        + "  <div class=\"catalogDetailBadge\"></div>"
+        + "</div>";
+      catalogDetailOverlayHome.addEventListener("click", function(e){
+        if(e.target === catalogDetailOverlayHome) closeCatalogDetailHome();
+      });
+      document.body.appendChild(catalogDetailOverlayHome);
+      catalogDetailIconHome = catalogDetailOverlayHome.querySelector(".catalogDetailIcon");
+      catalogDetailTitleHome = catalogDetailOverlayHome.querySelector(".catalogDetailTitle");
+      catalogDetailDescHome = catalogDetailOverlayHome.querySelector(".catalogDetailDesc");
+      catalogDetailMetaHome = catalogDetailOverlayHome.querySelector(".catalogDetailMeta");
+      catalogDetailWhenHome = catalogDetailOverlayHome.querySelector(".catalogDetailWhen");
+      catalogDetailBadgeHome = catalogDetailOverlayHome.querySelector(".catalogDetailBadge");
+      var closeBtn = catalogDetailOverlayHome.querySelector(".catalogDetailClose");
+      if(closeBtn){
+        closeBtn.addEventListener("click", closeCatalogDetailHome);
+      }
+    }
+
+    function openCatalogDetailHome(item){
+      if(!item) return;
+      ensureCatalogDetailOverlayHome();
+      catalogDetailIconHome.innerHTML = "";
+      if(item.icon){
+        var img = document.createElement("img");
+        img.src = item.icon;
+        img.alt = item.label || "Catalog item";
+        catalogDetailIconHome.appendChild(img);
+      }else if(item.badge){
+        var badge = document.createElement("div");
+        badge.className = "catalogMissing";
+        badge.textContent = item.badge;
+        catalogDetailIconHome.appendChild(badge);
+      }
+      catalogDetailTitleHome.textContent = item.label || "Catalog Item";
+      catalogDetailDescHome.textContent = item.desc || "";
+      catalogDetailMetaHome.textContent = item.src ? ("File: " + item.src) : "";
+      catalogDetailWhenHome.textContent = item.when ? ("Plays: " + item.when) : "";
+      catalogDetailBadgeHome.textContent = item.badge ? String(item.badge) : "";
+      catalogDetailOverlayHome.classList.add("show");
+    }
+
+    function closeCatalogDetailHome(){
+      if(catalogDetailOverlayHome) catalogDetailOverlayHome.classList.remove("show");
+    }
+
+    var homeCatalogFilterState = { active: "secondary" };
+
+    function initCatalogFiltersHome(){
+      var panel = document.querySelector('.settingsPanel[data-settings-panel="catalogs"]');
+      if(!panel || panel.dataset.filtersReadyHome === "1") return;
+      var buttons = panel.querySelectorAll(".catalogFilterBtn");
+      var sections = panel.querySelectorAll("[data-catalog-section]");
+      if(!buttons.length || !sections.length) return;
+      panel.dataset.filtersReadyHome = "1";
+      buttons.forEach(function(btn){
+        btn.addEventListener("click", function(){
+          setCatalogFilterHome(btn.getAttribute("data-catalog-filter"));
+        });
+      });
+      setCatalogFilterHome(homeCatalogFilterState.active || buttons[0].getAttribute("data-catalog-filter"));
+    }
+
+    function setCatalogFilterHome(filter){
+      var panel = document.querySelector('.settingsPanel[data-settings-panel="catalogs"]');
+      if(!panel) return;
+      var buttons = panel.querySelectorAll(".catalogFilterBtn");
+      var sections = panel.querySelectorAll("[data-catalog-section]");
+      var active = filter || "all";
+      homeCatalogFilterState.active = active;
+      buttons.forEach(function(btn){
+        btn.classList.toggle("active", btn.getAttribute("data-catalog-filter") === active);
+      });
+      sections.forEach(function(section){
+        var sectionKey = section.getAttribute("data-catalog-section");
+        section.style.display = (active === "all" || sectionKey === active) ? "" : "none";
+      });
+    }
+
     function renderCatalogListHome(listEl, items, filter){
       if(!listEl) return;
       listEl.innerHTML = "";
@@ -3012,7 +3217,9 @@
       for(var i=0; i<list.length; i++){
         var item = list[i];
         var li = document.createElement("li");
-        li.className = "catalogItem";
+        li.className = "catalogItem catalogIconOnly";
+        li.setAttribute("role", "button");
+        li.tabIndex = 0;
 
         var icon = document.createElement("div");
         icon.className = "catalogIcon";
@@ -3028,99 +3235,17 @@
           icon.appendChild(missing);
         }
 
-        var text = document.createElement("div");
-        text.className = "catalogText";
-        var title = document.createElement("div");
-        title.className = "catalogTitle";
-        title.textContent = item.label;
-        text.appendChild(title);
-
-        if(item.desc){
-          var desc = document.createElement("div");
-          desc.className = "catalogDesc";
-          desc.textContent = item.desc;
-          text.appendChild(desc);
-        }
-
-        if(item.id && item.badge){
-          var file = document.createElement("div");
-          file.className = "catalogMeta";
-          file.textContent = "File: " + item.src;
-          text.appendChild(file);
-        }
-
-        if(item.when){
-          var when = document.createElement("div");
-          when.className = "catalogWhen";
-          when.textContent = "Plays: " + item.when;
-          text.appendChild(when);
-        }
-
-        if(item.src){
-          var controls = document.createElement("div");
-          controls.className = "catalogControls";
-          var playBtn = document.createElement("button");
-          playBtn.type = "button";
-          playBtn.className = "btn catalogControlBtn";
-          playBtn.innerHTML = "&#9654;";
-          var stopBtn = document.createElement("button");
-          stopBtn.type = "button";
-          stopBtn.className = "btn catalogControlBtn";
-          stopBtn.innerHTML = "&#9632;";
-          var volume = document.createElement("input");
-          volume.type = "range";
-          volume.min = "0";
-          volume.max = "1";
-          volume.step = "0.01";
-          volume.className = "catalogVolume";
-          volume.value = String(getPreviewItemVolumeHome(item.id));
-          var duration = document.createElement("div");
-          duration.className = "catalogDuration";
-          duration.textContent = "--:--";
-
-          var audio = new Audio(item.src);
-          audio.preload = "metadata";
-          audio.volume = getPreviewVolumeHome() * getPreviewItemVolumeHome(item.id);
-          homePreviewPlayers[item.id] = audio;
-          (function(audioRef, durationEl, playBtnEl, stopBtnEl, volumeEl, itemId){
-            audioRef.addEventListener("loadedmetadata", function(){
-              durationEl.textContent = formatDurationHome(audioRef.duration);
-            });
-            audioRef.addEventListener("ended", function(){
-              if(activeHomePreview === audioRef) activeHomePreview = null;
-            });
-            playBtnEl.addEventListener("click", function(){
-              if(activeHomePreview && activeHomePreview !== audioRef){
-                stopPreviewAudioHome(activeHomePreview);
-              }
-              activeHomePreview = audioRef;
-              try{
-                audioRef.volume = getPreviewVolumeHome() * getPreviewItemVolumeHome(itemId);
-                audioRef.currentTime = 0;
-                audioRef.play().catch(function(){});
-              }catch(e){}
-            });
-            stopBtnEl.addEventListener("click", function(){
-              stopPreviewAudioHome(audioRef);
-              if(activeHomePreview === audioRef) activeHomePreview = null;
-            });
-            volumeEl.addEventListener("input", function(){
-              var val = parseFloat(volumeEl.value);
-              if(!Number.isNaN(val)) setPreviewItemVolumeHome(itemId, val);
-              try{ audioRef.volume = getPreviewVolumeHome() * getPreviewItemVolumeHome(itemId); }catch(e){}
-            });
-          })(audio, duration, playBtn, stopBtn, volume, item.id);
-          try{ audio.load(); }catch(e){}
-
-          controls.appendChild(playBtn);
-          controls.appendChild(stopBtn);
-          controls.appendChild(volume);
-          controls.appendChild(duration);
-          text.appendChild(controls);
-        }
+        (function(itemRef, liRef){
+          liRef.addEventListener("click", function(){ openCatalogDetailHome(itemRef); });
+          liRef.addEventListener("keydown", function(e){
+            if(e.key === "Enter" || e.key === " "){
+              e.preventDefault();
+              openCatalogDetailHome(itemRef);
+            }
+          });
+        })(item, li);
 
         li.appendChild(icon);
-        li.appendChild(text);
         listEl.appendChild(li);
       }
     }
@@ -3135,6 +3260,7 @@
       renderCatalogListHome(sfxListHome, homeSfxCatalog, function(item){
         return activeSfxCategoryHome === "all" || item.category === activeSfxCategoryHome;
       });
+      initCatalogFiltersHome();
     }
 
     function setSfxCategoryHome(category){
@@ -3207,8 +3333,17 @@
     var shipStatGuns = document.getElementById("shipStatGuns");
     var shipStatThrusters = document.getElementById("shipStatThrusters");
     var shipStatSpecialCard = document.getElementById("shipStatSpecialCard");
+    var shotTypeInput = document.getElementById("shotType");
+    var btnShotType = document.getElementById("btnShotType");
+    var shotTypeOverlay = document.getElementById("shotTypeOverlay");
+    var btnCloseShotType = document.getElementById("btnCloseShotType");
+    var shotTypeOptions = Array.prototype.slice.call(document.querySelectorAll(".shotTypeOption"));
     var shipLoadingStart = 0;
     var shipPanel = document.getElementById("shipPanel");
+    var shotTypeLabels = {
+      single: "Single",
+      laser: "Laser"
+    };
     var shipDetailsMap = {
       mk7: {
         name: "Crimson MK-7",
@@ -3340,6 +3475,24 @@
       if(shipStatThrusters) shipStatThrusters.textContent = details.thrusters;
       updateShipCarousel(value);
     }
+    function setShotType(value, persist){
+      var selected = shotTypeLabels[value] ? value : "single";
+      if(shotTypeInput) shotTypeInput.value = selected;
+      if(btnShotType) btnShotType.textContent = "Shot Type: " + (shotTypeLabels[selected] || "Single");
+      shotTypeOptions.forEach(function(option){
+        option.classList.toggle("selected", option.getAttribute("data-shot") === selected);
+      });
+      if(persist){
+        saved.shotType = selected;
+        persistSessionConfig("asteroidConfig", Object.assign({}, saved, { shotType: selected }));
+      }
+    }
+    function openShotTypeOverlay(){
+      if(shotTypeOverlay) shotTypeOverlay.classList.add("show");
+    }
+    function closeShotTypeOverlay(){
+      if(shotTypeOverlay) shotTypeOverlay.classList.remove("show");
+    }
     function scheduleShipCarouselSync(){
       if(launchSetupSpinner) launchSetupSpinner.classList.add("isLoading");
       shipLoadingStart = performance.now();
@@ -3366,6 +3519,32 @@
     shipOptions.forEach(function(option){
       option.addEventListener("click", function(){
         syncShipSelection(option.dataset.ship);
+      });
+    });
+    setShotType(saved.shotType || (shotTypeInput ? shotTypeInput.value : "single"), false);
+    if(btnShotType){
+      btnShotType.addEventListener("click", function(){
+        playMenuBeep();
+        openShotTypeOverlay();
+      });
+    }
+    if(btnCloseShotType){
+      btnCloseShotType.addEventListener("click", function(){
+        playMenuBeep();
+        closeShotTypeOverlay();
+      });
+    }
+    if(shotTypeOverlay){
+      shotTypeOverlay.addEventListener("click", function(e){
+        if(e.target === shotTypeOverlay) closeShotTypeOverlay();
+      });
+    }
+    shotTypeOptions.forEach(function(option){
+      option.addEventListener("click", function(){
+        var choice = option.getAttribute("data-shot") || "single";
+        playMenuBeep();
+        setShotType(choice, true);
+        closeShotTypeOverlay();
       });
     });
     if(shipStatSpecialCard){
@@ -3518,9 +3697,15 @@
         selectedSubmode = (mode === "rational_dec") ? "3" : "2";
         return;
       }
-      if(mode.indexOf("add_factor") === 0){
+      if(mode.indexOf("add_series") === 0){
+        selectedOperation = "add";
+        selectedMode = "series";
+      }else if(mode.indexOf("add_factor") === 0){
         selectedOperation = "add";
         selectedMode = "factor";
+      }else if(mode.indexOf("divisors") === 0){
+        selectedOperation = "mul";
+        selectedMode = "divisors";
       }else if(mode.indexOf("factor") === 0){
         selectedOperation = "mul";
         selectedMode = "factor";
@@ -3533,6 +3718,8 @@
       }
       if(mode.indexOf("stampede") !== -1){
         selectedMode = "stampede";
+      }else if(mode.indexOf("divisors") !== -1){
+        selectedMode = "divisors";
       }else if(mode.indexOf("classic") !== -1){
         selectedMode = "classic";
       }else if(mode.indexOf("factor") !== -1){
@@ -3542,7 +3729,7 @@
       }
       if(mode === "digits2" || mode === "add_digits2" || mode === "add_classic2" || mode === "classic2" || mode === "factor2" || mode === "add_factor2" || mode === "stampede2" || mode === "add_stampede2"){
         selectedSubmode = "2";
-      }else if(mode === "digits3" || mode === "add_digits3" || mode === "add_classic3" || mode === "classic3" || mode === "factor3" || mode === "add_factor3" || mode === "stampede3" || mode === "add_stampede3"){
+      }else if(mode === "digits3" || mode === "add_digits3" || mode === "add_classic3" || mode === "classic3" || mode === "factor3" || mode === "add_factor3" || mode === "stampede3" || mode === "add_stampede3" || mode === "add_series3" || mode === "add_series4"){
         selectedSubmode = "3";
       }
     }
@@ -3551,7 +3738,7 @@
       if(!decoyFunctionInput || !questionModeInput) return;
       var mode = String(questionModeInput.value || "");
       var isClassic = (mode === "classic" || mode === "classic2" || mode === "classic3"
-        || mode === "add_classic2" || mode === "add_classic3"
+        || mode === "add_classic2" || mode === "add_classic3" || mode === "add_series3" || mode === "add_series4"
         || mode === "factor2" || mode === "factor3" || mode === "add_factor2" || mode === "add_factor3"
         || mode === "stampede2" || mode === "stampede3"
         || mode === "add_stampede2" || mode === "add_stampede3"
@@ -3571,7 +3758,11 @@
         if(selectedMode === "classic") return selectedSubmode === "2" ? "classic2" : "classic3";
         if(selectedMode === "stampede") return selectedSubmode === "2" ? "stampede2" : "stampede3";
         if(selectedMode === "factor") return selectedSubmode === "2" ? "factor2" : "factor3";
+        if(selectedMode === "divisors") return "divisors";
         return selectedSubmode === "2" ? "digits2" : "digits3";
+      }
+      if(selectedMode === "series"){
+        return (selectedDifficulty === "hard" || selectedDifficulty === "brutal") ? "add_series4" : "add_series3";
       }
       if(selectedMode === "classic"){
         return selectedSubmode === "3" ? "add_classic3" : "add_classic2";
@@ -3605,7 +3796,17 @@
             : "Question shows n\u00B2. Shoot the square answer.";
           return;
         }
+        if(selectedMode === "divisors"){
+          if(title) title.textContent = "Divisors";
+          if(desc) desc.textContent = "Shoot every divisor of the number.";
+          return;
+        }
         if(selectedOperation === "add"){
+          if(selectedMode === "series"){
+            if(title) title.textContent = "Series";
+            if(desc) desc.textContent = "Add multiple numbers: 3 terms on easy/normal, 4 terms on hard/brutal.";
+            return;
+          }
           if(title) title.textContent = sub + " + " + sub;
           if(desc){
             if(selectedMode === "stampede"){
@@ -3642,6 +3843,12 @@
       if((selectedOperation === "square" || selectedOperation === "rational") && selectedMode === "stampede"){
         selectedMode = "classic";
       }
+      if(selectedOperation !== "add" && selectedMode === "series"){
+        selectedMode = "classic";
+      }
+      if(selectedOperation !== "mul" && selectedMode === "divisors"){
+        selectedMode = "classic";
+      }
       setSubmodeFromDifficulty(selectedDifficulty);
       var qm = computeQuestionMode();
       if(questionModeInput) questionModeInput.value = qm;
@@ -3651,12 +3858,20 @@
       updateSubmodeLabels();
       updateDecoyFunctionAvailability();
       if(stampedeToggle) stampedeToggle.checked = (selectedMode === "stampede");
+      var submodeGrid = document.getElementById("submodeChoices");
+      if(submodeGrid){
+        submodeGrid.style.display = (selectedOperation === "add" && selectedMode === "series") || selectedMode === "divisors" ? "none" : "";
+      }
       if(modeChoices.length){
         modeChoices.forEach(function(card){
           var isDigit = card.getAttribute("data-mode") === "digit";
           var isFactor = card.getAttribute("data-mode") === "factor";
+          var isSeries = card.getAttribute("data-mode") === "series";
+          var isDivisors = card.getAttribute("data-mode") === "divisors";
           card.classList.toggle("disabled", (selectedOperation === "square" || selectedOperation === "rational") && isDigit);
           card.classList.toggle("disabled", isFactor && (selectedOperation === "square" || selectedOperation === "rational"));
+          card.classList.toggle("disabled", isSeries && selectedOperation !== "add");
+          card.classList.toggle("disabled", isDivisors && selectedOperation !== "mul");
           if(isFactor){
             var title = card.querySelector("h4");
             var desc = card.querySelector("p");
@@ -4479,6 +4694,7 @@
         decoyFunction: String(getValue("decoyFunction") || "units_bias"),
         sound: true,
         ship: selectedShip,
+        shotType: String(getValue("shotType") || "single"),
         belt: String(getValue("belt") || selectedBelt || "dusk"),
         alienSwarm: data.get("alienSwarm") !== null,
         stampede: data.get("stampedeMode") !== null,
@@ -4579,6 +4795,9 @@
         add_stampede3: "Addition Stampede 3x3",
         add_classic2: "Addition Classic 2x2",
         add_classic3: "Addition Classic 3x3",
+        add_series3: "Addition Series (3 terms)",
+        add_series4: "Addition Series (4 terms)",
+        divisors: "Divisors",
         square_shoot: "Perfect Squares",
         square_root: "Square Roots",
         rational_frac: "Target Fraction",
@@ -4831,6 +5050,9 @@
           add_stampede3: "Addition Stampede 3x3",
           add_classic2: "Addition Classic 2x2",
           add_classic3: "Addition Classic 3x3",
+          add_series3: "Addition Series (3 terms)",
+          add_series4: "Addition Series (4 terms)",
+          divisors: "Divisors",
           square_shoot: "Perfect Squares",
           square_root: "Square Roots",
           rational_frac: "Target Fraction",
@@ -4934,6 +5156,7 @@
         questionMode: config.questionMode,
         sound: "1",
         ship: config.ship,
+        shotType: String(config.shotType || "single"),
         belt: String(config.belt || "dusk"),
         autoStart: "1",
       });
@@ -5002,6 +5225,7 @@
           }
         });
         syncShipSelection(defaults.ship);
+        setShotType(defaults.shotType || "single", false);
       });
     }
 
@@ -5052,8 +5276,12 @@
           mode = "Digit Hunt";
         }else if(base.indexOf("classic") === 0){
           mode = "Classic Answer";
+        }else if(base.indexOf("series") === 0){
+          mode = "Series";
         }else if(base.indexOf("stampede") === 0){
           mode = "Stampede";
+        }else if(base.indexOf("divisors") === 0){
+          mode = "Divisors";
         }else if(base.indexOf("factor") === 0){
           mode = isAdd ? "Partial Sums" : "Factor Hunt";
         }else{
@@ -5064,6 +5292,10 @@
           submode = (label === "rational_dec") ? "Target Decimal" : "Target Fraction";
         }else if(isSquare){
           submode = (label === "square_root") ? "Shoot Roots" : "Shoot Squares";
+        }else if(base.indexOf("series") === 0){
+          submode = (label.indexOf("4") !== -1) ? "4 terms" : "3 terms";
+        }else if(base.indexOf("divisors") === 0){
+          submode = "";
         }else{
           var sub = (label.indexOf("3") !== -1) ? "3" : "2";
           submode = isAdd ? (sub + "x" + sub) : ("1x" + sub);

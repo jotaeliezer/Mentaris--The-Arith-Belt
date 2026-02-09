@@ -20,7 +20,6 @@
           <div class="chip"><span>SCORE</span> <b id="scoreText">0</b></div>
           <div class="chip"><span>STREAK</span> <b id="streakText">0</b></div>
           <div class="chip"><span>LEVEL</span> <b id="levelText">1</b></div>
-          <div class="chip"><span>LIVES</span> <b id="livesText">10</b></div>
           <div class="chip"><span>TIMER</span> <b id="timerText">ENDLESS</b></div>
         </div>
 
@@ -123,9 +122,9 @@
                 <h3>Controls</h3>
                 <div class="settingsCommands">
                   <div class="kbd">MOVE: <b>WASD</b> OR <b>ARROWS</b></div>
-                  <div class="kbd">FIRE: <b>Z</b></div>
-                  <div class="kbd">SECONDARY: <b>X</b></div>
-                  <div class="kbd">SHOCKWAVE: <b>C</b></div>
+                  <div class="kbd">FIRE: <b>E</b></div>
+                  <div class="kbd">SECONDARY: <b>F</b></div>
+                  <div class="kbd">SPECIAL: <b>Q</b></div>
                   <div class="kbd">DASH: <b>SPACE</b></div>
                   <div class="kbd">PAUSE: <b>P</b> <b>|</b> MENU: <b>M</b></div>
                 </div>
@@ -138,20 +137,27 @@
 
               <div class="panel settingsPanel" data-settings-panel="catalogs">
                 <h3>Catalogs</h3>
+                <div class="catalogFilterRow">
+                  <button type="button" class="btn catalogFilterBtn active" data-catalog-filter="secondary">Secondary</button>
+                  <button type="button" class="btn catalogFilterBtn" data-catalog-filter="defense">Defense</button>
+                  <button type="button" class="btn catalogFilterBtn" data-catalog-filter="offense">Offense</button>
+                  <button type="button" class="btn catalogFilterBtn" data-catalog-filter="ships">Ships</button>
+                  <button type="button" class="btn catalogFilterBtn" data-catalog-filter="all">All</button>
+                </div>
                 <div class="catalogGrid">
-                  <div class="panel">
+                  <div class="panel" data-catalog-section="secondary">
                     <h3>Secondary Powerups</h3>
                     <ul class="list catalogList" id="powerupsSecondaryList"></ul>
                   </div>
-                  <div class="panel">
+                  <div class="panel" data-catalog-section="defense">
                     <h3>Defense Powerups</h3>
                     <ul class="list catalogList" id="powerupsDefenseList"></ul>
                   </div>
-                  <div class="panel">
+                  <div class="panel" data-catalog-section="offense">
                     <h3>Offense Shot Upgrades</h3>
                     <ul class="list catalogList" id="powerupsOffenseList"></ul>
                   </div>
-                  <div class="panel">
+                  <div class="panel" data-catalog-section="ships">
                     <h3>Ships</h3>
                     <ul class="list catalogList" id="shipsCatalogList"></ul>
                   </div>
@@ -202,6 +208,11 @@
                 <option value="classic">CLASSIC ANSWER</option>
                 <option value="classic2">CLASSIC ANSWER (1x2)</option>
                 <option value="classic3">CLASSIC ANSWER (1x3)</option>
+                <option value="stampede2">STAMPEDE (1x2)</option>
+                <option value="stampede3">STAMPEDE (1x3)</option>
+                <option value="factor2">FACTOR HUNT (1x2)</option>
+                <option value="factor3">FACTOR HUNT (1x3)</option>
+                <option value="divisors">DIVISORS</option>
                 <option value="rational_frac">RATIONALS: TARGET FRACTION</option>
                 <option value="rational_dec">RATIONALS: TARGET DECIMAL</option>
                 <option value="square_shoot">PERFECT SQUARES</option>
@@ -210,6 +221,10 @@
                 <option value="add_digits3">ADDITION DIGIT HUNT (3x3)</option>
                 <option value="add_classic2">ADDITION CLASSIC (2x2)</option>
                 <option value="add_classic3">ADDITION CLASSIC (3x3)</option>
+                <option value="add_stampede2">ADDITION STAMPEDE (2x2)</option>
+                <option value="add_stampede3">ADDITION STAMPEDE (3x3)</option>
+                <option value="add_factor2">PARTIAL SUMS (2x2)</option>
+                <option value="add_factor3">PARTIAL SUMS (3x3)</option>
               </select>
             </div>
           </div>
@@ -232,9 +247,9 @@
               <h3>Flight</h3>
               <ul class="list">
                 <li><span>Move</span><b>W A S D / Arrow Keys</b></li>
-                <li><span>Fire</span><b>Z</b></li>
-                <li><span>Secondary</span><b>X</b></li>
-                <li><span>Shockwave</span><b>C</b></li>
+                <li><span>Fire</span><b>E</b></li>
+                <li><span>Secondary</span><b>F</b></li>
+                <li><span>Special</span><b>Q</b></li>
                 <li><span>Dash</span><b>Space</b></li>
                 <li><span>Pause</span><b>P</b></li>
                 <li><span>Mousepad</span><b>B</b></li>
@@ -276,6 +291,7 @@
                     <option value="am2">AM2 SCOUT</option>
                   </select>
                 </label>
+                <input type="hidden" id="shotType" value="single" />
               </div>
             </div>
           </div>
@@ -376,7 +392,7 @@
               <p class="subtitle" id="endReason">—</p>
             </div>
             <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
-              <div class="kbd">RESTART: <b>R</b> • SETTINGS: <b>M</b> • SECONDARY: <b>X</b> • SHOCKWAVE: <b>C</b> • DASH: <b>SPACE</b></div>
+              <div class="kbd">RESTART: <b>R</b> • SETTINGS: <b>M</b> • SECONDARY: <b>F</b> • SPECIAL: <b>Q</b> • DASH: <b>SPACE</b></div>
             </div>
           </div>
 

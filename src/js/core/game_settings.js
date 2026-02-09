@@ -42,6 +42,7 @@ export function createState(){
     powerupsMissed:0,
     powerupsUsed:0,
     powerupsUsedByType:{},
+    powerupsMissedByType:{},
     aliensShotByType:{},
     specialUses:0,
     startTime:0,
@@ -57,6 +58,10 @@ export function createState(){
     answer:0,
     questionReady:false,
     waveId:0,
+    divisorTarget:0,
+    divisorAnswers:null,
+    divisorHits:null,
+    divisorRemaining:0,
 
     // weak facts
     missesByFact: new Map(),
@@ -116,7 +121,16 @@ export function createState(){
     sandboxInfiniteLives:false,
     sandboxNoScore:false,
     sandboxSpawnAsteroids:true,
-    stampedeMode:false
+    stampedeMode:false,
+    sandboxTwoPilots:false,
+    sandboxTwoPilotsMode:"shared",
+    sandboxMultiplayer:{
+      enabled:false,
+      mode:"shared",
+      sharedQuestionState:null,
+      pilot1State:null,
+      pilot2State:null
+    }
   };
 }
 

@@ -568,14 +568,14 @@ body.launching #menuWrap{
 .subtitle{
   margin:6px 0 0;
   color:var(--muted);
-  font-size:13px;
+  font-size:15px;
   line-height:1.35;
 }
 
 #endReason{
   margin-top:4px;
   color:var(--muted);
-  font-size:13px;
+  font-size:15px;
   line-height:1.35;
   opacity:0;
   transition: opacity .2s ease;
@@ -884,7 +884,7 @@ input[type="checkbox"]{ transform: translateY(1px); }
 .pillWarn{ color:var(--warn); }
 .pillBad{ color:var(--bad); }
 
-.monoSmall{ font-size:12px; color:var(--muted); line-height:1.45; }
+.monoSmall{ font-size:14px; color:var(--muted); line-height:1.45; }
 
 .list{ margin:10px 0 0; padding:0; list-style:none; display:grid; gap:8px; }
 .list li{
@@ -900,9 +900,12 @@ input[type="checkbox"]{ transform: translateY(1px); }
 }
 
 .catalogList li{
-  align-items:flex-start;
-  justify-content:flex-start;
-  gap:12px;
+  align-items:center;
+  justify-content:center;
+  gap:0;
+  padding:14px;
+  cursor:pointer;
+  min-height:260px;
 }
 
 .catalogEmpty{
@@ -910,6 +913,50 @@ input[type="checkbox"]{ transform: translateY(1px); }
   color:var(--muted);
   padding:12px;
   justify-content:flex-start;
+}
+
+.catalogList{
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap:16px;
+}
+
+.catalogItem.catalogIconOnly{
+  position:relative;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+.catalogItem.catalogIconOnly:hover{
+  transform: translateY(-2px);
+  border-color: rgba(0,229,255,.35);
+  box-shadow: 0 14px 28px rgba(0,0,0,.35);
+}
+
+.catalogItem.catalogIconOnly:focus{
+  outline: none;
+  border-color: rgba(0,229,255,.55);
+  box-shadow: 0 0 0 2px rgba(0,229,255,.2);
+}
+
+.catalogFilterRow{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:6px 0 14px;
+}
+
+.catalogFilterBtn{
+  font-size:11px;
+  padding:6px 12px;
+  border-radius:999px;
+  text-transform:uppercase;
+  letter-spacing:.6px;
+  background: rgba(255,255,255,.05);
+}
+
+.catalogFilterBtn.active{
+  border-color: rgba(0,229,255,.5);
+  background: rgba(0,229,255,.16);
+  box-shadow: 0 10px 24px rgba(0,0,0,.35);
 }
 
 .sfxCategoryRow{
@@ -935,9 +982,9 @@ input[type="checkbox"]{ transform: translateY(1px); }
 }
 
 .catalogIcon{
-  width:52px;
-  height:52px;
-  border-radius:12px;
+  width:234px;
+  height:234px;
+  border-radius:24px;
   border:1px solid var(--line);
   background: rgba(255,255,255,.04);
   display:flex;
@@ -947,16 +994,100 @@ input[type="checkbox"]{ transform: translateY(1px); }
 }
 
 .catalogIcon img{
-  width:42px;
-  height:42px;
+  width:189px;
+  height:189px;
   object-fit:contain;
 }
 
 .catalogMissing{
-  font-size:10px;
+  font-size:12px;
   letter-spacing:1px;
   text-transform:uppercase;
   color:var(--muted);
+}
+
+.catalogDetailOverlay{
+  align-items:center;
+  justify-content:center;
+  backdrop-filter: blur(6px);
+}
+
+.catalogDetailOverlay .catalogDetailCard{
+  position:relative;
+  width:min(520px, 92%);
+  padding:22px;
+  border-radius:18px;
+  border:1px solid rgba(0,229,255,.35);
+  background: rgba(8,12,24,.92);
+  box-shadow: 0 20px 60px rgba(0,0,0,.6);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:12px;
+  transform: scale(0.94);
+  opacity:0;
+  transition: opacity .2s ease, transform .2s ease;
+}
+
+.catalogDetailOverlay.show .catalogDetailCard{
+  transform: scale(1);
+  opacity:1;
+}
+
+.catalogDetailOverlay .catalogDetailClose{
+  position:absolute;
+  top:12px;
+  right:12px;
+}
+
+.catalogDetailOverlay .catalogDetailIcon{
+  width:240px;
+  height:240px;
+  border-radius:24px;
+  border:1px solid var(--line);
+  background: rgba(255,255,255,.04);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.catalogDetailOverlay .catalogDetailIcon img{
+  width:200px;
+  height:200px;
+  object-fit:contain;
+}
+
+.catalogDetailOverlay .catalogDetailTitle{
+  font-size:14px;
+  letter-spacing:1.2px;
+  text-transform:uppercase;
+  color:#e8ecff;
+  text-align:center;
+}
+
+.catalogDetailOverlay .catalogDetailDesc{
+  font-size:15px;
+  color:rgba(232,236,255,.82);
+  text-align:center;
+  line-height:1.5;
+}
+
+.catalogDetailOverlay .catalogDetailMeta,
+.catalogDetailOverlay .catalogDetailWhen{
+  font-size:11px;
+  color:var(--muted);
+  text-align:center;
+}
+
+.catalogDetailOverlay .catalogDetailBadge{
+  font-size:11px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:#e8ecff;
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.08);
 }
 
 .catalogText{
@@ -1168,15 +1299,34 @@ input[type="checkbox"]{ transform: translateY(1px); }
 
 #statsListSecondary{
   display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(3, max-content);
+  justify-content:start;
   gap:12px;
   max-height:260px;
   overflow:auto;
 }
 
+#statsListSecondary .endStatsSection{
+  grid-column: 1 / -1;
+}
+
+#statsListSecondary .endStatsSection.endStatsCompact{
+  grid-column: auto;
+  width: fit-content;
+  max-width: 100%;
+  justify-self:start;
+}
+
 @media (max-width: 680px){
   #statsList{
     grid-template-columns: 1fr;
+  }
+  #statsListSecondary{
+    grid-template-columns: 1fr;
+  }
+  #statsListSecondary .endStatsSection.endStatsCompact{
+    grid-column: 1 / -1;
+    width: 100%;
   }
 }
 
@@ -1355,6 +1505,30 @@ input[type="checkbox"]{ transform: translateY(1px); }
 .wideGameplay #gameShell{
   width:min(1280px, 100%);
   max-width:1280px;
+}
+
+.wideGameplay #hud{
+  width:min(1120px, 100%);
+  left:50%;
+  right:auto;
+  transform: translateX(-50%);
+}
+
+.splitGameplay #wrap{
+  justify-content:flex-start;
+  overflow-x:auto;
+}
+
+.splitGameplay #gameShell{
+  width:2240px;
+  max-width:none;
+}
+
+.splitGameplay #hud{
+  width:100%;
+  left:0;
+  right:0;
+  transform:none;
 }
 
 /* Settings title + actions */

@@ -139304,6 +139304,7 @@
       powerupsMissed: 0,
       powerupsUsed: 0,
       powerupsUsedByType: {},
+      powerupsMissedByType: {},
       aliensShotByType: {},
       specialUses: 0,
       startTime: 0,
@@ -139319,6 +139320,10 @@
       answer: 0,
       questionReady: false,
       waveId: 0,
+      divisorTarget: 0,
+      divisorAnswers: null,
+      divisorHits: null,
+      divisorRemaining: 0,
       // weak facts
       missesByFact: /* @__PURE__ */ new Map(),
       // dynamic difficulty
@@ -139373,7 +139378,16 @@
       sandboxInfiniteLives: false,
       sandboxNoScore: false,
       sandboxSpawnAsteroids: true,
-      stampedeMode: false
+      stampedeMode: false,
+      sandboxTwoPilots: false,
+      sandboxTwoPilotsMode: "shared",
+      sandboxMultiplayer: {
+        enabled: false,
+        mode: "shared",
+        sharedQuestionState: null,
+        pilot1State: null,
+        pilot2State: null
+      }
     };
   }
   function createPlayer() {
@@ -139889,16 +139903,16 @@
       { id: "intro", title: "Welcome aboard, pilot", body: "Welcome to the Arith Belt. Let's begin your training.", autoAdvanceMs: 2e3, showProgress: false },
       { id: "move_arrows", title: "Step 1: Flight Controls (Arrows)", body: "Use the Up, Down, Left, and Right arrow keys to guide the ship through dots 1-4 in order.", event: "move_arrows", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Formation clean, cadet.", praiseBody: "Arrow control confirmed. Smooth tracking." },
       { id: "move_wasd", title: "Step 2: Flight Controls (WASD)", body: "Now use W, A, S, and D to guide the ship through the same dots again.", event: "move_wasd", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "WASD verified.", praiseBody: "Sharp handling. You fly like you mean it." },
-      { id: "fire_once", title: "Step 3: Fire Once", body: "Tap Z or E (or click) to fire a single shot.", event: "fire", count: 1 },
-      { id: "fire_again", title: "Step 4: Fire Again", body: "Tap Z or E again to fire another shot.", event: "fire", count: 1 },
-      { id: "correct", title: "Step 5: Correct Hit", body: "Hit the asteroid with the correct answer.", event: "correct" },
-      { id: "powerup", title: "Step 6: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
-      { id: "dash", title: "Step 7: Dash", body: "Press Space to dash through danger.", event: "dash" },
-      { id: "ability", title: "Step 8: Ability", body: "Press C to use your ship ability.", event: "ability" },
-      { id: "secondary_aid", title: "Step 9: Aid Weapon", body: "Use X or Q to trigger your aid weapon (Time Dilation).", event: "secondary" },
-      { id: "secondary_slots", title: "Step 10: Aid Slots", body: "You have 3 aid slots on the top-right. Press 1, 2, or 3 (or numpad 1-3) to select a slot.", event: "secondary_slot", count: 1 },
-      { id: "alien", title: "Step 11: Alien Contact", body: "Shoot down the alien target.", event: "alien" },
-      { id: "mousepad_hybrid", title: "Step 12: Mousepad", body: "Press B to enable mousepad. Fly to dots 1-4 in order.", event: "mousepad_hybrid", hideDuringAction: true, actionPauseMs: 700 },
+      { id: "mousepad_hybrid", title: "Step 3: Mousepad", body: "Press B to enable mousepad. Fly to dots 1-4 in order.", event: "mousepad_hybrid", hideDuringAction: true, actionPauseMs: 700 },
+      { id: "fire_once", title: "Step 4: Fire Once", body: "Press E (or click) to fire a single shot.", event: "fire", count: 1 },
+      { id: "fire_again", title: "Step 5: Fire Again", body: "Press E again to fire another shot.", event: "fire", count: 1 },
+      { id: "correct", title: "Step 6: Correct Hit", body: "Hit the asteroid with the correct answer.", event: "correct" },
+      { id: "powerup", title: "Step 7: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
+      { id: "dash", title: "Step 8: Dash", body: "Press Space to dash through danger.", event: "dash" },
+      { id: "ability", title: "Step 9: Ability", body: "Press Q to use your ship ability.", event: "ability" },
+      { id: "secondary_aid", title: "Step 10: Aid Weapon", body: "Press F to trigger your aid weapon (Time Dilation).", event: "secondary" },
+      { id: "secondary_slots", title: "Step 11: Aid Slots", body: "You have 3 aid slots on the top-right. Press 1, 2, or 3 (or numpad 1-3) to select a slot.", event: "secondary_slot", count: 1 },
+      { id: "alien", title: "Step 12: Alien Contact", body: "Shoot down the alien target.", event: "alien" },
       { id: "portal", title: "Final Step: Portal", body: "Cadet, fly up into the portal. Mission starts on contact.", event: "portal" }
     ];
     var progressTotal = 0;
@@ -139947,7 +139961,7 @@
         return;
       var style = document.createElement("style");
       style.id = "tourGuideStyles";
-      style.textContent = '#tourGuide{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:0 18px 28px;pointer-events:none;z-index:20;opacity:0;transition:opacity .4s ease;font-family:"Oxanium",sans-serif;}#tourGuide.show{opacity:1;}#tourGuide .tourGuide-wrap{display:flex;align-items:flex-end;gap:18px;}#tourGuide .tourGuide-avatarWrap{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:220px;}#tourGuide .tourGuide-avatar{width:230px;height:230px;object-fit:contain;filter:drop-shadow(0 12px 26px rgba(0,0,0,.45));}#tourGuide .tourGuide-avatarName{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.85);}#tourGuide .tourGuide-card{pointer-events:auto;background:rgba(8,12,24,.88);border:1px solid rgba(0,229,255,.35);border-radius:18px;padding:18px 20px;max-width:520px;width:min(520px,92%);box-shadow:0 18px 48px rgba(0,0,0,.5);font-family:"Oxanium",sans-serif;opacity:0;transform:translateY(12px);transition:opacity .45s ease, transform .45s ease;}#tourGuide.show .tourGuide-card{opacity:1;transform:translateY(0);}#tourGuide .tourGuide-card.is-fading{opacity:0;transform:translateY(8px);}#tourGuide .tourGuide-title{font-size:14px;letter-spacing:1.4px;text-transform:uppercase;color:#e8ecff;margin:0 0 8px;min-height:18px;}#tourGuide .tourGuide-body{font-size:13px;color:rgba(232,236,255,.82);line-height:1.6;margin:0 0 10px;min-height:32px;}#tourGuide .tourGuide-progress{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:rgba(232,236,255,.6);}#tourGuide .tourGuide-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;}#tourGuide .tourGuide-skip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);color:#e8ecff;border-radius:12px;padding:6px 10px;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:"Oxanium",sans-serif;}';
+      style.textContent = '#tourGuide{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:0 18px 28px;pointer-events:none;z-index:20;opacity:0;transition:opacity .4s ease;font-family:"Oxanium",sans-serif;}#tourGuide.show{opacity:1;}#tourGuide .tourGuide-wrap{display:flex;align-items:flex-end;gap:18px;}#tourGuide .tourGuide-avatarWrap{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:220px;}#tourGuide .tourGuide-avatar{width:230px;height:230px;object-fit:contain;filter:drop-shadow(0 12px 26px rgba(0,0,0,.45));}#tourGuide .tourGuide-avatarName{font-size:13px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.85);}#tourGuide .tourGuide-card{pointer-events:auto;background:rgba(8,12,24,.88);border:1px solid rgba(0,229,255,.35);border-radius:18px;padding:18px 20px;max-width:520px;width:min(520px,92%);box-shadow:0 18px 48px rgba(0,0,0,.5);font-family:"Oxanium",sans-serif;opacity:0;transform:translateY(12px);transition:opacity .45s ease, transform .45s ease;}#tourGuide.show .tourGuide-card{opacity:1;transform:translateY(0);}#tourGuide .tourGuide-card.is-fading{opacity:0;transform:translateY(8px);}#tourGuide .tourGuide-title{font-size:16px;letter-spacing:1.4px;text-transform:uppercase;color:#e8ecff;margin:0 0 8px;min-height:18px;}#tourGuide .tourGuide-body{font-size:15px;color:rgba(232,236,255,.82);line-height:1.6;margin:0 0 10px;min-height:32px;}#tourGuide .tourGuide-progress{font-size:13px;letter-spacing:1px;text-transform:uppercase;color:rgba(232,236,255,.6);}#tourGuide .tourGuide-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;}#tourGuide .tourGuide-skip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);color:#e8ecff;border-radius:12px;padding:6px 10px;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:"Oxanium",sans-serif;}';
       document.head.appendChild(style);
     }
     function mount() {
@@ -140310,9 +140324,9 @@
       cam2.t0 = Math.max(cam2.t0, dur);
       cam2.t = Math.max(cam2.t, dur);
     }
-    function updateCamera2(dtReal) {
+    function updateCamera2(dtReal2) {
       if (cam2.t > 0) {
-        cam2.t = Math.max(0, cam2.t - dtReal);
+        cam2.t = Math.max(0, cam2.t - dtReal2);
         var f = cam2.t0 > 0 ? cam2.t / cam2.t0 : 0;
         cam2.x = (Math.random() * 2 - 1) * cam2.amp * f;
         cam2.y = (Math.random() * 2 - 1) * cam2.amp * f;
@@ -141834,6 +141848,12 @@
     }
     return player.secondarySlots;
   }
+  function getSecondarySlotsForPilot(pilot) {
+    if (!pilot.secondarySlots || pilot.secondarySlots.length !== 3) {
+      pilot.secondarySlots = [null, null, null];
+    }
+    return pilot.secondarySlots;
+  }
   function syncSelectedSecondary() {
     var slots = getSecondarySlots();
     var idx = clamp(player.secondarySlotIndex | 0, 0, slots.length - 1);
@@ -141855,6 +141875,28 @@
     }
     player.secondaryMode = "none";
     player.secondaryCharges = 0;
+  }
+  function syncSelectedSecondaryForPilot(pilot) {
+    var slots = getSecondarySlotsForPilot(pilot);
+    var idx = clamp(pilot.secondarySlotIndex | 0, 0, slots.length - 1);
+    pilot.secondarySlotIndex = idx;
+    var slot = slots[idx];
+    if (slot && slot.type && slot.count > 0) {
+      pilot.secondaryMode = slot.type;
+      pilot.secondaryCharges = slot.count;
+      return;
+    }
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i];
+      if (s && s.type && s.count > 0) {
+        pilot.secondarySlotIndex = i;
+        pilot.secondaryMode = s.type;
+        pilot.secondaryCharges = s.count;
+        return;
+      }
+    }
+    pilot.secondaryMode = "none";
+    pilot.secondaryCharges = 0;
   }
   function getSecondaryInventoryEntries() {
     var slots = getSecondarySlots();
@@ -141918,6 +141960,41 @@
     }
     syncSelectedSecondary();
   }
+  function addSecondaryPowerupForPilot(pilot, type) {
+    if (!type)
+      return;
+    var slots = getSecondarySlotsForPilot(pilot);
+    var selectedIdx = clamp(pilot.secondarySlotIndex | 0, 0, slots.length - 1);
+    var foundIdx = -1;
+    var emptyIdx = -1;
+    for (var i = 0; i < slots.length; i++) {
+      var slot = slots[i];
+      if (slot && slot.type === type) {
+        foundIdx = i;
+        break;
+      }
+      if (slot == null && emptyIdx < 0) {
+        emptyIdx = i;
+      }
+    }
+    if (foundIdx >= 0) {
+      slots[foundIdx].count += 1;
+      if (type === "autofire") {
+        pilot.secondarySlotIndex = foundIdx;
+      }
+    } else if (emptyIdx >= 0) {
+      slots[emptyIdx] = { type, count: 1 };
+      if (pilot.secondaryMode === "none" || type === "autofire") {
+        pilot.secondarySlotIndex = emptyIdx;
+      }
+    } else {
+      slots[selectedIdx] = { type, count: 1 };
+      if (type === "autofire") {
+        pilot.secondarySlotIndex = selectedIdx;
+      }
+    }
+    syncSelectedSecondaryForPilot(pilot);
+  }
   function setSettingsTab(tabId) {
     if (!settingsTabButtons || !settingsPanels)
       return;
@@ -141951,6 +142028,9 @@
       localStorage.setItem(wideGameplayKey, isWide ? "1" : "0");
     } catch (e) {
     }
+  }
+  function setSplitGameplay(isSplit) {
+    document.body.classList.toggle("splitGameplay", !!isSplit);
   }
   function loadWideGameplay() {
     var stored = null;
@@ -142043,7 +142123,8 @@
     strikes: document.getElementById("strikes"),
     sound: document.getElementById("sound"),
     questionMode: document.getElementById("questionMode"),
-    stampedeMode: document.getElementById("stampedeMode")
+    stampedeMode: document.getElementById("stampedeMode"),
+    shotType: document.getElementById("shotType")
   };
   var endSubtitle = document.getElementById("endSubtitle");
   var endTitle = document.getElementById("endTitle");
@@ -142078,6 +142159,10 @@
   var state = createState();
   var player = createPlayer();
   player.spinManeuver = { active: false, phase: 0, x0: 0, y0: 0, x1: 0, y1: 0, x2: 0, y2: 0 };
+  var pilot2 = null;
+  var pilotStats = { 1: null, 2: null };
+  var sandboxMultiplayer = { enabled: false, mode: "shared" };
+  var pilot2Mouse = { x: 0, y: 0, has: false };
   var bullets = [];
   var asteroids = [];
   var powerups = [];
@@ -142209,11 +142294,12 @@
       pickupFxTimerId = 0;
     }, 140);
   }
-  function spawnGunSmoke() {
-    var offset = Math.max(10, player.w * 0.22);
-    var baseY = player.y - player.h * 0.55;
+  function spawnGunSmoke(pilot) {
+    var p = pilot || player;
+    var offset = Math.max(10, p.w * 0.22);
+    var baseY = p.y - p.h * 0.55;
     for (var side = -1; side <= 1; side += 2) {
-      var sx = player.x + offset * side;
+      var sx = p.x + offset * side;
       for (var i = 0; i < 2; i++) {
         particles.push({
           x: sx + rand(-2, 2),
@@ -142251,6 +142337,7 @@
   var backgroundReady = [];
   var backgroundIndex = 0;
   var backgroundScroll = 0;
+  var backgroundScrollSplit = 0;
   var backgroundScale = 2.1;
   var beltKey = "dusk";
   var beltIndexMap = {
@@ -142357,6 +142444,17 @@
     };
     icon.img.src = icon.src;
   });
+  var alienIconsByType = {
+    scout: "images/aliens/alien_ET.png",
+    alien_ET: "images/aliens/alien_ET.png",
+    alien_brain: "images/aliens/alien_brain.png",
+    alien_golem: "images/aliens/alien_golem.png",
+    alien_galaga: "images/aliens/alien_galaga.png",
+    alien_eye: "images/aliens/alien_eye.png",
+    alien_saucer: "images/aliens/alien_saucer.png",
+    alien_robot: "images/aliens/alien_robot.png",
+    alien_spider: "images/aliens/alien_spider.png"
+  };
   var bulletSingle = { img: new Image(), ready: false, src: "images/bullets/bullet_single.png" };
   bulletSingle.img.onload = function() {
     bulletSingle.ready = true;
@@ -142527,47 +142625,6 @@
   ];
   var previewPlayers = {};
   var activePreview = null;
-  var previewVolumeKey = "mentaris.preview.sfx.";
-  function formatDuration(sec) {
-    if (!isFinite(sec) || sec <= 0)
-      return "--:--";
-    var total = Math.round(sec);
-    var m = Math.floor(total / 60);
-    var s = total % 60;
-    return m + ":" + (s < 10 ? "0" : "") + s;
-  }
-  function getPreviewBaseVolume() {
-    var master = state && typeof state.volume === "number" ? state.volume : 1;
-    var sfx = state && typeof state.sfxVolume === "number" ? state.sfxVolume : 1;
-    if (!isFinite(master))
-      master = 1;
-    if (!isFinite(sfx))
-      sfx = 1;
-    return Math.max(0, Math.min(1, master * sfx));
-  }
-  function getPreviewItemVolume(id) {
-    if (!id)
-      return 1;
-    try {
-      var raw = localStorage.getItem(previewVolumeKey + id);
-      if (raw != null) {
-        var val = parseFloat(raw);
-        if (isFinite(val))
-          return clamp(val, 0, 1);
-      }
-    } catch (e) {
-    }
-    return 1;
-  }
-  function setPreviewItemVolume(id, value) {
-    if (!id)
-      return;
-    var safe = clamp(value, 0, 1);
-    try {
-      localStorage.setItem(previewVolumeKey + id, String(safe));
-    } catch (e) {
-    }
-  }
   function stopPreviewAudio(audio) {
     if (!audio)
       return;
@@ -142584,6 +142641,63 @@
       }
     }
     activePreview = null;
+  }
+  var catalogDetailOverlay = null;
+  var catalogDetailIcon = null;
+  var catalogDetailTitle = null;
+  var catalogDetailDesc = null;
+  var catalogDetailMeta = null;
+  var catalogDetailWhen = null;
+  var catalogDetailBadge = null;
+  function ensureCatalogDetailOverlay() {
+    if (catalogDetailOverlay)
+      return;
+    catalogDetailOverlay = document.createElement("div");
+    catalogDetailOverlay.id = "catalogDetailOverlay";
+    catalogDetailOverlay.className = "overlay catalogDetailOverlay";
+    catalogDetailOverlay.innerHTML = '<div class="catalogDetailCard">  <button class="btn catalogDetailClose" type="button">Close</button>  <div class="catalogDetailIcon"></div>  <div class="catalogDetailTitle"></div>  <div class="catalogDetailDesc"></div>  <div class="catalogDetailMeta"></div>  <div class="catalogDetailWhen"></div>  <div class="catalogDetailBadge"></div></div>';
+    catalogDetailOverlay.addEventListener("click", function(e) {
+      if (e.target === catalogDetailOverlay)
+        closeCatalogDetail();
+    });
+    document.body.appendChild(catalogDetailOverlay);
+    catalogDetailIcon = catalogDetailOverlay.querySelector(".catalogDetailIcon");
+    catalogDetailTitle = catalogDetailOverlay.querySelector(".catalogDetailTitle");
+    catalogDetailDesc = catalogDetailOverlay.querySelector(".catalogDetailDesc");
+    catalogDetailMeta = catalogDetailOverlay.querySelector(".catalogDetailMeta");
+    catalogDetailWhen = catalogDetailOverlay.querySelector(".catalogDetailWhen");
+    catalogDetailBadge = catalogDetailOverlay.querySelector(".catalogDetailBadge");
+    var closeBtn = catalogDetailOverlay.querySelector(".catalogDetailClose");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", closeCatalogDetail);
+    }
+  }
+  function openCatalogDetail(item) {
+    if (!item)
+      return;
+    ensureCatalogDetailOverlay();
+    catalogDetailIcon.innerHTML = "";
+    if (item.icon) {
+      var img = document.createElement("img");
+      img.src = item.icon;
+      img.alt = item.label || "Catalog item";
+      catalogDetailIcon.appendChild(img);
+    } else if (item.badge) {
+      var badge = document.createElement("div");
+      badge.className = "catalogMissing";
+      badge.textContent = item.badge;
+      catalogDetailIcon.appendChild(badge);
+    }
+    catalogDetailTitle.textContent = item.label || "Catalog Item";
+    catalogDetailDesc.textContent = item.desc || "";
+    catalogDetailMeta.textContent = item.src ? "File: " + item.src : "";
+    catalogDetailWhen.textContent = item.when ? "Plays: " + item.when : "";
+    catalogDetailBadge.textContent = item.badge ? String(item.badge) : "";
+    catalogDetailOverlay.classList.add("show");
+  }
+  function closeCatalogDetail() {
+    if (catalogDetailOverlay)
+      catalogDetailOverlay.classList.remove("show");
   }
   function renderCatalogList(listEl, items, filter) {
     if (!listEl)
@@ -142603,7 +142717,9 @@
     for (var i = 0; i < list.length; i++) {
       var item = list[i];
       var li = document.createElement("li");
-      li.className = "catalogItem";
+      li.className = "catalogItem catalogIconOnly";
+      li.setAttribute("role", "button");
+      li.tabIndex = 0;
       var icon = document.createElement("div");
       icon.className = "catalogIcon";
       if (item.icon) {
@@ -142617,108 +142733,53 @@
         missing.textContent = item.badge || "NO IMAGE";
         icon.appendChild(missing);
       }
-      var text = document.createElement("div");
-      text.className = "catalogText";
-      var title = document.createElement("div");
-      title.className = "catalogTitle";
-      title.textContent = item.label;
-      text.appendChild(title);
-      if (item.desc) {
-        var desc = document.createElement("div");
-        desc.className = "catalogDesc";
-        desc.textContent = item.desc;
-        text.appendChild(desc);
-      }
-      if (item.id && item.badge) {
-        var file = document.createElement("div");
-        file.className = "catalogMeta";
-        file.textContent = "File: " + item.src;
-        text.appendChild(file);
-      }
-      if (item.when) {
-        var when = document.createElement("div");
-        when.className = "catalogWhen";
-        when.textContent = "Plays: " + item.when;
-        text.appendChild(when);
-      }
-      if (item.src) {
-        var controls = document.createElement("div");
-        controls.className = "catalogControls";
-        var playBtn = document.createElement("button");
-        playBtn.type = "button";
-        playBtn.className = "btn catalogControlBtn";
-        playBtn.innerHTML = "&#9654;";
-        playBtn.setAttribute("aria-label", "Play");
-        playBtn.title = "Play";
-        var stopBtn = document.createElement("button");
-        stopBtn.type = "button";
-        stopBtn.className = "btn catalogControlBtn";
-        stopBtn.innerHTML = "&#9632;";
-        stopBtn.setAttribute("aria-label", "Stop");
-        stopBtn.title = "Stop";
-        var volume = document.createElement("input");
-        volume.type = "range";
-        volume.className = "catalogVolume";
-        volume.min = "0";
-        volume.max = "100";
-        volume.step = "1";
-        var initialVolume = getPreviewItemVolume(item.id);
-        volume.value = String(Math.round(initialVolume * 100));
-        var duration = document.createElement("div");
-        duration.className = "catalogDuration";
-        duration.textContent = "--:--";
-        var audio = new Audio(item.src);
-        audio.preload = "metadata";
-        audio.volume = getPreviewBaseVolume() * initialVolume;
-        previewPlayers[item.id] = audio;
-        (function(audioRef, durationEl, playBtnEl, stopBtnEl, volumeEl, itemId) {
-          audioRef.addEventListener("loadedmetadata", function() {
-            durationEl.textContent = formatDuration(audioRef.duration);
-          });
-          audioRef.addEventListener("ended", function() {
-            if (activePreview === audioRef)
-              activePreview = null;
-          });
-          playBtnEl.addEventListener("click", function() {
-            if (activePreview && activePreview !== audioRef) {
-              stopPreviewAudio(activePreview);
-            }
-            activePreview = audioRef;
-            try {
-              var itemVol = getPreviewItemVolume(itemId);
-              audioRef.volume = getPreviewBaseVolume() * itemVol;
-              audioRef.currentTime = 0;
-              audioRef.play().catch(function() {
-              });
-            } catch (e) {
-            }
-          });
-          stopBtnEl.addEventListener("click", function() {
-            stopPreviewAudio(audioRef);
-            if (activePreview === audioRef)
-              activePreview = null;
-          });
-          volumeEl.addEventListener("input", function() {
-            var val = parseFloat(volumeEl.value);
-            var scaled = isFinite(val) ? val / 100 : 1;
-            setPreviewItemVolume(itemId, scaled);
-            audioRef.volume = getPreviewBaseVolume() * getPreviewItemVolume(itemId);
-          });
-        })(audio, duration, playBtn, stopBtn, volume, item.id);
-        try {
-          audio.load();
-        } catch (e) {
-        }
-        controls.appendChild(playBtn);
-        controls.appendChild(stopBtn);
-        controls.appendChild(volume);
-        controls.appendChild(duration);
-        text.appendChild(controls);
-      }
+      (function(itemRef, liRef) {
+        liRef.addEventListener("click", function() {
+          openCatalogDetail(itemRef);
+        });
+        liRef.addEventListener("keydown", function(e) {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openCatalogDetail(itemRef);
+          }
+        });
+      })(item, li);
       li.appendChild(icon);
-      li.appendChild(text);
       listEl.appendChild(li);
     }
+  }
+  var catalogFilterState = { active: "secondary" };
+  function initCatalogFilters() {
+    var panel = document.querySelector('.settingsPanel[data-settings-panel="catalogs"]');
+    if (!panel || panel.dataset.filtersReady === "1")
+      return;
+    var buttons = panel.querySelectorAll(".catalogFilterBtn");
+    var sections = panel.querySelectorAll("[data-catalog-section]");
+    if (!buttons.length || !sections.length)
+      return;
+    panel.dataset.filtersReady = "1";
+    buttons.forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        setCatalogFilter(btn.getAttribute("data-catalog-filter"));
+      });
+    });
+    setCatalogFilter(catalogFilterState.active || buttons[0].getAttribute("data-catalog-filter"));
+  }
+  function setCatalogFilter(filter) {
+    var panel = document.querySelector('.settingsPanel[data-settings-panel="catalogs"]');
+    if (!panel)
+      return;
+    var buttons = panel.querySelectorAll(".catalogFilterBtn");
+    var sections = panel.querySelectorAll("[data-catalog-section]");
+    var active = filter || "all";
+    catalogFilterState.active = active;
+    buttons.forEach(function(btn) {
+      btn.classList.toggle("active", btn.getAttribute("data-catalog-filter") === active);
+    });
+    sections.forEach(function(section) {
+      var sectionKey = section.getAttribute("data-catalog-section");
+      section.style.display = active === "all" || sectionKey === active ? "" : "none";
+    });
   }
   function renderSettingsCatalogs() {
     stopAllPreviewAudio();
@@ -142732,6 +142793,7 @@
         return true;
       return item.category === activeSfxCategory;
     });
+    initCatalogFilters();
   }
   var powerupManager = new PowerupManager(state, player);
   renderSettingsCatalogs();
@@ -142811,7 +142873,7 @@
       return;
     var k = (e.key || "").toLowerCase();
     var code = e.code || "";
-    var prevent = ["arrowleft", "arrowright", "arrowup", "arrowdown", "a", "d", "w", "s", "p", "r", "m", "z", "e", "x", "q", "c", "b", "1", "2", "3", " ", "spacebar"];
+    var prevent = ["arrowleft", "arrowright", "arrowup", "arrowdown", "a", "d", "w", "s", "p", "r", "m", "e", "q", "f", "b", "1", "2", "3", " ", "spacebar"];
     if (prevent.indexOf(k) !== -1 || code === "Digit1" || code === "Digit2" || code === "Digit3" || code === "Numpad1" || code === "Numpad2" || code === "Numpad3")
       e.preventDefault();
     keys.add(k);
@@ -142827,7 +142889,7 @@
       hardRestart();
     if (k === "m")
       openSettings();
-    if ((k === "z" || k === "e") && !e.repeat) {
+    if (k === "e" && !e.repeat) {
       if ((player.blasterMode || "single") === "missile") {
         openMissileInput();
       } else if (player.autoFireActive && player.autoFireAmmo > 0) {
@@ -142838,7 +142900,7 @@
     if ((k === "w" || k === "arrowup") && !e.repeat && state.running && !state.paused && !state.over) {
       playSfx(state, "ship_advance");
     }
-    if (k === "x") {
+    if (k === "f") {
       if (isStampedeMode()) {
         player.clawHoldKey = true;
         player.clawHold = 0;
@@ -142846,27 +142908,29 @@
         secondaryFire();
       }
     }
-    if (k === "q") {
-      secondaryFire();
-    }
     if (k === "1" || code === "Digit1" || code === "Numpad1")
       selectSecondaryByIndex(0);
     if (k === "2" || code === "Digit2" || code === "Numpad2")
       selectSecondaryByIndex(1);
     if (k === "3" || code === "Digit3" || code === "Numpad3")
       selectSecondaryByIndex(2);
-    if (k === "c")
+    if (k === "q")
       shockwave();
     if (k === "b") {
-      if (!mousepadActive) {
-        setMousepadActive(true);
-        showToast("MOUSEPAD: HYBRID");
+      if (isSandboxMultiplayer()) {
+        var p2 = ensurePilot2();
+        setPilot2MouseControl(!p2.mouseControlEnabled, false);
       } else {
-        setMousepadActive(false);
-        showToast("MOUSEPAD OFF");
+        if (!mousepadActive) {
+          setMousepadActive(true);
+          showToast("MOUSEPAD: HYBRID");
+        } else {
+          setMousepadActive(false);
+          showToast("MOUSEPAD OFF");
+        }
       }
     }
-    if (k === " " || k === "spacebar")
+    if ((k === " " || code === "Space") && !e.repeat)
       dash();
   }, { passive: false });
   window.addEventListener("keyup", function(e) {
@@ -142874,7 +142938,7 @@
       return;
     var k = (e.key || "").toLowerCase();
     keys.delete(k);
-    if (k === "x" && isStampedeMode()) {
+    if (k === "f" && isStampedeMode()) {
       player.clawHoldKey = false;
       player.clawHold = 0;
     }
@@ -142882,6 +142946,7 @@
   var pointerDown = false;
   var lastPointerX = null;
   var lastPointerY = null;
+  var pointerDragEnabled = false;
   var virtualPad = document.getElementById("virtualPad");
   var controlPad = document.getElementById("controlPad");
   var padStatus = document.getElementById("padStatus");
@@ -142910,6 +142975,279 @@
     mousepadSensitivityPadMode = mousepadPadDefaults.sensitivityPadMode;
     mousepadSensitivityFps = mousepadPadDefaults.sensitivityFps;
     mousepadDeadzonePad = mousepadPadDefaults.deadzone;
+  }
+  function isSandboxMultiplayer() {
+    return !!(sandboxMode && state.sandboxTwoPilots);
+  }
+  function isSandboxSplitMode() {
+    return isSandboxMultiplayer() && state.sandboxTwoPilotsMode === "split";
+  }
+  function clampPilotToLane(pilot, laneId) {
+    if (!pilot || !isSandboxSplitMode())
+      return;
+    var lane = getLaneBounds(laneId);
+    var minX = lane.minX + pilot.w / 2 + 2;
+    var maxX = lane.maxX - pilot.w / 2 - 2;
+    if (maxX < minX) {
+      var mid = (lane.minX + lane.maxX) / 2;
+      minX = mid;
+      maxX = mid;
+    }
+    pilot.x = clamp(pilot.x, minX, maxX);
+  }
+  function getLaneIdForX(x) {
+    var r = canvas.getBoundingClientRect();
+    if (!isSandboxSplitMode())
+      return x < r.width * 0.5 ? 1 : 2;
+    var lane1 = getLaneBounds(1);
+    var lane2 = getLaneBounds(2);
+    if (x <= lane1.maxX)
+      return 1;
+    if (x >= lane2.minX)
+      return 2;
+    return 0;
+  }
+  function resetPilotShotType(pilot) {
+    if (!pilot)
+      return;
+    pilot.blasterMode = "single";
+    pilot.blasterHitsRemaining = 0;
+    pilot.blasterTimer = 0;
+  }
+  function clearScopeOnHitForPilot(pilot) {
+    if (pilot && pilot.scopeTimer > 0) {
+      pilot.scopeTimer = 0;
+    }
+  }
+  function registerShotTypeHitForPilot(pilot, amount, forceClear) {
+    if (!pilot)
+      return;
+    if (pilot.blasterMode === "single")
+      return;
+    if (forceClear) {
+      resetPilotShotType(pilot);
+      return;
+    }
+    var hits = typeof pilot.blasterHitsRemaining === "number" ? pilot.blasterHitsRemaining : 0;
+    hits -= amount || 1;
+    pilot.blasterHitsRemaining = Math.max(0, hits);
+    if (pilot.blasterHitsRemaining <= 0) {
+      resetPilotShotType(pilot);
+    }
+  }
+  function cyclePilotPowerup(pilot, direction) {
+    if (!pilot)
+      return;
+    var slots = getSecondarySlotsForPilot(pilot);
+    if (!slots.length)
+      return;
+    var idx = clamp(pilot.secondarySlotIndex | 0, 0, slots.length - 1);
+    for (var i = 0; i < slots.length; i++) {
+      idx = (idx + direction + slots.length) % slots.length;
+      var slot = slots[idx];
+      if (slot && slot.type && slot.count > 0) {
+        pilot.secondarySlotIndex = idx;
+        syncSelectedSecondaryForPilot(pilot);
+        showToast("SECONDARY -> " + slot.type.toUpperCase());
+        return;
+      }
+    }
+  }
+  function updatePilot2Mouse(e) {
+    if (!isSandboxMultiplayer())
+      return;
+    var p2 = ensurePilot2();
+    if (!p2.mouseControlEnabled)
+      return;
+    var rect = canvas.getBoundingClientRect();
+    pilot2Mouse.x = clamp(e.clientX - rect.left, 0, rect.width);
+    pilot2Mouse.y = clamp(e.clientY - rect.top, 0, rect.height);
+    pilot2Mouse.has = true;
+  }
+  function positionSandboxPilots() {
+    if (!isSandboxMultiplayer())
+      return;
+    var r = canvas.getBoundingClientRect();
+    var hudH = document.getElementById("hud").getBoundingClientRect().height;
+    var topLimit = hudH + 14;
+    var bottomLimit = r.height - 18;
+    var y = clamp(r.height - 90, topLimit + player.h / 2 + 6, bottomLimit - player.h / 2);
+    player.x = clamp(r.width * 0.25, player.w / 2 + 10, r.width - player.w / 2 - 10);
+    player.y = y;
+    var p2 = ensurePilot2();
+    p2.x = clamp(r.width * 0.75, p2.w / 2 + 10, r.width - p2.w / 2 - 10);
+    p2.y = y;
+    pilot2Mouse.x = p2.x;
+    pilot2Mouse.y = p2.y;
+    pilot2Mouse.has = true;
+  }
+  function tickPilotTimers(pilot, dtReal2) {
+    if (!pilot)
+      return;
+    pilot.cooldown = Math.max(0, pilot.cooldown - dtReal2);
+    pilot.invuln = Math.max(0, pilot.invuln - dtReal2);
+    pilot.hitFlash = Math.max(0, pilot.hitFlash - dtReal2 * 3.6);
+    pilot.shipShake = Math.max(0, (pilot.shipShake || 0) - dtReal2 * 3.2);
+    if (pilot.teleportHide > 0) {
+      pilot.teleportHide = Math.max(0, pilot.teleportHide - dtReal2);
+    }
+    if (pilot.teleportFx) {
+      pilot.teleportFx.t += dtReal2;
+      if (!pilot.teleportFx.reappearPlayed && pilot.teleportFx.t >= (pilot.teleportFx.hide || 0)) {
+        pilot.teleportFx.reappearPlayed = true;
+        playSfx(state, "teleport_reappear");
+      }
+      var fxTotal = Math.max(pilot.teleportFx.ghostDur || 0, (pilot.teleportFx.hide || 0) + (pilot.teleportFx.zoomDur || 0));
+      if (pilot.teleportFx.t >= fxTotal) {
+        pilot.teleportFx = null;
+      }
+    }
+    pilot.recoil = Math.max(0, pilot.recoil - dtReal2 * 9);
+    pilot.flash = Math.max(0, pilot.flash - dtReal2 * 12);
+    if (pilot.secondaryCooldown > 0) {
+      pilot.secondaryCooldown = Math.max(0, pilot.secondaryCooldown - dtReal2);
+    }
+    if (pilot.blasterMode !== "single" && !(pilot.blasterHitsRemaining > 0)) {
+      resetPilotShotType(pilot);
+    }
+    if (pilot.defenseMode === "armor") {
+      if (!(pilot.armorBlocksRemaining > 0)) {
+        pilot.defenseMode = "none";
+        pilot.defenseTimer = 0;
+      }
+    } else if (pilot.defenseTimer > 0) {
+      pilot.defenseTimer = Math.max(0, pilot.defenseTimer - dtReal2);
+      if (pilot.defenseTimer === 0)
+        pilot.defenseMode = "none";
+    }
+    if (pilot.magnetTimer > 0) {
+      pilot.magnetTimer = Math.max(0, pilot.magnetTimer - dtReal2);
+    }
+    if (pilot.lockTimer > 0) {
+      pilot.lockTimer = Math.max(0, pilot.lockTimer - dtReal2);
+      if (pilot.lockTimer === 0)
+        pilot.lockTargetId = 0;
+    }
+  }
+  function createPilotStats() {
+    return {
+      score: 0,
+      correct: 0,
+      wrong: 0,
+      missed: 0,
+      streak: 0,
+      hits: 0,
+      shots: 0,
+      shotCounts: {},
+      powerupsCollected: 0,
+      powerupsMissed: 0,
+      powerupsUsed: 0,
+      powerupsCollectedByType: {},
+      powerupsUsedByType: {},
+      powerupsMissedByType: {}
+    };
+  }
+  function ensurePilotStats(pilotId) {
+    if (!pilotStats[pilotId])
+      pilotStats[pilotId] = createPilotStats();
+    return pilotStats[pilotId];
+  }
+  function resetPilotStats(pilotId) {
+    pilotStats[pilotId] = createPilotStats();
+  }
+  function recordPilotShot(pilotId, mode) {
+    var stats = ensurePilotStats(pilotId);
+    stats.shots += 1;
+    var key = String(mode || "single");
+    stats.shotCounts[key] = (stats.shotCounts[key] || 0) + 1;
+  }
+  function recordPilotCorrect(pilotId) {
+    var stats = ensurePilotStats(pilotId);
+    stats.correct += 1;
+    stats.hits += 1;
+    stats.streak += 1;
+    var baseGain = 50 + Math.min(250, stats.streak * 10);
+    var factor = Math.max(state.a, state.b);
+    if (isDigitMode())
+      factor = state.b;
+    if (isAdditionMode()) {
+      factor = clamp(Math.round(factor / 10), 2, 30);
+    } else {
+      factor = clamp(factor, 2, 12);
+    }
+    var weight = 1 + factor / 12 * 0.6;
+    stats.score += Math.round(baseGain * weight);
+  }
+  function recordPilotWrong(pilotId) {
+    var stats = ensurePilotStats(pilotId);
+    stats.wrong += 1;
+    stats.hits += 1;
+    stats.streak = 0;
+    stats.score = Math.max(0, stats.score - 60);
+  }
+  function recordPilotMissed(pilotId) {
+    var stats = ensurePilotStats(pilotId);
+    stats.missed += 1;
+    stats.streak = 0;
+  }
+  function clonePilotFromPlayer(src) {
+    var p = createPlayer();
+    for (var key in src) {
+      if (!Object.prototype.hasOwnProperty.call(src, key))
+        continue;
+      var val = src[key];
+      if (val && typeof val === "object") {
+        p[key] = Array.isArray(val) ? val.slice() : Object.assign({}, val);
+      } else {
+        p[key] = val;
+      }
+    }
+    p.invuln = 0;
+    p.hidden = false;
+    p.mouseControlEnabled = true;
+    p.secondarySlots = [null, null, null];
+    p.secondaryInventory = {};
+    p.secondaryMode = "none";
+    p.secondaryCharges = 0;
+    p.secondarySlotIndex = 0;
+    p.secondaryCooldown = 0;
+    p.autoFireActive = false;
+    p.autoFireAmmo = 0;
+    p.autoFireAmmoMax = 0;
+    p.livesStart = Math.max(0, state.livesStart || state.lives || 0);
+    p.lives = p.livesStart;
+    p.dead = false;
+    return p;
+  }
+  function ensurePilot2() {
+    if (!pilot2) {
+      pilot2 = clonePilotFromPlayer(player);
+    }
+    return pilot2;
+  }
+  function setPilot2MouseControl(enabled, silent) {
+    var p2 = ensurePilot2();
+    p2.mouseControlEnabled = !!enabled;
+    if (p2.mouseControlEnabled) {
+      pilot2Mouse.has = true;
+      pilot2Mouse.x = p2.x;
+      pilot2Mouse.y = p2.y;
+    }
+    if (!silent) {
+      showToast(p2.mouseControlEnabled ? "PILOT 2 MOUSE ON" : "PILOT 2 MOUSE OFF");
+    }
+  }
+  function pickAlternateShipType(primary) {
+    var order = ["classic", "spire", "am2", "mk7", "fizard", "ember", "azure", "bu2x", "mantas", "cyan", "veloz"];
+    var idx = order.indexOf(primary);
+    if (idx < 0)
+      idx = 0;
+    for (var i = 1; i <= order.length; i++) {
+      var next = order[(idx + i) % order.length];
+      if (next && next !== primary)
+        return next;
+    }
+    return primary || "mk7";
   }
   function setMissionBriefActive(active) {
     missionBriefShowing = !!active;
@@ -143041,6 +143379,22 @@
     }
   }
   canvas.addEventListener("pointerdown", function(e) {
+    if (isSandboxMultiplayer()) {
+      var p2 = ensurePilot2();
+      updatePilot2Mouse(e);
+      if (e.button === 1) {
+        secondaryFireForPilot(p2, 2);
+      } else {
+        var slots = getSecondarySlotsForPilot(p2);
+        var slot = slots[clamp(p2.secondarySlotIndex | 0, 0, slots.length - 1)];
+        if (slot && slot.type && slot.count > 0 && p2.secondaryCooldown <= 0) {
+          secondaryFireForPilot(p2, 2);
+        } else {
+          fireForPilot(p2, 2);
+        }
+      }
+      return;
+    }
     pointerDown = true;
     lastPointerX = e.clientX;
     lastPointerY = e.clientY;
@@ -143048,7 +143402,13 @@
     canvas.setPointerCapture(e.pointerId);
   });
   canvas.addEventListener("pointermove", function(e) {
-    if (!pointerDown)
+    if (isSandboxMultiplayer()) {
+      updatePilot2Mouse(e);
+      return;
+    }
+    if (!pointerDown || !pointerDragEnabled)
+      return;
+    if (mousepadActive)
       return;
     var dx = e.clientX - lastPointerX;
     var dy = e.clientY - lastPointerY;
@@ -143062,13 +143422,63 @@
     player.y += dy * 1.15;
     player.x = clamp(player.x, player.w / 2 + 10, r.width - player.w / 2 - 10);
     player.y = clamp(player.y, topLimit + player.h / 2 + 6, bottomLimit - player.h / 2);
+    if (isSandboxSplitMode()) {
+      clampPilotToLane(player, 1);
+    }
+    if (isSandboxSplitMode()) {
+      clampPilotToLane(player, 1);
+    }
+    if (isSandboxMultiplayer()) {
+      var p2 = ensurePilot2();
+      var p2Profile = getShipProfile(p2.shipType);
+      p2.speed = p2Profile.speed;
+      if (!p2.dead && p2.mouseControlEnabled && pilot2Mouse.has && state.running && !state.paused && !state.over) {
+        var laneP2 = isSandboxSplitMode() ? getLaneBounds(2) : { minX: p2.w / 2 + 10, maxX: r.width - p2.w / 2 - 10 };
+        var minX2 = laneP2.minX + p2.w / 2 + 2;
+        var maxX2 = laneP2.maxX - p2.w / 2 - 2;
+        if (!isSandboxSplitMode()) {
+          minX2 = laneP2.minX;
+          maxX2 = laneP2.maxX;
+        }
+        var targetX2 = clamp(pilot2Mouse.x, minX2, maxX2);
+        var targetY2 = clamp(pilot2Mouse.y, topLimit + p2.h / 2 + 6, bottomLimit - p2.h / 2);
+        var dx2 = targetX2 - p2.x;
+        var dy2 = targetY2 - p2.y;
+        var settle2 = 1 - Math.exp(-10 * dtReal);
+        p2.x += dx2 * settle2;
+        p2.y += dy2 * settle2;
+        var velScale = 1 / Math.max(1e-3, dtReal);
+        var targetVX2 = dx2 * velScale * 0.2;
+        var targetVY2 = dy2 * velScale * 0.2;
+        p2.vx += (targetVX2 - p2.vx) * 0.3;
+        p2.vy += (targetVY2 - p2.vy) * 0.3;
+        p2.bankHold = clamp(p2.vx / (p2.speed || 1), -1, 1);
+      }
+      var p2Bounds = isSandboxSplitMode() ? getLaneBounds(2) : { minX: p2.w / 2 + 10, maxX: r.width - p2.w / 2 - 10 };
+      p2.x = clamp(p2.x, p2Bounds.minX, p2Bounds.maxX);
+      p2.y = clamp(p2.y, topLimit + p2.h / 2 + 6, bottomLimit - p2.h / 2);
+      tickPilotTimers(p2, dtReal);
+    }
   });
   canvas.addEventListener("pointerup", function() {
+    if (isSandboxMultiplayer())
+      return;
     pointerDown = false;
     lastPointerX = null;
     lastPointerY = null;
   });
+  canvas.addEventListener("wheel", function(e) {
+    if (!isSandboxMultiplayer())
+      return;
+    e.preventDefault();
+    var p2 = ensurePilot2();
+    var dir = (e.deltaY || 0) > 0 ? 1 : -1;
+    cyclePilotPowerup(p2, dir);
+  }, { passive: false });
   window.addEventListener("mousemove", function(e) {
+    if (isSandboxMultiplayer()) {
+      updatePilot2Mouse(e);
+    }
     if (!mousepadActive)
       return;
     if (virtualPad && (mousepadMode === "pad" || mousepadMode === "hybrid")) {
@@ -143097,6 +143507,9 @@
     player.y += dy * mousepadSensitivityPad;
     player.x = clamp(player.x, player.w / 2 + 10, r.width - player.w / 2 - 10);
     player.y = clamp(player.y, topLimit + player.h / 2 + 6, bottomLimit - player.h / 2);
+    if (isSandboxSplitMode()) {
+      clampPilotToLane(player, 1);
+    }
   });
   function resize() {
     var shell = document.getElementById("gameShell");
@@ -143113,6 +143526,9 @@
     view.hudH = document.getElementById("hud").getBoundingClientRect().height;
     player.x = clamp(player.x || w / 2, player.w / 2 + 10, w - player.w / 2 - 10);
     player.y = clamp(player.y || h - 58, 80, h - 58);
+    if (isSandboxMultiplayer()) {
+      positionSandboxPilots();
+    }
     buildStarfield(w, h);
     bg.nebula = [];
     var g1 = ctx.createRadialGradient(w * 0.22, h * 0.18, 20, w * 0.22, h * 0.18, Math.max(w, h) * 0.55);
@@ -143140,6 +143556,9 @@
     if (state.questionMode === "rational_frac" || state.questionMode === "rational_dec") {
       return String(state.rationalQuestion || "?") + " = ?";
     }
+    if (isDivisorsMode()) {
+      return String(state.divisorTarget || state.answer || "?");
+    }
     if (state.questionMode === "square_shoot") {
       return String(state.a) + "\xB2 = ?";
     }
@@ -143150,12 +143569,18 @@
     if (isFactorMode()) {
       if (isPartialSumsMode()) {
         var known = typeof state.partialSumKnown === "number" ? state.partialSumKnown : state.a;
-        var missing = typeof state.partialSumCorrectValue === "number" ? state.partialSumCorrectValue : typeof state.partialSumMissing === "number" ? state.partialSumMissing : state.b;
+        var missing = typeof state.partialSumMissing === "number" ? state.partialSumMissing : state.b;
         var sum = typeof state.partialSumTotal === "number" ? state.partialSumTotal : known + missing;
         return known + " + ? = " + sum;
       }
       var product = typeof state.factorProduct === "number" ? state.factorProduct : state.a * state.b;
       return state.a + " x ? = " + product;
+    }
+    if (state.questionMode === "add_series3" || state.questionMode === "add_series4") {
+      var terms = Array.isArray(state.seriesTerms) ? state.seriesTerms : [];
+      if (!terms.length)
+        return "?";
+      return terms.join(" + ") + " = ?";
     }
     var op = isAdditionMode() ? "+" : "x";
     var left = state.a;
@@ -143183,7 +143608,8 @@
     scoreText.textContent = String(state.score);
     streakText.textContent = String(state.streak);
     levelText.textContent = String(state.level);
-    livesText.textContent = String(state.lives);
+    if (livesText)
+      livesText.textContent = String(state.lives);
     if (hullText) {
       hullText.textContent = Math.round(clamp(player.hull, 0, 1) * 100) + "%";
     }
@@ -143403,7 +143829,7 @@
   function isAdditionMode() {
     if (state.operation === "add")
       return true;
-    return state.questionMode === "add_digits2" || state.questionMode === "add_digits3" || state.questionMode === "add_classic2" || state.questionMode === "add_classic3" || state.questionMode === "add_stampede2" || state.questionMode === "add_stampede3" || state.questionMode === "add_factor2" || state.questionMode === "add_factor3";
+    return state.questionMode === "add_digits2" || state.questionMode === "add_digits3" || state.questionMode === "add_classic2" || state.questionMode === "add_classic3" || state.questionMode === "add_series3" || state.questionMode === "add_series4" || state.questionMode === "add_stampede2" || state.questionMode === "add_stampede3" || state.questionMode === "add_factor2" || state.questionMode === "add_factor3";
   }
   function isSquareMode() {
     return state.questionMode === "square_shoot" || state.questionMode === "square_root";
@@ -143547,7 +143973,7 @@
         return 1;
       return den;
     }
-    if (state.questionMode === "classic" || state.questionMode === "classic2" || state.questionMode === "classic3" || state.questionMode === "add_classic2" || state.questionMode === "add_classic3" || state.questionMode === "stampede2" || state.questionMode === "stampede3" || state.questionMode === "add_stampede2" || state.questionMode === "add_stampede3") {
+    if (state.questionMode === "classic" || state.questionMode === "classic2" || state.questionMode === "classic3" || state.questionMode === "add_classic2" || state.questionMode === "add_classic3" || state.questionMode === "add_series3" || state.questionMode === "add_series4" || state.questionMode === "stampede2" || state.questionMode === "stampede3" || state.questionMode === "add_stampede2" || state.questionMode === "add_stampede3") {
       var ansStr = String(Math.abs(parseInt(answerStr, 10) || 0));
       var maxDigit = 0;
       for (var di = 0; di < ansStr.length; di++) {
@@ -143725,27 +144151,83 @@
     return true;
   }
   function isClassicMode() {
-    return state.questionMode === "classic" || state.questionMode === "classic2" || state.questionMode === "classic3" || state.questionMode === "factor2" || state.questionMode === "factor3" || state.questionMode === "add_factor2" || state.questionMode === "add_factor3" || state.questionMode === "add_classic2" || state.questionMode === "add_classic3" || state.questionMode === "stampede2" || state.questionMode === "stampede3" || state.questionMode === "add_stampede2" || state.questionMode === "add_stampede3" || isSquareMode() || isRationalMode();
+    return state.questionMode === "classic" || state.questionMode === "classic2" || state.questionMode === "classic3" || state.questionMode === "factor2" || state.questionMode === "factor3" || state.questionMode === "add_factor2" || state.questionMode === "add_factor3" || state.questionMode === "add_classic2" || state.questionMode === "add_classic3" || state.questionMode === "add_series3" || state.questionMode === "add_series4" || state.questionMode === "stampede2" || state.questionMode === "stampede3" || state.questionMode === "add_stampede2" || state.questionMode === "add_stampede3" || isSquareMode() || isRationalMode();
   }
   function isFactorMode() {
     return state.questionMode === "factor2" || state.questionMode === "factor3" || state.questionMode === "add_factor2" || state.questionMode === "add_factor3";
   }
   function isPartialSumsMode() {
-    return state.questionMode === "add_factor2" || state.questionMode === "add_factor3";
+    if (state.questionMode === "add_factor2" || state.questionMode === "add_factor3")
+      return true;
+    return state.operation === "add" && (state.questionMode === "factor2" || state.questionMode === "factor3");
+  }
+  function isDivisorsMode() {
+    return state.questionMode === "divisors";
+  }
+  function buildDivisorAnswers(target) {
+    var n = Math.max(1, Math.floor(Math.abs(target || 0)));
+    var list = [];
+    for (var i = 1; i <= n; i++) {
+      if (n % i === 0)
+        list.push(i);
+    }
+    return list;
+  }
+  function getRemainingDivisors() {
+    if (!state.divisorAnswers || !state.divisorAnswers.length)
+      return [];
+    if (!state.divisorHits)
+      return state.divisorAnswers.slice();
+    var out = [];
+    for (var i = 0; i < state.divisorAnswers.length; i++) {
+      var val = state.divisorAnswers[i];
+      if (!state.divisorHits[val])
+        out.push(val);
+    }
+    return out;
+  }
+  function isDivisorLabel(label) {
+    if (!state.divisorAnswers || !state.divisorAnswers.length)
+      return false;
+    var val = Number(label);
+    if (!Number.isFinite(val))
+      return false;
+    for (var i = 0; i < state.divisorAnswers.length; i++) {
+      if (state.divisorAnswers[i] === val)
+        return true;
+    }
+    return false;
+  }
+  function markDivisorHit(label) {
+    var val = Number(label);
+    if (!Number.isFinite(val))
+      return false;
+    if (!state.divisorHits)
+      state.divisorHits = {};
+    if (state.divisorHits[val])
+      return false;
+    state.divisorHits[val] = true;
+    state.divisorRemaining = Math.max(0, (state.divisorRemaining || 0) - 1);
+    return true;
   }
   function getCurrentCorrectTargetValue() {
     if (isDigitMode())
       return state.correctDigit;
+    if (isDivisorsMode())
+      return state.divisorTarget || state.answer;
     if (isPartialSumsMode()) {
       if (typeof state.partialSumCorrectValue === "number")
         return state.partialSumCorrectValue;
       if (typeof state.partialSumMissing === "number")
         return state.partialSumMissing;
+      if (typeof state.partialSumTotal === "number" && typeof state.partialSumKnown === "number") {
+        return state.partialSumTotal - state.partialSumKnown;
+      }
     }
     return state.answer;
   }
   function isClassicModeValue(mode) {
-    return mode === "classic" || mode === "classic2" || mode === "classic3" || mode === "factor2" || mode === "factor3" || mode === "add_factor2" || mode === "add_factor3" || mode === "add_classic2" || mode === "add_classic3" || mode === "stampede2" || mode === "stampede3" || mode === "add_stampede2" || mode === "add_stampede3" || mode === "square_shoot" || mode === "square_root" || mode === "rational_frac" || mode === "rational_dec";
+    return mode === "classic" || mode === "classic2" || mode === "classic3" || mode === "factor2" || mode === "factor3" || mode === "add_factor2" || mode === "add_factor3" || mode === "add_classic2" || mode === "add_classic3" || mode === "add_series3" || mode === "add_series4" || mode === "stampede2" || mode === "stampede3" || mode === "add_stampede2" || mode === "add_stampede3" || mode === "square_shoot" || mode === "square_root" || mode === "rational_frac" || mode === "rational_dec";
   }
   function describeQuestionMode(mode) {
     var modeLabel = String(mode || state.questionMode || "classic");
@@ -143754,6 +144236,8 @@
     var isRational = modeLabel.indexOf("rational_") === 0;
     var isFactor = modeLabel.indexOf("factor") !== -1;
     var isStampede = modeLabel.indexOf("stampede") !== -1;
+    var isSeries = modeLabel.indexOf("series") !== -1;
+    var isDivisors = modeLabel === "divisors";
     if (!isStampede && state.stampedeMode)
       isStampede = true;
     var operation = isRational ? "Rationals" : isSquare ? "Squares" : isAdd ? "Addition" : "Multiplication";
@@ -143762,8 +144246,12 @@
       modeName = modeLabel === "rational_dec" ? "Target Decimal" : "Target Fraction";
     } else if (isSquare) {
       modeName = modeLabel === "square_root" ? "Square Roots" : "Perfect Squares";
+    } else if (isDivisors) {
+      modeName = "Divisors";
     } else if (isFactor) {
       modeName = isAdd ? "Partial Sums" : "Factor Hunt";
+    } else if (isSeries) {
+      modeName = "Series";
     } else if (isStampede) {
       modeName = "Stampede";
     } else {
@@ -143774,6 +144262,10 @@
       subLabel = modeLabel === "rational_dec" ? "Decimal" : "Fraction";
     } else if (isSquare) {
       subLabel = modeLabel === "square_root" ? "Shoot Roots" : "Shoot Squares";
+    } else if (isDivisors) {
+      subLabel = "";
+    } else if (isSeries) {
+      subLabel = modeLabel.indexOf("4") !== -1 ? "4 terms" : "3 terms";
     } else {
       var sub = modeLabel.indexOf("3") !== -1 ? "3" : "2";
       subLabel = isAdd ? sub + "x" + sub : "1x" + sub;
@@ -143866,6 +144358,11 @@
     state.partialSumMissing = null;
     state.partialSumCorrectValue = null;
     state.partialSumTotal = null;
+    state.seriesTerms = null;
+    state.divisorTarget = 0;
+    state.divisorAnswers = null;
+    state.divisorHits = null;
+    state.divisorRemaining = 0;
     if (isSquareMode()) {
       var base = randi(rr.a1, rr.a2);
       state.a = base;
@@ -143917,7 +144414,7 @@
         state.partialSumKnown = knownAddend;
         state.partialSumMissing = missingAddend;
         state.partialSumCorrectValue = missingAddend;
-        state.partialSumTotal = knownAddend + missingAddend;
+        state.partialSumTotal = state.partialSumKnown + state.partialSumMissing;
         state.answer = state.partialSumCorrectValue;
       } else {
         if (state.questionMode === "factor2") {
@@ -143930,6 +144427,49 @@
         state.factorProduct = state.a * state.b;
         state.answer = state.b;
       }
+      state.questionReady = true;
+      state.waveId++;
+      syncHud();
+      prepareWave();
+      return;
+    }
+    if (isDivisorsMode()) {
+      var diff = String(state.difficulty || "normal").toLowerCase();
+      var minTarget = diff === "hard" || diff === "brutal" ? 51 : 2;
+      var maxTarget = diff === "hard" || diff === "brutal" ? 99 : 50;
+      if (maxTarget < minTarget) {
+        var tmpRange = minTarget;
+        minTarget = maxTarget;
+        maxTarget = tmpRange;
+      }
+      var target = randi(minTarget, maxTarget);
+      state.divisorTarget = target;
+      state.divisorAnswers = buildDivisorAnswers(target);
+      state.divisorHits = {};
+      state.divisorRemaining = state.divisorAnswers.length;
+      state.a = target;
+      state.b = 1;
+      state.answer = target;
+      state.questionReady = true;
+      state.waveId++;
+      syncHud();
+      prepareWave();
+      return;
+    }
+    if (state.questionMode === "add_series3" || state.questionMode === "add_series4") {
+      var termCount = state.questionMode === "add_series4" ? 4 : 3;
+      var terms = [];
+      var tMin = rr.a1;
+      var tMax = rr.a2;
+      for (var ti = 0; ti < termCount; ti++) {
+        terms.push(randi(tMin, tMax));
+      }
+      state.seriesTerms = terms;
+      state.a = terms[0];
+      state.b = terms[1];
+      state.answer = terms.reduce(function(sum, val) {
+        return sum + val;
+      }, 0);
       state.questionReady = true;
       state.waveId++;
       syncHud();
@@ -144273,9 +144813,53 @@
     }
     return pool;
   }
+  function buildDivisorDecoyPool(targetCount) {
+    var pool = [];
+    var divisorSet = /* @__PURE__ */ new Set();
+    if (state.divisorAnswers && state.divisorAnswers.length) {
+      for (var i = 0; i < state.divisorAnswers.length; i++) {
+        divisorSet.add(String(state.divisorAnswers[i]));
+      }
+    }
+    var target = Math.max(6, targetCount || 0) * 3;
+    var guard = 0;
+    while (pool.length < target && guard < 240) {
+      var cand = randi(2, 99);
+      var key = String(cand);
+      if (divisorSet.has(key)) {
+        guard++;
+        continue;
+      }
+      if (pool.indexOf(cand) !== -1) {
+        guard++;
+        continue;
+      }
+      pool.push(cand);
+      guard++;
+    }
+    if (!pool.length) {
+      var fallback = genDecoys(state.divisorTarget || 12, targetCount * 2);
+      for (var fi = 0; fi < fallback.length; fi++) {
+        var fKey = String(fallback[fi]);
+        if (divisorSet.has(fKey))
+          continue;
+        pool.push(fallback[fi]);
+      }
+    }
+    return pool;
+  }
   function prepareWave() {
     var decoyScale = 0.7;
     var decoyCount = Math.max(1, Math.round(state.decoys * 0.3 * decoyScale));
+    if (isDivisorsMode()) {
+      state.waveDecoys = buildDivisorDecoyPool(decoyCount);
+      state.waveDecoyBag = state.waveDecoys.slice();
+      state.correctInPlay = false;
+      state.correctAsteroidId = 0;
+      state.correctDelayRemaining = 0;
+      state.spawnTimer = 0;
+      return;
+    }
     if (isDigitMode()) {
       if (state.correctDigit == null)
         state.correctDigit = pickCorrectDigit();
@@ -144283,7 +144867,7 @@
       state.waveDecoyBag = buildDigitDecoyBag();
     } else {
       state.waveDecoys = genDecoys(state.answer, decoyCount);
-      state.waveDecoyBag = buildClassicDecoyBag(state.answer, Math.max(6, Math.round(decoyCount * 2 * decoyScale)));
+      state.waveDecoyBag = buildClassicDecoyBag(state.answer, Math.max(4, Math.round(decoyCount * 1.6 * decoyScale)));
     }
     state.correctInPlay = false;
     state.correctAsteroidId = 0;
@@ -144293,8 +144877,13 @@
     state.spawnTimer = 0;
   }
   function pickSpawnX(w) {
+    return pickSpawnXInRange(48, w - 48);
+  }
+  function pickSpawnXInRange(minX, maxX) {
+    var lo = Math.min(minX, maxX);
+    var hi = Math.max(minX, maxX);
     for (var tries = 0; tries < 10; tries++) {
-      var x = rand(48, w - 48);
+      var x = rand(lo, hi);
       var ok = true;
       for (var i = 0; i < asteroids.length; i++) {
         var a = asteroids[i];
@@ -144306,7 +144895,24 @@
       if (ok)
         return x;
     }
-    return rand(48, w - 48);
+    return rand(lo, hi);
+  }
+  function getLaneBounds(laneId) {
+    var r = canvas.getBoundingClientRect();
+    var w = r.width;
+    var pad = 36;
+    if (!isSandboxSplitMode() || !laneId) {
+      return { minX: pad, maxX: w - pad };
+    }
+    var mid = w / 2;
+    var gap = 40;
+    if (laneId === 1) {
+      return { minX: pad, maxX: Math.max(pad + 40, mid - gap) };
+    }
+    if (laneId === 2) {
+      return { minX: Math.min(mid + gap, w - pad - 40), maxX: w - pad };
+    }
+    return { minX: pad, maxX: w - pad };
   }
   function getDifficultySpeedFactor() {
     var diff = String(state.difficulty || "normal").toLowerCase();
@@ -144320,11 +144926,12 @@
       return 1.05;
     return 0.62;
   }
-  function spawnAsteroid(label, isCorrect) {
+  function spawnAsteroid(label, isCorrect, laneId) {
     var r = canvas.getBoundingClientRect();
     var w = r.width;
     var h = r.height;
-    var spawnX = pickSpawnX(w);
+    var lane = getLaneBounds(laneId);
+    var spawnX = pickSpawnXInRange(lane.minX, lane.maxX);
     if (isCorrect && typeof state.nextCorrectSpawnX === "number") {
       spawnX = state.nextCorrectSpawnX;
       state.nextCorrectSpawnX = null;
@@ -144356,10 +144963,10 @@
       var sideYMax = Math.max(80, h * 0.35);
       spawnY = rand(0, sideYMax);
       if (spawnSide === "left") {
-        spawnX = -rand(20, 64);
+        spawnX = lane.minX - rand(20, 64);
         baseVx = rand(40, 90);
       } else if (spawnSide === "right") {
-        spawnX = w + rand(20, 64);
+        spawnX = lane.maxX + rand(20, 64);
         baseVx = rand(-90, -40);
       }
     }
@@ -144374,6 +144981,7 @@
       label,
       isCorrect: !!isCorrect,
       waveId: state.waveId,
+      laneId: laneId || 0,
       spin: rand(-2.6, 2.6),
       rot: rand(0, Math.PI * 2),
       seed: Math.random() * 1e3,
@@ -144408,7 +145016,7 @@
         denHits = 1;
       a.hitsRemaining = denHits;
       a.hitsTotal = denHits;
-    } else if (isCorrect && (state.questionMode === "classic" || state.questionMode === "classic2" || state.questionMode === "classic3" || state.questionMode === "add_classic2" || state.questionMode === "add_classic3" || state.questionMode === "square_shoot" || state.questionMode === "square_root" || state.questionMode === "add_factor2" || state.questionMode === "add_factor3")) {
+    } else if (isCorrect && (state.questionMode === "classic" || state.questionMode === "classic2" || state.questionMode === "classic3" || state.questionMode === "add_classic2" || state.questionMode === "add_classic3" || state.questionMode === "add_series3" || state.questionMode === "add_series4" || state.questionMode === "square_shoot" || state.questionMode === "square_root" || state.questionMode === "add_factor2" || state.questionMode === "add_factor3")) {
       var ansStr = String(Math.abs(state.answer || 0));
       var maxDigit = 0;
       for (var di = 0; di < ansStr.length; di++) {
@@ -144427,20 +145035,63 @@
       state.correctAsteroidId = id;
     }
   }
-  function spawnDecoyOnly() {
+  function spawnDecoyOnlyInLane(laneId) {
     var activeLabels = /* @__PURE__ */ new Set();
     for (var i = 0; i < asteroids.length; i++) {
       var a = asteroids[i];
       if (a.waveId === state.waveId && a.label != null) {
-        activeLabels.add(String(a.label));
+        if (!laneId || a.laneId === laneId) {
+          activeLabels.add(String(a.label));
+        }
       }
+    }
+    if (isDivisorsMode()) {
+      if (!state.waveDecoyBag || !state.waveDecoyBag.length) {
+        state.waveDecoyBag = buildDivisorDecoyPool(Math.max(2, Math.round(state.decoys * 0.6))).slice();
+      }
+      var dLabel = null;
+      if (state.waveDecoyBag && state.waveDecoyBag.length) {
+        for (var dBi = state.waveDecoyBag.length - 1; dBi >= 0; dBi--) {
+          var cand = state.waveDecoyBag[dBi];
+          if (!activeLabels.has(String(cand))) {
+            dLabel = cand;
+            state.waveDecoyBag.splice(dBi, 1);
+            break;
+          }
+        }
+        if (dLabel == null) {
+          dLabel = state.waveDecoyBag.pop();
+        }
+      }
+      if (dLabel == null) {
+        var guard = 0;
+        var divisorSet = /* @__PURE__ */ new Set();
+        if (state.divisorAnswers) {
+          for (var di = 0; di < state.divisorAnswers.length; di++) {
+            divisorSet.add(String(state.divisorAnswers[di]));
+          }
+        }
+        while (guard++ < 80) {
+          var fallback = randi(2, 99);
+          if (divisorSet.has(String(fallback)))
+            continue;
+          if (activeLabels.has(String(fallback)))
+            continue;
+          dLabel = fallback;
+          break;
+        }
+      }
+      if (dLabel == null)
+        dLabel = randi(2, 99);
+      spawnAsteroid(dLabel, false, laneId);
+      return;
     }
     var label = null;
     if (!state.waveDecoyBag || !state.waveDecoyBag.length) {
       if (isDigitMode()) {
         state.waveDecoyBag = buildDigitDecoyBag(activeLabels);
       } else {
-        state.waveDecoyBag = buildClassicDecoyBag(getCurrentCorrectTargetValue(), Math.max(6, Math.round(state.decoys * 0.6 * 0.7)), activeLabels);
+        state.waveDecoyBag = buildClassicDecoyBag(getCurrentCorrectTargetValue(), Math.max(4, Math.round(state.decoys * 0.6 * 0.55)), activeLabels);
       }
     }
     if (state.waveDecoyBag && state.waveDecoyBag.length) {
@@ -144461,10 +145112,78 @@
       var pool = state.waveDecoys && state.waveDecoys.length ? state.waveDecoys : [Math.max(0, correctTarget + randi(-10, 10))];
       label = pool[randi(0, pool.length - 1)];
     }
-    spawnAsteroid(label, false);
+    spawnAsteroid(label, false, laneId);
+  }
+  function spawnDecoyOnly() {
+    return spawnDecoyOnlyInLane(0);
+  }
+  function hasCorrectInLane(laneId) {
+    for (var i = 0; i < asteroids.length; i++) {
+      var a = asteroids[i];
+      if (!a || !a.isCorrect)
+        continue;
+      if (a.waveId !== state.waveId)
+        continue;
+      if (laneId && a.laneId !== laneId)
+        continue;
+      return true;
+    }
+    return false;
+  }
+  function countDivisorInPlay(laneId) {
+    if (!state.divisorAnswers || !state.divisorAnswers.length)
+      return 0;
+    var divisorSet = /* @__PURE__ */ new Set();
+    for (var di = 0; di < state.divisorAnswers.length; di++) {
+      divisorSet.add(String(state.divisorAnswers[di]));
+    }
+    var count = 0;
+    for (var i = 0; i < asteroids.length; i++) {
+      var a = asteroids[i];
+      if (!a || a.waveId !== state.waveId || a.label == null)
+        continue;
+      if (laneId && a.laneId !== laneId)
+        continue;
+      if (divisorSet.has(String(a.label)))
+        count++;
+    }
+    return count;
+  }
+  function spawnDivisorWaveLane(laneId) {
+    var remaining = getRemainingDivisors();
+    if (!remaining.length) {
+      spawnDecoyOnlyInLane(laneId);
+      return;
+    }
+    var correctInPlay = countDivisorInPlay(laneId);
+    var maxCorrect = Math.min(2, remaining.length);
+    if (correctInPlay < maxCorrect && Math.random() < 0.65) {
+      var label = remaining[randi(0, remaining.length - 1)];
+      spawnAsteroid(label, true, laneId);
+    } else {
+      spawnDecoyOnlyInLane(laneId);
+    }
+  }
+  function spawnOneFromWaveLane(laneId) {
+    if (!hasCorrectInLane(laneId)) {
+      var label = getCurrentCorrectTargetValue();
+      spawnAsteroid(label, true, laneId);
+    } else {
+      spawnDecoyOnlyInLane(laneId);
+    }
   }
   function spawnOneFromWave() {
-    if (!state.correctInPlay) {
+    if (isDivisorsMode()) {
+      if (isSandboxSplitMode()) {
+        spawnDivisorWaveLane(1);
+        spawnDivisorWaveLane(2);
+      } else {
+        spawnDivisorWaveLane(0);
+      }
+    } else if (isSandboxSplitMode()) {
+      spawnOneFromWaveLane(1);
+      spawnOneFromWaveLane(2);
+    } else if (!state.correctInPlay) {
       if (state.correctDelayRemaining > 0) {
         spawnDecoyOnly();
         state.correctDelayRemaining--;
@@ -144480,9 +145199,11 @@
       var w = r.width;
       var baseVy = (92 + state.level * 10) * getDifficultySpeedFactor();
       var speedScale = state.baseSpeed * (1 + state.ddSpeedBonus);
+      var ambLane = isSandboxSplitMode() ? Math.random() < 0.5 ? 1 : 2 : 0;
+      var ambBounds = getLaneBounds(ambLane);
       asteroids.push({
         id: ++state.asteroidId,
-        x: rand(40, w - 40),
+        x: rand(ambBounds.minX, ambBounds.maxX),
         y: -rand(220, 520),
         vx: rand(-25, 25),
         vy: baseVy * speedScale * rand(0.75, 1),
@@ -144491,6 +145212,7 @@
         label: null,
         isCorrect: false,
         waveId: -1,
+        laneId: ambLane,
         spin: rand(-3.2, 3.2),
         rot: rand(0, Math.PI * 2),
         seed: Math.random() * 1e3,
@@ -144530,12 +145252,13 @@
     var roll = Math.random();
     var lowHull = player.hull < 0.3;
     var stampedeActive = isStampedeMode();
+    var allowOffense = !!sandboxMode;
     if (state.alienSwarm) {
       if (lowHull && roll < 0.5) {
         var sType = Math.random() < 0.7 ? "repair" : pickSecondaryType();
         return { type: sType, group: "secondary" };
       }
-      if (roll < 0.75) {
+      if (roll < 0.75 && allowOffense) {
         var offense = ["laser", "fire", "ice", "electric", "pierce", "plasma", "rail"];
         if (isMissileAllowed())
           offense.unshift("missile");
@@ -144562,7 +145285,7 @@
         var sType = Math.random() < 0.6 ? "repair" : pickSecondaryType();
         return { type: sType, group: "secondary" };
       }
-      if (roll < 0.65) {
+      if (roll < 0.65 && allowOffense) {
         var offense = ["laser", "fire", "ice", "electric", "pierce", "plasma", "rail"];
         if (isMissileAllowed())
           offense.unshift("missile");
@@ -144581,7 +145304,7 @@
       var sType = Math.random() < 0.7 ? "repair" : pickSecondaryType();
       return { type: sType, group: "secondary" };
     }
-    if (roll < 0.45) {
+    if (roll < 0.45 && allowOffense) {
       var offense = ["laser", "fire", "ice", "electric", "pierce", "plasma", "rail"];
       if (isMissileAllowed())
         offense.unshift("missile");
@@ -144685,7 +145408,68 @@
         else if (p.type === "lock")
           showToast("SECONDARY -> TARGET LOCK (X/Q)");
         else if (p.type === "autofire")
-          showToast("SECONDARY -> AUTO-FIRE (X/Q)");
+          showToast("SECONDARY -> AUTO-FIRE (Q)");
+      }
+    }
+  }
+  function applyPowerupForPilot(pilot, pilotId, powerup) {
+    var p = powerup;
+    if (p.group === "offense") {
+      if (p.type === "missile" && !isMissileAllowed()) {
+        p.type = "laser";
+      }
+      pilot.blasterMode = p.type;
+      pilot.blasterHitsRemaining = 2;
+      pilot.blasterTimer = 0;
+      if (p.type === "missile")
+        showToast("OFFENSE -> MISSILE SHOT");
+      else if (p.type === "laser")
+        showToast("OFFENSE -> LASER BURST");
+      else if (p.type === "fire")
+        showToast("OFFENSE -> FIREBALL");
+      else if (p.type === "ice")
+        showToast("OFFENSE -> ICE SHARDS");
+      else if (p.type === "electric")
+        showToast("OFFENSE -> ELECTRIC BOLTS");
+      else if (p.type === "pierce")
+        showToast("OFFENSE -> LOOK UP SHOT");
+      else if (p.type === "plasma")
+        showToast("OFFENSE -> PLASMA ORB");
+      else if (p.type === "rail")
+        showToast("OFFENSE -> RAIL BEAM");
+    } else if (p.group === "defense" && p.type === "shield") {
+      pilot.defenseMode = "shield";
+      pilot.defenseTimer = 10;
+      showToast("DEFENSE -> SHIELD");
+    } else if (p.group === "defense" && p.type === "armor") {
+      pilot.defenseMode = "armor";
+      pilot.defenseTimer = 0;
+      pilot.armorBlocksRemaining = 5;
+      showToast("DEFENSE -> ARMOR");
+    } else if (p.group === "defense" && p.type === "scope") {
+      pilot.scopeTimer = 1;
+      showToast("DEFENSE -> SCOPE ONLINE");
+    } else if (p.group === "secondary") {
+      if (p.type === "scope") {
+        pilot.scopeTimer = 1;
+        showToast("SECONDARY -> SCOPE ONLINE");
+      } else if (p.type === "repair") {
+        pilot.hull = clamp(pilot.hull + 0.35, 0, 1);
+        spawnRing(pilot.x, pilot.y, 18);
+        spawnParticles(pilot.x, pilot.y, "correct");
+        showToast("HULL REPAIRED");
+      } else {
+        addSecondaryPowerupForPilot(pilot, p.type);
+        if (p.type === "time")
+          showToast("SECONDARY -> TIME DILATION (X/Q)");
+        else if (p.type === "magnet")
+          showToast("SECONDARY -> MAGNET SWEEP (X/Q)");
+        else if (p.type === "emp")
+          showToast("SECONDARY -> EMP BURST (X/Q)");
+        else if (p.type === "lock")
+          showToast("SECONDARY -> TARGET LOCK (X/Q)");
+        else if (p.type === "autofire")
+          showToast("SECONDARY -> AUTO-FIRE (Q)");
       }
     }
   }
@@ -144853,6 +145637,21 @@
     if (inputs.ship && inputs.ship.value) {
       player.shipType = inputs.ship.value;
     }
+    if (!sandboxMode && inputs.shotType) {
+      var selectedShotType = String(inputs.shotType.value || "single");
+      if (selectedShotType !== "single" && selectedShotType !== "missile" && !shotIcons[selectedShotType]) {
+        selectedShotType = "single";
+      }
+      if (selectedShotType === "missile" && !isMissileAllowed())
+        selectedShotType = "single";
+      player.blasterMode = selectedShotType;
+      if (selectedShotType === "single") {
+        player.blasterHitsRemaining = 0;
+      } else {
+        player.blasterHitsRemaining = 9999;
+        player.blasterTimer = 0;
+      }
+    }
     if (!state.sound)
       setDrone(state, false);
     setSoundtrack(state, state.sound && !state.over && (state.running || countdownActive || introActive || missionBriefShowing));
@@ -144945,7 +145744,9 @@
     state.powerupsCollected = 0;
     state.powerupsMissed = 0;
     state.powerupsUsed = 0;
+    state.powerupsCollectedByType = {};
     state.powerupsUsedByType = {};
+    state.powerupsMissedByType = {};
     state.aliensShotByType = {};
     state.specialUses = 0;
     state.asteroidCollisions = 0;
@@ -145061,6 +145862,20 @@
       setSoundtrackStartIndex(getSoundtrackStartIndex());
       setSoundtrack(state, true);
       state.soundtrackPrimed = true;
+    }
+    if (isSandboxMultiplayer()) {
+      ensurePilot2();
+      pilot2.hull = 1;
+      pilot2.invuln = 0;
+      pilot2.hitFlash = 0;
+      pilot2.shipShake = 0;
+      pilot2.dead = false;
+      pilot2.hidden = false;
+      pilot2.livesStart = Math.max(0, state.livesStart || state.lives || 0);
+      pilot2.lives = pilot2.livesStart;
+      resetPilotStats(1);
+      resetPilotStats(2);
+      positionSandboxPilots();
     }
     applyMousepadAutoStart();
   }
@@ -145435,6 +146250,10 @@
     var key = String(type || "single");
     state.shotCounts[key] = (state.shotCounts[key] || 0) + 1;
   }
+  function recordShotCountForPilot(pilotId, type) {
+    recordShotCount(type);
+    recordPilotShot(pilotId, type);
+  }
   function cleanupAutoFireSlots() {
     var slots = getSecondarySlots();
     var changed = false;
@@ -145448,43 +146267,44 @@
     if (changed)
       syncSelectedSecondary();
   }
-  function fire(cooldownOverride) {
+  function fireForPilot(pilot, pilotId, cooldownOverride) {
     if (!state.running || state.paused || state.over)
       return;
-    if (player.cooldown > 0)
+    if (pilot.cooldown > 0)
       return;
     if (typeof cooldownOverride === "number" && isFinite(cooldownOverride)) {
-      player.cooldown = cooldownOverride;
+      pilot.cooldown = cooldownOverride;
     } else {
-      player.cooldown = 0.16;
+      pilot.cooldown = 0.16;
     }
-    var mode = player.blasterMode || "single";
+    var mode = pilot.blasterMode || "single";
     if (mode === "missile") {
       return false;
     }
     state.shots++;
-    recordShotCount(mode);
+    recordShotCountForPilot(pilotId, mode);
+    var bulletBase = { pilotId, x: pilot.x, y: pilot.y - 24, vx: 0 };
     if (mode === "laser") {
-      bullets.push({ x: player.x, y: player.y - 24, vy: -980, r: 5.2, vx: 0, kind: "laser", len: 22, w: 3.6 });
+      bullets.push(Object.assign({ vy: -980, r: 5.2, kind: "laser", len: 22, w: 3.6 }, bulletBase));
     } else if (mode === "fire") {
-      bullets.push({ x: player.x, y: player.y - 20, vy: -720, r: 6.2, vx: 0, kind: "fire" });
+      bullets.push(Object.assign({ vy: -720, r: 6.2, kind: "fire" }, bulletBase));
     } else if (mode === "ice") {
-      bullets.push({ x: player.x, y: player.y - 26, vy: -880, r: 6.5, vx: 0, kind: "ice" });
+      bullets.push(Object.assign({ vy: -880, r: 6.5, kind: "ice", y: pilot.y - 26 }, bulletBase));
     } else if (mode === "electric") {
-      bullets.push({ x: player.x, y: player.y - 24, vy: -920, r: 5.6, vx: 0, kind: "electric" });
+      bullets.push(Object.assign({ vy: -920, r: 5.6, kind: "electric" }, bulletBase));
       state.lightningFlash = Math.max(state.lightningFlash || 0, 0.12);
     } else if (mode === "pierce") {
-      bullets.push({ x: player.x, y: player.y - 24, vy: -900, r: 3.8, vx: 0, kind: "pierce", speed: 900, rot: 0, spin: 6 });
+      bullets.push(Object.assign({ vy: -900, r: 3.8, kind: "pierce", speed: 900, rot: 0, spin: 6 }, bulletBase));
     } else if (mode === "plasma") {
-      bullets.push({ x: player.x, y: player.y - 24, vy: -1e3, r: 7.6, vx: 0, kind: "plasma" });
+      bullets.push(Object.assign({ vy: -1e3, r: 7.6, kind: "plasma" }, bulletBase));
     } else if (mode === "rail") {
-      bullets.push({ x: player.x, y: player.y - 26, vy: -1260, r: 5.2, vx: 0, kind: "rail", len: 40, w: 4.2 });
+      bullets.push(Object.assign({ vy: -1260, r: 5.2, kind: "rail", len: 40, w: 4.2, y: pilot.y - 26 }, bulletBase));
     } else {
-      bullets.push({ x: player.x, y: player.y - 24, vy: -880, r: 4, vx: 0, kind: "single" });
+      bullets.push(Object.assign({ vy: -880, r: 4, kind: "single" }, bulletBase));
     }
-    spawnGunSmoke();
-    player.recoil = 1;
-    player.flash = 1;
+    spawnGunSmoke(pilot);
+    pilot.recoil = 1;
+    pilot.flash = 1;
     var gunSfx = mode === "laser" ? "gun2" : "gun1";
     if (mode === "ice")
       gunSfx = "ice_shot";
@@ -145501,60 +146321,72 @@
       tourGuide.notify("fire");
     return true;
   }
-  function secondaryFire() {
+  function fire(cooldownOverride) {
+    return fireForPilot(player, 1, cooldownOverride);
+  }
+  function secondaryFireForPilot(pilot, pilotId) {
     if (!state.running || state.paused || state.over)
       return;
-    if (player.secondaryCooldown > 0)
+    if (pilot.secondaryCooldown > 0)
       return;
-    var slots = getSecondarySlots();
-    var idx = clamp(player.secondarySlotIndex | 0, 0, slots.length - 1);
+    var slots = getSecondarySlotsForPilot(pilot);
+    var idx = clamp(pilot.secondarySlotIndex | 0, 0, slots.length - 1);
     var slot = slots[idx];
     if (!slot || !slot.type || !(slot.count > 0)) {
-      syncSelectedSecondary();
-      slot = slots[player.secondarySlotIndex];
+      syncSelectedSecondaryForPilot(pilot);
+      slot = slots[pilot.secondarySlotIndex];
       if (!slot || !slot.type || !(slot.count > 0))
         return;
     }
     var activeType = slot.type;
     if (activeType === "autofire" && !(slot.count > 0)) {
-      syncSelectedSecondary();
+      syncSelectedSecondaryForPilot(pilot);
       return;
     }
     slot.count = Math.max(0, (slot.count || 0) - 1);
-    player.secondaryCharges = slot.count;
-    player.secondaryCooldown = 1.2;
-    state.powerupsUsed = (state.powerupsUsed || 0) + 1;
-    if (activeType) {
-      if (!state.powerupsUsedByType)
-        state.powerupsUsedByType = {};
-      state.powerupsUsedByType[activeType] = (state.powerupsUsedByType[activeType] || 0) + 1;
+    pilot.secondaryCharges = slot.count;
+    pilot.secondaryCooldown = 1.2;
+    if (!isSandboxMultiplayer()) {
+      state.powerupsUsed = (state.powerupsUsed || 0) + 1;
+      if (activeType) {
+        if (!state.powerupsUsedByType)
+          state.powerupsUsedByType = {};
+        state.powerupsUsedByType[activeType] = (state.powerupsUsedByType[activeType] || 0) + 1;
+      }
+    }
+    if (pilotId) {
+      var stats = ensurePilotStats(pilotId);
+      stats.powerupsUsed += 1;
+      if (activeType) {
+        stats.powerupsUsedByType[activeType] = (stats.powerupsUsedByType[activeType] || 0) + 1;
+      }
     }
     if (activeType === "repair") {
-      player.hull = clamp(player.hull + 0.35, 0, 1);
-      spawnRing(player.x, player.y, 18);
-      spawnParticles(player.x, player.y, "correct");
+      pilot.hull = clamp(pilot.hull + 0.35, 0, 1);
+      spawnRing(pilot.x, pilot.y, 18);
+      spawnParticles(pilot.x, pilot.y, "correct");
       showToast("SECONDARY -> HULL REPAIR");
     } else if (activeType === "autofire") {
-      var mode = player.blasterMode || "single";
+      var mode = pilot.blasterMode || "single";
       if (mode === "missile") {
         mode = "single";
       }
       var ammo = getAutoFireAmmo(mode);
-      if (!player.autoFireActive) {
-        player.autoFireAmmo = 0;
-        player.autoFireAmmoMax = 0;
+      if (!pilot.autoFireActive) {
+        pilot.autoFireAmmo = 0;
+        pilot.autoFireAmmoMax = 0;
       }
-      player.autoFireActive = true;
-      player.autoFireMode = mode;
-      player.autoFireAmmo += ammo;
-      player.autoFireAmmoMax += ammo;
+      pilot.autoFireActive = true;
+      pilot.autoFireMode = mode;
+      pilot.autoFireAmmo += ammo;
+      pilot.autoFireAmmoMax += ammo;
       showToast("SECONDARY -> AUTO-FIRE ONLINE");
     } else if (activeType === "time") {
       startSlowMoWave();
       playSfx(state, "time_activate");
       showToast("SECONDARY -> TIME DILATION");
     } else if (activeType === "magnet") {
-      player.magnetTimer = 6;
+      pilot.magnetTimer = 6;
       showToast("SECONDARY -> MAGNET SWEEP");
     } else if (activeType === "emp") {
       state.empTimer = Math.max(state.empTimer, 2);
@@ -145562,24 +146394,27 @@
       playSfx(state, "emp_activate");
       showToast("SECONDARY -> EMP BURST");
     } else if (activeType === "lock") {
-      player.lockTimer = Math.max(player.lockTimer, 6);
+      pilot.lockTimer = Math.max(pilot.lockTimer, 6);
       showToast("SECONDARY -> TARGET LOCK");
     } else if (activeType === "scope") {
-      player.scopeTimer = 1;
+      pilot.scopeTimer = 1;
       showToast("SECONDARY -> SCOPE ONLINE");
     }
     if (activeType === "autofire") {
       if (slot.count < 0)
         slot.count = 0;
-      if (slot.count === 0 && !player.autoFireActive) {
+      if (slot.count === 0 && !pilot.autoFireActive) {
         slots[idx] = null;
       }
     } else if (slot.count <= 0) {
       slots[idx] = null;
     }
-    syncSelectedSecondary();
+    syncSelectedSecondaryForPilot(pilot);
     if (tourGuide)
       tourGuide.notify("secondary");
+  }
+  function secondaryFire() {
+    return secondaryFireForPilot(player, 1);
   }
   function startSlowMoWave() {
     state.slowMoRemaining = Math.max(state.slowMoRemaining || 0, 8);
@@ -145639,7 +146474,7 @@
     emitSide(leftX, -1);
     emitSide(rightX, 1);
   }
-  function applyFlaresToAsteroid(a, dtReal) {
+  function applyFlaresToAsteroid(a, dtReal2) {
     if (!state.flaresActive)
       return;
     var flareOffset = state.flaresOffset || 46;
@@ -145655,8 +146490,8 @@
     var distL = Math.hypot(dxL, a.y - flareY);
     if (distL < flareRadius) {
       var pushL = (1 - distL / flareRadius) * flareStrength;
-      a.vx = (a.vx || 0) - pushL * dtReal;
-      a.vy = (a.vy || 0) + (a.y - flareY) / Math.max(1, distL) * pushL * dtReal * 0.2;
+      a.vx = (a.vx || 0) - pushL * dtReal2;
+      a.vy = (a.vy || 0) + (a.y - flareY) / Math.max(1, distL) * pushL * dtReal2 * 0.2;
       hit = true;
     }
     var rightX = player.x + flareOffset;
@@ -145664,14 +146499,14 @@
     var distR = Math.hypot(dxR, a.y - flareY);
     if (distR < flareRadius) {
       var pushR = (1 - distR / flareRadius) * flareStrength;
-      a.vx = (a.vx || 0) + pushR * dtReal;
-      a.vy = (a.vy || 0) + (a.y - flareY) / Math.max(1, distR) * pushR * dtReal * 0.2;
+      a.vx = (a.vx || 0) + pushR * dtReal2;
+      a.vy = (a.vy || 0) + (a.y - flareY) / Math.max(1, distR) * pushR * dtReal2 * 0.2;
       hit = true;
     }
     if (a.flareSparkTimer == null)
       a.flareSparkTimer = 0;
     if (a.flareSparkTimer > 0) {
-      a.flareSparkTimer = Math.max(0, a.flareSparkTimer - dtReal);
+      a.flareSparkTimer = Math.max(0, a.flareSparkTimer - dtReal2);
     }
     if (hit && a.flareSparkTimer <= 0) {
       spawnParticles(a.x, a.y, "spark");
@@ -145879,6 +146714,10 @@
       tourGuide.notify("ability");
   }
   function loseLife(reason) {
+    if (tutorialActive) {
+      triggerTutorialRecovery(reason || "HULL CRITICAL");
+      return;
+    }
     if (sandboxMode && state.sandboxInfiniteLives) {
       syncHud();
       showToast(reason);
@@ -145895,6 +146734,10 @@
   function consumeShipLife(detail) {
     if (state.over)
       return true;
+    if (tutorialActive) {
+      triggerTutorialRecovery(detail || "HULL CRITICAL");
+      return true;
+    }
     if (sandboxMode && state.sandboxInfiniteLives) {
       syncHud();
       return false;
@@ -146167,6 +147010,93 @@
     }
     appendLeaderboardCsv({ name: trimmed, score: state.score });
   }
+  function handleDivisorCorrectHit(hitAst) {
+    if (warningClip) {
+      try {
+        warningClip.pause();
+        warningClip.currentTime = 0;
+      } catch (e) {
+      }
+      warningClip = null;
+    }
+    var nearMiss = !!(hitAst && hitAst.warned);
+    var precisionHit = false;
+    if (hitAst && typeof hitAst.spawnAt === "number") {
+      precisionHit = getElapsedSeconds() - hitAst.spawnAt <= precisionWindowSec;
+    }
+    state.correct++;
+    state.hits++;
+    state.streak++;
+    playSfx(state, "correct");
+    if (tourGuide)
+      tourGuide.notify("correct");
+    var baseGain = 50 + Math.min(250, state.streak * 10);
+    var factor = Math.max(state.a, state.b);
+    if (isDigitMode()) {
+      factor = state.b;
+    }
+    if (isAdditionMode()) {
+      factor = clamp(Math.round(factor / 10), 2, 30);
+    } else {
+      factor = clamp(factor, 2, 12);
+    }
+    var weight = 1 + factor / 12 * 0.6;
+    var gain = Math.round(baseGain * weight);
+    state.score += gain;
+    state.ddSpeedBonus = clamp(state.ddSpeedBonus + 0.015, 0, 0.35);
+    var praise = ["GOOD JOB", "NICE HIT", "CLEAN SHOT", "PERFECT", "ON TARGET"];
+    var streakPraise = ["STREAK x5!", "HOT STREAK!", "ON FIRE!", "LASER FOCUS!"];
+    if (state.streak > 0 && state.streak % 5 === 0) {
+      showToast(streakPraise[Math.floor(Math.random() * streakPraise.length)]);
+    } else {
+      showToast(praise[Math.floor(Math.random() * praise.length)]);
+    }
+    if (state.correct % 5 === 0) {
+      state.level++;
+      state.slowMoRemaining = Math.max(state.slowMoRemaining, 2);
+      state.slowMoScale = 0.55;
+      playSfx(state, "level_up2");
+      showToast("LEVEL UP!");
+    }
+    syncHud();
+    if (!tutorialActive) {
+      var spawned = false;
+      if (hitAst && hitAst.hiddenPowerup) {
+        maybeSpawnAnswerPowerup(hitAst);
+        spawned = true;
+      } else {
+        answerHitsSincePowerup += 1;
+        if (nearMiss && hitAst) {
+          spawned = maybeSpawnEventPowerup(0.1, hitAst.x, hitAst.y);
+        }
+        if (!spawned && precisionHit && hitAst) {
+          spawned = maybeSpawnEventPowerup(0.3, hitAst.x, hitAst.y);
+        }
+        if (!spawned && state.divisorRemaining <= 0) {
+          if (waveHadWrongHit) {
+            cleanWaveStreak = 0;
+          } else {
+            cleanWaveStreak += 1;
+          }
+          waveHadWrongHit = false;
+          if (cleanWaveStreak >= 3) {
+            if (maybeSpawnEventPowerup(1)) {
+              cleanWaveStreak = 0;
+              spawned = true;
+            }
+          }
+        }
+      }
+    }
+    if (state.divisorRemaining <= 0) {
+      state.questionsCompleted++;
+      if (shouldEndByQuestionLimit()) {
+        endGame("questions");
+        return;
+      }
+      nextProblem();
+    }
+  }
   function onCorrectHit(hitAst) {
     if (warningClip) {
       try {
@@ -146375,6 +147305,10 @@
   function endGame(reason) {
     if (reason === void 0)
       reason = "destroyed";
+    if (tutorialActive) {
+      triggerTutorialRecovery("HULL CRITICAL");
+      return;
+    }
     setDrone(state, false);
     setSoundtrack(state, false);
     state.soundtrackPrimed = false;
@@ -146524,7 +147458,8 @@
       if (statsListSecondary) {
         statsListSecondary.innerHTML = "";
         statsListSecondary.style.display = "grid";
-        statsListSecondary.style.gridTemplateColumns = "repeat(auto-fit, minmax(220px, 1fr))";
+        statsListSecondary.style.gridTemplateColumns = "repeat(3, max-content)";
+        statsListSecondary.style.justifyContent = "start";
         statsListSecondary.style.gap = "12px";
       }
     }
@@ -146533,7 +147468,7 @@
         return;
       var style = document.createElement("style");
       style.id = "endStatsCharts";
-      style.textContent = ".endStatsSection{grid-column:1/-1;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.04);}.endStatsSection h4{margin:0 0 10px;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);}.endStatsRow{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;margin:8px 0;}.endStatsIcon{width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.06);display:grid;place-items:center;overflow:hidden;border:1px solid rgba(255,255,255,.12);}.endStatsIcon img{width:20px;height:20px;object-fit:contain;}.endStatsBar{height:10px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;position:relative;}.endStatsFill{height:100%;border-radius:999px;background:linear-gradient(90deg, rgba(0,229,255,.7), rgba(0,229,255,.35));}.endStatsCount{font-size:12px;color:#e8ecff;min-width:38px;text-align:right;}.endStatsStack{display:flex;gap:12px 14px;align-items:center;flex-wrap:wrap;}.endStatsStackItem{display:flex;align-items:center;gap:8px;}.endStatsStackIcon{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.06);display:grid;place-items:center;overflow:hidden;border:1px solid rgba(255,255,255,.12);}.endStatsStackIcon img{width:26px;height:26px;object-fit:contain;}.endStatsStackCount{font-size:13px;font-weight:600;color:#e8ecff;}.endStatsHidden{display:none;}";
+      style.textContent = ".endStatsSection{grid-column:1/-1;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.04);}.endStatsSection h4{margin:0 0 10px;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);}.endStatsRow{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;margin:8px 0;}.endStatsIcon{width:28px;height:28px;border-radius:8px;background:rgba(255,255,255,.06);display:grid;place-items:center;overflow:hidden;border:1px solid rgba(255,255,255,.12);}.endStatsIcon img{width:20px;height:20px;object-fit:contain;}.endStatsBar{height:10px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;position:relative;}.endStatsFill{height:100%;border-radius:999px;background:linear-gradient(90deg, rgba(0,229,255,.7), rgba(0,229,255,.35));}.endStatsCount{font-size:12px;color:#e8ecff;min-width:38px;text-align:right;}.endStatsStackRow{display:flex;flex-direction:column;gap:6px;}.endStatsStack{display:flex;gap:12px 16px;align-items:center;flex-wrap:wrap;justify-content:flex-start;}.endStatsStackItem{display:flex;align-items:center;gap:8px;}.endStatsStackIcon{width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.06);display:grid;place-items:center;overflow:hidden;border:1px solid rgba(255,255,255,.12);}.endStatsStackIcon img{width:30px;height:30px;object-fit:contain;}.endStatsStackCount{font-size:14px;font-weight:600;color:#e8ecff;line-height:1;margin-left:0;text-align:left;}.endStatsHidden{display:none;}";
       document.head.appendChild(style);
     }
     ensureEndStatsChartStyles();
@@ -146551,9 +147486,11 @@
       row.innerHTML = '<span style="color: var(--muted);">' + label2 + "</span><b>" + value + "</b>";
       statsList.appendChild(row);
     }
-    function addSection(title, list) {
+    function addSection(title, list, extraClass) {
       var section = document.createElement("div");
       section.className = "endStatsSection";
+      if (extraClass)
+        section.classList.add(extraClass);
       var h = document.createElement("h4");
       h.textContent = title;
       section.appendChild(h);
@@ -146605,40 +147542,39 @@
       row.appendChild(countEl);
       section.appendChild(row);
     }
-    function addIconStackRow(section, label2, icons, count2) {
-      var iconList = Array.isArray(icons) ? icons.filter(Boolean) : [];
-      if (iconList.length === 0)
+    function addIconStackRow(section, label2, entries) {
+      var list = Array.isArray(entries) ? entries.filter(function(entry2) {
+        return entry2 && entry2.src && entry2.count > 0;
+      }) : [];
+      if (list.length === 0)
         return;
       var row = document.createElement("div");
-      row.className = "endStatsRow";
-      row.style.gridTemplateColumns = "1fr auto";
-      var stackWrap = document.createElement("div");
+      row.className = "endStatsStackRow";
       var labelEl = document.createElement("div");
       labelEl.textContent = label2;
       labelEl.style.fontSize = "11px";
       labelEl.style.color = "var(--muted)";
       var stack = document.createElement("div");
       stack.className = "endStatsStack";
-      for (var i = 0; i < iconList.length; i++) {
-        var src = iconList[i];
+      for (var i = 0; i < list.length; i++) {
+        var entry = list[i];
         var item = document.createElement("div");
         item.className = "endStatsStackItem";
         var icon = document.createElement("div");
         icon.className = "endStatsStackIcon";
         var img = document.createElement("img");
-        img.src = src;
+        img.src = entry.src;
         img.alt = label2;
         icon.appendChild(img);
         var countEl = document.createElement("div");
         countEl.className = "endStatsStackCount";
-        countEl.textContent = String(count2);
+        countEl.textContent = String(entry.count);
         item.appendChild(icon);
         item.appendChild(countEl);
         stack.appendChild(item);
       }
-      stackWrap.appendChild(labelEl);
-      stackWrap.appendChild(stack);
-      row.appendChild(stackWrap);
+      row.appendChild(labelEl);
+      row.appendChild(stack);
       section.appendChild(row);
     }
     if (canRenderStats) {
@@ -146662,55 +147598,75 @@
           addIconBarRow(shotSection, label, getShotIconSrc(st), count, maxShot);
         }
       }
-      var alienIcons = [];
+      var alienEntries = [];
       if (state.aliensShotByType) {
-        alienIcons = Object.keys(state.aliensShotByType).filter(function(key2) {
-          return state.aliensShotByType[key2] > 0;
-        }).map(function(key2) {
-          var icon = alienIconsByType && alienIconsByType[key2] ? alienIconsByType[key2] : key2;
-          return icon;
+        alienEntries = Object.keys(state.aliensShotByType).map(function(key2) {
+          var count2 = state.aliensShotByType[key2] || 0;
+          if (count2 <= 0)
+            return null;
+          var src = alienIconsByType && alienIconsByType[key2] ? alienIconsByType[key2] : key2;
+          if (!src)
+            return null;
+          return { src, count: count2 };
         }).filter(Boolean);
       }
-      var alienSection = addSection("ALIENS SHOT", listTarget);
-      addIconStackRow(alienSection, "ALIENS SHOT", alienIcons, state.aliensShot || 0);
-      var powerupSection = addSection("POWERUPS", listTarget);
-      var collectedIcons = [];
-      if (state.powerupsCollectedByType) {
-        collectedIcons = Object.keys(state.powerupsCollectedByType).filter(function(type) {
-          return state.powerupsCollectedByType[type] > 0;
-        }).map(function(type) {
-          var icon = powerupIcons[type];
-          if (!icon && shotIcons && shotIcons[type])
-            icon = shotIcons[type];
-          return icon ? icon.src : null;
-        }).filter(Boolean);
-      } else if (state.powerupsCollectedByTypeAlt) {
-        collectedIcons = Object.keys(state.powerupsCollectedByTypeAlt).filter(function(type) {
-          return state.powerupsCollectedByTypeAlt[type] > 0;
-        }).map(function(type) {
-          var icon = powerupIcons[type];
-          if (!icon && shotIcons && shotIcons[type])
-            icon = shotIcons[type];
-          return icon ? icon.src : null;
-        }).filter(Boolean);
-      }
-      addIconStackRow(powerupSection, "COLLECTED", collectedIcons, state.powerupsCollected || 0);
-      var usedIcons = [];
+      var alienSection = addSection("ALIENS SHOT", listTarget, "endStatsCompact");
+      addIconStackRow(alienSection, "ALIENS SHOT", alienEntries);
+      var powerupSection = addSection("POWERUPS", listTarget, "endStatsCompact");
+      var collectedEntries = [];
+      var collectedMap = state.powerupsCollectedByType || state.powerupsCollectedByTypeAlt || {};
+      collectedEntries = Object.keys(collectedMap).map(function(type) {
+        var count2 = collectedMap[type] || 0;
+        if (count2 <= 0)
+          return null;
+        var icon = powerupIcons[type];
+        if (!icon && shotIcons && shotIcons[type])
+          icon = shotIcons[type];
+        var src = icon ? icon.src : null;
+        if (!src)
+          return null;
+        return { src, count: count2 };
+      }).filter(Boolean);
+      addIconStackRow(powerupSection, "COLLECTED", collectedEntries);
+      var usedEntries = [];
       if (state.powerupsUsedByType) {
-        usedIcons = Object.keys(state.powerupsUsedByType).filter(function(type) {
-          return state.powerupsUsedByType[type] > 0;
-        }).map(function(type) {
+        usedEntries = Object.keys(state.powerupsUsedByType).map(function(type) {
+          var count2 = state.powerupsUsedByType[type] || 0;
+          if (count2 <= 0)
+            return null;
           var icon = powerupIcons[type];
           if (!icon && shotIcons && shotIcons[type])
             icon = shotIcons[type];
-          return icon ? icon.src : null;
+          var src = icon ? icon.src : null;
+          if (!src)
+            return null;
+          return { src, count: count2 };
         }).filter(Boolean);
       }
-      addIconStackRow(powerupSection, "USED", usedIcons, state.powerupsUsed || 0);
-      var mineralSection = addSection("MINERALS", listTarget);
-      var mineralIcon = "images/asteroids/mineral.png";
-      addIconStackRow(mineralSection, "COLLECTED", [mineralIcon], state.mineralsEarned || 0);
-      var maneuverSection = addSection("MANEUVERS", listTarget);
+      addIconStackRow(powerupSection, "USED", usedEntries);
+      var missedEntries = [];
+      if (state.powerupsMissedByType) {
+        missedEntries = Object.keys(state.powerupsMissedByType).map(function(type) {
+          var count2 = state.powerupsMissedByType[type] || 0;
+          if (count2 <= 0)
+            return null;
+          var icon = powerupIcons[type];
+          if (!icon && shotIcons && shotIcons[type])
+            icon = shotIcons[type];
+          var src = icon ? icon.src : null;
+          if (!src)
+            return null;
+          return { src, count: count2 };
+        }).filter(Boolean);
+      }
+      addIconStackRow(powerupSection, "MISSED", missedEntries);
+      var mineralCount = state.mineralsEarned || 0;
+      if (mineralCount > 0) {
+        var mineralSection = addSection("MINERALS", listTarget);
+        var mineralIcon = "images/asteroids/mineral.png";
+        addIconStackRow(mineralSection, "COLLECTED", [{ src: mineralIcon, count: mineralCount }]);
+      }
+      var maneuverSection = addSection("MANEUVERS", listTarget, "endStatsCompact");
       var dashIcon = cooldownIcons && cooldownIcons.dash ? cooldownIcons.dash.src : null;
       var abilityKey = "shockwave";
       var profile = getShipProfile(player.shipType);
@@ -146719,8 +147675,8 @@
       else if (profile && profile.ability === "spin")
         abilityKey = "teleport";
       var abilityIcon = cooldownIcons && cooldownIcons[abilityKey] ? cooldownIcons[abilityKey].src : null;
-      addIconStackRow(maneuverSection, "DASHES", dashIcon ? [dashIcon] : [], state.dashes || 0);
-      addIconStackRow(maneuverSection, "SPECIAL", abilityIcon ? [abilityIcon] : [], state.specialUses || 0);
+      addIconStackRow(maneuverSection, "DASHES", dashIcon ? [{ src: dashIcon, count: state.dashes || 0 }] : []);
+      addIconStackRow(maneuverSection, "SPECIAL", abilityIcon ? [{ src: abilityIcon, count: state.specialUses || 0 }] : []);
       if (!statsListSecondary) {
       }
     }
@@ -146977,14 +147933,14 @@
     requestAnimationFrame(tick);
   }
   function update(dt) {
-    var dtReal = dt;
-    var dtSlow = dtReal;
+    var dtReal2 = dt;
+    var dtSlow = dtReal2;
     bg.dt = dt;
     if (state.lightningFlash > 0) {
-      state.lightningFlash = Math.max(0, state.lightningFlash - dtReal);
+      state.lightningFlash = Math.max(0, state.lightningFlash - dtReal2);
     }
     if (state.cameraFlash > 0) {
-      state.cameraFlash = Math.max(0, state.cameraFlash - dtReal);
+      state.cameraFlash = Math.max(0, state.cameraFlash - dtReal2);
     }
     if (usePhaserRenderer && !tutorialActive && backgroundSprites[backgroundIndex] && backgroundReady[backgroundIndex]) {
       var bgImg = backgroundSprites[backgroundIndex];
@@ -146993,18 +147949,18 @@
       var drawH = Math.ceil(bgImg.height * scale) + 4;
       var maxScroll = Math.max(1, drawH - view.h);
       if (!state.paused && !screenshotMode) {
-        backgroundScroll = (backgroundScroll + 3 * dtReal) % maxScroll;
+        backgroundScroll = (backgroundScroll + 3 * dtReal2) % maxScroll;
       }
     }
     if (state.over) {
       setShipIdle(state, false);
       setShipAdvance(state, false);
-      updateGameOverFx(dtReal);
+      updateGameOverFx(dtReal2);
       return;
     }
     if (!state.running || state.paused || screenshotMode) {
       if (countdownActive) {
-        var settle = 1 - Math.exp(-6 * dtReal);
+        var settle = 1 - Math.exp(-6 * dtReal2);
         player.x += (countdownTarget.x - player.x) * settle;
         player.y += (countdownTarget.y - player.y) * settle;
       }
@@ -147017,36 +147973,36 @@
       return;
     }
     if (state.slowMoRemaining > 0) {
-      state.slowMoRemaining = Math.max(0, state.slowMoRemaining - dtReal);
+      state.slowMoRemaining = Math.max(0, state.slowMoRemaining - dtReal2);
       if (state.slowMoWaveDelay > 0) {
-        state.slowMoWaveDelay = Math.max(0, state.slowMoWaveDelay - dtReal);
+        state.slowMoWaveDelay = Math.max(0, state.slowMoWaveDelay - dtReal2);
         if (state.slowMoWaveDelay === 0 && !state.slowMoWaveActive) {
           state.slowMoWaveActive = true;
           state.slowMoWaveY = view.h - 10;
         }
       }
       if (state.slowMoWaveActive) {
-        state.slowMoWaveY -= (state.slowMoWaveSpeed || 260) * dtReal;
+        state.slowMoWaveY -= (state.slowMoWaveSpeed || 260) * dtReal2;
         if (state.slowMoWaveY <= -80) {
           state.slowMoWaveActive = false;
         }
       } else {
-        dtSlow = dtReal * (state.slowMoScale || 0.42);
+        dtSlow = dtReal2 * (state.slowMoScale || 0.42);
       }
     } else if (state.slowMoWaveActive) {
       state.slowMoWaveActive = false;
     }
     if (state.empWaveActive) {
-      state.empWaveY -= (state.empWaveSpeed || 600) * dtReal;
-      state.empWavePhase = (state.empWavePhase || 0) + dtReal * 6;
+      state.empWaveY -= (state.empWaveSpeed || 600) * dtReal2;
+      state.empWavePhase = (state.empWavePhase || 0) + dtReal2 * 6;
       if (state.empWaveY <= -120) {
         state.empWaveActive = false;
       }
     }
-    updateCamera(dtReal);
-    updateDashGhosts(dtReal);
+    updateCamera(dtReal2);
+    updateDashGhosts(dtReal2);
     if (tutorialActive) {
-      tutorialPortalT += dtReal;
+      tutorialPortalT += dtReal2;
       if (tutorialPortalActive) {
         var rectP = canvas.getBoundingClientRect();
         var hudHP = document.getElementById("hud").getBoundingClientRect().height;
@@ -147061,7 +148017,7 @@
     }
     if (tutorialActive && tutorialStepId === "alien" && state.aliensShot === 0 && aliens.length === 0) {
       if (tutorialAlienDelayRemaining > 0) {
-        tutorialAlienDelayRemaining = Math.max(0, tutorialAlienDelayRemaining - dtReal);
+        tutorialAlienDelayRemaining = Math.max(0, tutorialAlienDelayRemaining - dtReal2);
       }
       if (tutorialAlienDelayRemaining <= 0) {
         tutorialAlienUnlocked = true;
@@ -147109,7 +148065,7 @@
       }
     }
     if (!tutorialActive) {
-      survivorTimer += dtReal;
+      survivorTimer += dtReal2;
       if (survivorTimer >= 45) {
         survivorRewardReady = true;
       }
@@ -147126,7 +148082,7 @@
       var spin = player.spinManeuver;
       var targetX = spin.phase === 0 ? spin.x1 : spin.phase === 1 ? spin.x2 : spin.x0;
       var targetY = spin.phase === 0 ? spin.y1 : spin.phase === 1 ? spin.y2 : spin.y0;
-      var settle = 1 - Math.exp(-8 * dtReal);
+      var settle = 1 - Math.exp(-8 * dtReal2);
       player.x += (targetX - player.x) * settle;
       player.y += (targetY - player.y) * settle;
       if (Math.hypot(targetX - player.x, targetY - player.y) < 2) {
@@ -147150,7 +148106,7 @@
       inputY = clamp(inputY + virtualAxes.y, -1, 1);
     }
     if (mousepadActive && mousepadMode === "hybrid") {
-      var decay = Math.exp(-8 * dtReal);
+      var decay = Math.exp(-8 * dtReal2);
       padCursor.x *= decay;
       padCursor.y *= decay;
       updateVirtualFromCursor();
@@ -147175,7 +148131,7 @@
       setShipIdle(state, true);
     }
     if (mousepadMode === "hybrid" && mousepadActive && !spinActive) {
-      var bankLerp = 1 - Math.exp(-10 * dtReal);
+      var bankLerp = 1 - Math.exp(-10 * dtReal2);
       player.bankHold += (inputX - player.bankHold) * bankLerp;
     } else {
       var bankThreshold = 0.2;
@@ -147184,11 +148140,11 @@
         bankDir = 0;
       if (bankDir !== 0) {
         var accel = player.bankHold * bankDir < 0 ? 4.2 : 2.2;
-        player.bankHold = clamp(player.bankHold + bankDir * dtReal * accel, -1, 1);
+        player.bankHold = clamp(player.bankHold + bankDir * dtReal2 * accel, -1, 1);
       } else if (player.bankHold !== 0) {
         var decay = 3.2;
         var sign = player.bankHold > 0 ? 1 : -1;
-        player.bankHold -= sign * decay * dtReal;
+        player.bankHold -= sign * decay * dtReal2;
         if (player.bankHold * sign < 0)
           player.bankHold = 0;
       }
@@ -147202,12 +148158,12 @@
     var accelUp = profile.accelUp || 6;
     var accelDown = profile.accelDown || 9;
     var accelRate = targetSpeed > player.moveSpeed ? accelUp : accelDown;
-    var accel = 1 - Math.exp(-accelRate * dtReal);
+    var accel = 1 - Math.exp(-accelRate * dtReal2);
     player.moveSpeed += (targetSpeed - player.moveSpeed) * accel;
     var desiredVX = dirX * player.moveSpeed;
     var desiredVY = dirY * player.moveSpeed;
     var response = profile.response || 14;
-    var alpha = 1 - Math.exp(-response * dtReal);
+    var alpha = 1 - Math.exp(-response * dtReal2);
     player.vx += (desiredVX - player.vx) * alpha;
     player.vy += (desiredVY - player.vy) * alpha;
     var r = canvas.getBoundingClientRect();
@@ -147218,14 +148174,14 @@
       player.vx = 0;
       player.vy = 0;
     } else {
-      player.x += player.vx * dtReal;
-      player.y += player.vy * dtReal;
+      player.x += player.vx * dtReal2;
+      player.y += player.vy * dtReal2;
     }
     player.x = clamp(player.x, player.w / 2 + 10, r.width - player.w / 2 - 10);
     player.y = clamp(player.y, topLimit + player.h / 2 + 6, bottomLimit - player.h / 2);
     if (tutorialRespawnActive) {
       var targetY = tutorialRespawnTargetY || view.h - 58;
-      var settleRespawn = 1 - Math.exp(-6 * dtReal);
+      var settleRespawn = 1 - Math.exp(-6 * dtReal2);
       player.y += (targetY - player.y) * settleRespawn;
       player.vx = 0;
       player.vy = 0;
@@ -147256,15 +148212,15 @@
       }
     }
     if (tutorialActive) {
-      updateTutorialDots(dtReal);
+      updateTutorialDots(dtReal2);
     }
-    updateClaw(dtReal);
+    updateClaw(dtReal2);
     if (mousepadMode === "hybrid" && mousepadActive && !spinActive && Math.abs(inputX) < 0.05) {
       player.bankHold = clamp(player.vx / (player.speed || 1), -1, 1);
     }
-    player.cooldown = Math.max(0, player.cooldown - dtReal);
+    player.cooldown = Math.max(0, player.cooldown - dtReal2);
     if (player.autoFireActive && player.autoFireAmmo > 0) {
-      if (keys.has("z") || keys.has("e")) {
+      if (keys.has(" ") || keys.has("spacebar")) {
         if (!player.autoFireSpinning) {
           player.autoFireSpinning = true;
           player.autoFireSpinTimer = 0.8;
@@ -147290,7 +148246,7 @@
           }
         }
         if (player.autoFireSpinTimer > 0) {
-          player.autoFireSpinTimer = Math.max(0, player.autoFireSpinTimer - dtReal);
+          player.autoFireSpinTimer = Math.max(0, player.autoFireSpinTimer - dtReal2);
         } else {
           var desiredMode = player.blasterMode || "single";
           if (desiredMode === "missile")
@@ -147320,15 +148276,15 @@
         player.autoFireSpinSfxPlayed = false;
       }
     }
-    player.invuln = Math.max(0, player.invuln - dtReal);
-    player.hitFlash = Math.max(0, player.hitFlash - dtReal * 3.6);
-    player.shipShake = Math.max(0, (player.shipShake || 0) - dtReal * 3.2);
-    state.collisionSlow = Math.max(0, (state.collisionSlow || 0) - dtReal);
+    player.invuln = Math.max(0, player.invuln - dtReal2);
+    player.hitFlash = Math.max(0, player.hitFlash - dtReal2 * 3.6);
+    player.shipShake = Math.max(0, (player.shipShake || 0) - dtReal2 * 3.2);
+    state.collisionSlow = Math.max(0, (state.collisionSlow || 0) - dtReal2);
     if (player.teleportHide > 0) {
-      player.teleportHide = Math.max(0, player.teleportHide - dtReal);
+      player.teleportHide = Math.max(0, player.teleportHide - dtReal2);
     }
     if (player.teleportFx) {
-      player.teleportFx.t += dtReal;
+      player.teleportFx.t += dtReal2;
       if (!player.teleportFx.reappearPlayed && player.teleportFx.t >= (player.teleportFx.hide || 0)) {
         player.teleportFx.reappearPlayed = true;
         playSfx(state, "teleport_reappear");
@@ -147343,7 +148299,7 @@
       }
     }
     if (player.fadeOutActive) {
-      player.fadeOutT += dtReal;
+      player.fadeOutT += dtReal2;
       var fadeDur = Math.max(1e-3, player.fadeOutDur || 0);
       var fadeP = clamp(player.fadeOutT / fadeDur, 0, 1);
       var fadeEase = 1 - Math.pow(1 - fadeP, 2.2);
@@ -147359,10 +148315,10 @@
         }
       }
     }
-    player.recoil = Math.max(0, player.recoil - dtReal * 9);
-    player.flash = Math.max(0, player.flash - dtReal * 12);
+    player.recoil = Math.max(0, player.recoil - dtReal2 * 9);
+    player.flash = Math.max(0, player.flash - dtReal2 * 12);
     if (player.secondaryCooldown > 0) {
-      player.secondaryCooldown = Math.max(0, player.secondaryCooldown - dtReal);
+      player.secondaryCooldown = Math.max(0, player.secondaryCooldown - dtReal2);
     }
     if (player.blasterMode !== "single" && !(player.blasterHitsRemaining > 0)) {
       resetShotType();
@@ -147373,26 +148329,26 @@
         player.defenseTimer = 0;
       }
     } else if (player.defenseTimer > 0) {
-      player.defenseTimer = Math.max(0, player.defenseTimer - dtReal);
+      player.defenseTimer = Math.max(0, player.defenseTimer - dtReal2);
       if (player.defenseTimer === 0)
         player.defenseMode = "none";
     }
     if (player.magnetTimer > 0) {
-      player.magnetTimer = Math.max(0, player.magnetTimer - dtReal);
+      player.magnetTimer = Math.max(0, player.magnetTimer - dtReal2);
     }
     if (state.sandboxNoScore) {
       state.score = 0;
     }
     if (player.lockTimer > 0) {
-      player.lockTimer = Math.max(0, player.lockTimer - dtReal);
+      player.lockTimer = Math.max(0, player.lockTimer - dtReal2);
       if (player.lockTimer === 0)
         player.lockTargetId = 0;
     }
     if (state.empTimer > 0) {
-      state.empTimer = Math.max(0, state.empTimer - dtReal);
+      state.empTimer = Math.max(0, state.empTimer - dtReal2);
     }
     if (state.empCascade && state.empCascade.length) {
-      state.empCascadeTimer -= dtReal;
+      state.empCascadeTimer -= dtReal2;
       if (state.empCascadeTimer <= 0) {
         var removed = false;
         while (state.empCascade.length) {
@@ -147425,15 +148381,13 @@
         }
       }
     }
-    if (keys.has("x") && !isStampedeMode())
+    if (keys.has("f") && !isStampedeMode())
       secondaryFire();
     if (keys.has("q"))
-      secondaryFire();
-    if (keys.has("c"))
       shockwave();
     if (state.flaresActive) {
-      state.flaresTimer = Math.max(0, state.flaresTimer - dtReal);
-      state.flaresEmitTimer = (state.flaresEmitTimer || 0) - dtReal;
+      state.flaresTimer = Math.max(0, state.flaresTimer - dtReal2);
+      state.flaresEmitTimer = (state.flaresEmitTimer || 0) - dtReal2;
       if (state.flaresEmitTimer <= 0) {
         state.flaresEmitTimer = 0.06;
         emitFlareStream();
@@ -147443,13 +148397,13 @@
       }
     }
     if (player.dashCooldown > 0) {
-      player.dashCooldown = Math.max(0, player.dashCooldown - dtReal);
+      player.dashCooldown = Math.max(0, player.dashCooldown - dtReal2);
     }
     if (player.shockwaveCooldown > 0) {
-      player.shockwaveCooldown = Math.max(0, player.shockwaveCooldown - dtReal);
+      player.shockwaveCooldown = Math.max(0, player.shockwaveCooldown - dtReal2);
     }
     if (state.missileBufferTimer > 0) {
-      state.missileBufferTimer = Math.max(0, state.missileBufferTimer - dtReal);
+      state.missileBufferTimer = Math.max(0, state.missileBufferTimer - dtReal2);
       if (state.missileBufferTimer === 0) {
         state.missileBuffer = "";
       }
@@ -147466,7 +148420,7 @@
     for (var bi = bullets.length - 1; bi >= 0; bi--) {
       var b = bullets[bi];
       if (b.noHitTimer > 0) {
-        b.noHitTimer = Math.max(0, b.noHitTimer - dtReal);
+        b.noHitTimer = Math.max(0, b.noHitTimer - dtReal2);
         if (b.noHitTimer === 0) {
           b.noHit = false;
         }
@@ -147543,7 +148497,7 @@
           }
         }
         if (b.life != null) {
-          b.life -= dtReal;
+          b.life -= dtReal2;
           if (b.life <= 0) {
             bullets.splice(bi, 1);
             continue;
@@ -147569,7 +148523,7 @@
           }
         }
         if (b.delay > 0) {
-          b.delay = Math.max(0, b.delay - dtReal);
+          b.delay = Math.max(0, b.delay - dtReal2);
           b.x = player.x;
           b.y = player.y - 18;
           b.vx = 0;
@@ -147578,10 +148532,10 @@
         } else {
           if (b.age == null)
             b.age = 0;
-          b.age += dtReal;
+          b.age += dtReal2;
           if (b.accelT == null)
             b.accelT = 0;
-          b.accelT += dtReal;
+          b.accelT += dtReal2;
           if (typeof b.accelDelay === "number" && b.accelT >= b.accelDelay) {
             var accelDur = b.accelDuration || 0.6;
             var accelP = clamp((b.accelT - b.accelDelay) / Math.max(0.01, accelDur), 0, 1);
@@ -147663,16 +148617,16 @@
           var dyT = target.y - b.y;
           var distT = Math.max(1, Math.hypot(dxT, dyT));
           var spd = Math.max(200, Math.hypot(b.vx || 0, b.vy || 0));
-          b.vx += dxT / distT * spd * 0.6 * dtReal;
-          b.vy += dyT / distT * spd * 0.6 * dtReal;
+          b.vx += dxT / distT * spd * 0.6 * dtReal2;
+          b.vy += dyT / distT * spd * 0.6 * dtReal2;
         }
       }
-      b.y += b.vy * dtReal;
+      b.y += b.vy * dtReal2;
       if (b.vx)
-        b.x += b.vx * dtReal;
+        b.x += b.vx * dtReal2;
       if (b.kind === "pierce") {
         b.spin = typeof b.spin === "number" ? b.spin : 6;
-        b.rot = (b.rot || 0) + b.spin * dtReal;
+        b.rot = (b.rot || 0) + b.spin * dtReal2;
       }
       if (b.kind === "missile") {
         if (!b.trail)
@@ -147689,22 +148643,52 @@
       }
     }
     updateAlienBullets(dtSlow, view);
-    updateParticles(dtReal);
-    updateRings(dtReal);
-    emitDamageSmoke(dtReal);
+    updateParticles(dtReal2);
+    updateRings(dtReal2);
+    emitDamageSmoke(dtReal2);
     for (var pi = powerups.length - 1; pi >= 0; pi--) {
       var p = powerups[pi];
       if (p.popTimer != null && p.popTimer > 0) {
-        p.popTimer = Math.max(0, p.popTimer - dtReal);
+        p.popTimer = Math.max(0, p.popTimer - dtReal2);
       }
-      p.y += p.vy * dtReal;
+      p.y += p.vy * dtReal2;
       if (p.rotSpeed != null) {
-        p.rot += p.rotSpeed * dtReal;
+        p.rot += p.rotSpeed * dtReal2;
       }
+      var collectedBy = 0;
       var dxp = p.x - player.x;
       var dyp = p.y - player.y;
       if (Math.hypot(dxp, dyp) < p.r + 18) {
-        state.powerupsCollected += 1;
+        collectedBy = 1;
+      } else if (isSandboxMultiplayer()) {
+        var p2 = ensurePilot2();
+        var dxp2 = p.x - p2.x;
+        var dyp2 = p.y - p2.y;
+        if (Math.hypot(dxp2, dyp2) < p.r + 18) {
+          collectedBy = 2;
+        }
+      }
+      if (collectedBy) {
+        if (isSandboxSplitMode()) {
+          var lane = getLaneIdForX(p.x);
+          if (collectedBy === 1 && lane !== 1 || collectedBy === 2 && lane !== 2) {
+            collectedBy = 0;
+          }
+        }
+      }
+      if (collectedBy) {
+        if (!isSandboxMultiplayer()) {
+          state.powerupsCollected += 1;
+          if (!state.powerupsCollectedByType)
+            state.powerupsCollectedByType = {};
+          state.powerupsCollectedByType[p.type] = (state.powerupsCollectedByType[p.type] || 0) + 1;
+        } else {
+          var pStats = ensurePilotStats(collectedBy);
+          pStats.powerupsCollected += 1;
+          if (p.type) {
+            pStats.powerupsCollectedByType[p.type] = (pStats.powerupsCollectedByType[p.type] || 0) + 1;
+          }
+        }
         if (p.group === "offense") {
           playSfx(state, "shot_powerup");
         } else if (p.type === "repair") {
@@ -147716,15 +148700,34 @@
         } else {
           playSfx(state, "powerup_collected");
         }
-        spawnPickupFx(player.x, player.y - 6);
-        applyPowerup(p);
+        var targetPilot = collectedBy === 2 ? ensurePilot2() : player;
+        spawnPickupFx(targetPilot.x, targetPilot.y - 6);
+        if (isSandboxMultiplayer()) {
+          applyPowerupForPilot(targetPilot, collectedBy, p);
+        } else {
+          applyPowerup(p);
+        }
         if (tourGuide)
           tourGuide.notify("powerup");
         powerups.splice(pi, 1);
         continue;
       }
       if (p.y - p.r > r.height + 40) {
-        state.powerupsMissed += 1;
+        if (!isSandboxMultiplayer()) {
+          state.powerupsMissed += 1;
+          if (!state.powerupsMissedByType)
+            state.powerupsMissedByType = {};
+          state.powerupsMissedByType[p.type] = (state.powerupsMissedByType[p.type] || 0) + 1;
+        } else {
+          var missPilot = isSandboxSplitMode() ? getLaneIdForX(p.x) : 1;
+          var missStats = ensurePilotStats(missPilot);
+          missStats.powerupsMissed += 1;
+          if (p.type) {
+            if (!missStats.powerupsMissedByType)
+              missStats.powerupsMissedByType = {};
+            missStats.powerupsMissedByType[p.type] = (missStats.powerupsMissedByType[p.type] || 0) + 1;
+          }
+        }
         if (tutorialActive && tutorialStepId === "powerup") {
           spawnPowerup(p.type, p.group);
         }
@@ -147736,9 +148739,9 @@
       var a = asteroids[ai];
       if (a.spawnFade != null && a.spawnFade < 1) {
         var fadeDur = a.spawnFadeDur || 0.35;
-        a.spawnFade = Math.min(1, a.spawnFade + dtReal / Math.max(0.12, fadeDur));
+        a.spawnFade = Math.min(1, a.spawnFade + dtReal2 / Math.max(0.12, fadeDur));
       }
-      applyFlaresToAsteroid(a, dtReal);
+      applyFlaresToAsteroid(a, dtReal2);
       if (a.shakeTimer != null && a.shakeTimer > 0) {
         a.shakeTimer = Math.max(0, a.shakeTimer - dtSlow);
       }
@@ -147749,12 +148752,12 @@
         var dymA = targetY - a.y;
         var distA = Math.max(1, Math.hypot(dxmA, dymA));
         var pullA = clamp(240 / distA, 0, 4.5);
-        a.x += dxmA / distA * pullA * dtReal * 140;
-        a.y += dymA / distA * pullA * dtReal * 140;
+        a.x += dxmA / distA * pullA * dtReal2 * 140;
+        a.y += dymA / distA * pullA * dtReal2 * 140;
         if (a.vx != null)
-          a.vx *= 1 - Math.min(1, dtReal * 2.2);
+          a.vx *= 1 - Math.min(1, dtReal2 * 2.2);
         if (a.vy != null)
-          a.vy *= 1 - Math.min(1, dtReal * 1.8);
+          a.vy *= 1 - Math.min(1, dtReal2 * 1.8);
       }
       if (a.effectTimer != null) {
         a.effectTimer -= dtSlow;
@@ -147793,11 +148796,18 @@
       }
       a.vx *= 1 - Math.min(1, dtAst * 0.35);
       var bound = a.r + 8;
-      if (a.x < bound) {
-        a.x = bound;
+      var minBound = bound;
+      var maxBound = r.width - bound;
+      if (isSandboxSplitMode() && a.laneId) {
+        var laneBounds = getLaneBounds(a.laneId);
+        minBound = laneBounds.minX + a.r;
+        maxBound = laneBounds.maxX - a.r;
+      }
+      if (a.x < minBound) {
+        a.x = minBound;
         a.vx = Math.abs(a.vx) * 0.6;
-      } else if (a.x > r.width - bound) {
-        a.x = r.width - bound;
+      } else if (a.x > maxBound) {
+        a.x = maxBound;
         a.vx = -Math.abs(a.vx) * 0.6;
       }
       a.rot = (a.rot || 0) + (a.spin || 0) * dtAst;
@@ -147806,14 +148816,67 @@
         if (!tutorialActive)
           warningClip = playSfx(state, "warning");
       }
-      if (handleShipAsteroidCollision(a, player.x, player.y, false)) {
-        asteroids.splice(ai, 1);
-        if (state.over)
-          return;
-        continue;
+      if (!(isSandboxSplitMode() && (a.laneId || getLaneIdForX(a.x)) !== 1)) {
+        if (handleShipAsteroidCollision(a, player.x, player.y, false)) {
+          asteroids.splice(ai, 1);
+          if (state.over)
+            return;
+          continue;
+        }
+      }
+      if (isSandboxMultiplayer()) {
+        var p2 = ensurePilot2();
+        if (!(isSandboxSplitMode() && (a.laneId || getLaneIdForX(a.x)) !== 2)) {
+          if (handlePilotAsteroidCollision(a, p2, 2, p2.x, p2.y, false, false)) {
+            asteroids.splice(ai, 1);
+            if (state.over)
+              return;
+            continue;
+          }
+        }
       }
       if (a.y - a.r > r.height + 40) {
         if (a.isCorrect && a.waveId === state.waveId) {
+          if (isDivisorsMode()) {
+            if (isSandboxSplitMode()) {
+              var missPilotDiv = a.laneId || getLaneIdForX(a.x);
+              recordPilotMissed(missPilotDiv);
+            } else if (isSandboxMultiplayer()) {
+              recordPilotMissed(1);
+              recordPilotMissed(2);
+            }
+            state.missed++;
+            state.streak = 0;
+            if (a.hiddenPowerup) {
+              hiddenPowerupActive = false;
+              answerHitsSincePowerup = 0;
+            }
+            recordFactMiss(state.a, state.b);
+            syncHud();
+            playSfx(state, "missed_answer");
+            loseLife("CORRECT ANSWER ESCAPED");
+            asteroids.splice(ai, 1);
+            continue;
+          }
+          if (isSandboxSplitMode()) {
+            var missPilot = a.laneId || getLaneIdForX(a.x);
+            recordPilotMissed(missPilot);
+            if (a.hiddenPowerup) {
+              hiddenPowerupActive = false;
+              answerHitsSincePowerup = 0;
+            }
+            a.isCorrect = false;
+            a.waveId = -1;
+            if (state.correctAsteroidId === a.id) {
+              state.correctAsteroidId = 0;
+              state.correctInPlay = false;
+            }
+            asteroids.splice(ai, 1);
+            continue;
+          } else if (isSandboxMultiplayer()) {
+            recordPilotMissed(1);
+            recordPilotMissed(2);
+          }
           state.missed++;
           state.correctInPlay = false;
           state.correctAsteroidId = 0;
@@ -147940,6 +149003,13 @@
         var bb = bullets[bj];
         if (bb.noHit)
           continue;
+        var pilotId = bb.pilotId || 1;
+        if (isSandboxSplitMode()) {
+          var laneId = a2.laneId || getLaneIdForX(a2.x);
+          if (pilotId !== laneId) {
+            continue;
+          }
+        }
         var ddx = a2.x - bb.x;
         var ddy = a2.y - bb.y;
         if (ddx * ddx + ddy * ddy <= (a2.r + bb.r) * (a2.r + bb.r)) {
@@ -147993,6 +149063,11 @@
                 }
               }
               if (correctAst && correctAst !== a2) {
+                if (isSandboxSplitMode() && correctAst.laneId && correctAst.laneId !== pilotId) {
+                  correctAst = null;
+                }
+              }
+              if (correctAst && correctAst !== a2) {
                 var dxC = correctAst.x - bb.x;
                 var dyC = correctAst.y - bb.y;
                 var rC = correctAst.r + bb.r;
@@ -148035,44 +149110,78 @@
             break;
           }
           var wasCorrect = hitAst.isCorrect && hitAst.waveId === state.waveId;
-          if (wasCorrect && isPartialSumsMode()) {
+          if (isPartialSumsMode()) {
             var expectedValue = Number(getCurrentCorrectTargetValue());
             var hitValue = Number(hitAst.label);
-            if (!Number.isFinite(expectedValue) || !Number.isFinite(hitValue) || hitValue !== expectedValue) {
-              wasCorrect = false;
+            wasCorrect = Number.isFinite(expectedValue) && Number.isFinite(hitValue) && hitValue === expectedValue;
+          }
+          var impactReason = "wrong";
+          if (isDivisorsMode()) {
+            var divisorCorrect = isDivisorLabel(hitAst.label);
+            var divisorNew = divisorCorrect && markDivisorHit(hitAst.label);
+            if (isSandboxMultiplayer()) {
+              if (divisorCorrect && divisorNew) {
+                recordPilotCorrect(pilotId);
+              } else if (!divisorCorrect && !stampedeActive) {
+                recordPilotWrong(pilotId);
+              }
             }
-          }
-          var stampedeRedemption = false;
-          if (stampedeActive && wasCorrect) {
-            stampedeRedemption = true;
-            state.correctInPlay = false;
-            state.correctAsteroidId = 0;
-            state.correctDelayRemaining = 0;
-            wasCorrect = false;
-            state.score = Math.max(0, state.score - 90);
-            state.streak = 0;
-            waveHadWrongHit = true;
-            kickShake(22, 0.16);
-            triggerCameraFlash(0.18);
-            showToast("REDEMPTION");
-          }
-          if (wasCorrect) {
-            var wid = state.waveId;
-            state.correctInPlay = false;
-            state.correctAsteroidId = 0;
-            retireWave(wid);
-            bestStreak = Math.max(bestStreak, state.streak + 1);
-            onCorrectHit(hitAst);
-            stopHits = true;
-            clearedWaveId = wid;
-          } else if (!stampedeActive) {
-            recordFactMiss(state.a, state.b);
-            onWrongHit();
+            if (divisorCorrect) {
+              if (divisorNew) {
+                bestStreak = Math.max(bestStreak, state.streak + 1);
+                handleDivisorCorrectHit(hitAst);
+                stopHits = true;
+              } else {
+                playSfx(state, "impact_thud", 0.35);
+              }
+            } else if (!stampedeActive) {
+              recordFactMiss(state.a, state.b);
+              onWrongHit();
+            } else {
+              state.score += 6;
+              playSfx(state, "impact_thud", 0.4);
+            }
+            impactReason = divisorCorrect ? "correct" : stampedeActive ? "stampede_wrong" : "wrong";
           } else {
-            state.score += 6;
-            playSfx(state, "impact_thud", 0.4);
+            var stampedeRedemption = false;
+            if (stampedeActive && wasCorrect) {
+              stampedeRedemption = true;
+              state.correctInPlay = false;
+              state.correctAsteroidId = 0;
+              state.correctDelayRemaining = 0;
+              wasCorrect = false;
+              state.score = Math.max(0, state.score - 90);
+              state.streak = 0;
+              waveHadWrongHit = true;
+              kickShake(22, 0.16);
+              triggerCameraFlash(0.18);
+              showToast("REDEMPTION");
+            }
+            if (isSandboxMultiplayer()) {
+              if (wasCorrect) {
+                recordPilotCorrect(pilotId);
+              } else if (!stampedeActive) {
+                recordPilotWrong(pilotId);
+              }
+            }
+            if (wasCorrect) {
+              var wid = state.waveId;
+              state.correctInPlay = false;
+              state.correctAsteroidId = 0;
+              retireWave(wid);
+              bestStreak = Math.max(bestStreak, state.streak + 1);
+              onCorrectHit(hitAst);
+              stopHits = true;
+              clearedWaveId = wid;
+            } else if (!stampedeActive) {
+              recordFactMiss(state.a, state.b);
+              onWrongHit();
+            } else {
+              state.score += 6;
+              playSfx(state, "impact_thud", 0.4);
+            }
+            impactReason = wasCorrect ? "correct" : stampedeActive ? "stampede_wrong" : "wrong";
           }
-          var impactReason = wasCorrect ? "correct" : stampedeActive ? "stampede_wrong" : "wrong";
           if (kind === "fire") {
             markAsteroidEffect(hitAst, "burn", 1.6);
             hitAst.effectReason = impactReason;
@@ -148263,6 +149372,80 @@
         al2.hitShake = Math.max(al2.hitShake || 0, 0.75);
       }
     }
+    if (isSandboxMultiplayer()) {
+      var p2 = ensurePilot2();
+      if (!p2.dead) {
+        for (var i2 = 0; i2 < aliens.length; i2++) {
+          var alP2 = aliens[i2];
+          if (!alP2 || alP2.dead || alP2.fadeOut)
+            continue;
+          if (isSandboxSplitMode()) {
+            var laneP2 = getLaneIdForX(alP2.x);
+            if (laneP2 !== 2)
+              continue;
+          }
+          var dxC2 = alP2.x - p2.x;
+          var dyC2 = alP2.y - (p2.y - 8);
+          if (dxC2 * dxC2 + dyC2 * dyC2 <= Math.pow(alP2.r + 18, 2)) {
+            if (p2.invuln <= 0) {
+              clearScopeOnHitForPilot(p2);
+              registerShotTypeHitForPilot(p2, 1, false);
+              resetSurvivorTimer();
+              kickShake(18, 0.16);
+              triggerCameraFlash(0.16);
+              p2.shipShake = Math.max(p2.shipShake || 0, 0.34);
+              var distC2 = Math.max(1, Math.hypot(dxC2, dyC2));
+              var knockBackAlien2 = 0.75;
+              p2.vx = -dxC2 / distC2 * p2.speed * knockBackAlien2;
+              p2.vy = -dyC2 / distC2 * p2.speed * knockBackAlien2;
+              var dmgHit2 = 0.45;
+              if (p2.defenseMode === "armor")
+                dmgHit2 = 0;
+              if (p2.defenseMode === "shield") {
+                impactDebris(p2.x, p2.y - 8);
+                playSfx(state, "impact", 0.4);
+                p2.hitFlash = 1;
+                p2.invuln = 0.45;
+                showToast("SHIELD BLOCK");
+              } else if (p2.defenseMode === "armor") {
+                impactShipHit(p2.x, p2.y - 10);
+                playSfx(state, "impact_thud", 0.45);
+                p2.hitFlash = 1;
+                p2.invuln = 0.45;
+                showToast("ARMOR ABSORB");
+                consumeArmorBlockForPilot(p2);
+              } else {
+                impactShipHit(p2.x, p2.y - 10);
+                playSfx(state, "crash", 0.6);
+                p2.hitFlash = 1;
+                p2.invuln = 0.55;
+                p2.hull = clamp(p2.hull - dmgHit2, 0, 1);
+                if (p2.hull <= 0) {
+                  p2.hull = 0;
+                  p2.lives = Math.max(0, (p2.lives || 0) - 1);
+                  if (p2.lives <= 0) {
+                    p2.dead = true;
+                    p2.hidden = true;
+                    showToast("PILOT DOWN");
+                  } else {
+                    p2.hull = 1;
+                    p2.invuln = Math.max(p2.invuln || 0, 0.6);
+                    showToast("HULL CRITICAL");
+                  }
+                } else {
+                  playSfx(state, "ship_damaged");
+                  showToast("ALIEN COLLISION");
+                }
+              }
+            }
+            var distC2b = Math.max(1, Math.hypot(dxC2, dyC2));
+            alP2.x += dxC2 / distC2b * 24;
+            alP2.y += dyC2 / distC2b * 24;
+            alP2.hitShake = Math.max(alP2.hitShake || 0, 0.75);
+          }
+        }
+      }
+    }
     for (var ab = alienBullets.length - 1; ab >= 0; ab--) {
       var abul = alienBullets[ab];
       var dxp = abul.x - player.x;
@@ -148329,6 +149512,72 @@
             } else {
               playSfx(state, "ship_damaged");
               showToast("HULL DAMAGED");
+            }
+          }
+        }
+      }
+      if (isSandboxMultiplayer()) {
+        var p2b = ensurePilot2();
+        if (p2b.dead)
+          continue;
+        if (isSandboxSplitMode()) {
+          var laneAb = getLaneIdForX(abul.x);
+          if (laneAb !== 2)
+            continue;
+        }
+        var dxp2 = abul.x - p2b.x;
+        var dyp2 = abul.y - (p2b.y - 4);
+        if (dxp2 * dxp2 + dyp2 * dyp2 < (abul.r + 16) * (abul.r + 16)) {
+          alienBullets.splice(ab, 1);
+          if (p2b.invuln <= 0) {
+            clearScopeOnHitForPilot(p2b);
+            registerShotTypeHitForPilot(p2b, 1, false);
+            resetSurvivorTimer();
+            kickShake(16, 0.14);
+            triggerCameraFlash(0.14);
+            p2b.shipShake = Math.max(p2b.shipShake || 0, 1);
+            var distP2 = Math.max(1, Math.hypot(dxp2, dyp2));
+            var knockBackBullet2 = 0.5;
+            p2b.vx = -dxp2 / distP2 * p2b.speed * knockBackBullet2;
+            p2b.vy = -dyp2 / distP2 * p2b.speed * knockBackBullet2;
+            var dmgHit2 = 0.35;
+            if (p2b.defenseMode === "armor")
+              dmgHit2 = 0;
+            if (p2b.defenseMode === "shield") {
+              impactDebris(p2b.x, p2b.y - 8);
+              playSfx(state, "impact", 0.35);
+              p2b.hitFlash = 1;
+              p2b.invuln = 0.35;
+              showToast("SHIELD BLOCK");
+            } else if (p2b.defenseMode === "armor") {
+              impactShipHit(p2b.x, p2b.y - 10);
+              playSfx(state, "impact_thud", 0.45);
+              p2b.hitFlash = 1;
+              p2b.invuln = 0.35;
+              showToast("ARMOR ABSORB");
+              consumeArmorBlockForPilot(p2b);
+            } else {
+              impactShipHit(p2b.x, p2b.y - 10);
+              playSfx(state, "crash", 0.45);
+              p2b.hitFlash = 1;
+              p2b.invuln = 0.45;
+              p2b.hull = clamp(p2b.hull - dmgHit2, 0, 1);
+              if (p2b.hull <= 0) {
+                p2b.hull = 0;
+                p2b.lives = Math.max(0, (p2b.lives || 0) - 1);
+                if (p2b.lives <= 0) {
+                  p2b.dead = true;
+                  p2b.hidden = true;
+                  showToast("PILOT DOWN");
+                } else {
+                  p2b.hull = 1;
+                  p2b.invuln = Math.max(p2b.invuln || 0, 0.6);
+                  showToast("HULL CRITICAL");
+                }
+              } else {
+                playSfx(state, "ship_damaged");
+                showToast("ALIEN HIT");
+              }
             }
           }
         }
@@ -148464,22 +149713,79 @@
       });
     }
     ctx.clearRect(0, 0, w, h);
-    if (!phaserActive && !tutorialActive && backgroundSprites[backgroundIndex] && backgroundReady[backgroundIndex]) {
-      var bgImg = backgroundSprites[backgroundIndex];
-      var baseScale = Math.max(w / bgImg.width, h / bgImg.height);
-      var scale = baseScale * backgroundScale;
-      var drawW = Math.ceil(bgImg.width * scale) + 4;
-      var drawH = Math.ceil(bgImg.height * scale) + 4;
-      var maxScroll = Math.max(1, drawH - h);
-      if (!state.paused && !screenshotMode) {
-        backgroundScroll = (backgroundScroll + 4.8 * (bg.dt || 1 / 60)) % maxScroll;
+    if (!phaserActive && !tutorialActive) {
+      var splitBg = isSandboxSplitMode();
+      if (splitBg) {
+        let drawLaneBackground = function(lane, bgIdx, scrollOffset) {
+          if (backgroundSprites[bgIdx] && backgroundReady[bgIdx]) {
+            var bgImg3 = backgroundSprites[bgIdx];
+            var laneW = lane.maxX - lane.minX;
+            var baseScale3 = Math.max(laneW / bgImg3.width, h / bgImg3.height);
+            var scale2 = baseScale3 * backgroundScale;
+            var drawW2 = Math.ceil(bgImg3.width * scale2) + 4;
+            var drawH3 = Math.ceil(bgImg3.height * scale2) + 4;
+            var offX2 = Math.floor((lane.minX + lane.maxX - drawW2) / 2);
+            var offY2 = Math.floor(h - drawH3 + scrollOffset + 160);
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(lane.minX, 0, laneW, h);
+            ctx.clip();
+            ctx.globalAlpha = 0.55;
+            ctx.drawImage(bgImg3, offX2, offY2, drawW2, drawH3);
+            ctx.restore();
+          } else if (SHOW_STARS) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(lane.minX, 0, lane.maxX - lane.minX, h);
+            ctx.clip();
+            drawStars(w, h, true);
+            ctx.restore();
+          }
+        };
+        var lane1 = getLaneBounds(1);
+        var lane2 = getLaneBounds(2);
+        var bgIdx1 = backgroundIndex;
+        var bgIdx2 = backgroundIndex;
+        var bgReady1 = backgroundSprites[bgIdx1] && backgroundReady[bgIdx1];
+        var bgReady2 = backgroundSprites[bgIdx2] && backgroundReady[bgIdx2];
+        var maxScroll1 = 0;
+        var maxScroll2 = 0;
+        if (!state.paused && !screenshotMode) {
+          if (bgReady1) {
+            var bgImg1 = backgroundSprites[bgIdx1];
+            var baseScale1 = Math.max((lane1.maxX - lane1.minX) / bgImg1.width, h / bgImg1.height);
+            var drawH1 = Math.ceil(bgImg1.height * (baseScale1 * backgroundScale)) + 4;
+            maxScroll1 = Math.max(1, drawH1 - h);
+          }
+          if (bgReady2) {
+            var bgImg2 = backgroundSprites[bgIdx2];
+            var baseScale2 = Math.max((lane2.maxX - lane2.minX) / bgImg2.width, h / bgImg2.height);
+            var drawH2 = Math.ceil(bgImg2.height * (baseScale2 * backgroundScale)) + 4;
+            maxScroll2 = Math.max(1, drawH2 - h);
+          }
+          var maxScroll = Math.max(maxScroll1, maxScroll2, 1);
+          backgroundScroll = (backgroundScroll + 4.8 * (bg.dt || 1 / 60)) % maxScroll;
+          backgroundScrollSplit = backgroundScroll;
+        }
+        drawLaneBackground(lane1, bgIdx1, backgroundScroll);
+        drawLaneBackground(lane2, bgIdx2, backgroundScrollSplit);
+      } else if (backgroundSprites[backgroundIndex] && backgroundReady[backgroundIndex]) {
+        var bgImg = backgroundSprites[backgroundIndex];
+        var baseScale = Math.max(w / bgImg.width, h / bgImg.height);
+        var scale = baseScale * backgroundScale;
+        var drawW = Math.ceil(bgImg.width * scale) + 4;
+        var drawH = Math.ceil(bgImg.height * scale) + 4;
+        var maxScroll = Math.max(1, drawH - h);
+        if (!state.paused && !screenshotMode) {
+          backgroundScroll = (backgroundScroll + 4.8 * (bg.dt || 1 / 60)) % maxScroll;
+        }
+        var offX = Math.floor((w - drawW) / 2);
+        var offY = Math.floor(h - drawH + backgroundScroll + 160);
+        ctx.save();
+        ctx.globalAlpha = 0.55;
+        ctx.drawImage(bgImg, offX, offY, drawW, drawH);
+        ctx.restore();
       }
-      var offX = Math.floor((w - drawW) / 2);
-      var offY = Math.floor(h - drawH + backgroundScroll + 160);
-      ctx.save();
-      ctx.globalAlpha = 0.55;
-      ctx.drawImage(bgImg, offX, offY, drawW, drawH);
-      ctx.restore();
     } else if (!phaserActive && tutorialActive && SHOW_STARS) {
       drawStars(w, h, true);
     }
@@ -148518,6 +149824,9 @@
     drawTutorialDots();
     if (!state.hideAsteroids) {
       drawShip();
+      if (isSandboxMultiplayer()) {
+        drawPilotShip(ensurePilot2());
+      }
     }
     drawClawPrompt();
     ctx.restore();
@@ -148570,6 +149879,178 @@
       ctx.restore();
     }
     if (!state.over) {
+      let drawQuestionAt = function(cx) {
+        ctx.fillText(qDisplay, cx, questionTop);
+        if (qParsed.repeatStart >= 0 && qParsed.repeatLen > 0) {
+          var qWidth = ctx.measureText(qDisplay).width;
+          var qLeft = cx - qWidth / 2;
+          var leftW = ctx.measureText(qDisplay.slice(0, qParsed.repeatStart)).width;
+          var repeatW = ctx.measureText(qDisplay.slice(qParsed.repeatStart, qParsed.repeatStart + qParsed.repeatLen)).width;
+          var lineY = questionTop - size * 0.08;
+          ctx.strokeStyle = "rgba(232,236,255,.85)";
+          ctx.lineWidth = Math.max(1, size * 0.06);
+          ctx.beginPath();
+          ctx.moveTo(qLeft + leftW, lineY);
+          ctx.lineTo(qLeft + leftW + repeatW, lineY);
+          ctx.stroke();
+        }
+        if (isDigitMode()) {
+          var aStr = String(state.a);
+          var totalDigits = aStr.length;
+          var progress = state.answerDigits && state.answerDigits.length ? state.answerDigits.length - Math.max(0, state.digitsLeft) : 0;
+          var digitIndex = Math.max(0, Math.min(totalDigits - 1, totalDigits - 1 - progress));
+          var qW = ctx.measureText(qDisplay).width;
+          var qStart = cx - qW / 2;
+          var prefixW = ctx.measureText(aStr.slice(0, digitIndex)).width;
+          var digitW = ctx.measureText(aStr.charAt(digitIndex)).width || size * 0.45;
+          var arrowX = qStart + prefixW + digitW / 2;
+          var arrowY = questionTop + size * 0.9;
+          var arrowW = Math.max(8, size * 0.22);
+          var arrowH = Math.max(6, size * 0.16);
+          ctx.save();
+          ctx.fillStyle = "rgba(255,255,255,.85)";
+          ctx.beginPath();
+          ctx.moveTo(arrowX, arrowY + arrowH);
+          ctx.lineTo(arrowX - arrowW / 2, arrowY);
+          ctx.lineTo(arrowX + arrowW / 2, arrowY);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
+      }, drawHudBarsForPilot = function(barX3, barW3, hullRatio, livesLeft, livesStart, wrongCount) {
+        var hudBars = [];
+        hudBars.push({
+          label: "HP",
+          ratio: clamp(hullRatio, 0, 1),
+          fill: "rgba(28,220,120,.9)",
+          glow: "rgba(28,220,120,.35)"
+        });
+        if (state.timeLimitSec > 0) {
+          var elapsedProg = getElapsedSeconds();
+          var remainingProg = Math.max(0, state.timeLimitSec - elapsedProg);
+          var timeRatio = clamp(remainingProg / state.timeLimitSec, 0, 1);
+          var fillColor = "rgba(0,169,255,.9)";
+          var glowColor = "rgba(0,169,255,.35)";
+          if (remainingProg <= 15) {
+            var pulse = 0.65 + 0.35 * Math.sin(performance.now() * 0.02);
+            fillColor = "rgba(255,80,80," + (0.7 + 0.2 * pulse).toFixed(2) + ")";
+            glowColor = "rgba(255,80,80," + (0.4 + 0.35 * pulse).toFixed(2) + ")";
+          } else if (remainingProg <= 30) {
+            fillColor = "rgba(255,180,60,.92)";
+            glowColor = "rgba(255,180,60,.35)";
+          }
+          hudBars.push({
+            label: "TIMER",
+            ratio: timeRatio,
+            fill: fillColor,
+            glow: glowColor
+          });
+        }
+        var targetCount = state.questionLimit || 0;
+        if (!targetCount && state.targetMode && state.targetMode.charAt(0) === "q") {
+          var parsedTargets = parseInt(state.targetMode.slice(1), 10);
+          if (!Number.isNaN(parsedTargets) && parsedTargets > 0)
+            targetCount = parsedTargets;
+        }
+        if (targetCount > 0) {
+          hudBars.push({
+            label: "PROGRESS",
+            ratio: clamp(state.questionsCompleted / targetCount, 0, 1),
+            fill: "rgba(210,210,210,.92)",
+            glow: "rgba(255,255,255,.25)"
+          });
+        }
+        if (hudBars.length) {
+          for (var bi = 0; bi < hudBars.length; bi++) {
+            var bY = barY + bi * (barH + barGap);
+            var b = hudBars[bi];
+            ctx.save();
+            ctx.fillStyle = "rgba(0,0,0,.4)";
+            ctx.strokeStyle = "rgba(255,255,255,.22)";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.roundRect(barX3, bY, barW3, barH, 8);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = b.fill;
+            ctx.shadowColor = b.glow;
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.roundRect(barX3, bY, barW3 * b.ratio, barH, 8);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = labelColor;
+            ctx.font = labelStyle;
+            ctx.textAlign = "right";
+            ctx.textBaseline = "middle";
+            ctx.fillText(b.label, barX3 - 8, bY + barH / 2);
+            ctx.restore();
+          }
+        }
+        var maxLives = Math.max(0, livesStart || 0);
+        var strikeLabelY = null;
+        if (maxLives > 0) {
+          var livesGap = 4;
+          var lifeH = 6;
+          var availableW = barW3 - livesGap * (maxLives - 1);
+          var lifeW = Math.max(6, Math.floor(availableW / maxLives));
+          if (lifeW > 18)
+            lifeW = 18;
+          var totalW = lifeW * maxLives + livesGap * (maxLives - 1);
+          if (totalW > barW3) {
+            lifeW = Math.max(5, Math.floor((barW3 - livesGap * (maxLives - 1)) / maxLives));
+          }
+          var lifeY = barY + hudBars.length * (barH + barGap) + 6;
+          ctx.save();
+          ctx.fillStyle = labelColor;
+          ctx.font = labelStyle;
+          ctx.textAlign = "right";
+          ctx.textBaseline = "middle";
+          ctx.fillText("LIVES", barX3 - 8, lifeY + lifeH / 2);
+          for (var li = 0; li < maxLives; li++) {
+            var lx = barX3 + li * (lifeW + livesGap);
+            var isActive = li < livesLeft;
+            ctx.fillStyle = isActive ? "rgba(255,80,80,.9)" : "rgba(255,80,80,.2)";
+            ctx.fillRect(lx, lifeY, lifeW, lifeH);
+            ctx.strokeStyle = "rgba(255,120,120,.5)";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(lx, lifeY, lifeW, lifeH);
+          }
+          ctx.restore();
+          strikeLabelY = lifeY + lifeH + 10;
+        }
+        if (strikeLimit > 0) {
+          var strikesUsed = Math.max(0, Math.min(wrongCount || 0, strikeLimit));
+          var strikesLeft = Math.max(0, strikeLimit - strikesUsed);
+          var strikeGap = 4;
+          var strikeH = 6;
+          var strikeAvailW = barW3 - strikeGap * (strikeLimit - 1);
+          var strikeW = Math.max(6, Math.floor(strikeAvailW / strikeLimit));
+          if (strikeW > 18)
+            strikeW = 18;
+          var strikeTotalW = strikeW * strikeLimit + strikeGap * (strikeLimit - 1);
+          if (strikeTotalW > barW3) {
+            strikeW = Math.max(5, Math.floor((barW3 - strikeGap * (strikeLimit - 1)) / strikeLimit));
+          }
+          var strikeY = strikeLabelY != null ? strikeLabelY : barY + hudBars.length * (barH + barGap) + 6;
+          ctx.save();
+          ctx.fillStyle = labelColor;
+          ctx.font = labelStyle;
+          ctx.textAlign = "right";
+          ctx.textBaseline = "middle";
+          ctx.fillText("STRIKES", barX3 - 8, strikeY + strikeH / 2);
+          for (var si = 0; si < strikeLimit; si++) {
+            var sx = barX3 + si * (strikeW + strikeGap);
+            var strikeActive = si < strikesLeft;
+            ctx.fillStyle = strikeActive ? "rgba(255,210,90,.95)" : "rgba(255,210,90,.2)";
+            ctx.fillRect(sx, strikeY, strikeW, strikeH);
+            ctx.strokeStyle = "rgba(255,220,120,.55)";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(sx, strikeY, strikeW, strikeH);
+          }
+          ctx.restore();
+        }
+      };
       if (introActive) {
         return;
       }
@@ -148598,190 +150079,60 @@
       var qRaw = getQuestionRawText();
       var qParsed = parseRepeatingText(qRaw);
       var qDisplay = qParsed.display;
+      var splitHud = isSandboxSplitMode();
+      var lane1 = splitHud ? getLaneBounds(1) : null;
+      var lane2 = splitHud ? getLaneBounds(2) : null;
       if (!(tutorialActive && tutorialHideQuestion) && !missionBriefShowing) {
-        ctx.fillText(qDisplay, w / 2, questionTop);
-        if (qParsed.repeatStart >= 0 && qParsed.repeatLen > 0) {
-          var qWidth = ctx.measureText(qDisplay).width;
-          var qLeft = w / 2 - qWidth / 2;
-          var leftW = ctx.measureText(qDisplay.slice(0, qParsed.repeatStart)).width;
-          var repeatW = ctx.measureText(qDisplay.slice(qParsed.repeatStart, qParsed.repeatStart + qParsed.repeatLen)).width;
-          var lineY = questionTop - size * 0.08;
-          ctx.strokeStyle = "rgba(232,236,255,.85)";
-          ctx.lineWidth = Math.max(1, size * 0.06);
-          ctx.beginPath();
-          ctx.moveTo(qLeft + leftW, lineY);
-          ctx.lineTo(qLeft + leftW + repeatW, lineY);
-          ctx.stroke();
-        }
-        if (isDigitMode()) {
-          var aStr = String(state.a);
-          var totalDigits = aStr.length;
-          var progress = state.answerDigits && state.answerDigits.length ? state.answerDigits.length - Math.max(0, state.digitsLeft) : 0;
-          var digitIndex = Math.max(0, Math.min(totalDigits - 1, totalDigits - 1 - progress));
-          var qW = ctx.measureText(qDisplay).width;
-          var qStart = w / 2 - qW / 2;
-          var prefixW = ctx.measureText(aStr.slice(0, digitIndex)).width;
-          var digitW = ctx.measureText(aStr.charAt(digitIndex)).width || size * 0.45;
-          var arrowX = qStart + prefixW + digitW / 2;
-          var arrowY = questionTop + size * 0.9;
-          var arrowW = Math.max(8, size * 0.22);
-          var arrowH = Math.max(6, size * 0.16);
-          ctx.save();
-          ctx.fillStyle = "rgba(255,255,255,.85)";
-          ctx.beginPath();
-          ctx.moveTo(arrowX, arrowY + arrowH);
-          ctx.lineTo(arrowX - arrowW / 2, arrowY);
-          ctx.lineTo(arrowX + arrowW / 2, arrowY);
-          ctx.closePath();
-          ctx.fill();
-          ctx.restore();
+        if (splitHud) {
+          var cx1 = (lane1.minX + lane1.maxX) / 2;
+          var cx2 = (lane2.minX + lane2.maxX) / 2;
+          drawQuestionAt(cx1);
+          drawQuestionAt(cx2);
+        } else {
+          drawQuestionAt(w / 2);
         }
       }
       ctx.restore();
-      var barX = 96;
-      var barY = view.hudH + 10;
-      var barW = Math.min(260, w * 0.35);
       var barH = 10;
       var barGap = 8;
-      var hudBars = [];
-      var hullRatio = clamp(player.hull, 0, 1);
-      hudBars.push({
-        label: "HP",
-        ratio: hullRatio,
-        fill: "rgba(28,220,120,.9)",
-        glow: "rgba(28,220,120,.35)"
-      });
-      if (state.timeLimitSec > 0) {
-        var elapsedProg = getElapsedSeconds();
-        var remainingProg = Math.max(0, state.timeLimitSec - elapsedProg);
-        var timeRatio = clamp(remainingProg / state.timeLimitSec, 0, 1);
-        var fillColor = "rgba(0,169,255,.9)";
-        var glowColor = "rgba(0,169,255,.35)";
-        if (remainingProg <= 15) {
-          var pulse = 0.65 + 0.35 * Math.sin(performance.now() * 0.02);
-          fillColor = "rgba(255,80,80," + (0.7 + 0.2 * pulse).toFixed(2) + ")";
-          glowColor = "rgba(255,80,80," + (0.4 + 0.35 * pulse).toFixed(2) + ")";
-        } else if (remainingProg <= 30) {
-          fillColor = "rgba(255,180,60,.92)";
-          glowColor = "rgba(255,180,60,.35)";
-        }
-        hudBars.push({
-          label: "TIMER",
-          ratio: timeRatio,
-          fill: fillColor,
-          glow: glowColor
-        });
-      }
-      var targetCount = state.questionLimit || 0;
-      if (!targetCount && state.targetMode && state.targetMode.charAt(0) === "q") {
-        var parsedTargets = parseInt(state.targetMode.slice(1), 10);
-        if (!Number.isNaN(parsedTargets) && parsedTargets > 0)
-          targetCount = parsedTargets;
-      }
-      if (targetCount > 0) {
-        hudBars.push({
-          label: "PROGRESS",
-          ratio: clamp(state.questionsCompleted / targetCount, 0, 1),
-          fill: "rgba(210,210,210,.92)",
-          glow: "rgba(255,255,255,.25)"
-        });
-      }
-      if (hudBars.length) {
-        for (var bi = 0; bi < hudBars.length; bi++) {
-          var bY = barY + bi * (barH + barGap);
-          var b = hudBars[bi];
-          ctx.save();
-          ctx.fillStyle = "rgba(0,0,0,.4)";
-          ctx.strokeStyle = "rgba(255,255,255,.22)";
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.roundRect(barX, bY, barW, barH, 8);
-          ctx.fill();
-          ctx.stroke();
-          ctx.fillStyle = b.fill;
-          ctx.shadowColor = b.glow;
-          ctx.shadowBlur = 6;
-          ctx.beginPath();
-          ctx.roundRect(barX, bY, barW * b.ratio, barH, 8);
-          ctx.fill();
-          ctx.shadowBlur = 0;
-          ctx.fillStyle = labelColor;
-          ctx.font = labelStyle;
-          ctx.textAlign = "right";
-          ctx.textBaseline = "middle";
-          ctx.fillText(b.label, barX - 8, bY + barH / 2);
-          ctx.restore();
-        }
-      }
-      var maxLives = Math.max(0, state.livesStart || 0);
-      var strikeLabelY = null;
-      if (maxLives > 0) {
-        var livesLeft = Math.max(0, Math.min(state.lives || 0, maxLives));
-        var lifeGap = 4;
-        var lifeH = 6;
-        var availableW = barW - lifeGap * (maxLives - 1);
-        var lifeW = Math.max(6, Math.floor(availableW / maxLives));
-        if (lifeW > 18)
-          lifeW = 18;
-        var totalW = lifeW * maxLives + lifeGap * (maxLives - 1);
-        if (totalW > barW) {
-          lifeW = Math.max(5, Math.floor((barW - lifeGap * (maxLives - 1)) / maxLives));
-        }
-        var lifeY = barY + hudBars.length * (barH + barGap) + 6;
-        ctx.save();
-        ctx.fillStyle = labelColor;
-        ctx.font = labelStyle;
-        ctx.textAlign = "right";
-        ctx.textBaseline = "middle";
-        ctx.fillText("LIVES", barX - 8, lifeY + lifeH / 2);
-        for (var li = 0; li < maxLives; li++) {
-          var lx = barX + li * (lifeW + lifeGap);
-          var isActive = li < livesLeft;
-          ctx.fillStyle = isActive ? "rgba(255,80,80,.9)" : "rgba(255,80,80,.2)";
-          ctx.fillRect(lx, lifeY, lifeW, lifeH);
-          ctx.strokeStyle = "rgba(255,120,120,.5)";
-          ctx.lineWidth = 1;
-          ctx.strokeRect(lx, lifeY, lifeW, lifeH);
-        }
-        ctx.restore();
-        strikeLabelY = lifeY + lifeH + 10;
-      }
+      var barY = view.hudH + 10;
       var strikeLimit = typeof state.strikeLimit === "number" ? state.strikeLimit : null;
-      var strikeY = null;
       if (strikeLimit === null || Number.isNaN(strikeLimit)) {
         var diff = String(state.difficulty || "normal").toLowerCase();
         strikeLimit = diff === "easy" ? 25 : diff === "normal" ? 20 : diff === "hard" ? 15 : 10;
       }
-      if (strikeLimit > 0) {
-        var strikesUsed = Math.max(0, Math.min(state.wrong || 0, strikeLimit));
-        var strikesLeft = Math.max(0, strikeLimit - strikesUsed);
-        var strikeGap = 4;
-        var strikeH = 6;
-        var strikeAvailW = barW - strikeGap * (strikeLimit - 1);
-        var strikeW = Math.max(6, Math.floor(strikeAvailW / strikeLimit));
-        if (strikeW > 18)
-          strikeW = 18;
-        var strikeTotalW = strikeW * strikeLimit + strikeGap * (strikeLimit - 1);
-        if (strikeTotalW > barW) {
-          strikeW = Math.max(5, Math.floor((barW - strikeGap * (strikeLimit - 1)) / strikeLimit));
+      if (splitHud) {
+        var laneW1 = lane1.maxX - lane1.minX;
+        var laneW2 = lane2.maxX - lane2.minX;
+        var barW1 = Math.min(240, laneW1 * 0.55);
+        var barW2 = Math.min(240, laneW2 * 0.55);
+        var barX1 = lane1.minX + 76;
+        var barX2 = lane2.minX + 76;
+        var p1Stats = ensurePilotStats(1);
+        var p2Stats = ensurePilotStats(2);
+        var p2Hud = ensurePilot2();
+        drawHudBarsForPilot(barX1, barW1, player.hull, state.lives || 0, state.livesStart || 0, p1Stats.wrong || 0);
+        drawHudBarsForPilot(barX2, barW2, p2Hud.hull, p2Hud.lives || 0, p2Hud.livesStart || 0, p2Stats.wrong || 0);
+        var gapStart = lane1.maxX;
+        var gapEnd = lane2.minX;
+        if (gapEnd > gapStart) {
+          ctx.save();
+          ctx.fillStyle = "rgba(0,0,0,.55)";
+          ctx.fillRect(gapStart, view.hudH + 6, gapEnd - gapStart, h - view.hudH - 16);
+          ctx.strokeStyle = "rgba(255,255,255,.12)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(gapStart, view.hudH + 6);
+          ctx.lineTo(gapStart, h - 10);
+          ctx.moveTo(gapEnd, view.hudH + 6);
+          ctx.lineTo(gapEnd, h - 10);
+          ctx.stroke();
+          ctx.restore();
         }
-        strikeY = strikeLabelY != null ? strikeLabelY : barY + hudBars.length * (barH + barGap) + 6;
-        ctx.save();
-        ctx.fillStyle = labelColor;
-        ctx.font = labelStyle;
-        ctx.textAlign = "right";
-        ctx.textBaseline = "middle";
-        ctx.fillText("STRIKES", barX - 8, strikeY + strikeH / 2);
-        for (var si = 0; si < strikeLimit; si++) {
-          var sx = barX + si * (strikeW + strikeGap);
-          var strikeActive = si < strikesLeft;
-          ctx.fillStyle = strikeActive ? "rgba(255,210,90,.95)" : "rgba(255,210,90,.2)";
-          ctx.fillRect(sx, strikeY, strikeW, strikeH);
-          ctx.strokeStyle = "rgba(255,220,120,.55)";
-          ctx.lineWidth = 1;
-          ctx.strokeRect(sx, strikeY, strikeW, strikeH);
-        }
-        ctx.restore();
+      } else {
+        var barX = 96;
+        var barW = Math.min(260, w * 0.35);
+        drawHudBarsForPilot(barX, barW, player.hull, state.lives || 0, state.livesStart || 0, state.wrong || 0);
       }
       var profile = getShipProfile(player.shipType);
       var dashLeft = Math.max(0, player.dashCooldown || 0);
@@ -148857,6 +150208,79 @@
         ctx.textBaseline = "middle";
         ctx.fillText(String(mineralCount), mX + mSize + 8, mY + mSize / 2);
         ctx.restore();
+      }
+      if (isSandboxMultiplayer() && !isSandboxSplitMode()) {
+        var p2Hud = ensurePilot2();
+        var barX2 = w - barW - 96;
+        var barY2 = barY;
+        var barH2 = barH;
+        var barGap2 = barGap;
+        var hudBars2 = [];
+        var hullRatio2 = clamp(p2Hud.hull, 0, 1);
+        hudBars2.push({
+          label: "HP",
+          ratio: hullRatio2,
+          fill: "rgba(28,220,120,.9)",
+          glow: "rgba(28,220,120,.35)"
+        });
+        if (hudBars2.length) {
+          for (var b2 = 0; b2 < hudBars2.length; b2++) {
+            var bY2 = barY2 + b2 * (barH2 + barGap2);
+            var bHud = hudBars2[b2];
+            ctx.save();
+            ctx.fillStyle = "rgba(0,0,0,.4)";
+            ctx.strokeStyle = "rgba(255,255,255,.22)";
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.roundRect(barX2, bY2, barW, barH2, 8);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = bHud.fill;
+            ctx.shadowColor = bHud.glow;
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.roundRect(barX2, bY2, barW * bHud.ratio, barH2, 8);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = labelColor;
+            ctx.font = labelStyle;
+            ctx.textAlign = "left";
+            ctx.textBaseline = "middle";
+            ctx.fillText(bHud.label, barX2 + barW + 8, bY2 + barH2 / 2);
+            ctx.restore();
+          }
+        }
+        var maxLives2 = Math.max(0, p2Hud.livesStart || state.livesStart || 0);
+        if (maxLives2 > 0) {
+          var livesLeft2 = Math.max(0, Math.min(p2Hud.lives || 0, maxLives2));
+          var lifeGap2 = 4;
+          var lifeH2 = 6;
+          var availableW2 = barW - lifeGap2 * (maxLives2 - 1);
+          var lifeW2 = Math.max(6, Math.floor(availableW2 / maxLives2));
+          if (lifeW2 > 18)
+            lifeW2 = 18;
+          var totalW2 = lifeW2 * maxLives2 + lifeGap2 * (maxLives2 - 1);
+          if (totalW2 > barW) {
+            lifeW2 = Math.max(5, Math.floor((barW - lifeGap2 * (maxLives2 - 1)) / maxLives2));
+          }
+          var lifeY2 = barY2 + hudBars2.length * (barH2 + barGap2) + 6;
+          ctx.save();
+          ctx.fillStyle = labelColor;
+          ctx.font = labelStyle;
+          ctx.textAlign = "left";
+          ctx.textBaseline = "middle";
+          ctx.fillText("LIVES", barX2 + barW + 8, lifeY2 + lifeH2 / 2);
+          for (var li2 = 0; li2 < maxLives2; li2++) {
+            var lx2 = barX2 + li2 * (lifeW2 + lifeGap2);
+            var isActive2 = li2 < livesLeft2;
+            ctx.fillStyle = isActive2 ? "rgba(255,80,80,.9)" : "rgba(255,80,80,.2)";
+            ctx.fillRect(lx2, lifeY2, lifeW2, lifeH2);
+            ctx.strokeStyle = "rgba(255,120,120,.5)";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(lx2, lifeY2, lifeW2, lifeH2);
+          }
+          ctx.restore();
+        }
       }
       drawActivePickupHud(hudFade, rightX, cy, radius, w);
       ctx.restore();
@@ -149533,6 +150957,9 @@
     } else if (modeName.indexOf("Partial Sums") !== -1) {
       detail = "Find the missing addend that completes the sum. Avoid decoys.";
       hitsRule = "Correct addend asteroids take hits equal to the largest digit in the answer.";
+    } else if (modeName.indexOf("Series") !== -1) {
+      detail = "Solve the full series sum and shoot the correct answer. Avoid decoys.";
+      hitsRule = "Correct answer asteroids take hits equal to the largest digit in the answer.";
     } else if (modeName.indexOf("Factor Hunt") !== -1) {
       detail = "Find the missing factor that completes the product. Avoid decoys.";
       hitsRule = "Correct factor asteroids take 1 hit.";
@@ -149546,7 +150973,7 @@
     } else if (op == "Squares") {
       detail = "Solve the square or root and shoot the correct asteroid.";
       hitsRule = "Correct square/root asteroids take hits equal to the largest digit in the answer.";
-    } else if (String(state.questionMode).indexOf("classic") != -1) {
+    } else if (String(state.questionMode).indexOf("classic") != -1 || String(state.questionMode).indexOf("series") != -1) {
       hitsRule = "Correct answer asteroids take hits equal to the largest digit in the answer.";
     }
     var lines = [];
@@ -149878,7 +151305,7 @@
     if (p.group === "secondary" && p.type === "autofire") {
       ctx.save();
       ctx.globalCompositeOperation = "source-over";
-      ctx.lineWidth = 2.4;
+      ctx.lineWidth = 3.6;
       for (var af = 0; af < 3; af++) {
         var y = -8 + af * 6;
         ctx.beginPath();
@@ -150356,6 +151783,14 @@
     var sy = shake ? Math.cos(performance.now() * 0.045) * shake : 0;
     renderShip(player.x + sx, player.y + sy, fadeAlpha, false);
   }
+  function drawPilotShip(pilot) {
+    if (!pilot || pilot.hidden)
+      return;
+    var prev = player;
+    player = pilot;
+    drawShip();
+    player = prev;
+  }
   function drawDashGhosts() {
     if (!dashGhosts.length)
       return;
@@ -150411,6 +151846,102 @@
     if (player.scopeTimer > 0) {
       player.scopeTimer = 0;
     }
+  }
+  function consumeArmorBlockForPilot(pilot) {
+    if (!pilot || pilot.defenseMode !== "armor")
+      return;
+    pilot.armorBlocksRemaining = Math.max(0, (pilot.armorBlocksRemaining || 0) - 1);
+    if (pilot.armorBlocksRemaining <= 0) {
+      pilot.defenseMode = "none";
+      pilot.defenseTimer = 0;
+      showToast("ARMOR DEPLETED");
+    }
+  }
+  function handlePilotAsteroidCollision(a, pilot, pilotId, hitX, hitY, force, noRemove) {
+    if (!pilot)
+      return false;
+    if (pilot.dead)
+      return false;
+    if (a.noDamage)
+      return false;
+    if (a.grabbedByClaw)
+      return false;
+    var dx = a.x - hitX;
+    var dy = a.y - (hitY - 4);
+    var dist = Math.hypot(dx, dy);
+    if (dist >= a.r + 16)
+      return false;
+    if (!force && pilot.invuln > 0) {
+      return false;
+    }
+    if (isStampedeMode() && a.isCorrect && a.waveId === state.waveId) {
+      if (pilot.clawActive && pilot.clawTargetId === a.id) {
+        return false;
+      }
+    }
+    if (force || pilot.invuln <= 0) {
+      clearScopeOnHitForPilot(pilot);
+      registerShotTypeHitForPilot(pilot, 1, false);
+      resetSurvivorTimer();
+      if (!noRemove && a.isCorrect && a.waveId === state.waveId) {
+        state.correctInPlay = false;
+        state.correctAsteroidId = 0;
+      }
+      kickShake(22, 0.18);
+      triggerCameraFlash(0.18);
+      a.shakeTimer = 0.2;
+      a.shakeDur = 0.2;
+      a.shakeAmp = 4.2;
+      a.vx = (a.vx || 0) + dx / Math.max(1, dist) * 120;
+      a.vy = (a.vy || 0) + dy / Math.max(1, dist) * 120;
+      var knockBack = 0.7;
+      pilot.vx = -dx / Math.max(1, dist) * pilot.speed * knockBack;
+      pilot.vy = -dy / Math.max(1, dist) * pilot.speed * knockBack;
+      var dmgHit = a.ghost || a.label === null ? 0.18 : 0.3;
+      if (pilot.defenseMode === "armor")
+        dmgHit = 0;
+      if (pilot.defenseMode === "shield") {
+        impactDebris(hitX, hitY - 8);
+        playSfx(state, "impact", 0.35);
+        pilot.hitFlash = 1;
+        pilot.shipShake = Math.max(pilot.shipShake || 0, 1);
+        pilot.invuln = 0.35;
+        showToast("SHIELD BLOCK");
+      } else if (pilot.defenseMode === "armor") {
+        impactShipHit(hitX, hitY - 10);
+        playSfx(state, "impact_thud", 0.45);
+        pilot.hitFlash = 1;
+        pilot.shipShake = Math.max(pilot.shipShake || 0, 1);
+        pilot.invuln = 0.35;
+        showToast("ARMOR ABSORB");
+        consumeArmorBlockForPilot(pilot);
+      } else {
+        impactShipHit(hitX, hitY - 10);
+        playSfx(state, "crash", 0.55);
+        pilot.hitFlash = 1;
+        pilot.shipShake = Math.max(pilot.shipShake || 0, 1);
+        pilot.invuln = 0.45;
+        pilot.hull = clamp(pilot.hull - dmgHit, 0, 1);
+        if (pilot.hull <= 0) {
+          pilot.hull = 0;
+          pilot.lives = Math.max(0, (pilot.lives || 0) - 1);
+          if (pilot.lives <= 0) {
+            pilot.dead = true;
+            pilot.hidden = true;
+            showToast("PILOT DOWN");
+          } else {
+            pilot.hull = 1;
+            pilot.invuln = Math.max(pilot.invuln || 0, 0.6);
+            showToast("HULL CRITICAL");
+          }
+          return true;
+        } else {
+          playSfx(state, "ship_damaged");
+          showToast("HULL DAMAGED");
+        }
+      }
+    }
+    return !noRemove;
   }
   function triggerCameraFlash(strength) {
     var amt = typeof strength === "number" && isFinite(strength) ? strength : 0.18;
@@ -150555,7 +152086,7 @@
     if (!player.clawActive) {
       if (candidate) {
         player.clawPromptAlpha = Math.min(1, (player.clawPromptAlpha || 0) + dt * 3.5);
-        if (player.clawHoldKey && keys.has("x")) {
+        if (player.clawHoldKey && keys.has("q")) {
           player.clawHold = (player.clawHold || 0) + dt;
           if (player.clawHold >= (player.clawHoldRequired || 0.35)) {
             startClawGrab(candidate.asteroid);
@@ -150718,22 +152249,24 @@
     var forwardStretch = Math.max(0, -vyN) * 0.06;
     var backwardShrink = Math.max(0, vyN) * 0.08;
     var speedMag = Math.min(1, Math.hypot(useVX, useVY) / (player.speed || 1));
+    var idleHover = speedMag < 0.05 && Math.abs(vxN) < 0.05 && Math.abs(vyN) < 0.05;
+    var hoverBoost = idleHover ? 1.35 : 1;
     var t = performance.now();
     ctx.translate(x, y + bob);
     var scaleMap = {
-      am2: 0.9,
-      mk7: 0.82,
-      fizard: 0.82,
-      classic: 0.82,
-      ember: 0.82,
-      azure: 0.82,
-      spire: 0.82,
-      bu2x: 0.82,
-      mantas: 0.82,
-      cyan: 0.82,
-      veloz: 0.82
+      am2: 1.08,
+      mk7: 0.98,
+      fizard: 0.98,
+      classic: 0.98,
+      ember: 0.98,
+      azure: 0.98,
+      spire: 0.98,
+      bu2x: 0.98,
+      mantas: 0.98,
+      cyan: 0.98,
+      veloz: 0.98
     };
-    var scale = scaleMap[shipType] || 0.74;
+    var scale = scaleMap[shipType] || 0.9;
     if (typeof scaleMul === "number")
       scale *= scaleMul;
     ctx.scale(scale, scale);
@@ -150747,23 +152280,6 @@
     ctx.rotate(turn);
     ctx.transform(1, 0, shear, 1, 0, 0);
     ctx.scale(squashX * (1 + sway) * (1 - backwardShrink * 0.4), (1 - sway * 0.6) * (1 + forwardStretch - backwardShrink));
-    if (player.defenseMode === "armor" && !ghost) {
-      ctx.save();
-      ctx.globalAlpha = baseAlpha * 0.65;
-      ctx.shadowColor = "rgba(0,229,255,.95)";
-      ctx.shadowBlur = 36;
-      ctx.strokeStyle = "rgba(0,229,255,.6)";
-      ctx.lineWidth = 2.6;
-      ctx.beginPath();
-      ctx.arc(0, 6, 38, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.globalAlpha = baseAlpha * 0.35;
-      ctx.fillStyle = "rgba(0,229,255,.2)";
-      ctx.beginPath();
-      ctx.arc(0, 6, 34, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    }
     if (player.defenseMode === "shield" && !ghost) {
       ctx.save();
       var shieldY = -28;
@@ -151353,6 +152869,56 @@
       ctx.stroke();
     }
     ctx.restore();
+    if (player.defenseMode === "armor" && !ghost) {
+      ctx.save();
+      ctx.globalAlpha = baseAlpha * 0.85;
+      ctx.globalCompositeOperation = "destination-over";
+      ctx.shadowColor = "rgba(215,225,240,.95)";
+      ctx.shadowBlur = 30;
+      ctx.strokeStyle = "rgba(225,235,250,.9)";
+      ctx.lineWidth = 3.6;
+      ctx.translate(0, recoilShift * 1.15);
+      if (useShipSprite) {
+        var iwArmor = shipSprite.img.naturalWidth || shipSprite.img.width || 1;
+        var ihArmor = shipSprite.img.naturalHeight || shipSprite.img.height || 1;
+        var targetHArmor = 120;
+        var targetWArmor = targetHArmor * (iwArmor / ihArmor);
+        var halfWArmor = targetWArmor / 2;
+        var halfIWArmor = iwArmor / 2;
+        var topYArmor = -targetHArmor / 2;
+        var overlapPxArmor = Math.max(2, Math.round(iwArmor * 4e-3));
+        var destOverlapArmor = overlapPxArmor * (targetWArmor / iwArmor);
+        ctx.save();
+        ctx.imageSmoothingEnabled = true;
+        try {
+          ctx.imageSmoothingQuality = "high";
+        } catch (e) {
+        }
+        ctx.save();
+        ctx.scale(leftScale, 1);
+        ctx.drawImage(shipSprite.img, 0, 0, halfIWArmor + overlapPxArmor, ihArmor, -halfWArmor, topYArmor, halfWArmor + destOverlapArmor, targetHArmor);
+        ctx.restore();
+        ctx.save();
+        ctx.scale(rightScale, 1);
+        ctx.drawImage(shipSprite.img, halfIWArmor - overlapPxArmor, 0, halfIWArmor + overlapPxArmor, ihArmor, -destOverlapArmor, topYArmor, halfWArmor + destOverlapArmor, targetHArmor);
+        ctx.restore();
+        ctx.restore();
+      } else {
+        var drawPoly = function(points) {
+          ctx.beginPath();
+          ctx.moveTo(points[0], points[1]);
+          for (var pi = 2; pi < points.length; pi += 2) {
+            ctx.lineTo(points[pi], points[pi + 1]);
+          }
+          ctx.closePath();
+          ctx.stroke();
+        };
+        drawPoly(wingLeft);
+        drawPoly(wingRight);
+        drawPoly(bodyOuter);
+      }
+      ctx.restore();
+    }
     ctx.save();
     var drawThrusterCasing = true;
     if (useShipSprite)
@@ -151434,8 +153000,8 @@
       ctx.shadowColor = colors.accent;
       ctx.shadowBlur = 12;
       var muzzleX = gun.centerX + gun.centerW / 2;
-      var muzzleY = gun.barrelY - recoilShift - 6;
-      var baseLen = 8 + flash * 7;
+      var muzzleY = gun.barrelY - recoilShift - 14;
+      var baseLen = 11 + flash * 9;
       var angleJitter = (Math.random() - 0.5) * 0.35;
       var mainAngle = -Math.PI / 2 + angleJitter;
       var arms = 6;
@@ -151459,15 +153025,16 @@
       return "rgba(" + m[1] + "," + m[2] + "," + m[3] + "," + a + ")";
     }
     if (!useShipSprite) {
-      var flameAlphaMul = 0.48;
+      var flameAlphaMul = 0.48 * hoverBoost;
       var bankForFlame = clamp(bank, -1, 1);
       var leftPlumeMul = clamp(1 + bankForFlame * 0.35, 0.68, 1.38);
       var rightPlumeMul = clamp(1 - bankForFlame * 0.35, 0.68, 1.38);
       var centerPlumeMul = 1 + Math.abs(bankForFlame) * 0.12;
       var forwardBoost = Math.max(0, -vyN);
-      var flame = 12 + speedMag * 18 + Math.sin(t * 0.03) * 2.6 + forwardBoost * 22;
+      var flame = 12 + speedMag * 18 + Math.sin(t * 0.03) * 2.6 + forwardBoost * 16;
       flame *= ghostFlameBoost;
-      var flameLengthScale = shipType === "mk7" ? 0.78 : 0.86;
+      flame *= hoverBoost;
+      var flameLengthScale = shipType === "mk7" ? 0.7 : 0.78;
       flame *= flameLengthScale;
       var bloom = 0.35 + speedMag * 0.5 + forwardBoost * 0.6 + Math.sin(t * 0.02) * 0.08;
       bloom *= ghostFlameBoost;
@@ -151492,7 +153059,12 @@
       }
       ctx.fill();
       ctx.restore();
+      var flameWidthScale = 1.18 * (idleHover ? 1.15 : 1) * (1 + forwardBoost * 0.18);
       ctx.save();
+      ctx.globalCompositeOperation = idleHover ? "lighter" : "source-over";
+      ctx.translate(thrusterOffsetX, 0);
+      ctx.scale(flameWidthScale, 1);
+      ctx.translate(-thrusterOffsetX, 0);
       ctx.globalAlpha = baseAlpha * (0.85 + forwardBoost * 0.35) * flameAlphaMul;
       var outerFlameGrad = ctx.createLinearGradient(0, thrusterBaseY - 1, 0, thrusterBaseY + flame * 1.28);
       outerFlameGrad.addColorStop(0, "rgba(0,0,0,0)");
@@ -151571,14 +153143,15 @@
       }
       ctx.restore();
     } else if (useShipSprite) {
-      var flameAlphaMul = 0.48;
+      var flameAlphaMul = 0.48 * hoverBoost;
       var bankForFlame = clamp(bank, -1, 1);
       var leftPlumeMul = clamp(1 + bankForFlame * 0.35, 0.68, 1.38);
       var rightPlumeMul = clamp(1 - bankForFlame * 0.35, 0.68, 1.38);
       var centerPlumeMul = 1 + Math.abs(bankForFlame) * 0.12;
       var forwardBoost = Math.max(0, -vyN);
-      var flame = 12 + speedMag * 18 + Math.sin(t * 0.03) * 2.6 + forwardBoost * 22;
+      var flame = 12 + speedMag * 18 + Math.sin(t * 0.03) * 2.6 + forwardBoost * 16;
       flame *= ghostFlameBoost;
+      flame *= hoverBoost;
       var bloom = 0.35 + speedMag * 0.5 + forwardBoost * 0.6 + Math.sin(t * 0.02) * 0.08;
       bloom *= ghostFlameBoost;
       var flameWiggle = (Math.sin(t * 0.06) + Math.sin(t * 0.11 + 1.4)) * 0.6 * (0.6 + speedMag);
@@ -151651,11 +153224,14 @@
       var flameCore = fp.flameCore;
       var baseY = 20 + thrusterOffsetY + fp.baseYOffset;
       var nozzleOffsets = fp.nozzleOffsets;
-      var nozzleWidth = fp.nozzleWidth;
-      var plumeLengthMul = fp.plumeLengthMul;
+      var plumeWidthScale = 1.18 * (idleHover ? 1.15 : 1) * (1 + forwardBoost * 0.18);
+      var plumeLengthScale = 0.86 * (idleHover ? 1.15 : 1);
+      var nozzleWidth = fp.nozzleWidth * plumeWidthScale;
+      var plumeLengthMul = fp.plumeLengthMul * plumeLengthScale;
       var nozzleLengthScale = fp.nozzleLengthScale;
       var plumeLen = flame * plumeLengthMul;
       ctx.save();
+      ctx.globalCompositeOperation = idleHover ? "lighter" : "source-over";
       ctx.globalAlpha = baseAlpha * (0.25 + bloom * 0.25) * flameAlphaMul;
       ctx.fillStyle = flameColor;
       ctx.shadowColor = flameColor;
@@ -152196,6 +153772,9 @@
         inputs.ship.value = String(config.ship);
       player.shipType = String(config.ship);
     }
+    if (config.shotType != null && inputs.shotType) {
+      inputs.shotType.value = String(config.shotType);
+    }
     if (config.belt) {
       setBackgroundBelt(config.belt);
     }
@@ -152257,6 +153836,7 @@
       timerMode: params.get("timerMode"),
       questionMode: params.get("questionMode"),
       operation: params.get("operation"),
+      shotType: params.get("shotType"),
       ship: params.get("ship"),
       difficulty: params.get("difficulty"),
       belt: params.get("belt"),
@@ -152299,19 +153879,19 @@
     }
   }
   function initSandboxPanel() {
-    if (!gameShell || sandboxPanel)
+    if (!document.body || sandboxPanel)
       return;
     var styleId = "sandboxPanelStyles";
     if (!document.getElementById(styleId)) {
       var style = document.createElement("style");
       style.id = styleId;
-      style.textContent = ".sandboxPanel{position:absolute;top:90px;left:28px;z-index:40;min-width:260px;background:rgba(6,10,18,.88);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px 14px;box-shadow:0 24px 60px rgba(0,0,0,.45);}.sandboxPanel .sandboxHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}.sandboxPanel h4{margin:0;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.8);}.sandboxPanel .sandboxToggle{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e8ecff;border-radius:10px;padding:4px 8px;font-size:10px;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;}.sandboxPanel.collapsed .sandboxBody{display:none;}.sandboxPanel .sandboxGroup{margin:8px 0;}.sandboxPanel .sandboxButtons{display:flex;flex-wrap:wrap;gap:6px;}.sandboxPanel .sandboxBtn{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e8ecff;border-radius:10px;padding:6px 8px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;}.sandboxPanel .sandboxBtn.active{border-color:rgba(0,229,255,.6);box-shadow:0 0 0 1px rgba(0,229,255,.25) inset;}.sandboxPanel .sandboxBtn:hover{transform:translateY(-1px);border-color:rgba(0,229,255,.6);box-shadow:0 8px 18px rgba(0,0,0,.25);}.sandboxPanel .sandboxNote{font-size:11px;color:rgba(232,236,255,.55);margin-top:6px;}";
+      style.textContent = ".sandboxPanel{position:fixed;top:90px;left:16px;z-index:45;width:min(360px,calc(100vw - 32px));max-height:calc(100vh - 112px);overflow:auto;background:rgba(6,10,18,.88);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px 14px;box-shadow:0 24px 60px rgba(0,0,0,.45);}.sandboxPanel .sandboxHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}.sandboxPanel h4{margin:0;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.8);}.sandboxPanel .sandboxToggle{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e8ecff;border-radius:10px;padding:4px 8px;font-size:10px;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;}.sandboxPanel.collapsed .sandboxBody{display:none;}.sandboxPanel .sandboxGroup{margin:8px 0;}.sandboxPanel .sandboxButtons{display:flex;flex-wrap:wrap;gap:6px;}.sandboxPanel .sandboxBtn{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e8ecff;border-radius:10px;padding:6px 8px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;}.sandboxPanel .sandboxBtn.active{border-color:rgba(0,229,255,.6);box-shadow:0 0 0 1px rgba(0,229,255,.25) inset;}.sandboxPanel .sandboxBtn:hover{transform:translateY(-1px);border-color:rgba(0,229,255,.6);box-shadow:0 8px 18px rgba(0,0,0,.25);}.sandboxPanel .sandboxNote{font-size:11px;color:rgba(232,236,255,.55);margin-top:6px;}@media (max-width: 900px){.sandboxPanel{top:78px;left:10px;width:min(320px,calc(100vw - 20px));max-height:calc(100vh - 96px);}}";
       document.head.appendChild(style);
     }
     sandboxPanel = document.createElement("div");
     sandboxPanel.className = "sandboxPanel";
-    sandboxPanel.innerHTML = "<div class='sandboxHeader'><h4>Sandbox</h4><button class='sandboxToggle' id='sandboxToggle' type='button'>Hide</button></div><div class='sandboxBody'><div class='sandboxGroup'><div class='sandboxButtons' id='sandboxActions'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Shot Types</div><div class='sandboxButtons' id='sandboxShots'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Defense</div><div class='sandboxButtons' id='sandboxDefense'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Secondary</div><div class='sandboxButtons' id='sandboxSecondary'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Ships</div><div class='sandboxButtons' id='sandboxShips'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Clusters</div><div class='sandboxButtons' id='sandboxBelts'></div></div></div>";
-    gameShell.appendChild(sandboxPanel);
+    sandboxPanel.innerHTML = "<div class='sandboxHeader'><h4>Sandbox</h4><button class='sandboxToggle' id='sandboxToggle' type='button'>Hide</button></div><div class='sandboxBody'><div class='sandboxGroup'><div class='sandboxButtons' id='sandboxActions'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Two Pilots</div><div class='sandboxButtons' id='sandboxMultiplayer'></div><div class='sandboxButtons' id='sandboxMultiplayerMode'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Shot Types</div><div class='sandboxButtons' id='sandboxShots'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Defense</div><div class='sandboxButtons' id='sandboxDefense'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Secondary</div><div class='sandboxButtons' id='sandboxSecondary'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Ships</div><div class='sandboxButtons' id='sandboxShips'></div></div><div class='sandboxGroup'><div class='sandboxNote'>Clusters</div><div class='sandboxButtons' id='sandboxBelts'></div></div></div>";
+    document.body.appendChild(sandboxPanel);
     var sandboxToggleBtn = sandboxPanel.querySelector("#sandboxToggle");
     if (sandboxToggleBtn) {
       sandboxToggleBtn.addEventListener("click", function() {
@@ -152358,6 +153938,13 @@
         return;
       btn.classList.toggle("active", !!active);
     }
+    function setSandboxButtonEnabled(btn, enabled) {
+      if (!btn)
+        return;
+      btn.disabled = !enabled;
+      btn.style.opacity = enabled ? "1" : "0.45";
+      btn.style.pointerEvents = enabled ? "auto" : "none";
+    }
     function spawnSandboxTarget() {
       if (!state.running || state.paused || state.over)
         return;
@@ -152368,12 +153955,17 @@
       showToast("TARGET SPAWNED");
     }
     var actionsContainer = sandboxPanel.querySelector("#sandboxActions");
+    var multiplayerContainer = sandboxPanel.querySelector("#sandboxMultiplayer");
+    var multiplayerModeContainer = sandboxPanel.querySelector("#sandboxMultiplayerMode");
     var btnSpawnTarget = null;
     var btnInfLives = null;
     var btnNoScore = null;
     var btnReset = null;
     var btnSpawnToggle = null;
     var btnStampede = null;
+    var btnTwoPilots = null;
+    var btnSharedArena = null;
+    var btnSplitArena = null;
     if (actionsContainer) {
       btnSpawnTarget = addButton(actionsContainer, "Spawn Target", spawnSandboxTarget);
       btnInfLives = addButton(actionsContainer, "Infinite Lives", function() {
@@ -152399,6 +153991,74 @@
       });
       btnReset = addButton(actionsContainer, "Reset Run", function() {
         resetSession();
+      });
+    }
+    if (multiplayerContainer) {
+      btnTwoPilots = addButton(multiplayerContainer, "Two Pilots", function() {
+        state.sandboxTwoPilots = !state.sandboxTwoPilots;
+        if (state.sandboxMultiplayer) {
+          state.sandboxMultiplayer.enabled = state.sandboxTwoPilots;
+        }
+        sandboxMultiplayer.enabled = state.sandboxTwoPilots;
+        if (state.sandboxTwoPilots) {
+          ensurePilot2();
+          setPilot2MouseControl(true, true);
+          pilot2.shipType = pickAlternateShipType(player.shipType);
+          resetPilotStats(1);
+          resetPilotStats(2);
+          positionSandboxPilots();
+        }
+        updateSandboxToggle(btnTwoPilots, state.sandboxTwoPilots);
+        setSandboxButtonEnabled(btnSharedArena, state.sandboxTwoPilots);
+        setSandboxButtonEnabled(btnSplitArena, state.sandboxTwoPilots);
+        showToast(state.sandboxTwoPilots ? "TWO PILOTS ON \u2022 PILOT 2 MOUSE ON" : "TWO PILOTS OFF");
+      });
+    }
+    if (multiplayerModeContainer) {
+      btnSharedArena = addButton(multiplayerModeContainer, "Shared Arena", function() {
+        if (!state.sandboxTwoPilots) {
+          state.sandboxTwoPilots = true;
+          if (state.sandboxMultiplayer)
+            state.sandboxMultiplayer.enabled = true;
+          sandboxMultiplayer.enabled = true;
+          ensurePilot2();
+          setPilot2MouseControl(true, true);
+          pilot2.shipType = pickAlternateShipType(player.shipType);
+          resetPilotStats(1);
+          resetPilotStats(2);
+          positionSandboxPilots();
+          updateSandboxToggle(btnTwoPilots, true);
+        }
+        state.sandboxTwoPilotsMode = "shared";
+        if (state.sandboxMultiplayer)
+          state.sandboxMultiplayer.mode = "shared";
+        sandboxMultiplayer.mode = "shared";
+        updateSandboxToggle(btnSharedArena, true);
+        updateSandboxToggle(btnSplitArena, false);
+        showToast("MODE -> SHARED ARENA");
+      });
+      btnSplitArena = addButton(multiplayerModeContainer, "Split Arena", function() {
+        if (!state.sandboxTwoPilots) {
+          state.sandboxTwoPilots = true;
+          if (state.sandboxMultiplayer)
+            state.sandboxMultiplayer.enabled = true;
+          sandboxMultiplayer.enabled = true;
+          ensurePilot2();
+          setPilot2MouseControl(true, true);
+          pilot2.shipType = pickAlternateShipType(player.shipType);
+          resetPilotStats(1);
+          resetPilotStats(2);
+          positionSandboxPilots();
+          updateSandboxToggle(btnTwoPilots, true);
+        }
+        state.sandboxTwoPilotsMode = "split";
+        if (state.sandboxMultiplayer)
+          state.sandboxMultiplayer.mode = "split";
+        sandboxMultiplayer.mode = "split";
+        setSplitGameplay(isSandboxSplitMode());
+        updateSandboxToggle(btnSplitArena, true);
+        updateSandboxToggle(btnSharedArena, false);
+        showToast("MODE -> SPLIT ARENA");
       });
     }
     var shotContainer = sandboxPanel.querySelector("#sandboxShots");
@@ -152466,6 +154126,18 @@
     updateSandboxToggle(btnNoScore, state.sandboxNoScore);
     updateSandboxToggle(btnSpawnToggle, state.sandboxSpawnAsteroids);
     updateSandboxToggle(btnStampede, state.stampedeMode);
+    updateSandboxToggle(btnTwoPilots, state.sandboxTwoPilots);
+    updateSandboxToggle(btnSharedArena, state.sandboxTwoPilotsMode !== "split");
+    updateSandboxToggle(btnSplitArena, state.sandboxTwoPilotsMode === "split");
+    setSandboxButtonEnabled(btnSharedArena, state.sandboxTwoPilots);
+    setSandboxButtonEnabled(btnSplitArena, state.sandboxTwoPilots);
+    setSplitGameplay(isSandboxSplitMode());
+    if (state.sandboxMultiplayer) {
+      state.sandboxMultiplayer.enabled = state.sandboxTwoPilots;
+      state.sandboxMultiplayer.mode = state.sandboxTwoPilotsMode;
+    }
+    sandboxMultiplayer.enabled = state.sandboxTwoPilots;
+    sandboxMultiplayer.mode = state.sandboxTwoPilotsMode;
     for (var sb = 0; sb < shipButtons.length; sb++) {
       updateSandboxToggle(shipButtons[sb].btn, shipButtons[sb].id === player.shipType);
     }
