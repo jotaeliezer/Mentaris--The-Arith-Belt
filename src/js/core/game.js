@@ -2474,6 +2474,48 @@ function awardMinerals(amount){
   showToast("MINERALS +" + amt);
 }
 
+function getHighestDigit(value){
+  if(value == null) return 0;
+  var str = String(value);
+  var maxDigit = 0;
+  for(var i=0; i<str.length; i++){
+    var code = str.charCodeAt(i);
+    if(code >= 48 && code <= 57){
+      var digit = code - 48;
+      if(digit > maxDigit) maxDigit = digit;
+    }
+  }
+  return maxDigit;
+}
+
+function spawnMineralBurst(x, y, count){
+  var total = Math.max(0, Math.round(count || 0));
+  if(total <= 0) return;
+  var r = canvas.getBoundingClientRect();
+  var spread = Math.min(40, 12 + total * 2.5);
+  for(var i=0; i<total; i++){
+    var angle = rand(0, Math.PI * 2);
+    var dist = rand(0, spread);
+    var vx = Math.cos(angle) * rand(8, 22);
+    var vy = rand(40, 70);
+    powerups.push({
+      x: (typeof x === "number" ? x : rand(60, r.width - 60)) + Math.cos(angle) * dist,
+      y: (typeof y === "number" ? y : rand(60, r.height - 60)) + Math.sin(angle) * dist,
+      vx: vx,
+      vy: vy,
+      r: 12,
+      rot: rand(0, Math.PI * 2),
+      rotSpeed: rand(-1.2, 1.2),
+      type: "mineral",
+      group: "mineral",
+      value: 1,
+      popTimer: 0.55,
+      popDuration: 0.55,
+      popScale: 0.6
+    });
+  }
+}
+
 function isDigitMode(){
   return state.questionMode === "digits3"
     || state.questionMode === "digits2"
@@ -5804,6 +5846,9 @@ function handleDivisorCorrectHit(hitAst){
   state.streak++;
   playSfx(state, "correct");
   if(tourGuide) tourGuide.notify("correct");
+  if(hitAst && hitAst.label != null){
+    spawnMineralBurst(hitAst.x, hitAst.y, getHighestDigit(hitAst.label));
+  }
 
   var baseGain = 50 + Math.min(250, state.streak*10);
   var factor = Math.max(state.a, state.b);
@@ -5899,6 +5944,9 @@ function onCorrectHit(hitAst){
   state.streak++;
   playSfx(state, "correct");
   if(tourGuide) tourGuide.notify("correct");
+  if(hitAst && hitAst.label != null){
+    spawnMineralBurst(hitAst.x, hitAst.y, getHighestDigit(hitAst.label));
+  }
 
   var baseGain = 50 + Math.min(250, state.streak*10);
   var factor = Math.max(state.a, state.b);
@@ -7506,6 +7554,16 @@ function update(dt){
       p.popTimer = Math.max(0, p.popTimer - dtReal);
     }
     p.y += p.vy * dtReal;
+    if(p.vx != null){
+      p.x += p.vx * dtReal;
+      if(p.x < 26){
+        p.x = 26;
+        p.vx = Math.abs(p.vx);
+      }else if(p.x > r.width - 26){
+        p.x = r.width - 26;
+        p.vx = -Math.abs(p.vx);
+      }
+    }
     if(p.rotSpeed != null){
       p.rot += p.rotSpeed * dtReal;
     }
@@ -7531,6 +7589,13 @@ function update(dt){
       }
     }
     if(collectedBy){
+      if(p.type === "mineral"){
+        awardMinerals(p.value || 1);
+        var targetPilotMineral = collectedBy === 2 ? ensurePilot2() : player;
+        spawnPickupFx(targetPilotMineral.x, targetPilotMineral.y - 6);
+        powerups.splice(pi,1);
+        continue;
+      }
       if(!isSandboxMultiplayer()){
         state.powerupsCollected += 1;
         if(!state.powerupsCollectedByType) state.powerupsCollectedByType = {};
@@ -7565,6 +7630,10 @@ function update(dt){
       continue;
     }
     if(p.y - p.r > r.height + 40){
+      if(p.type === "mineral"){
+        powerups.splice(pi,1);
+        continue;
+      }
       if(!isSandboxMultiplayer()){
         state.powerupsMissed += 1;
         if(!state.powerupsMissedByType) state.powerupsMissedByType = {};
@@ -10086,6 +10155,7 @@ function drawPowerups(){
 }
 
 function getPowerupColor(p){
+  if(p.type === "mineral") return "rgba(255,221,0,.85)";
   if(p.group === "defense"){
     if(p.type === "scope") return "rgba(255,77,109,.7)";
     return p.type === "shield" ? "rgba(193,216,47,.7)" : "rgba(255,77,109,.7)";
@@ -10115,6 +10185,15 @@ function drawPowerupIcon(p, color){
   ctx.lineWidth = 2;
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
+
+  if(p.type === "mineral" && mineralIconImg.ready){
+    ctx.save();
+    ctx.globalCompositeOperation = "source-over";
+    var size = Math.max(24, (p.r || 12) * 2.6);
+    ctx.drawImage(mineralIconImg.img, -size / 2, -size / 2, size, size);
+    ctx.restore();
+    return;
+  }
 
   var icon = powerupIcons[p.type];
   if(!icon && p.group === "offense"){
