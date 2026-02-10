@@ -139912,12 +139912,14 @@
       { id: "fire_once", title: "Step 4: Fire Once", body: "Press Space (or click) to fire a single shot.", event: "fire", count: 1 },
       { id: "fire_again", title: "Step 5: Fire Again", body: "Press Space again to fire another shot.", event: "fire", count: 1 },
       { id: "correct", title: "Step 6: Correct Hit", body: "Hit the asteroid with the correct answer.", event: "correct" },
-      { id: "powerup", title: "Step 7: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
-      { id: "dash", title: "Step 8: Dash", body: "Press Shift to dash through danger.", event: "dash" },
-      { id: "ability", title: "Step 9: Ability", body: "Press Q to use your ship ability.", event: "ability" },
-      { id: "secondary_aid", title: "Step 10: Aid Weapon", body: "Press F to trigger your aid weapon (Time Dilation).", event: "secondary" },
-      { id: "secondary_slots", title: "Step 11: Aid Slots", body: "You have 3 aid slots on the top-right. Press 1, 2, or 3 (or numpad 1-3) to select a slot.", event: "secondary_slot", count: 1 },
-      { id: "alien", title: "Step 12: Alien Contact", body: "Shoot down the alien target.", event: "alien" },
+      { id: "minerals", title: "Step 7: Minerals", body: "Collect all minerals. Your mineral count is at the top right.", event: "minerals" },
+      { id: "powerup", title: "Step 8: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
+      { id: "secondary_slots", title: "Step 9: Aid Slots", body: "You have 3 aid slots on the top-right. Press 1, 2, or 3 (or numpad 1-3) to select a slot.", event: "secondary_slot", count: 1 },
+      { id: "secondary_aid", title: "Step 10: Aid Weapon", body: "Press E to trigger your aid weapon when the asteroids drop.", event: "secondary" },
+      { id: "correct_after_powerup", title: "Step 11: Correct Hit", body: "Now shoot the correct answer asteroid.", event: "correct" },
+      { id: "dash", title: "Step 12: Dash", body: "Press Shift to dash through danger.", event: "dash" },
+      { id: "ability", title: "Step 13: Ability", body: "Press Q to use your ship ability.", event: "ability" },
+      { id: "alien", title: "Step 14: Alien Contact", body: "Shoot down the alien target.", event: "alien" },
       { id: "portal", title: "Final Step: Portal", body: "Cadet, fly up into the portal. Mission starts on contact.", event: "portal" }
     ];
     var progressTotal = 0;
@@ -140274,17 +140276,19 @@
     }
     function notify(eventName) {
       if (!active || !eventName)
-        return;
+        return false;
       if (!stepAccepting)
-        return;
+        return false;
       var step = interjectActive ? interjectSteps ? interjectSteps[interjectIndex] : null : steps[stepIndex];
       if (step && step.event === eventName) {
         stepProgress += 1;
         var required = step.count || 1;
         if (stepProgress >= required) {
           handleStepCompletion(step);
+          return true;
         }
       }
+      return false;
     }
     function jumpTo(stepId) {
       if (!active || !stepId)
@@ -141859,6 +141863,15 @@
     }
     return pilot.secondarySlots;
   }
+  function hasSecondaryType(pilot, type) {
+    var slots = getSecondarySlotsForPilot(pilot);
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i];
+      if (s && s.type === type && s.count > 0)
+        return true;
+    }
+    return false;
+  }
   function syncSelectedSecondary() {
     var slots = getSecondarySlots();
     var idx = clamp(player.secondarySlotIndex | 0, 0, slots.length - 1);
@@ -142239,6 +142252,12 @@
   var tutorialAlienUnlocked = true;
   var tutorialAlienDelayRemaining = 0;
   var tutorialStepId = null;
+  var tutorialShootLocked = false;
+  var tutorialMineralsTarget = 0;
+  var tutorialMineralsCollected = 0;
+  var tutorialMineralsComplete = false;
+  var tutorialMineralsPending = false;
+  var tutorialExtraPowerupsSpawned = false;
   var tutorialPortalActive = false;
   var tutorialPortalX = 0;
   var tutorialPortalY = 0;
@@ -143022,6 +143041,9 @@
     if (k === "m")
       openSettings();
     if (keyNorm === keyBindings.shoot && !e.repeat) {
+      if (tutorialActive && tutorialShootLocked) {
+        return;
+      }
       if ((player.blasterMode || "single") === "missile") {
         openMissileInput();
       } else if (player.autoFireActive && player.autoFireAmmo > 0) {
@@ -143526,6 +143548,10 @@
           fireForPilot(p2, 2);
         }
       }
+      return;
+    }
+    if (tutorialActive && tutorialShootLocked) {
+      pointerDown = false;
       return;
     }
     pointerDown = true;
@@ -144048,6 +144074,49 @@
     state.mineralsEarned = (state.mineralsEarned || 0) + amt;
     saveMinerals();
     showToast("MINERALS +" + amt);
+  }
+  function getHighestDigit(value) {
+    if (value == null)
+      return 0;
+    var str = String(value);
+    var maxDigit = 0;
+    for (var i = 0; i < str.length; i++) {
+      var code = str.charCodeAt(i);
+      if (code >= 48 && code <= 57) {
+        var digit = code - 48;
+        if (digit > maxDigit)
+          maxDigit = digit;
+      }
+    }
+    return maxDigit;
+  }
+  function spawnMineralBurst(x, y, count) {
+    var total = Math.max(0, Math.round(count || 0));
+    if (total <= 0)
+      return;
+    var r = canvas.getBoundingClientRect();
+    var spread = Math.min(40, 12 + total * 2.5);
+    for (var i = 0; i < total; i++) {
+      var angle = rand(0, Math.PI * 2);
+      var dist = rand(0, spread);
+      var vx = Math.cos(angle) * rand(8, 22);
+      var vy = rand(40, 70);
+      powerups.push({
+        x: (typeof x === "number" ? x : rand(60, r.width - 60)) + Math.cos(angle) * dist,
+        y: (typeof y === "number" ? y : rand(60, r.height - 60)) + Math.sin(angle) * dist,
+        vx,
+        vy,
+        r: 12,
+        rot: rand(0, Math.PI * 2),
+        rotSpeed: rand(-1.2, 1.2),
+        type: "mineral",
+        group: "mineral",
+        value: 1,
+        popTimer: 0.55,
+        popDuration: 0.55,
+        popScale: 0.6
+      });
+    }
   }
   function isDigitMode() {
     return state.questionMode === "digits3" || state.questionMode === "digits2" || state.questionMode === "add_digits2" || state.questionMode === "add_digits3" || state.questionMode === "stampede2" || state.questionMode === "stampede3" || state.questionMode === "add_stampede2" || state.questionMode === "add_stampede3";
@@ -146474,6 +146543,8 @@
   function fireForPilot(pilot, pilotId, cooldownOverride) {
     if (!state.running || state.paused || state.over)
       return;
+    if (pilotId === 1 && tutorialActive && tutorialShootLocked)
+      return false;
     if (pilot.cooldown > 0)
       return;
     if (typeof cooldownOverride === "number" && isFinite(cooldownOverride)) {
@@ -146636,6 +146707,10 @@
       slots[idx] = null;
     }
     syncSelectedSecondaryForPilot(pilot);
+    if (pilotId === 1 && tutorialActive && tutorialShootLocked) {
+      tutorialShootLocked = false;
+      showToast("SHOOTING ONLINE");
+    }
     if (tourGuide)
       tourGuide.notify("secondary");
   }
@@ -147424,6 +147499,21 @@
     playSfx(state, "correct");
     if (tourGuide)
       tourGuide.notify("correct");
+    if (tutorialActive && tutorialStepId === "correct" && hitAst && hitAst.label != null) {
+      var mineralTarget = getHighestDigit(hitAst.label);
+      tutorialMineralsTarget = mineralTarget;
+      tutorialMineralsCollected = 0;
+      tutorialMineralsComplete = mineralTarget <= 0;
+      tutorialMineralsPending = tutorialMineralsComplete;
+      tutorialSpawnUnlocked = false;
+      asteroids.length = 0;
+      state.correctInPlay = false;
+      state.correctAsteroidId = 0;
+      state.spawnTimer = Math.max(state.spawnTimer || 0, 1.6);
+    }
+    if (hitAst && hitAst.label != null) {
+      spawnMineralBurst(hitAst.x, hitAst.y, getHighestDigit(hitAst.label));
+    }
     var baseGain = 50 + Math.min(250, state.streak * 10);
     var factor = Math.max(state.a, state.b);
     if (isDigitMode()) {
@@ -147511,6 +147601,9 @@
     playSfx(state, "correct");
     if (tourGuide)
       tourGuide.notify("correct");
+    if (hitAst && hitAst.label != null) {
+      spawnMineralBurst(hitAst.x, hitAst.y, getHighestDigit(hitAst.label));
+    }
     var baseGain = 50 + Math.min(250, state.streak * 10);
     var factor = Math.max(state.a, state.b);
     if (isDigitMode()) {
@@ -148636,7 +148729,7 @@
     }
     player.cooldown = Math.max(0, player.cooldown - dtReal2);
     if (player.autoFireActive && player.autoFireAmmo > 0) {
-      var shootHeld = keys.has(keyBindings.shoot) || pointerDown;
+      var shootHeld = (!tutorialActive || !tutorialShootLocked) && (keys.has(keyBindings.shoot) || pointerDown);
       if (shootHeld) {
         if (!player.autoFireSpinning) {
           player.autoFireSpinning = true;
@@ -149078,6 +149171,16 @@
         p.popTimer = Math.max(0, p.popTimer - dtReal2);
       }
       p.y += p.vy * dtReal2;
+      if (p.vx != null) {
+        p.x += p.vx * dtReal2;
+        if (p.x < 26) {
+          p.x = 26;
+          p.vx = Math.abs(p.vx);
+        } else if (p.x > r.width - 26) {
+          p.x = r.width - 26;
+          p.vx = -Math.abs(p.vx);
+        }
+      }
       if (p.rotSpeed != null) {
         p.rot += p.rotSpeed * dtReal2;
       }
@@ -149103,6 +149206,26 @@
         }
       }
       if (collectedBy) {
+        if (p.type === "mineral") {
+          awardMinerals(p.value || 1);
+          if (tutorialActive && tutorialMineralsTarget > 0) {
+            tutorialMineralsCollected += 1;
+            if (tutorialMineralsCollected >= tutorialMineralsTarget) {
+              tutorialMineralsComplete = true;
+              tutorialMineralsPending = true;
+            }
+          }
+          var targetPilotMineral = collectedBy === 2 ? ensurePilot2() : player;
+          spawnPickupFx(targetPilotMineral.x, targetPilotMineral.y - 6);
+          powerups.splice(pi, 1);
+          continue;
+        }
+        if (tutorialActive && tutorialStepId === "powerup") {
+          showToast("USE E TO TRIGGER THE POWERUP WHEN ASTEROIDS DROP");
+          tutorialSpawnUnlocked = false;
+          state.spawnTimer = Math.max(state.spawnTimer || 0, 1.4);
+          tutorialShootLocked = true;
+        }
         if (!isSandboxMultiplayer()) {
           state.powerupsCollected += 1;
           if (!state.powerupsCollectedByType)
@@ -149139,6 +149262,10 @@
         continue;
       }
       if (p.y - p.r > r.height + 40) {
+        if (p.type === "mineral") {
+          powerups.splice(pi, 1);
+          continue;
+        }
         if (!isSandboxMultiplayer()) {
           state.powerupsMissed += 1;
           if (!state.powerupsMissedByType)
@@ -149158,6 +149285,11 @@
           spawnPowerup(p.type, p.group);
         }
         powerups.splice(pi, 1);
+      }
+    }
+    if (tutorialActive && tutorialStepId === "minerals" && tutorialMineralsPending && tutorialMineralsComplete && tourGuide) {
+      if (tourGuide.notify("minerals")) {
+        tutorialMineralsPending = false;
       }
     }
     var tNow = performance.now() * 1e-3;
@@ -150623,20 +150755,6 @@
         ctx.globalAlpha = 0.9 * hudFade;
         ctx.drawImage(abilityIcon.img, rightX - iconSize / 2, iconY, iconSize, iconSize);
       }
-      if (player.secondaryMode === "time" && player.secondaryCharges > 0) {
-        var badgeSize = Math.max(16, radius * 0.9);
-        var badgeX = (leftX + rightX) / 2;
-        var badgeY = cy + radius + 16;
-        drawTimeDilationBadge(badgeX, badgeY, badgeSize, 0.95 * hudFade);
-        ctx.save();
-        ctx.globalAlpha = 0.85 * hudFade;
-        ctx.fillStyle = "rgba(232,236,255,.85)";
-        ctx.font = "700 10px Oxanium, sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "top";
-        ctx.fillText("X", badgeX, badgeY + badgeSize * 0.55);
-        ctx.restore();
-      }
       var mineralCount = state.mineralsEarned || 0;
       if (mineralIconImg.ready && (isStampedeMode() || mineralCount > 0)) {
         var mSize = 62;
@@ -150749,32 +150867,6 @@
       ctx.fillText("SCREENSHOT MODE (0)", w - 12, h - 10);
       ctx.restore();
     }
-  }
-  function drawTimeDilationBadge(cx, cy, size, alpha) {
-    var r = size * 0.5;
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.translate(cx, cy);
-    ctx.fillStyle = "rgba(0,229,255,.2)";
-    ctx.strokeStyle = "rgba(255,255,255,.8)";
-    ctx.lineWidth = Math.max(1.4, size * 0.1);
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.strokeStyle = "rgba(255,255,255,.9)";
-    ctx.lineWidth = Math.max(1.2, size * 0.08);
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(0, -r * 0.45);
-    ctx.moveTo(0, 0);
-    ctx.lineTo(r * 0.35, r * 0.18);
-    ctx.stroke();
-    ctx.fillStyle = "rgba(255,255,255,.9)";
-    ctx.beginPath();
-    ctx.arc(0, 0, Math.max(1.2, size * 0.06), 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
   }
   function drawHudPickupIcon(entry, cx, cy, size) {
     var type = entry.type;
@@ -151645,6 +151737,8 @@
     ctx.globalCompositeOperation = "source-over";
   }
   function getPowerupColor(p) {
+    if (p.type === "mineral")
+      return "rgba(255,221,0,.85)";
     if (p.group === "defense") {
       if (p.type === "scope")
         return "rgba(255,77,109,.7)";
@@ -151677,6 +151771,14 @@
     ctx.lineWidth = 2;
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
+    if (p.type === "mineral" && mineralIconImg.ready) {
+      ctx.save();
+      ctx.globalCompositeOperation = "source-over";
+      var size = Math.max(24, (p.r || 12) * 2.6);
+      ctx.drawImage(mineralIconImg.img, -size / 2, -size / 2, size, size);
+      ctx.restore();
+      return;
+    }
     var icon = powerupIcons[p.type];
     if (!icon && p.group === "offense") {
       icon = shotIcons[p.type];
@@ -154875,6 +154977,12 @@
         tutorialAlienUnlocked = false;
         tutorialAlienDelayRemaining = 0;
         tutorialHullRecoveryShown = false;
+        tutorialShootLocked = false;
+        tutorialMineralsTarget = 0;
+        tutorialMineralsCollected = 0;
+        tutorialMineralsComplete = false;
+        tutorialMineralsPending = false;
+        tutorialExtraPowerupsSpawned = false;
         tutorialPortalActive = false;
         tutorialPortalT = 0;
         tutorialPortalLock = false;
@@ -154917,6 +155025,12 @@
             if (stepId === "correct") {
               tutorialSpawnUnlocked = true;
             }
+            if (stepId === "minerals") {
+              tutorialSpawnUnlocked = false;
+              if (tutorialMineralsComplete) {
+                tutorialMineralsPending = true;
+              }
+            }
             if (stepId === "portal") {
               tutorialPortalActive = true;
               tutorialPortalLock = false;
@@ -154927,12 +155041,37 @@
             if (stepId === "powerup" && !tutorialPowerupSpawned) {
               tutorialPowerupSpawned = true;
               tutorialPowerupUnlocked = true;
+              tutorialSpawnUnlocked = false;
+              asteroids.length = 0;
+              state.correctInPlay = false;
+              state.correctAsteroidId = 0;
+              state.spawnTimer = 2;
               if (!(state.powerupsCollected > 0)) {
-                spawnPowerup("shield", "defense");
+                spawnPowerup("time", "secondary", player.x, -40, { pop: true, popScale: 0.9 });
+              }
+            }
+            if (stepId === "secondary_slots") {
+              tutorialSpawnUnlocked = false;
+              asteroids.length = 0;
+              state.correctInPlay = false;
+              state.correctAsteroidId = 0;
+              state.spawnTimer = 2;
+              if (!tutorialExtraPowerupsSpawned) {
+                tutorialExtraPowerupsSpawned = true;
+                if (!hasSecondaryType(player, "magnet")) {
+                  spawnPowerup("magnet", "secondary", player.x - 70, -40, { pop: true, popScale: 0.9 });
+                }
+                if (!hasSecondaryType(player, "emp")) {
+                  spawnPowerup("emp", "secondary", player.x + 70, -40, { pop: true, popScale: 0.9 });
+                }
               }
             }
             if (stepId === "secondary_aid") {
-              spawnPowerup("time", "secondary", player.x, player.y - 140);
+              tutorialSpawnUnlocked = true;
+              state.spawnTimer = Math.min(state.spawnTimer || 0, 0.6);
+            }
+            if (stepId === "correct_after_powerup") {
+              tutorialSpawnUnlocked = true;
             }
             if (stepId === "alien" && !tutorialAlienSpawned) {
               tutorialAlienSpawned = true;

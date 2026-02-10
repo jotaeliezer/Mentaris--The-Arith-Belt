@@ -139436,6 +139436,7 @@
       shockwaveCooldown: 0,
       bankHold: 0,
       hull: 1,
+      lowHullAlarmed: false,
       invuln: 0,
       hitFlash: 0,
       shipShake: 0,
@@ -139590,6 +139591,8 @@
       machine_gun_load: new Audio("sfx/shots/machine_gun_load.mp3"),
       camer_ice_shot: new Audio("sfx/shots/camer_ice_shot.mp3"),
       correct: new Audio("sfx/gameplay/correct.mp3"),
+      mineral_collected: new Audio("sfx/gameplay/mineral_collected.mp3"),
+      ship_damage_alarm: new Audio("sfx/gameplay/ship_damage_alarm.mp3"),
       crash: new Audio("sfx/ship/crash.mp3"),
       dash: new Audio("sfx/ship/dash.mp3"),
       armor_pickup: new Audio("sfx/powerups/armor_pickup.mp3"),
@@ -139633,6 +139636,8 @@
     sfxBank.machine_gun_load.volume = 0.55;
     sfxBank.camer_ice_shot.volume = 0.4;
     sfxBank.correct.volume = 0.5;
+    sfxBank.mineral_collected.volume = 0.55;
+    sfxBank.ship_damage_alarm.volume = 0.6;
     sfxBank.crash.volume = 0.6;
     sfxBank.dash.volume = 0.55;
     sfxBank.armor_pickup.volume = 0.55;
@@ -139912,12 +139917,14 @@
       { id: "fire_once", title: "Step 4: Fire Once", body: "Press Space (or click) to fire a single shot.", event: "fire", count: 1 },
       { id: "fire_again", title: "Step 5: Fire Again", body: "Press Space again to fire another shot.", event: "fire", count: 1 },
       { id: "correct", title: "Step 6: Correct Hit", body: "Hit the asteroid with the correct answer.", event: "correct" },
-      { id: "powerup", title: "Step 7: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
-      { id: "dash", title: "Step 8: Dash", body: "Press Shift to dash through danger.", event: "dash" },
-      { id: "ability", title: "Step 9: Ability", body: "Press Q to use your ship ability.", event: "ability" },
-      { id: "secondary_aid", title: "Step 10: Aid Weapon", body: "Press F to trigger your aid weapon (Time Dilation).", event: "secondary" },
-      { id: "secondary_slots", title: "Step 11: Aid Slots", body: "You have 3 aid slots on the top-right. Press 1, 2, or 3 (or numpad 1-3) to select a slot.", event: "secondary_slot", count: 1 },
-      { id: "alien", title: "Step 12: Alien Contact", body: "Shoot down the alien target.", event: "alien" },
+      { id: "minerals", title: "Step 7: Minerals", body: "Collect all minerals. Your mineral count is at the top right.", event: "minerals" },
+      { id: "powerup", title: "Step 8: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
+      { id: "secondary_slots", title: "Step 9: Aid Slots", body: "You have 3 aid slots on the top-right. Press 1, 2, or 3 (or numpad 1-3) to select a slot.", event: "secondary_slot", count: 1 },
+      { id: "secondary_aid", title: "Step 10: Aid Weapon", body: "Press E to trigger your aid weapon when the asteroids drop.", event: "secondary" },
+      { id: "correct_after_powerup", title: "Step 11: Correct Hit", body: "Now shoot the correct answer asteroid.", event: "correct" },
+      { id: "dash", title: "Step 12: Dash", body: "Press Shift to dash through danger.", event: "dash" },
+      { id: "ability", title: "Step 13: Ability", body: "Press Q to use your ship ability.", event: "ability" },
+      { id: "alien", title: "Step 14: Alien Contact", body: "Shoot down the alien target.", event: "alien" },
       { id: "portal", title: "Final Step: Portal", body: "Cadet, fly up into the portal. Mission starts on contact.", event: "portal" }
     ];
     var progressTotal = 0;
@@ -140274,17 +140281,19 @@
     }
     function notify(eventName) {
       if (!active || !eventName)
-        return;
+        return false;
       if (!stepAccepting)
-        return;
+        return false;
       var step = interjectActive ? interjectSteps ? interjectSteps[interjectIndex] : null : steps[stepIndex];
       if (step && step.event === eventName) {
         stepProgress += 1;
         var required = step.count || 1;
         if (stepProgress >= required) {
           handleStepCompletion(step);
+          return true;
         }
       }
+      return false;
     }
     function jumpTo(stepId) {
       if (!active || !stepId)
@@ -141859,6 +141868,15 @@
     }
     return pilot.secondarySlots;
   }
+  function hasSecondaryType(pilot, type) {
+    var slots = getSecondarySlotsForPilot(pilot);
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i];
+      if (s && s.type === type && s.count > 0)
+        return true;
+    }
+    return false;
+  }
   function syncSelectedSecondary() {
     var slots = getSecondarySlots();
     var idx = clamp(player.secondarySlotIndex | 0, 0, slots.length - 1);
@@ -142239,6 +142257,13 @@
   var tutorialAlienUnlocked = true;
   var tutorialAlienDelayRemaining = 0;
   var tutorialStepId = null;
+  var tutorialShootLocked = false;
+  var tutorialMineralsTarget = 0;
+  var tutorialMineralsCollected = 0;
+  var tutorialMineralsComplete = false;
+  var tutorialMineralsPending = false;
+  var tutorialMineralsRemaining = 0;
+  var tutorialExtraPowerupsSpawned = false;
   var tutorialPortalActive = false;
   var tutorialPortalX = 0;
   var tutorialPortalY = 0;
@@ -142606,6 +142631,8 @@
     { id: "impact", label: "Impact", desc: "Collision hit.", when: "Ship hits and alien impacts.", badge: "SFX", src: "sfx/gameplay/impact.mp3", category: "gameplay" },
     { id: "impact_thud", label: "Impact Thud", desc: "Asteroid thud.", when: "Asteroid impacts and EMP cascade hits.", badge: "SFX", src: "sfx/gameplay/impact_thud.mp3", category: "gameplay" },
     { id: "correct", label: "Correct", desc: "Correct hit cue.", when: "Correct answer asteroid destroyed.", badge: "SFX", src: "sfx/gameplay/correct.mp3", category: "gameplay" },
+    { id: "mineral_collected", label: "Mineral Collected", desc: "Mineral pickup.", when: "Collecting mineral drops.", badge: "SFX", src: "sfx/gameplay/mineral_collected.mp3", category: "gameplay" },
+    { id: "ship_damage_alarm", label: "Ship Damage Alarm", desc: "Hull critical alarm.", when: "Ship is one hit from destruction.", badge: "SFX", src: "sfx/gameplay/ship_damage_alarm.mp3", category: "gameplay" },
     { id: "wrong_asteroid", label: "Wrong Asteroid", desc: "Wrong hit cue.", when: "Wrong answer asteroid hit.", badge: "SFX", src: "sfx/gameplay/wrong_asteroid.mp3", category: "gameplay" },
     { id: "missed_answer", label: "Missed Answer", desc: "Missed answer cue.", when: "Correct asteroid escapes.", badge: "SFX", src: "sfx/gameplay/missed_answer.mp3", category: "gameplay" },
     { id: "level_up2", label: "Level Up", desc: "Level up cue.", when: "Level increases.", badge: "SFX", src: "sfx/progress/level_up2.mp3", category: "progress" },
@@ -143022,6 +143049,9 @@
     if (k === "m")
       openSettings();
     if (keyNorm === keyBindings.shoot && !e.repeat) {
+      if (tutorialActive && tutorialShootLocked) {
+        return;
+      }
       if ((player.blasterMode || "single") === "missile") {
         openMissileInput();
       } else if (player.autoFireActive && player.autoFireAmmo > 0) {
@@ -143526,6 +143556,10 @@
           fireForPilot(p2, 2);
         }
       }
+      return;
+    }
+    if (tutorialActive && tutorialShootLocked) {
+      pointerDown = false;
       return;
     }
     pointerDown = true;
@@ -144048,6 +144082,21 @@
     state.mineralsEarned = (state.mineralsEarned || 0) + amt;
     saveMinerals();
     showToast("MINERALS +" + amt);
+  }
+  function updateLowHullAlarm(pilot, dmgHit) {
+    if (!pilot)
+      return;
+    var threshold = Math.max(0, dmgHit || 0);
+    if (pilot.hull > threshold + 1e-3) {
+      pilot.lowHullAlarmed = false;
+      return;
+    }
+    if (pilot.hull > 0 && pilot.hull <= threshold) {
+      if (!pilot.lowHullAlarmed) {
+        pilot.lowHullAlarmed = true;
+        playSfx(state, "ship_damage_alarm");
+      }
+    }
   }
   function getHighestDigit(value) {
     if (value == null)
@@ -146078,6 +146127,7 @@
     player.autoFireSpinSfxPlayed = false;
     applySelectedShotType();
     player.hull = 1;
+    player.lowHullAlarmed = false;
     player.invuln = 0;
     player.hitFlash = 0;
     player.shipShake = 0;
@@ -146113,6 +146163,7 @@
     if (isSandboxMultiplayer()) {
       ensurePilot2();
       pilot2.hull = 1;
+      pilot2.lowHullAlarmed = false;
       pilot2.invuln = 0;
       pilot2.hitFlash = 0;
       pilot2.shipShake = 0;
@@ -146517,6 +146568,8 @@
   function fireForPilot(pilot, pilotId, cooldownOverride) {
     if (!state.running || state.paused || state.over)
       return;
+    if (pilotId === 1 && tutorialActive && tutorialShootLocked)
+      return false;
     if (pilot.cooldown > 0)
       return;
     if (typeof cooldownOverride === "number" && isFinite(cooldownOverride)) {
@@ -146632,6 +146685,7 @@
     }
     if (activeType === "repair") {
       pilot.hull = clamp(pilot.hull + 0.35, 0, 1);
+      pilot.lowHullAlarmed = false;
       spawnRing(pilot.x, pilot.y, 18);
       spawnParticles(pilot.x, pilot.y, "correct");
       showToast("SECONDARY -> HULL REPAIR");
@@ -146679,6 +146733,10 @@
       slots[idx] = null;
     }
     syncSelectedSecondaryForPilot(pilot);
+    if (pilotId === 1 && tutorialActive && tutorialShootLocked) {
+      tutorialShootLocked = false;
+      showToast("SHOOTING ONLINE");
+    }
     if (tourGuide)
       tourGuide.notify("secondary");
   }
@@ -147467,6 +147525,19 @@
     playSfx(state, "correct");
     if (tourGuide)
       tourGuide.notify("correct");
+    if (tutorialActive && tutorialStepId === "correct" && hitAst && hitAst.label != null) {
+      var mineralTarget = getHighestDigit(hitAst.label);
+      tutorialMineralsTarget = mineralTarget;
+      tutorialMineralsCollected = 0;
+      tutorialMineralsComplete = mineralTarget <= 0;
+      tutorialMineralsPending = tutorialMineralsComplete;
+      tutorialMineralsRemaining = Math.max(0, mineralTarget);
+      tutorialSpawnUnlocked = false;
+      asteroids.length = 0;
+      state.correctInPlay = false;
+      state.correctAsteroidId = 0;
+      state.spawnTimer = Math.max(state.spawnTimer || 0, 1.6);
+    }
     if (hitAst && hitAst.label != null) {
       spawnMineralBurst(hitAst.x, hitAst.y, getHighestDigit(hitAst.label));
     }
@@ -148685,7 +148756,7 @@
     }
     player.cooldown = Math.max(0, player.cooldown - dtReal2);
     if (player.autoFireActive && player.autoFireAmmo > 0) {
-      var shootHeld = keys.has(keyBindings.shoot) || pointerDown;
+      var shootHeld = (!tutorialActive || !tutorialShootLocked) && (keys.has(keyBindings.shoot) || pointerDown);
       if (shootHeld) {
         if (!player.autoFireSpinning) {
           player.autoFireSpinning = true;
@@ -149164,10 +149235,27 @@
       if (collectedBy) {
         if (p.type === "mineral") {
           awardMinerals(p.value || 1);
+          playSfx(state, "mineral_collected");
+          if (tutorialActive && tutorialMineralsTarget > 0) {
+            tutorialMineralsCollected += 1;
+            if (tutorialMineralsRemaining > 0) {
+              tutorialMineralsRemaining -= 1;
+            }
+            if (tutorialMineralsCollected >= tutorialMineralsTarget) {
+              tutorialMineralsComplete = true;
+              tutorialMineralsPending = true;
+            }
+          }
           var targetPilotMineral = collectedBy === 2 ? ensurePilot2() : player;
           spawnPickupFx(targetPilotMineral.x, targetPilotMineral.y - 6);
           powerups.splice(pi, 1);
           continue;
+        }
+        if (tutorialActive && tutorialStepId === "powerup") {
+          showToast("USE E TO TRIGGER THE POWERUP WHEN ASTEROIDS DROP");
+          tutorialSpawnUnlocked = false;
+          state.spawnTimer = Math.max(state.spawnTimer || 0, 1.4);
+          tutorialShootLocked = true;
         }
         if (!isSandboxMultiplayer()) {
           state.powerupsCollected += 1;
@@ -149206,6 +149294,13 @@
       }
       if (p.y - p.r > r.height + 40) {
         if (p.type === "mineral") {
+          if (tutorialActive && tutorialMineralsTarget > 0 && tutorialMineralsRemaining > 0) {
+            tutorialMineralsRemaining -= 1;
+            if (tutorialMineralsRemaining <= 0) {
+              tutorialMineralsComplete = true;
+              tutorialMineralsPending = true;
+            }
+          }
           powerups.splice(pi, 1);
           continue;
         }
@@ -149228,6 +149323,13 @@
           spawnPowerup(p.type, p.group);
         }
         powerups.splice(pi, 1);
+      }
+    }
+    if (tutorialActive && tutorialStepId === "minerals" && tourGuide) {
+      if (tutorialMineralsPending && (tutorialMineralsComplete || tutorialMineralsRemaining <= 0)) {
+        if (tourGuide.notify("minerals")) {
+          tutorialMineralsPending = false;
+        }
       }
     }
     var tNow = performance.now() * 1e-3;
@@ -149858,6 +149960,7 @@
                 player.invuln = Math.max(player.invuln, 1.2);
                 showToast("HULL CRITICAL");
               }
+              updateLowHullAlarm(player, dmgHit);
               return;
             }
             if (consumeShipLife("OUT OF LIVES (ALIEN COLLISION)"))
@@ -149869,6 +149972,7 @@
               endGame("destroyed");
               return;
             } else {
+              updateLowHullAlarm(player, dmgHit);
               playSfx(state, "ship_damaged");
               showToast("ALIEN COLLISION");
             }
@@ -149937,10 +150041,12 @@
                     showToast("PILOT DOWN");
                   } else {
                     p2.hull = 1;
+                    p2.lowHullAlarmed = false;
                     p2.invuln = Math.max(p2.invuln || 0, 0.6);
                     showToast("HULL CRITICAL");
                   }
                 } else {
+                  updateLowHullAlarm(p2, dmgHit2);
                   playSfx(state, "ship_damaged");
                   showToast("ALIEN COLLISION");
                 }
@@ -150012,6 +150118,7 @@
                 player.invuln = Math.max(player.invuln, 1.2);
                 showToast("HULL CRITICAL");
               }
+              updateLowHullAlarm(player, dmgHit);
               return;
             }
             if (consumeShipLife("OUT OF LIVES (ALIEN SHOT)"))
@@ -150023,6 +150130,7 @@
               endGame("destroyed");
               return;
             } else {
+              updateLowHullAlarm(player, dmgHit);
               playSfx(state, "ship_damaged");
               showToast("HULL DAMAGED");
             }
@@ -150084,10 +150192,12 @@
                   showToast("PILOT DOWN");
                 } else {
                   p2b.hull = 1;
+                  p2b.lowHullAlarmed = false;
                   p2b.invuln = Math.max(p2b.invuln || 0, 0.6);
                   showToast("HULL CRITICAL");
                 }
               } else {
+                updateLowHullAlarm(p2b, dmgHit2);
                 playSfx(state, "ship_damaged");
                 showToast("ALIEN HIT");
               }
@@ -150693,20 +150803,6 @@
         ctx.globalAlpha = 0.9 * hudFade;
         ctx.drawImage(abilityIcon.img, rightX - iconSize / 2, iconY, iconSize, iconSize);
       }
-      if (player.secondaryMode === "time" && player.secondaryCharges > 0) {
-        var badgeSize = Math.max(16, radius * 0.9);
-        var badgeX = (leftX + rightX) / 2;
-        var badgeY = cy + radius + 16;
-        drawTimeDilationBadge(badgeX, badgeY, badgeSize, 0.95 * hudFade);
-        ctx.save();
-        ctx.globalAlpha = 0.85 * hudFade;
-        ctx.fillStyle = "rgba(232,236,255,.85)";
-        ctx.font = "700 10px Oxanium, sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "top";
-        ctx.fillText("X", badgeX, badgeY + badgeSize * 0.55);
-        ctx.restore();
-      }
       var mineralCount = state.mineralsEarned || 0;
       if (mineralIconImg.ready && (isStampedeMode() || mineralCount > 0)) {
         var mSize = 62;
@@ -150819,32 +150915,6 @@
       ctx.fillText("SCREENSHOT MODE (0)", w - 12, h - 10);
       ctx.restore();
     }
-  }
-  function drawTimeDilationBadge(cx, cy, size, alpha) {
-    var r = size * 0.5;
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.translate(cx, cy);
-    ctx.fillStyle = "rgba(0,229,255,.2)";
-    ctx.strokeStyle = "rgba(255,255,255,.8)";
-    ctx.lineWidth = Math.max(1.4, size * 0.1);
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-    ctx.strokeStyle = "rgba(255,255,255,.9)";
-    ctx.lineWidth = Math.max(1.2, size * 0.08);
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(0, -r * 0.45);
-    ctx.moveTo(0, 0);
-    ctx.lineTo(r * 0.35, r * 0.18);
-    ctx.stroke();
-    ctx.fillStyle = "rgba(255,255,255,.9)";
-    ctx.beginPath();
-    ctx.arc(0, 0, Math.max(1.2, size * 0.06), 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
   }
   function drawHudPickupIcon(entry, cx, cy, size) {
     var type = entry.type;
@@ -152461,11 +152531,13 @@
             showToast("PILOT DOWN");
           } else {
             pilot.hull = 1;
+            pilot.lowHullAlarmed = false;
             pilot.invuln = Math.max(pilot.invuln || 0, 0.6);
             showToast("HULL CRITICAL");
           }
           return true;
         } else {
+          updateLowHullAlarm(pilot, dmgHit);
           playSfx(state, "ship_damaged");
           showToast("HULL DAMAGED");
         }
@@ -152554,6 +152626,7 @@
           if (tutorialActive) {
             player.hull = Math.max(player.hull, 0.12);
             syncHud();
+            updateLowHullAlarm(player, dmgHit);
             return triggerTutorialRecovery("HULL CRITICAL");
           }
           player.hull = 0;
@@ -152562,6 +152635,7 @@
           endGame("destroyed");
           return true;
         } else {
+          updateLowHullAlarm(player, dmgHit);
           playSfx(state, "ship_damaged");
           showToast("HULL DAMAGED");
         }
@@ -154955,6 +155029,13 @@
         tutorialAlienUnlocked = false;
         tutorialAlienDelayRemaining = 0;
         tutorialHullRecoveryShown = false;
+        tutorialShootLocked = false;
+        tutorialMineralsTarget = 0;
+        tutorialMineralsCollected = 0;
+        tutorialMineralsComplete = false;
+        tutorialMineralsPending = false;
+        tutorialMineralsRemaining = 0;
+        tutorialExtraPowerupsSpawned = false;
         tutorialPortalActive = false;
         tutorialPortalT = 0;
         tutorialPortalLock = false;
@@ -154997,6 +155078,12 @@
             if (stepId === "correct") {
               tutorialSpawnUnlocked = true;
             }
+            if (stepId === "minerals") {
+              tutorialSpawnUnlocked = false;
+              if (tutorialMineralsComplete || tutorialMineralsRemaining <= 0) {
+                tutorialMineralsPending = true;
+              }
+            }
             if (stepId === "portal") {
               tutorialPortalActive = true;
               tutorialPortalLock = false;
@@ -155007,12 +155094,37 @@
             if (stepId === "powerup" && !tutorialPowerupSpawned) {
               tutorialPowerupSpawned = true;
               tutorialPowerupUnlocked = true;
+              tutorialSpawnUnlocked = false;
+              asteroids.length = 0;
+              state.correctInPlay = false;
+              state.correctAsteroidId = 0;
+              state.spawnTimer = 2;
               if (!(state.powerupsCollected > 0)) {
-                spawnPowerup("shield", "defense");
+                spawnPowerup("time", "secondary", player.x, -40, { pop: true, popScale: 0.9 });
+              }
+            }
+            if (stepId === "secondary_slots") {
+              tutorialSpawnUnlocked = false;
+              asteroids.length = 0;
+              state.correctInPlay = false;
+              state.correctAsteroidId = 0;
+              state.spawnTimer = 2;
+              if (!tutorialExtraPowerupsSpawned) {
+                tutorialExtraPowerupsSpawned = true;
+                if (!hasSecondaryType(player, "magnet")) {
+                  spawnPowerup("magnet", "secondary", player.x - 70, -40, { pop: true, popScale: 0.9 });
+                }
+                if (!hasSecondaryType(player, "emp")) {
+                  spawnPowerup("emp", "secondary", player.x + 70, -40, { pop: true, popScale: 0.9 });
+                }
               }
             }
             if (stepId === "secondary_aid") {
-              spawnPowerup("time", "secondary", player.x, player.y - 140);
+              tutorialSpawnUnlocked = true;
+              state.spawnTimer = Math.min(state.spawnTimer || 0, 0.6);
+            }
+            if (stepId === "correct_after_powerup") {
+              tutorialSpawnUnlocked = true;
             }
             if (stepId === "alien" && !tutorialAlienSpawned) {
               tutorialAlienSpawned = true;

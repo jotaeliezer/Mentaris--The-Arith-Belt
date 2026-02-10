@@ -611,6 +611,13 @@
       z-index:3;
       box-shadow: 0 6px 18px rgba(0,0,0,.35);
     }
+    .shipOption .buyButton,
+    .beltChoice .buyButton{
+      top:auto;
+      left:auto;
+      right:12px;
+      bottom:12px;
+    }
     .buyButton.hidden{ display:none; }
 
     .purchaseCard{
@@ -3884,13 +3891,15 @@
     function completePurchase(){
       if(!pendingPurchase) return;
       var minerals = getMineralsTotal();
-      if(minerals < pendingPurchase.cost){
+      var cost = Math.max(0, Number(pendingPurchase.cost) || 0);
+      if(minerals < cost){
         showToast("NOT ENOUGH MINERALS");
         closePurchaseOverlay();
         refreshBuyButtons();
         return;
       }
-      minerals = setMineralsTotal(minerals - pendingPurchase.cost);
+      minerals = setMineralsTotal(minerals - cost);
+      if(purchaseMinerals) purchaseMinerals.textContent = String(minerals);
       markUnlocked(pendingPurchase.type, pendingPurchase.id);
       if(pendingPurchase.type === "ship") unlockShipOption(pendingPurchase.el);
       if(pendingPurchase.type === "shot") unlockShotOption(pendingPurchase.el);

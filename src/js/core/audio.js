@@ -22,6 +22,8 @@ function initSfx(){
     machine_gun_load: new Audio("sfx/shots/machine_gun_load.mp3"),
     camer_ice_shot: new Audio("sfx/shots/camer_ice_shot.mp3"),
     correct: new Audio("sfx/gameplay/correct.mp3"),
+    mineral_collected: new Audio("sfx/gameplay/mineral_collected.mp3"),
+    ship_damage_alarm: new Audio("sfx/gameplay/ship_damage_alarm.mp3"),
     crash: new Audio("sfx/ship/crash.mp3"),
     dash: new Audio("sfx/ship/dash.mp3"),
     armor_pickup: new Audio("sfx/powerups/armor_pickup.mp3"),
@@ -65,6 +67,8 @@ function initSfx(){
   sfxBank.machine_gun_load.volume = 0.55;
   sfxBank.camer_ice_shot.volume = 0.4;
   sfxBank.correct.volume = 0.5;
+  sfxBank.mineral_collected.volume = 0.55;
+  sfxBank.ship_damage_alarm.volume = 0.6;
   sfxBank.crash.volume = 0.6;
   sfxBank.dash.volume = 0.55;
   sfxBank.armor_pickup.volume = 0.55;

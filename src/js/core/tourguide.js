@@ -14,12 +14,14 @@ export function createTourGuide(options){
     { id: "fire_once", title: "Step 4: Fire Once", body: "Press Space (or click) to fire a single shot.", event: "fire", count: 1 },
     { id: "fire_again", title: "Step 5: Fire Again", body: "Press Space again to fire another shot.", event: "fire", count: 1 },
     { id: "correct", title: "Step 6: Correct Hit", body: "Hit the asteroid with the correct answer.", event: "correct" },
-    { id: "powerup", title: "Step 7: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
-    { id: "dash", title: "Step 8: Dash", body: "Press Shift to dash through danger.", event: "dash" },
-    { id: "ability", title: "Step 9: Ability", body: "Press Q to use your ship ability.", event: "ability" },
-    { id: "secondary_aid", title: "Step 10: Aid Weapon", body: "Press F to trigger your aid weapon (Time Dilation).", event: "secondary" },
-    { id: "secondary_slots", title: "Step 11: Aid Slots", body: "You have 3 aid slots on the top-right. Press 1, 2, or 3 (or numpad 1-3) to select a slot.", event: "secondary_slot", count: 1 },
-    { id: "alien", title: "Step 12: Alien Contact", body: "Shoot down the alien target.", event: "alien" },
+    { id: "minerals", title: "Step 7: Minerals", body: "Collect all minerals. Your mineral count is at the top right.", event: "minerals" },
+    { id: "powerup", title: "Step 8: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
+    { id: "secondary_slots", title: "Step 9: Aid Slots", body: "You have 3 aid slots on the top-right. Press 1, 2, or 3 (or numpad 1-3) to select a slot.", event: "secondary_slot", count: 1 },
+    { id: "secondary_aid", title: "Step 10: Aid Weapon", body: "Press E to trigger your aid weapon when the asteroids drop.", event: "secondary" },
+    { id: "correct_after_powerup", title: "Step 11: Correct Hit", body: "Now shoot the correct answer asteroid.", event: "correct" },
+    { id: "dash", title: "Step 12: Dash", body: "Press Shift to dash through danger.", event: "dash" },
+    { id: "ability", title: "Step 13: Ability", body: "Press Q to use your ship ability.", event: "ability" },
+    { id: "alien", title: "Step 14: Alien Contact", body: "Shoot down the alien target.", event: "alien" },
     { id: "portal", title: "Final Step: Portal", body: "Cadet, fly up into the portal. Mission starts on contact.", event: "portal" }
   ];
   var progressTotal = 0;
@@ -357,16 +359,18 @@ export function createTourGuide(options){
   }
 
   function notify(eventName){
-    if(!active || !eventName) return;
-    if(!stepAccepting) return;
+    if(!active || !eventName) return false;
+    if(!stepAccepting) return false;
     var step = interjectActive ? (interjectSteps ? interjectSteps[interjectIndex] : null) : steps[stepIndex];
     if(step && step.event === eventName){
       stepProgress += 1;
       var required = step.count || 1;
       if(stepProgress >= required){
         handleStepCompletion(step);
+        return true;
       }
     }
+    return false;
   }
 
   function jumpTo(stepId){

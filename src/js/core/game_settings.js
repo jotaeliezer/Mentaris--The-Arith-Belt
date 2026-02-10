@@ -180,6 +180,7 @@ export function createPlayer(){
     shockwaveCooldown: 0,
     bankHold: 0,
     hull: 1,
+    lowHullAlarmed: false,
     invuln: 0,
     hitFlash: 0,
     shipShake: 0,
