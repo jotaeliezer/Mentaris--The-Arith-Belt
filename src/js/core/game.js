@@ -16,6 +16,7 @@ var canvas = document.getElementById("canvas");
 var ctx = canvas.getContext("2d", { alpha: true });
 var view = { w: 0, h: 0, hudH: 0 };
 var gameShell = document.getElementById("gameShell");
+var wrap = document.getElementById("wrap");
 var isElectron = (typeof navigator !== "undefined" && /Electron/i.test(navigator.userAgent || ""));
 var phaserRoot = document.getElementById("phaserRoot");
 if(!phaserRoot && gameShell){
@@ -154,8 +155,11 @@ var btnShipCommands = document.getElementById("btnShipCommands");
 var wideGameplayKey = "mentaris.gameplay.wide";
 var mousepadAutoKey = "mentaris.mousepad.autostart";
 var touchControlsKey = "mentaris.touch.controls.enabled";
+var touchControlsDockHiddenKey = "mentaris.touch.controls.hidden";
+var sandboxSectionsKey = "mentaris.sandbox.sections";
 var mousepadAutoStart = false;
 var touchControlsEnabled = false;
+var touchControlsDockHidden = false;
 var pauseAllowed = false;
 var secondaryTypeOrder = ["time", "magnet", "emp", "lock"];
 
@@ -355,6 +359,11 @@ function addSecondaryPowerup(type){
     }
   }
   syncSelectedSecondary();
+  if(tutorialActive && tutorialStepId === "secondary_slots" && tourGuide){
+    if(countActiveSecondarySlots(player) >= 3){
+      tourGuide.notify("secondary_slot");
+    }
+  }
 }
 
 function addSecondaryPowerupForPilot(pilot, type){
@@ -426,7 +435,13 @@ function setWideGameplay(isWide){
 }
 
 function setSplitGameplay(isSplit){
-  // Split arena should not alter overall layout.
+  var on = !!isSplit;
+  document.body.classList.toggle("splitGameplayMode", on);
+  if(wrap) wrap.classList.toggle("splitGameplay", on);
+  if(gameShell) gameShell.classList.toggle("splitGameplay", on);
+  if(on && isSandboxMultiplayer()){
+    positionSandboxPilots();
+  }
 }
 
 function loadWideGameplay(){
@@ -450,6 +465,11 @@ function loadMousepadAutoStart(){
 }
 
 function applyMousepadAutoStart(){
+  if(tutorialActive && tutorialMovementPreference !== "mouse"){
+    setMousepadActive(false);
+    updateCursorVisibility();
+    return;
+  }
   if(mousepadAutoStart){
     setMousepadActive(true);
   }else{
@@ -465,6 +485,53 @@ function isTouchCapableDevice(){
   return ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
 }
 
+function saveTouchDockHiddenState(){
+  try{ localStorage.setItem(touchControlsDockHiddenKey, touchControlsDockHidden ? "1" : "0"); }catch(e){}
+}
+
+function setTouchDockHidden(isHidden){
+  touchControlsDockHidden = !!isHidden;
+  document.body.classList.toggle("touchControlsDockHidden", touchControlsDockHidden);
+  if(touchDockHideBtn){
+    touchDockHideBtn.textContent = touchControlsDockHidden ? "Show" : "Hide";
+  }
+  saveTouchDockHiddenState();
+  updateSandboxGamepadButton();
+}
+
+function updateSandboxGamepadButton(){
+  if(!sandboxGamepadButton) return;
+  sandboxGamepadButton.classList.remove("active");
+  if(!touchControlsEnabled){
+    sandboxGamepadButton.textContent = "Gamepad Off";
+    return;
+  }
+  if(touchControlsDockHidden){
+    sandboxGamepadButton.textContent = "Gamepad Hidden";
+    return;
+  }
+  sandboxGamepadButton.textContent = "Gamepad On";
+  sandboxGamepadButton.classList.add("active");
+}
+
+function cycleTouchControlsMode(){
+  if(!touchControlsEnabled){
+    setTouchControlsEnabled(true);
+    setTouchDockHidden(false);
+    showToast("GAMEPAD ON");
+    return;
+  }
+  if(touchControlsDockHidden){
+    setTouchControlsEnabled(false);
+    setTouchDockHidden(false);
+    showToast("GAMEPAD OFF");
+    return;
+  }
+  setTouchDockHidden(true);
+  resetTouchInputState();
+  showToast("GAMEPAD HIDDEN");
+}
+
 function setTouchControlsEnabled(isOn){
   touchControlsEnabled = !!isOn;
   document.body.classList.toggle("touchControlsOn", touchControlsEnabled);
@@ -474,25 +541,36 @@ function setTouchControlsEnabled(isOn){
     setMousepadActive(false);
   }
   if(!touchControlsEnabled){
+    setTouchDockHidden(false);
     resetTouchInputState();
   }
-  if(sandboxGamepadButton){
-    sandboxGamepadButton.classList.toggle("active", touchControlsEnabled);
+  if(touchControlsEnabled && touchControlsDockHidden){
+    // Keep hidden state only for explicit user action.
+    document.body.classList.add("touchControlsDockHidden");
   }
+  updateSandboxGamepadButton();
 }
 
 function loadTouchControlsEnabled(){
   var stored = null;
   try{ stored = localStorage.getItem(touchControlsKey); }catch(e){}
+  var hiddenStored = null;
+  try{ hiddenStored = localStorage.getItem(touchControlsDockHiddenKey); }catch(e){}
+  touchControlsDockHidden = hiddenStored === "1" || hiddenStored === "true";
   if(stored === "1" || stored === "true"){
     setTouchControlsEnabled(true);
+    setTouchDockHidden(touchControlsDockHidden);
     return;
   }
   if(stored === "0" || stored === "false"){
     setTouchControlsEnabled(false);
+    setTouchDockHidden(false);
     return;
   }
   setTouchControlsEnabled(isTouchCapableDevice());
+  if(touchControlsEnabled){
+    setTouchDockHidden(false);
+  }
 }
 
 function setFullscreenLabel(btn, isFull){
@@ -666,6 +744,7 @@ var tutorialMineralsRemaining = 0;
 var tutorialExtraPowerupsSpawned = false;
 var tutorialFreezeMousepadRestore = false;
 var tutorialMovementPreference = null;
+var tutorialPlatformChoiceResolved = false;
 var tutorialPortalActive = false;
 var tutorialPortalX = 0;
 var tutorialPortalY = 0;
@@ -680,6 +759,8 @@ var sandboxAlienWaveRequired = 2;
 var sandboxAlienWavePrevHideAsteroids = null;
 var sandboxAlienWaveButton = null;
 var sandboxGamepadButton = null;
+var sandboxSectionsState = {};
+var tutorialPlatform = "desktop";
 var tutorialDots = [];
 var tutorialDotsIndex = 0;
 var tutorialDotsActive = false;
@@ -870,7 +951,7 @@ var shotIcons = {
   ice: { img: new Image(), ready: false, src: "images/shots/shot_ice.png" },
   laser: { img: new Image(), ready: false, src: "images/shots/shot_laser.png" },
   plasma: { img: new Image(), ready: false, src: "images/shots/shot_plasma.png" },
-  pierce: { img: new Image(), ready: false, src: "images/shots/shot_lookup.png" },
+  pierce: { img: new Image(), ready: false, src: "images/shots/shot_bola.png" },
   rail: { img: new Image(), ready: false, src: "images/shots/shot_rail.png" }
 };
 Object.keys(shotIcons).forEach(function(key){
@@ -977,30 +1058,30 @@ var powerupCatalogDefense = [
 ];
 
 var powerupCatalogOffense = [
-  { id: "missile", label: "Missile Shot", icon: shotIcons.missile ? shotIcons.missile.src : null, desc: "Type the correct answer to launch a seeking missile." },
-  { id: "laser", label: "Laser Burst", icon: shotIcons.laser ? shotIcons.laser.src : null, desc: "High-speed laser shots for about 12 seconds." },
-  { id: "fire", label: "Fireball", icon: shotIcons.fire ? shotIcons.fire.src : null, desc: "Fireball shots for about 12 seconds." },
-  { id: "ice", label: "Ice Shards", icon: shotIcons.ice ? shotIcons.ice.src : null, desc: "Ice shots for about 12 seconds." },
-  { id: "electric", label: "Electric Bolts", icon: shotIcons.electric ? shotIcons.electric.src : null, desc: "Electric bolts for about 12 seconds." },
-  { id: "pierce", label: "Bola Shot", icon: shotIcons.pierce ? shotIcons.pierce.src : null, desc: "Piercing shots for about 12 seconds." },
-  { id: "plasma", label: "Plasma Orb", icon: shotIcons.plasma ? shotIcons.plasma.src : null, desc: "Plasma shots for about 12 seconds." },
-  { id: "rail", label: "Rail Beam", icon: shotIcons.rail ? shotIcons.rail.src : null, desc: "Rail beam shots for about 12 seconds." }
+  { id: "missile", label: "Missile Shot", icon: shotIcons.missile ? shotIcons.missile.src : null, desc: "Type the correct answer to launch a seeking missile.", unlockType: "shot" },
+  { id: "laser", label: "Laser Burst", icon: shotIcons.laser ? shotIcons.laser.src : null, desc: "High-speed laser shots for about 12 seconds.", unlockType: "shot", defaultUnlocked: true },
+  { id: "fire", label: "Fireball", icon: shotIcons.fire ? shotIcons.fire.src : null, desc: "Fireball shots for about 12 seconds.", unlockType: "shot" },
+  { id: "ice", label: "Ice Shards", icon: shotIcons.ice ? shotIcons.ice.src : null, desc: "Ice shots for about 12 seconds.", unlockType: "shot" },
+  { id: "electric", label: "Electric Bolts", icon: shotIcons.electric ? shotIcons.electric.src : null, desc: "Electric bolts for about 12 seconds.", unlockType: "shot" },
+  { id: "pierce", label: "Bola Shot", icon: shotIcons.pierce ? shotIcons.pierce.src : null, desc: "Piercing shots for about 12 seconds.", unlockType: "shot" },
+  { id: "plasma", label: "Plasma Orb", icon: shotIcons.plasma ? shotIcons.plasma.src : null, desc: "Plasma shots for about 12 seconds.", unlockType: "shot" },
+  { id: "rail", label: "Rail Beam", icon: shotIcons.rail ? shotIcons.rail.src : null, desc: "Rail beam shots for about 12 seconds.", unlockType: "shot" }
 ];
 
 var shipCatalog = [
-  { id: "classic", label: "Scarlet Classic", icon: "images/ships/Scarlet%20Classic.png", desc: "Retro heavy fighter with stable handling." },
-  { id: "spire", label: "Verdant Spire", icon: "images/ships/Verdant%20Spire.png", desc: "Fast scout with flare support and single-center exhaust." },
-  { id: "am2", label: "AM3 Scout", icon: "images/ships/AM3%20Scout.png", desc: "High mobility frame with teleport spin capability." },
-  { id: "mk7", label: "Crimson MK-7", icon: "images/ships/Crimson%20MK-7.png", desc: "Balanced interceptor with broad wing profile." },
-  { id: "fizard", label: "Aurora Dart", icon: "images/ships/Aurora%20Dart.png", desc: "Sleek dart frame tuned for precise movement." },
-  { id: "bu2x", label: "BU2X", icon: "images/ships/BU2X.png", desc: "Experimental frame awaiting unlock clearance." },
-  { id: "ember", label: "Ruby Strike", icon: "images/ships/Ruby%20Strike.png", desc: "Neon striker with aggressive profile." },
-  { id: "azure", label: "Azure Lancer", icon: "images/ships/Azure%20Lancer.png", desc: "Aero spear frame with steady control." },
-  { id: "mantas", label: "Mantas Arc-5", icon: "images/ships/Mantas%20-%20Arc%205.png", desc: "Advanced sweep-frame built for high-speed slalom." },
-  { id: "cyan", label: "Cyan Vector 7", icon: "images/ships/Cyan%20Vector%207.png", desc: "High-precision vector craft with balanced handling." },
-  { id: "veloz", label: "Veloz Mas", icon: "images/ships/Veloz%20Mas.png", desc: "Aggressive chase frame tuned for offensive runs." },
-  { id: "verde9", label: "VER-DE-9", icon: "images/ships/VER-DE-9.png", desc: "Emerald vanguard frame with reinforced lanes and steady recoil control." },
-  { id: "whiteflame8", label: "White Flame 8", icon: "images/ships/White%20Flame%208.png", desc: "Lumen spear chassis with a bright exhaust signature and clean lines." }
+  { id: "classic", label: "Scarlet Classic", icon: "images/ships/Scarlet%20Classic.png", desc: "Retro heavy fighter with stable handling.", unlockType: "ship", defaultUnlocked: true },
+  { id: "spire", label: "Verdant Spire", icon: "images/ships/Verdant%20Spire.png", desc: "Fast scout with flare support and single-center exhaust.", unlockType: "ship", defaultUnlocked: true },
+  { id: "am2", label: "AM3 Scout", icon: "images/ships/AM3%20Scout.png", desc: "High mobility frame with teleport spin capability.", unlockType: "ship", defaultUnlocked: true },
+  { id: "mk7", label: "Crimson MK-7", icon: "images/ships/Crimson%20MK-7.png", desc: "Balanced interceptor with broad wing profile.", unlockType: "ship" },
+  { id: "fizard", label: "Aurora Dart", icon: "images/ships/Aurora%20Dart.png", desc: "Sleek dart frame tuned for precise movement.", unlockType: "ship" },
+  { id: "bu2x", label: "BU2X", icon: "images/ships/BU2X.png", desc: "Experimental frame awaiting unlock clearance.", unlockType: "ship" },
+  { id: "ember", label: "Ruby Strike", icon: "images/ships/Ruby%20Strike.png", desc: "Neon striker with aggressive profile.", unlockType: "ship" },
+  { id: "azure", label: "Azure Lancer", icon: "images/ships/Azure%20Lancer.png", desc: "Aero spear frame with steady control.", unlockType: "ship" },
+  { id: "mantas", label: "Mantas Arc-5", icon: "images/ships/Mantas%20-%20Arc%205.png", desc: "Advanced sweep-frame built for high-speed slalom.", unlockType: "ship" },
+  { id: "cyan", label: "Cyan Vector 7", icon: "images/ships/Cyan%20Vector%207.png", desc: "High-precision vector craft with balanced handling.", unlockType: "ship" },
+  { id: "veloz", label: "Veloz Mas", icon: "images/ships/Veloz%20Mas.png", desc: "Aggressive chase frame tuned for offensive runs.", unlockType: "ship" },
+  { id: "verde9", label: "VER-DE-9", icon: "images/ships/VER-DE-9.png", desc: "Emerald vanguard frame with reinforced lanes and steady recoil control.", unlockType: "ship" },
+  { id: "whiteflame8", label: "White Flame 8", icon: "images/ships/White%20Flame%208.png", desc: "Lumen spear chassis with a bright exhaust signature and clean lines.", unlockType: "ship" }
 ];
 
 var sfxCatalog = [
@@ -1178,10 +1259,32 @@ function closeCatalogDetail(){
   if(catalogDetailOverlay) catalogDetailOverlay.classList.remove("show");
 }
 
-function renderCatalogList(listEl, items, filter){
+function loadUnlockIds(key){
+  try{
+    var raw = localStorage.getItem(key);
+    if(raw){
+      var parsed = JSON.parse(raw);
+      if(Array.isArray(parsed)) return parsed;
+    }
+  }catch(e){}
+  return [];
+}
+
+function isCatalogItemLocked(item, unlockMap){
+  if(!item || !item.unlockType) return false;
+  if(item.defaultUnlocked) return false;
+  var list = unlockMap[item.unlockType] || [];
+  return list.indexOf(item.id) === -1;
+}
+
+function renderIconCatalogList(listEl, items, filter){
   if(!listEl) return;
   listEl.innerHTML = "";
   var list = items || [];
+  var unlockMap = {
+    ship: loadUnlockIds("mentaris.unlocks.ships"),
+    shot: loadUnlockIds("mentaris.unlocks.shots")
+  };
   if(filter){
     list = list.filter(filter);
   }
@@ -1194,8 +1297,10 @@ function renderCatalogList(listEl, items, filter){
   }
   for(var i=0; i<list.length; i++){
     var item = list[i];
+    var itemLocked = isCatalogItemLocked(item, unlockMap);
     var li = document.createElement("li");
     li.className = "catalogItem catalogIconOnly";
+    if(itemLocked) li.classList.add("isLocked");
     li.setAttribute("role", "button");
     li.tabIndex = 0;
 
@@ -1224,6 +1329,152 @@ function renderCatalogList(listEl, items, filter){
     })(item, li);
 
     li.appendChild(icon);
+    if(itemLocked){
+      var lockTag = document.createElement("div");
+      lockTag.className = "catalogLockTag";
+      lockTag.textContent = "LOCKED";
+      li.appendChild(lockTag);
+    }
+    listEl.appendChild(li);
+  }
+}
+
+function renderSfxCatalogList(listEl, items, filter){
+  if(!listEl) return;
+  listEl.innerHTML = "";
+  var list = items || [];
+  if(filter){
+    list = list.filter(filter);
+  }
+  if(!list.length){
+    var empty = document.createElement("li");
+    empty.className = "catalogEmpty";
+    empty.textContent = "No audio in this category yet.";
+    listEl.appendChild(empty);
+    return;
+  }
+  for(var i=0; i<list.length; i++){
+    var item = list[i];
+    var li = document.createElement("li");
+    li.className = "catalogItem catalogSfxRow";
+
+    var icon = document.createElement("div");
+    icon.className = "catalogIcon";
+    if(item.icon){
+      var img = document.createElement("img");
+      img.src = item.icon;
+      img.alt = item.label + " icon";
+      icon.appendChild(img);
+    }else{
+      var missing = document.createElement("div");
+      missing.className = "catalogMissing";
+      missing.textContent = item.badge || "SFX";
+      icon.appendChild(missing);
+    }
+
+    var text = document.createElement("div");
+    text.className = "catalogText";
+    var title = document.createElement("div");
+    title.className = "catalogTitle";
+    title.textContent = item.label || "Audio";
+    if(item.badge){
+      var tag = document.createElement("span");
+      tag.className = "catalogTag";
+      tag.textContent = String(item.badge);
+      title.appendChild(tag);
+    }
+    text.appendChild(title);
+    if(item.desc){
+      var desc = document.createElement("div");
+      desc.className = "catalogDesc";
+      desc.textContent = item.desc;
+      text.appendChild(desc);
+    }
+    if(item.when){
+      var when = document.createElement("div");
+      when.className = "catalogWhen";
+      when.textContent = "Plays: " + item.when;
+      text.appendChild(when);
+    }
+    if(item.src){
+      var meta = document.createElement("div");
+      meta.className = "catalogMeta";
+      meta.textContent = "File: " + item.src;
+      text.appendChild(meta);
+    }
+
+    var controls = document.createElement("div");
+    controls.className = "catalogControls";
+    var playBtn = document.createElement("button");
+    playBtn.type = "button";
+    playBtn.className = "btn catalogControlBtn";
+    playBtn.textContent = "\u25B6";
+    playBtn.title = "Play";
+    playBtn.setAttribute("aria-label", "Play");
+    var stopBtn = document.createElement("button");
+    stopBtn.type = "button";
+    stopBtn.className = "btn catalogControlBtn";
+    stopBtn.textContent = "\u25A0";
+    stopBtn.title = "Stop";
+    stopBtn.setAttribute("aria-label", "Stop");
+    var duration = document.createElement("span");
+    duration.className = "catalogDuration";
+    duration.textContent = "--:--";
+    controls.appendChild(playBtn);
+    controls.appendChild(stopBtn);
+    controls.appendChild(duration);
+
+    (function(itemRef, durationEl){
+      function ensurePlayer(){
+        if(!itemRef.src) return null;
+        if(!previewPlayers[itemRef.id]){
+          var audio = new Audio();
+          audio.preload = "metadata";
+          audio.src = itemRef.src;
+          previewPlayers[itemRef.id] = audio;
+        }
+        var audioRef = previewPlayers[itemRef.id];
+        function syncDuration(){
+          if(isFinite(audioRef.duration) && audioRef.duration > 0){
+            durationEl.textContent = formatDuration(audioRef.duration);
+          }
+        }
+        audioRef.addEventListener("loadedmetadata", syncDuration);
+        audioRef.addEventListener("durationchange", syncDuration);
+        try{ audioRef.load(); }catch(e){}
+        syncDuration();
+        return audioRef;
+      }
+      var preload = ensurePlayer();
+      if(preload && isFinite(preload.duration) && preload.duration > 0){
+        durationEl.textContent = formatDuration(preload.duration);
+      }
+      playBtn.addEventListener("click", function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        var audio = ensurePlayer();
+        if(!audio) return;
+        if(activePreview && activePreview !== itemRef.id && previewPlayers[activePreview]){
+          stopPreviewAudio(previewPlayers[activePreview]);
+        }
+        audio.volume = getPreviewBaseVolume() * getPreviewItemVolume(itemRef.id);
+        audio.currentTime = 0;
+        audio.play().then(function(){
+          activePreview = itemRef.id;
+        }).catch(function(){});
+      });
+      stopBtn.addEventListener("click", function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        var audio = previewPlayers[itemRef.id];
+        if(audio) stopPreviewAudio(audio);
+        if(activePreview === itemRef.id) activePreview = null;
+      });
+    })(item, duration);
+
+    li.appendChild(icon);
+    li.appendChild(text);
+    li.appendChild(controls);
     listEl.appendChild(li);
   }
 }
@@ -1264,11 +1515,11 @@ function setCatalogFilter(filter){
 function renderSettingsCatalogs(){
   stopAllPreviewAudio();
   previewPlayers = {};
-  renderCatalogList(powerupsSecondaryList, powerupCatalogSecondary);
-  renderCatalogList(powerupsDefenseList, powerupCatalogDefense);
-  renderCatalogList(powerupsOffenseList, powerupCatalogOffense);
-  renderCatalogList(shipsCatalogList, shipCatalog);
-  renderCatalogList(sfxList, sfxCatalog, function(item){
+  renderIconCatalogList(powerupsSecondaryList, powerupCatalogSecondary);
+  renderIconCatalogList(powerupsDefenseList, powerupCatalogDefense);
+  renderIconCatalogList(powerupsOffenseList, powerupCatalogOffense);
+  renderIconCatalogList(shipsCatalogList, shipCatalog);
+  renderSfxCatalogList(sfxList, sfxCatalog, function(item){
     if(!activeSfxCategory || activeSfxCategory === "all") return true;
     return item.category === activeSfxCategory;
   });
@@ -1475,12 +1726,15 @@ window.addEventListener("keydown", function(e){
     unlockSfx(state);
     audioPrimed = true;
   }
+  if(tutorialActive && tutorialMineralsFreeze){
+    return;
+  }
   if(k === "p") togglePause();
   if(k === "0") toggleScreenshot();
   if(k === "r") hardRestart();
   if(k === "m") openSettings();
   if(keyNorm === keyBindings.shoot && !e.repeat){
-    if(tutorialActive && tutorialShootLocked){
+    if(tutorialActive && (tutorialShootLocked || tutorialMineralsFreeze)){
       return;
     }
     if((player.blasterMode || "single") === "missile"){
@@ -1551,6 +1805,7 @@ var padStatus = document.getElementById("padStatus");
 var virtualKnob = document.getElementById("virtualKnob");
 var padMode = document.getElementById("padMode");
 var touchControlDock = document.getElementById("touchControlDock");
+var touchDockHideBtn = document.getElementById("touchDockHideBtn");
 var touchMovePad = document.getElementById("touchMovePad");
 var touchMoveKnob = document.getElementById("touchMoveKnob");
 var touchBtnFire = document.getElementById("touchBtnFire");
@@ -1576,6 +1831,7 @@ var touchMoveCenter = { x: 0, y: 0, radius: 0 };
 var touchActionHeld = { fire: false, dash: false, special: false, secondary: false };
 var touchActionPointers = {};
 var touchButtonMap = {};
+var asteroidFallSpeedScale = 0.94;
 var mousepadPadSettingsBackup = {
   sensitivityPad: mousepadSensitivityPad,
   sensitivityPadMode: mousepadSensitivityPadMode,
@@ -1680,7 +1936,12 @@ function updatePilot2Mouse(e){
   var p2 = ensurePilot2();
   if(!p2.mouseControlEnabled) return;
   var rect = canvas.getBoundingClientRect();
-  pilot2Mouse.x = clamp(e.clientX - rect.left, 0, rect.width);
+  var rawX = clamp(e.clientX - rect.left, 0, rect.width);
+  if(isSandboxSplitMode()){
+    var lane = getLaneBounds(2);
+    rawX = clamp(rawX, lane.minX, lane.maxX);
+  }
+  pilot2Mouse.x = rawX;
   pilot2Mouse.y = clamp(e.clientY - rect.top, 0, rect.height);
   pilot2Mouse.has = true;
 }
@@ -1692,6 +1953,19 @@ function positionSandboxPilots(){
   var topLimit = hudH + 14;
   var bottomLimit = r.height - 18;
   var y = clamp(r.height - 90, topLimit + player.h/2 + 6, bottomLimit - player.h/2);
+  if(isSandboxSplitMode()){
+    var lane1 = getLaneBounds(1);
+    var lane2 = getLaneBounds(2);
+    player.x = clamp((lane1.minX + lane1.maxX) * 0.5, lane1.minX + player.w/2 + 2, lane1.maxX - player.w/2 - 2);
+    player.y = y;
+    var p2Split = ensurePilot2();
+    p2Split.x = clamp((lane2.minX + lane2.maxX) * 0.5, lane2.minX + p2Split.w/2 + 2, lane2.maxX - p2Split.w/2 - 2);
+    p2Split.y = y;
+    pilot2Mouse.x = p2Split.x;
+    pilot2Mouse.y = p2Split.y;
+    pilot2Mouse.has = true;
+    return;
+  }
   player.x = clamp(r.width * 0.25, player.w/2 + 10, r.width - player.w/2 - 10);
   player.y = y;
   var p2 = ensurePilot2();
@@ -1704,6 +1978,7 @@ function positionSandboxPilots(){
 
 function tickPilotTimers(pilot, dtReal){
   if(!pilot) return;
+  pilot.lowHullPulse = Math.max(0, (pilot.lowHullPulse || 0) - dtReal);
   pilot.cooldown = Math.max(0, pilot.cooldown - dtReal);
   pilot.invuln = Math.max(0, pilot.invuln - dtReal);
   pilot.hitFlash = Math.max(0, pilot.hitFlash - dtReal * 3.6);
@@ -1920,6 +2195,10 @@ function setMissionBriefActive(active){
 resetMousepadPadSettings();
 
 function updateCursorVisibility(){
+  if(tutorialActive && tutorialStepId === "platform_choice" && !tutorialPlatformChoiceResolved){
+    document.body.style.cursor = "";
+    return;
+  }
   if(tutorialActive && tutorialMineralsFreeze){
     document.body.style.cursor = "";
     return;
@@ -1999,6 +2278,7 @@ function setMousepadMode(mode){
 
 function isTouchInputAllowed(){
   if(!touchControlsEnabled) return false;
+  if(touchControlsDockHidden) return false;
   if(!state.running || state.paused || state.over) return false;
   if(tutorialActive && tutorialMineralsFreeze) return false;
   if(missileInputActive || missionBriefShowing || countdownActive || introActive) return false;
@@ -2058,7 +2338,8 @@ function onTouchActionPress(action){
   if(action === "fire"){
     touchActionHeld.fire = true;
     setTouchButtonPressed("fire", true);
-    if(!tutorialActive || !tutorialShootLocked){
+    var autoSpinControlled = player.autoFireActive && (player.autoFireAmmo > 0);
+    if((!tutorialActive || !tutorialShootLocked) && !autoSpinControlled){
       fire();
     }
     return;
@@ -2109,6 +2390,21 @@ function bindTouchControls(){
     special: touchBtnSpecial,
     secondary: touchBtnSecondary
   };
+  if(touchDockHideBtn){
+    touchDockHideBtn.addEventListener("click", function(){
+      playSfx(state, "menu_beep");
+      if(!touchControlsEnabled){
+        setTouchControlsEnabled(true);
+        setTouchDockHidden(false);
+      }else{
+        setTouchDockHidden(!touchControlsDockHidden);
+        if(touchControlsDockHidden){
+          resetTouchInputState();
+        }
+      }
+      updateSandboxGamepadButton();
+    });
+  }
   if(touchMovePad){
     touchMovePad.addEventListener("pointerdown", function(e){
       if(!touchControlsEnabled || !isTouchInputAllowed()) return;
@@ -2796,6 +3092,7 @@ function updateLowHullAlarm(pilot, dmgHit){
   if(pilot.hull > 0 && pilot.hull <= threshold){
     if(!pilot.lowHullAlarmed){
       pilot.lowHullAlarmed = true;
+      pilot.lowHullPulse = Math.max(pilot.lowHullPulse || 0, 1.1);
       playSfx(state, "ship_damage_alarm");
     }
   }
@@ -3916,13 +4213,17 @@ function getLaneBounds(laneId){
   if(!isSandboxSplitMode() || !laneId){
     return { minX: pad, maxX: w - pad };
   }
-  var mid = w / 2;
-  var gap = 40;
+  var gap = 56;
+  var laneW = Math.max(160, (w - gap) / 2);
+  var lane1Start = 0;
+  var lane1End = laneW;
+  var lane2Start = laneW + gap;
+  var lane2End = w;
   if(laneId === 1){
-    return { minX: pad, maxX: Math.max(pad + 40, mid - gap) };
+    return { minX: lane1Start + pad, maxX: Math.max(lane1Start + pad + 40, lane1End - pad) };
   }
   if(laneId === 2){
-    return { minX: Math.min(mid + gap, w - pad - 40), maxX: w - pad };
+    return { minX: Math.min(lane2Start + pad, lane2End - pad - 40), maxX: lane2End - pad };
   }
   return { minX: pad, maxX: w - pad };
 }
@@ -3956,7 +4257,7 @@ function spawnAsteroid(label, isCorrect, laneId){
   else if(spawnSideRoll < sideChance) spawnSide = "right";
 
   var levelFactor = getDifficultySpeedFactor();
-  var baseVy = 100 + state.level * 14 * levelFactor;
+  var baseVy = (100 + state.level * 14 * levelFactor) * asteroidFallSpeedScale;
   var speedScale = state.baseSpeed * (1 + state.ddSpeedBonus);
   if(isStampedeMode()){
     baseVy *= 1.45;
@@ -4211,7 +4512,7 @@ function spawnOneFromWave(){
     if(Math.random() < extraChance){
       var r = canvas.getBoundingClientRect();
       var w = r.width;
-      var baseVy = (92 + state.level * 10) * getDifficultySpeedFactor();
+      var baseVy = (92 + state.level * 10) * getDifficultySpeedFactor() * asteroidFallSpeedScale;
       var speedScale = state.baseSpeed * (1 + state.ddSpeedBonus);
       var ambLane = isSandboxSplitMode() ? (Math.random() < 0.5 ? 1 : 2) : 0;
     var ambBounds = getLaneBounds(ambLane);
@@ -5449,10 +5750,17 @@ function secondaryFireForPilot(pilot, pilotId){
   }
   syncSelectedSecondaryForPilot(pilot);
   if(pilotId === 1 && tutorialActive && tutorialShootLocked){
-    tutorialShootLocked = false;
-    showToast("SHOOTING ONLINE");
+    if(tutorialStepId !== "secondary_time" && tutorialStepId !== "secondary_emp" && tutorialStepId !== "secondary_magnet" && tutorialStepId !== "secondary_aid"){
+      tutorialShootLocked = false;
+      showToast("SHOOTING ONLINE");
+    }
   }
-  if(tourGuide) tourGuide.notify("secondary");
+  if(tourGuide){
+    if(activeType === "time") tourGuide.notify("secondary_time");
+    if(activeType === "emp") tourGuide.notify("secondary_emp");
+    if(activeType === "magnet") tourGuide.notify("secondary_magnet");
+    tourGuide.notify("secondary");
+  }
 }
 
 function secondaryFire(){
@@ -6185,6 +6493,111 @@ function saveScoreName(name){
   appendLeaderboardCsv({ name: trimmed, score: state.score });
 }
 
+function findSecondarySlotIndexByType(type){
+  var slots = getSecondarySlots();
+  for(var i=0; i<slots.length; i++){
+    var slot = slots[i];
+    if(slot && slot.type === type && slot.count > 0) return i;
+  }
+  return -1;
+}
+
+function selectTutorialSecondary(type){
+  var idx = findSecondarySlotIndexByType(type);
+  if(idx >= 0){
+    selectSecondaryByIndex(idx);
+    return true;
+  }
+  return false;
+}
+
+function getTutorialDecoyLabel(correctLabel){
+  var answer = Number(correctLabel);
+  if(Number.isNaN(answer)) answer = 0;
+  for(var i=0; i<16; i++){
+    var delta = randi(2, 14);
+    if(Math.random() < 0.5) delta *= -1;
+    var candidate = answer + delta;
+    if(candidate === answer) continue;
+    if(candidate < 0) candidate = Math.abs(candidate) + 2;
+    return candidate;
+  }
+  return answer + 3;
+}
+
+function spawnTutorialAsteroidAt(label, isCorrect, x, y, vy){
+  spawnAsteroid(label, !!isCorrect, 0);
+  var a = asteroids.length ? asteroids[asteroids.length - 1] : null;
+  if(!a) return null;
+  a.x = x;
+  a.y = y;
+  a.vx = 0;
+  a.vy = vy;
+  a.baseVy = vy;
+  a.spawnSide = "top";
+  a.spawnFade = 1;
+  a.spawnFadeDur = 0;
+  a.warned = false;
+  if(isCorrect){
+    state.correctInPlay = true;
+    state.correctAsteroidId = a.id;
+  }
+  return a;
+}
+
+function setupTutorialPowerupField(config){
+  if(!tutorialActive) return;
+  var cfg = config || {};
+  var centerX = view.w * 0.5;
+  var answerX = (typeof cfg.answerX === "number") ? cfg.answerX : centerX;
+  var answerY = (typeof cfg.answerY === "number") ? cfg.answerY : (view.hudH + 150);
+  var answerVy = (typeof cfg.answerVy === "number") ? cfg.answerVy : 72;
+  var decoys = Math.max(0, cfg.decoys | 0);
+  var addBlocker = !!cfg.blocker;
+
+  asteroids.length = 0;
+  state.correctInPlay = false;
+  state.correctAsteroidId = 0;
+  state.spawnTimer = Math.max(state.spawnTimer || 0, 1.4);
+  tutorialSpawnUnlocked = false;
+
+  var answerLabel = getCurrentCorrectTargetValue();
+  spawnTutorialAsteroidAt(answerLabel, true, answerX, answerY, answerVy);
+
+  if(addBlocker){
+    var blockerY = Math.min(view.h - 180, answerY + 96);
+    spawnTutorialAsteroidAt(getTutorialDecoyLabel(answerLabel), false, answerX, blockerY, answerVy * 0.92);
+  }
+
+  for(var i=0; i<decoys; i++){
+    var offset = ((i % 2) ? 1 : -1) * (90 + i * 28);
+    var x = clamp(answerX + offset, 56, view.w - 56);
+    var y = answerY + 22 + i * 34;
+    spawnTutorialAsteroidAt(getTutorialDecoyLabel(answerLabel), false, x, y, answerVy * (0.88 + Math.random() * 0.2));
+  }
+}
+
+function beginTutorialMineralsFreeze(hitAst){
+  if(!tutorialActive || tutorialStepId !== "correct" || !hitAst || hitAst.label == null) return;
+  var mineralTarget = getHighestDigit(hitAst.label);
+  tutorialMineralsFreeze = true;
+  tutorialFreezeMousepadRestore = !!mousepadActive;
+  if(mousepadActive) setMousepadActive(false);
+  tutorialMineralsTarget = mineralTarget;
+  tutorialMineralsCollected = 0;
+  tutorialMineralsComplete = mineralTarget <= 0;
+  tutorialMineralsPending = tutorialMineralsComplete;
+  tutorialMineralsRemaining = Math.max(0, mineralTarget);
+  tutorialSpawnUnlocked = false;
+  pointerDown = false;
+  resetTouchInputState();
+  asteroids.length = 0;
+  state.correctInPlay = false;
+  state.correctAsteroidId = 0;
+  state.spawnTimer = Math.max(state.spawnTimer || 0, 1.6);
+  updateCursorVisibility();
+}
+
 function handleDivisorCorrectHit(hitAst){
   if(warningClip){
     try{
@@ -6205,23 +6618,7 @@ function handleDivisorCorrectHit(hitAst){
   state.streak++;
   playSfx(state, "correct");
   if(tourGuide) tourGuide.notify("correct");
-  if(tutorialActive && tutorialStepId === "correct" && hitAst && hitAst.label != null){
-    var mineralTarget = getHighestDigit(hitAst.label);
-    tutorialMineralsFreeze = true;
-    tutorialFreezeMousepadRestore = !!mousepadActive;
-    if(mousepadActive) setMousepadActive(false);
-    tutorialMineralsTarget = mineralTarget;
-    tutorialMineralsCollected = 0;
-    tutorialMineralsComplete = mineralTarget <= 0;
-    tutorialMineralsPending = tutorialMineralsComplete;
-    tutorialMineralsRemaining = Math.max(0, mineralTarget);
-    tutorialSpawnUnlocked = false;
-    asteroids.length = 0;
-    state.correctInPlay = false;
-    state.correctAsteroidId = 0;
-    state.spawnTimer = Math.max(state.spawnTimer || 0, 1.6);
-    updateCursorVisibility();
-  }
+  beginTutorialMineralsFreeze(hitAst);
   if(hitAst && hitAst.label != null){
     spawnMineralBurst(hitAst.x, hitAst.y, getHighestDigit(hitAst.label));
   }
@@ -6320,6 +6717,7 @@ function onCorrectHit(hitAst){
   state.streak++;
   playSfx(state, "correct");
   if(tourGuide) tourGuide.notify("correct");
+  beginTutorialMineralsFreeze(hitAst);
   if(hitAst && hitAst.label != null){
     spawnMineralBurst(hitAst.x, hitAst.y, getHighestDigit(hitAst.label));
   }
@@ -6438,6 +6836,7 @@ function onStampedeCorrect(hitAst){
   state.streak = 0;
   playSfx(state, "correct");
   if(tourGuide) tourGuide.notify("correct");
+  beginTutorialMineralsFreeze(hitAst);
   syncHud();
   var completedQuestion = false;
   if(state.answerDigits && state.digitsLeft > 0){
@@ -7959,6 +8358,11 @@ function update(dt){
 
   for(var pi=powerups.length-1; pi>=0; pi--){
     var p = powerups[pi];
+    if(tutorialActive && tutorialMineralsFreeze){
+      if(p && p.type === "mineral"){
+        continue;
+      }
+    }
     if(p.popTimer != null && p.popTimer > 0){
       p.popTimer = Math.max(0, p.popTimer - dtReal);
     }
@@ -9395,7 +9799,7 @@ function draw(){
       var diff = String(state.difficulty || "normal").toLowerCase();
       strikeLimit = diff === "easy" ? 25 : diff === "normal" ? 20 : diff === "hard" ? 15 : 10;
     }
-    function drawHudBarsForPilot(barX, barW, hullRatio, livesLeft, livesStart, wrongCount){
+    function drawHudBarsForPilot(barX, barW, hullRatio, livesLeft, livesStart, wrongCount, hpPulse){
       var hudBars = [];
       hudBars.push({
         label: "HP",
@@ -9452,9 +9856,18 @@ function draw(){
           ctx.fillStyle = b.fill;
           ctx.shadowColor = b.glow;
           ctx.shadowBlur = 6;
+          if(b.label === "HP" && hpPulse > 0){
+            var hpPulseWave = (Math.sin(performance.now() * 0.03) + 1) * 0.5;
+            ctx.globalAlpha = 0.75 + 0.25 * hpPulseWave;
+            ctx.shadowColor = "rgba(255,80,80,.75)";
+            ctx.shadowBlur = 10 + 8 * hpPulseWave;
+          }
           ctx.beginPath();
           ctx.roundRect(barX, bY, barW * b.ratio, barH, 8);
           ctx.fill();
+          if(b.label === "HP" && hpPulse > 0){
+            ctx.globalAlpha = 1;
+          }
           ctx.shadowBlur = 0;
           ctx.fillStyle = labelColor;
           ctx.font = labelStyle;
@@ -9538,8 +9951,8 @@ function draw(){
       var p1Stats = ensurePilotStats(1);
       var p2Stats = ensurePilotStats(2);
       var p2Hud = ensurePilot2();
-      drawHudBarsForPilot(barX1, barW1, player.hull, state.lives || 0, state.livesStart || 0, p1Stats.wrong || 0);
-      drawHudBarsForPilot(barX2, barW2, p2Hud.hull, p2Hud.lives || 0, p2Hud.livesStart || 0, p2Stats.wrong || 0);
+      drawHudBarsForPilot(barX1, barW1, player.hull, state.lives || 0, state.livesStart || 0, p1Stats.wrong || 0, player.lowHullPulse || 0);
+      drawHudBarsForPilot(barX2, barW2, p2Hud.hull, p2Hud.lives || 0, p2Hud.livesStart || 0, p2Stats.wrong || 0, p2Hud.lowHullPulse || 0);
       var gapStart = lane1.maxX;
       var gapEnd = lane2.minX;
       if(gapEnd > gapStart){
@@ -9559,7 +9972,7 @@ function draw(){
     }else{
       var barX = 96;
       var barW = Math.min(260, w * 0.35);
-      drawHudBarsForPilot(barX, barW, player.hull, state.lives || 0, state.livesStart || 0, state.wrong || 0);
+      drawHudBarsForPilot(barX, barW, player.hull, state.lives || 0, state.livesStart || 0, state.wrong || 0, player.lowHullPulse || 0);
     }
 
     var profile = getShipProfile(player.shipType);
@@ -10537,6 +10950,9 @@ function updateTutorialDots(dt){
     if(!(keys.has("arrowup") || keys.has("arrowdown") || keys.has("arrowleft") || keys.has("arrowright"))) return;
   }else if(tutorialDotsRequiredMode === "wasd"){
     if(!(keys.has("w") || keys.has("a") || keys.has("s") || keys.has("d"))) return;
+  }else if(tutorialDotsRequiredMode === "touch"){
+    if(!touchControlsEnabled || touchControlsDockHidden) return;
+    if(Math.hypot(touchMoveAxes.x, touchMoveAxes.y) < 0.08) return;
   }else{
     if(!mousepadActive || mousepadMode !== tutorialDotsRequiredMode) return;
   }
@@ -13553,22 +13969,38 @@ function toggleSandboxAlienWave(){
 
 function initSandboxPanel(){
   if(!document.body || sandboxPanel) return;
+  try{
+    var raw = localStorage.getItem(sandboxSectionsKey);
+    if(raw){
+      var parsed = JSON.parse(raw);
+      if(parsed && typeof parsed === "object"){
+        sandboxSectionsState = parsed;
+      }
+    }
+  }catch(e){}
   var styleId = "sandboxPanelStyles";
   if(!document.getElementById(styleId)){
     var style = document.createElement("style");
     style.id = styleId;
-    style.textContent = ".sandboxPanel{position:fixed;top:90px;left:16px;z-index:45;width:min(360px,calc(100vw - 32px));max-height:calc(100vh - 112px);overflow:auto;background:rgba(6,10,18,.88);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px 14px;box-shadow:0 24px 60px rgba(0,0,0,.45);}"+
+    style.textContent = ".sandboxPanel{position:fixed;top:90px;left:16px;z-index:45;width:min(460px,calc(100vw - 32px));max-height:calc(100vh - 112px);overflow:auto;background:rgba(6,10,18,.88);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px 14px;box-shadow:0 24px 60px rgba(0,0,0,.45);}"+
       ".sandboxPanel .sandboxHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}"+
       ".sandboxPanel h4{margin:0;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.8);}"+
       ".sandboxPanel .sandboxToggle{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e8ecff;border-radius:10px;padding:4px 8px;font-size:10px;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;}"+
       ".sandboxPanel.collapsed .sandboxBody{display:none;}"+
-      ".sandboxPanel .sandboxGroup{margin:8px 0;}"+
+      ".sandboxPanel .sandboxSectionTools{display:flex;gap:8px;margin-bottom:8px;}"+
+      ".sandboxPanel .sandboxSectionTools .sandboxToggle{flex:1;}"+
+      ".sandboxPanel .sandboxGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}"+
+      ".sandboxPanel .sandboxGroup{margin:0;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);border-radius:12px;padding:8px;}"+
+      ".sandboxPanel .sandboxGroupHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}"+
+      ".sandboxPanel .sandboxGroupTitle{font-size:11px;letter-spacing:1.1px;text-transform:uppercase;color:rgba(232,236,255,.78);}"+
+      ".sandboxPanel .sandboxGroupToggle{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e8ecff;border-radius:8px;padding:2px 6px;font-size:10px;cursor:pointer;}"+
+      ".sandboxPanel .sandboxGroup.collapsed .sandboxGroupBody{display:none;}"+
       ".sandboxPanel .sandboxButtons{display:flex;flex-wrap:wrap;gap:6px;}"+
       ".sandboxPanel .sandboxBtn{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e8ecff;border-radius:10px;padding:6px 8px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;}"+
       ".sandboxPanel .sandboxBtn.active{border-color:rgba(0,229,255,.6);box-shadow:0 0 0 1px rgba(0,229,255,.25) inset;}"+
       ".sandboxPanel .sandboxBtn:hover{transform:translateY(-1px);border-color:rgba(0,229,255,.6);box-shadow:0 8px 18px rgba(0,0,0,.25);}"+
-      ".sandboxPanel .sandboxNote{font-size:11px;color:rgba(232,236,255,.55);margin-top:6px;}"+
-      "@media (max-width: 900px){.sandboxPanel{top:78px;left:10px;width:min(320px,calc(100vw - 20px));max-height:calc(100vh - 96px);}}";
+      ".sandboxPanel .sandboxNote{font-size:11px;color:rgba(232,236,255,.55);margin:6px 0 4px;}"+
+      "@media (max-width: 960px){.sandboxPanel{top:78px;left:10px;width:min(420px,calc(100vw - 20px));max-height:calc(100vh - 96px);}.sandboxPanel .sandboxGrid{grid-template-columns:1fr;}}";
     document.head.appendChild(style);
   }
 
@@ -13577,18 +14009,15 @@ function initSandboxPanel(){
   sandboxPanel.innerHTML = ""
     + "<div class='sandboxHeader'><h4>Sandbox</h4><button class='sandboxToggle' id='sandboxToggle' type='button'>Hide</button></div>"
     + "<div class='sandboxBody'>"
-    + "<div class='sandboxGroup'><div class='sandboxButtons' id='sandboxActions'></div></div>"
-    + "<div class='sandboxGroup'><div class='sandboxNote'>Two Pilots</div><div class='sandboxButtons' id='sandboxMultiplayer'></div><div class='sandboxButtons' id='sandboxMultiplayerMode'></div></div>"
-    + "<div class='sandboxGroup'><div class='sandboxNote'>Operations</div><div class='sandboxButtons' id='sandboxOperations'></div></div>"
-    + "<div class='sandboxGroup'><div class='sandboxNote'>Modes: Multiplication</div><div class='sandboxButtons' id='sandboxModesMul'></div></div>"
-    + "<div class='sandboxGroup'><div class='sandboxNote'>Modes: Addition</div><div class='sandboxButtons' id='sandboxModesAdd'></div></div>"
-    + "<div class='sandboxGroup'><div class='sandboxNote'>Modes: Squares</div><div class='sandboxButtons' id='sandboxModesSquare'></div></div>"
-    + "<div class='sandboxGroup'><div class='sandboxNote'>Modes: Rationals</div><div class='sandboxButtons' id='sandboxModesRational'></div></div>"
-    + "<div class='sandboxGroup'><div class='sandboxNote'>Shot Types</div><div class='sandboxButtons' id='sandboxShots'></div></div>"
-    + "<div class='sandboxGroup'><div class='sandboxNote'>Defense</div><div class='sandboxButtons' id='sandboxDefense'></div></div>"
-    + "<div class='sandboxGroup'><div class='sandboxNote'>Secondary</div><div class='sandboxButtons' id='sandboxSecondary'></div></div>"
-    + "<div class='sandboxGroup'><div class='sandboxNote'>Ships</div><div class='sandboxButtons' id='sandboxShips'></div></div>"
-    + "<div class='sandboxGroup'><div class='sandboxNote'>Clusters</div><div class='sandboxButtons' id='sandboxBelts'></div></div>"
+    + "<div class='sandboxSectionTools'><button class='sandboxToggle' id='sandboxExpandAll' type='button'>Expand All</button><button class='sandboxToggle' id='sandboxCollapseAll' type='button'>Collapse All</button></div>"
+    + "<div class='sandboxGrid'>"
+    + "<div class='sandboxGroup' data-section='session'><div class='sandboxGroupHeader'><div class='sandboxGroupTitle'>Session</div><button class='sandboxGroupToggle' data-section-toggle='session' type='button'>-</button></div><div class='sandboxGroupBody'><div class='sandboxButtons' id='sandboxActionsSession'></div></div></div>"
+    + "<div class='sandboxGroup' data-section='multiplayer'><div class='sandboxGroupHeader'><div class='sandboxGroupTitle'>Multiplayer</div><button class='sandboxGroupToggle' data-section-toggle='multiplayer' type='button'>-</button></div><div class='sandboxGroupBody'><div class='sandboxButtons' id='sandboxMultiplayer'></div><div class='sandboxButtons' id='sandboxMultiplayerMode'></div></div></div>"
+    + "<div class='sandboxGroup' data-section='operation'><div class='sandboxGroupHeader'><div class='sandboxGroupTitle'>Operation</div><button class='sandboxGroupToggle' data-section-toggle='operation' type='button'>-</button></div><div class='sandboxGroupBody'><div class='sandboxButtons' id='sandboxOperations'></div><div class='sandboxNote'>Modes: Multiplication</div><div class='sandboxButtons' id='sandboxModesMul'></div><div class='sandboxNote'>Modes: Addition</div><div class='sandboxButtons' id='sandboxModesAdd'></div><div class='sandboxNote'>Modes: Squares</div><div class='sandboxButtons' id='sandboxModesSquare'></div><div class='sandboxNote'>Modes: Rationals</div><div class='sandboxButtons' id='sandboxModesRational'></div></div></div>"
+    + "<div class='sandboxGroup' data-section='loadout'><div class='sandboxGroupHeader'><div class='sandboxGroupTitle'>Loadout</div><button class='sandboxGroupToggle' data-section-toggle='loadout' type='button'>-</button></div><div class='sandboxGroupBody'><div class='sandboxNote'>Shot Types</div><div class='sandboxButtons' id='sandboxShots'></div><div class='sandboxNote'>Defense</div><div class='sandboxButtons' id='sandboxDefense'></div><div class='sandboxNote'>Secondary</div><div class='sandboxButtons' id='sandboxSecondary'></div></div></div>"
+    + "<div class='sandboxGroup' data-section='cosmetics'><div class='sandboxGroupHeader'><div class='sandboxGroupTitle'>Cosmetics</div><button class='sandboxGroupToggle' data-section-toggle='cosmetics' type='button'>-</button></div><div class='sandboxGroupBody'><div class='sandboxNote'>Ships</div><div class='sandboxButtons' id='sandboxShips'></div><div class='sandboxNote'>Clusters</div><div class='sandboxButtons' id='sandboxBelts'></div></div></div>"
+    + "<div class='sandboxGroup' data-section='experimental'><div class='sandboxGroupHeader'><div class='sandboxGroupTitle'>Experimental</div><button class='sandboxGroupToggle' data-section-toggle='experimental' type='button'>-</button></div><div class='sandboxGroupBody'><div class='sandboxButtons' id='sandboxActionsExperimental'></div></div></div>"
+    + "</div>"
     + "</div>";
   document.body.appendChild(sandboxPanel);
   var sandboxToggleBtn = sandboxPanel.querySelector("#sandboxToggle");
@@ -13600,6 +14029,56 @@ function initSandboxPanel(){
       playSfx(state, "menu_beep");
     });
   }
+  function saveSandboxSectionsState(){
+    try{ localStorage.setItem(sandboxSectionsKey, JSON.stringify(sandboxSectionsState)); }catch(e){}
+  }
+  function setSandboxSectionOpen(sectionId, isOpen){
+    var group = sandboxPanel.querySelector(".sandboxGroup[data-section='" + sectionId + "']");
+    if(!group) return;
+    var open = !!isOpen;
+    group.classList.toggle("collapsed", !open);
+    var toggleBtn = group.querySelector("[data-section-toggle='" + sectionId + "']");
+    if(toggleBtn) toggleBtn.textContent = open ? "-" : "+";
+    sandboxSectionsState[sectionId] = open;
+  }
+  var sectionDefaults = {
+    session: true,
+    multiplayer: false,
+    operation: true,
+    loadout: true,
+    cosmetics: false,
+    experimental: false
+  };
+  Object.keys(sectionDefaults).forEach(function(sectionId){
+    var open = (sandboxSectionsState[sectionId] != null) ? !!sandboxSectionsState[sectionId] : !!sectionDefaults[sectionId];
+    setSandboxSectionOpen(sectionId, open);
+    var sectionBtn = sandboxPanel.querySelector("[data-section-toggle='" + sectionId + "']");
+    if(sectionBtn){
+      sectionBtn.addEventListener("click", function(){
+        playSfx(state, "menu_beep");
+        var isOpen = !sandboxPanel.querySelector(".sandboxGroup[data-section='" + sectionId + "']").classList.contains("collapsed");
+        setSandboxSectionOpen(sectionId, !isOpen);
+        saveSandboxSectionsState();
+      });
+    }
+  });
+  var expandAllBtn = sandboxPanel.querySelector("#sandboxExpandAll");
+  if(expandAllBtn){
+    expandAllBtn.addEventListener("click", function(){
+      playSfx(state, "menu_beep");
+      Object.keys(sectionDefaults).forEach(function(sectionId){ setSandboxSectionOpen(sectionId, true); });
+      saveSandboxSectionsState();
+    });
+  }
+  var collapseAllBtn = sandboxPanel.querySelector("#sandboxCollapseAll");
+  if(collapseAllBtn){
+    collapseAllBtn.addEventListener("click", function(){
+      playSfx(state, "menu_beep");
+      Object.keys(sectionDefaults).forEach(function(sectionId){ setSandboxSectionOpen(sectionId, false); });
+      saveSandboxSectionsState();
+    });
+  }
+  saveSandboxSectionsState();
 
   function addButton(container, label, onClick){
     var btn = document.createElement("button");
@@ -13656,7 +14135,8 @@ function setSandboxShip(type){
     showToast("TARGET SPAWNED");
   }
 
-  var actionsContainer = sandboxPanel.querySelector("#sandboxActions");
+  var actionsContainer = sandboxPanel.querySelector("#sandboxActionsSession");
+  var experimentalContainer = sandboxPanel.querySelector("#sandboxActionsExperimental");
   var multiplayerContainer = sandboxPanel.querySelector("#sandboxMultiplayer");
   var multiplayerModeContainer = sandboxPanel.querySelector("#sandboxMultiplayerMode");
   var btnSpawnTarget = null;
@@ -13688,15 +14168,6 @@ function setSandboxShip(type){
       btnSpawnToggle.textContent = state.sandboxSpawnAsteroids ? "Asteroids On" : "Asteroids Off";
       showToast(state.sandboxSpawnAsteroids ? "ASTEROIDS ON" : "ASTEROIDS OFF");
     });
-    btnAlienWave = addButton(actionsContainer, "Alien Wave", function(){
-      toggleSandboxAlienWave();
-      updateSandboxToggle(btnAlienWave, state.sandboxAlienWaveActive);
-    });
-    btnGamepad = addButton(actionsContainer, "Gamepad", function(){
-      setTouchControlsEnabled(!touchControlsEnabled);
-      updateSandboxToggle(btnGamepad, touchControlsEnabled);
-      showToast(touchControlsEnabled ? "GAMEPAD ON" : "GAMEPAD OFF");
-    });
     btnStampede = addButton(actionsContainer, "Stampede", function(){
       state.stampedeMode = !state.stampedeMode;
       updateSandboxToggle(btnStampede, state.stampedeMode);
@@ -13704,6 +14175,16 @@ function setSandboxShip(type){
     });
     btnReset = addButton(actionsContainer, "Reset Run", function(){
       resetSession();
+    });
+  }
+  if(experimentalContainer){
+    btnAlienWave = addButton(experimentalContainer, "Alien Wave", function(){
+      toggleSandboxAlienWave();
+      updateSandboxToggle(btnAlienWave, !!(state.sandboxAlienWaveActive || state.sandboxAlienWave));
+    });
+    btnGamepad = addButton(experimentalContainer, "Gamepad Off", function(){
+      cycleTouchControlsMode();
+      updateSandboxGamepadButton();
     });
   }
   if(multiplayerContainer){
@@ -13954,8 +14435,8 @@ function setSandboxShip(type){
   updateSandboxToggle(btnInfLives, state.sandboxInfiniteLives);
   updateSandboxToggle(btnNoScore, state.sandboxNoScore);
   updateSandboxToggle(btnSpawnToggle, state.sandboxSpawnAsteroids);
-  updateSandboxToggle(btnAlienWave, state.sandboxAlienWaveActive);
-  updateSandboxToggle(btnGamepad, touchControlsEnabled);
+  updateSandboxToggle(btnAlienWave, !!(state.sandboxAlienWaveActive || state.sandboxAlienWave));
+  updateSandboxGamepadButton();
   updateSandboxToggle(btnStampede, state.stampedeMode);
   updateSandboxToggle(btnTwoPilots, state.sandboxTwoPilots);
   updateSandboxToggle(btnSharedArena, state.sandboxTwoPilotsMode !== "split");
@@ -14039,6 +14520,8 @@ function boot(){
       tutorialExtraPowerupsSpawned = false;
       tutorialFreezeMousepadRestore = false;
       tutorialMovementPreference = null;
+      tutorialPlatformChoiceResolved = false;
+      tutorialPlatform = "desktop";
       tutorialPortalActive = false;
       tutorialPortalT = 0;
       tutorialPortalLock = false;
@@ -14054,12 +14537,42 @@ function boot(){
         player: player,
         onStep: function(stepId){
           tutorialStepId = stepId;
-          if(stepId === "move_arrows"){
+          if(stepId === "platform_choice"){
+            tutorialPlatform = "desktop";
+            tutorialMovementPreference = null;
+            tutorialPlatformChoiceResolved = false;
+            setTouchDockHidden(false);
+            updateCursorVisibility();
+          }else if(stepId === "move_arrows"){
+            if(tutorialPlatform === "tablet"){
+              tourGuide.jumpTo("tablet_move");
+              return false;
+            }
             startTutorialDots("arrows", "move_arrows");
           }else if(stepId === "move_wasd"){
+            if(tutorialPlatform === "tablet"){
+              tourGuide.jumpTo("fire_once");
+              return false;
+            }
             startTutorialDots("wasd", "move_wasd");
           }else if(stepId === "mousepad_hybrid"){
+            if(tutorialPlatform === "tablet"){
+              tourGuide.jumpTo("fire_once");
+              return false;
+            }
             startTutorialDots("hybrid", "mousepad_hybrid");
+          }else if(stepId === "tablet_move"){
+            if(tutorialPlatform !== "tablet"){
+              tourGuide.jumpTo("fire_once");
+              return false;
+            }
+            setTouchControlsEnabled(true);
+            setTouchDockHidden(false);
+            if(mousepadActive) setMousepadActive(false);
+            startTutorialDots("touch", "move_touch");
+          }else if(stepId === "movement_preference" && tutorialPlatform === "tablet"){
+            tourGuide.jumpTo("fire_once");
+            return false;
           }else if(tutorialDotsActive){
             stopTutorialDots();
           }
@@ -14121,12 +14634,42 @@ function boot(){
               }
             }
           }
-          if(stepId === "secondary_aid"){
-            tutorialSpawnUnlocked = true;
-            state.spawnTimer = Math.min(state.spawnTimer || 0, 0.6);
+          if(stepId === "secondary_time"){
+            tutorialShootLocked = true;
+            selectTutorialSecondary("time");
+            setupTutorialPowerupField({ decoys: 4, answerY: view.hudH + 138 });
           }
-          if(stepId === "correct_after_powerup"){
-            tutorialSpawnUnlocked = true;
+          if(stepId === "secondary_emp"){
+            tutorialShootLocked = true;
+            selectTutorialSecondary("emp");
+            setupTutorialPowerupField({ decoys: 6, answerY: view.hudH + 132 });
+          }
+          if(stepId === "secondary_magnet"){
+            tutorialShootLocked = true;
+            selectTutorialSecondary("magnet");
+            setupTutorialPowerupField({ decoys: 4, answerY: view.hudH + 118, answerX: view.w * 0.68 });
+          }
+          if(stepId === "correct_after_magnet"){
+            tutorialShootLocked = false;
+            tutorialSpawnUnlocked = false;
+            state.spawnTimer = Math.max(state.spawnTimer || 0, 1.1);
+            if(!state.correctInPlay){
+              setupTutorialPowerupField({ decoys: 2, answerY: view.hudH + 142 });
+            }
+          }
+          if(stepId === "ability_intro"){
+            tutorialSpawnUnlocked = false;
+          }
+          if(stepId === "ability_clear"){
+            tutorialShootLocked = false;
+            setupTutorialPowerupField({ blocker: true, decoys: 3, answerY: view.hudH + 118, answerX: view.w * 0.52 });
+          }
+          if(stepId === "ability_shot"){
+            tutorialSpawnUnlocked = false;
+            state.spawnTimer = Math.max(state.spawnTimer || 0, 1.0);
+            if(!state.correctInPlay){
+              setupTutorialPowerupField({ decoys: 2, answerY: view.hudH + 128, answerX: view.w * 0.56 });
+            }
           }
           if(stepId === "alien" && !tutorialAlienSpawned){
             tutorialAlienSpawned = true;
@@ -14155,6 +14698,24 @@ function boot(){
           }
         },
         onChoice: function(stepId, choice){
+          if(stepId === "platform_choice"){
+            var selectedPlatform = choice && choice.id ? String(choice.id) : "desktop";
+            tutorialPlatform = selectedPlatform === "tablet" ? "tablet" : "desktop";
+            tutorialPlatformChoiceResolved = true;
+            if(tutorialPlatform === "tablet"){
+              tutorialMovementPreference = "touch";
+              setTouchControlsEnabled(true);
+              setTouchDockHidden(false);
+              if(mousepadActive) setMousepadActive(false);
+            }else{
+              tutorialMovementPreference = null;
+              setTouchControlsEnabled(false);
+              setTouchDockHidden(false);
+              if(mousepadActive) setMousepadActive(false);
+            }
+            updateCursorVisibility();
+            return;
+          }
           if(stepId !== "movement_preference") return;
           tutorialMovementPreference = choice && choice.id ? String(choice.id) : "";
           if(tutorialMovementPreference === "mouse"){

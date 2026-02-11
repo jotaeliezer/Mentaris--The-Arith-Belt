@@ -11,6 +11,8 @@
   --mag:#af006f;
   --radius:18px;
   --shadow:0 18px 60px rgba(0,0,0,.55);
+  --solo-shell-width:1120px;
+  --split-shell-gap:56px;
 }
 
 *{ box-sizing:border-box; }
@@ -102,6 +104,26 @@ body::before{
   box-shadow: var(--shadow);
 }
 
+.touchDockHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+
+.touchDockHideBtn{
+  border:1px solid rgba(255,255,255,.24);
+  background:rgba(255,255,255,.08);
+  color:var(--text);
+  border-radius:10px;
+  padding:6px 9px;
+  font-family:inherit;
+  font-size:11px;
+  letter-spacing:.8px;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+
 .touchDock-left{
   width:clamp(160px, 16vw, 220px);
 }
@@ -190,6 +212,10 @@ body::before{
 
 body.touchControlsOn #touchControlDock{
   display:flex;
+}
+
+body.touchControlsOn.touchControlsDockHidden #touchControlDock{
+  display:none;
 }
 
 body.touchControlsOn #controlDock{
@@ -914,6 +940,48 @@ body.launching #menuWrap{
   overflow:hidden;
 }
 
+body.splitGameplayMode{
+  overflow:auto;
+}
+
+body.splitGameplayMode #wrap{
+  justify-content:flex-start;
+  overflow-x:auto;
+  overflow-y:hidden;
+  padding:14px 24px;
+}
+
+body.splitGameplayMode #gameShell{
+  width:calc(var(--solo-shell-width) * 2 + var(--split-shell-gap));
+  max-width:none;
+  flex:0 0 calc(var(--solo-shell-width) * 2 + var(--split-shell-gap));
+  border:none;
+  background:transparent;
+  box-shadow: var(--shadow);
+}
+
+body.splitGameplayMode #gameShell::before,
+body.splitGameplayMode #gameShell::after{
+  content:"";
+  position:absolute;
+  top:0;
+  bottom:0;
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+  pointer-events:none;
+}
+
+body.splitGameplayMode #gameShell::before{
+  left:0;
+  width:var(--solo-shell-width);
+}
+
+body.splitGameplayMode #gameShell::after{
+  left:calc(var(--solo-shell-width) + var(--split-shell-gap));
+  width:var(--solo-shell-width);
+}
+
 .endScoresPanel{
   margin-top:16px;
 }
@@ -1126,6 +1194,14 @@ input[type="checkbox"]{ transform: translateY(1px); }
   position:relative;
   transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
+.catalogItem.catalogIconOnly.isLocked::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:12px;
+  background: rgba(5,8,16,.48);
+  pointer-events:none;
+}
 
 .catalogItem.catalogIconOnly:hover{
   transform: translateY(-2px);
@@ -1137,6 +1213,51 @@ input[type="checkbox"]{ transform: translateY(1px); }
   outline: none;
   border-color: rgba(0,229,255,.55);
   box-shadow: 0 0 0 2px rgba(0,229,255,.2);
+}
+
+.catalogLockTag{
+  position:absolute;
+  top:10px;
+  right:10px;
+  z-index:2;
+  padding:4px 9px;
+  border-radius:999px;
+  border:1px solid rgba(255,120,120,.45);
+  background: rgba(120,25,30,.68);
+  color:#ffd3d3;
+  font-size:10px;
+  letter-spacing:.9px;
+  text-transform:uppercase;
+}
+
+.catalogItem.catalogSfxRow{
+  align-items:flex-start;
+  justify-content:flex-start;
+  gap:12px;
+  min-height:0;
+  padding:10px;
+}
+.catalogItem.catalogSfxRow .catalogIcon{
+  width:72px;
+  height:72px;
+  border-radius:14px;
+}
+.catalogItem.catalogSfxRow .catalogIcon img{
+  width:56px;
+  height:56px;
+}
+.catalogItem.catalogSfxRow .catalogText{
+  flex:1;
+  min-width:0;
+}
+.catalogItem.catalogSfxRow .catalogTitle{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.catalogItem.catalogSfxRow .catalogControls{
+  align-self:center;
+  margin-top:0;
 }
 
 .catalogFilterRow{

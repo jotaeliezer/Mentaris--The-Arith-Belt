@@ -610,6 +610,7 @@
       align-items:center;
       gap:6px;
       font-weight:700;
+      font-family:"Oxanium", sans-serif;
     }
     .costTag::before{
       content:"";
@@ -637,6 +638,7 @@
       top:10px;
       left:10px;
       font-size:10px;
+      font-family:"Oxanium", sans-serif;
       letter-spacing:0.18em;
       text-transform:uppercase;
       padding:4px 10px;
@@ -658,12 +660,12 @@
     .buyButton.hidden{ display:none; }
 
     .purchaseCard{
-      width:min(440px, 92vw);
+      width:min(680px, 94vw);
     }
     .purchaseLayout{
       display:grid;
-      grid-template-columns:140px minmax(0, 1fr);
-      gap:14px;
+      grid-template-columns:140px minmax(0, 1fr) minmax(150px, auto);
+      gap:16px;
       align-items:start;
     }
     .purchasePreview{
@@ -692,14 +694,16 @@
     }
     .purchaseMeta{
       display:grid;
-      grid-template-columns:repeat(2, minmax(0,1fr));
-      gap:12px;
-      margin-bottom:14px;
+      grid-template-columns:repeat(2, minmax(130px, 160px));
+      gap:18px;
+      margin-bottom:0;
+      justify-content:start;
     }
     .purchaseRow{
       display:flex;
       flex-direction:column;
       gap:6px;
+      min-width:130px;
       padding:10px 12px;
       border-radius:12px;
       border:1px solid rgba(255,255,255,.08);
@@ -707,11 +711,38 @@
       text-transform:uppercase;
       letter-spacing:0.12em;
       font-size:11px;
+      white-space:nowrap;
     }
     .purchaseRow b{
       font-size:15px;
       color:rgba(240,250,255,.95);
       letter-spacing:0.1em;
+    }
+    .purchaseActions{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      align-self:center;
+      min-width:160px;
+    }
+    @media (max-width: 760px){
+      .purchaseCard{
+        width:min(500px, 94vw);
+      }
+      .purchaseLayout{
+        grid-template-columns:1fr;
+      }
+      .purchasePreview{
+        width:120px;
+        height:120px;
+      }
+      .purchaseActions{
+        min-width:0;
+      }
+    }
+    .purchaseActions .btn{
+      width:100%;
+      justify-content:center;
     }
     .btnConfirm{
       border-color: rgba(80,220,120,.55);
@@ -1067,7 +1098,13 @@
       gap:24px;
       align-items:start;
     }
+    .shipInfoColumn{
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
     .shipColumn{
+      --ship-card: 200px;
       display:flex;
       flex-direction:column;
       gap:18px;
@@ -1117,6 +1154,16 @@
       position:relative;
       z-index:1;
     }
+    .shipGrid,
+    .shotTypeCarousel{
+      touch-action: pan-y;
+      user-select: none;
+      cursor: grab;
+    }
+    .shipGrid.is-dragging,
+    .shotTypeCarousel.is-dragging{
+      cursor: grabbing;
+    }
     .shipOption{
       flex:0 0 var(--ship-card);
       opacity:0.7;
@@ -1165,7 +1212,6 @@
       min-height:240px;
     }
     .shotDetails{
-      margin-top:12px;
       min-height:220px;
     }
     .shipDetailsHeader{
@@ -1222,13 +1268,17 @@
       letter-spacing:0.12em;
     }
     .shotTypeCarousel{
-      --shot-card: 200px;
+      --shot-card: var(--ship-card, 200px);
       --shot-gap: 12px;
       position:relative;
       overflow:hidden;
       padding: 10px 6px 6px;
     }
     .shotTypeInlinePanel{
+    }
+    .shotTypeRow{
+      display:block;
+      width:100%;
     }
     .shotTypeInlinePanel h4{
       margin:0 0 8px;
@@ -1239,6 +1289,7 @@
     }
     .shotTypeInlineCarousel{
       padding:12px 0 6px;
+      min-width:720px;
     }
     .shotTypeTrack{
       display:flex;
@@ -1262,9 +1313,11 @@
       cursor:pointer;
       transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
       position:relative;
+      width: var(--shot-card);
       min-width: var(--shot-card);
       min-height: 170px;
       overflow:hidden;
+      font-family:"Oxanium", sans-serif;
     }
     .shotTypeOption:hover{
       border-color: rgba(0,229,255,.45);
@@ -1286,6 +1339,7 @@
       top:12px;
       right:12px;
       font-size:10px;
+      font-family:"Oxanium", sans-serif;
     }
     .shotTypeImage{
       width:auto;
@@ -1304,18 +1358,18 @@
       color:rgba(232,236,255,.9);
       text-transform:uppercase;
       text-shadow: 0 0 8px rgba(0,0,0,.6);
-      font-family:inherit;
+      font-family:"Oxanium", sans-serif;
       font-weight:600;
     }
     .shotTypeDesc{
       display:none;
     }
-    @media (max-width: 960px){
+    @media (max-width: 760px){
       .shipChooser{
         grid-template-columns:1fr;
       }
-      .shipDetails{
-        order:2;
+      .shotTypeInlineCarousel{
+        min-width:0;
       }
     }
 
@@ -2113,10 +2167,11 @@
                 </label>
               </div>
               </div>
-              <div class="shotTypeInlinePanel">
-                <h4>Shot Type</h4>
-                <div class="shotTypeCarousel shotTypeInlineCarousel" id="shotTypeInlineCarousel">
-                  <div class="shotTypeTrack" id="shotTypeInlineTrack">
+              <div class="shotTypeRow">
+                <div class="shotTypeInlinePanel">
+                  <h4>Shot Type</h4>
+                  <div class="shotTypeCarousel shotTypeInlineCarousel" id="shotTypeInlineCarousel">
+                    <div class="shotTypeTrack" id="shotTypeInlineTrack">
                     <button type="button" class="shotTypeOption shotTypeInlineOption" data-shot="single">
                       <img class="shotTypeImage" src="images/bullets/bullet_single.png" alt="" />
                       <div class="shotTypeLabel">Single</div>
@@ -2147,7 +2202,7 @@
                     </button>
                     <button type="button" class="shotTypeOption shotTypeInlineOption locked" data-shot="pierce" data-locked="true">
                       <div class="shotTypeCost costTag">600</div>
-                      <img class="shotTypeImage" src="images/shots/shot_lookup.png" alt="" />
+                      <img class="shotTypeImage" src="images/shots/shot_bola.png" alt="" />
                       <div class="shotTypeLabel">Bola</div>
                       <div class="shotTypeDesc">Piercing shots for about 12 seconds.</div>
                     </button>
@@ -2169,10 +2224,12 @@
                       <div class="shotTypeLabel">Missile</div>
                       <div class="shotTypeDesc">Type the correct answer to launch a seeking missile.</div>
                     </button>
+                    </div>
                   </div>
                 </div>
               </div>
               </div>
+              <div class="shipInfoColumn">
               <div class="shipDetails" aria-live="polite">
                 <div class="shipDetailsHeader">
                   <span class="shipDetailsName" id="shipDetailsName">Crimson MK-7</span>
@@ -2208,24 +2265,7 @@
                 <div class="shipDetailsBody" id="shotDetailsBody">
                   Reliable baseline projectile with balanced speed and precision.
                 </div>
-                <div class="shipDetailsStats">
-                  <div class="shipDetailsStat">
-                    <span>Impact</span>
-                    <span id="shotStatImpact">Balanced</span>
-                  </div>
-                  <div class="shipDetailsStat">
-                    <span>Pattern</span>
-                    <span id="shotStatPattern">Single Round</span>
-                  </div>
-                  <div class="shipDetailsStat">
-                    <span>Window</span>
-                    <span id="shotStatWindow">Instant</span>
-                  </div>
-                  <div class="shipDetailsStat">
-                    <span>Use Case</span>
-                    <span id="shotStatUseCase">All-Purpose</span>
-                  </div>
-                </div>
+              </div>
               </div>
               </div>
             </div>
@@ -2318,7 +2358,7 @@
           </button>
           <button type="button" class="shotTypeOption locked" data-shot="pierce" data-locked="true">
             <div class="shotTypeCost costTag">600</div>
-            <img class="shotTypeImage" src="images/shots/shot_lookup.png" alt="" />
+            <img class="shotTypeImage" src="images/shots/shot_bola.png" alt="" />
             <div class="shotTypeLabel">Bola</div>
             <div class="shotTypeDesc">Piercing shots for about 12 seconds.</div>
           </button>
@@ -2373,10 +2413,10 @@
                 <b id="purchaseCost">0</b>
               </div>
             </div>
-            <div class="row">
-              <button id="btnPurchaseConfirm" class="btn btnConfirm" type="button">Confirm</button>
-              <button id="btnPurchaseCancel" class="btn" type="button">Cancel</button>
-            </div>
+          </div>
+          <div class="purchaseActions">
+            <button id="btnPurchaseConfirm" class="btn btnConfirm" type="button">Confirm</button>
+            <button id="btnPurchaseCancel" class="btn" type="button">Cancel</button>
           </div>
         </div>
       </div>
@@ -3385,29 +3425,29 @@
     ];
 
     var homePowerupCatalogOffense = [
-      { id: "missile", label: "Missile Shot", icon: "images/shots/shot_missile.png", desc: "Type the correct answer to launch a seeking missile." },
-      { id: "laser", label: "Laser Burst", icon: "images/shots/shot_laser.png", desc: "High-speed laser shots for about 12 seconds." },
-      { id: "fire", label: "Fireball", icon: "images/shots/shot_fire.png", desc: "Fireball shots for about 12 seconds." },
-      { id: "ice", label: "Ice Shards", icon: "images/shots/shot_ice.png", desc: "Ice shots for about 12 seconds." },
-      { id: "electric", label: "Electric Bolts", icon: "images/shots/shot_electric.png", desc: "Electric bolts for about 12 seconds." },
-      { id: "pierce", label: "Bola Shot", icon: "images/shots/shot_lookup.png", desc: "Piercing shots for about 12 seconds." },
-      { id: "plasma", label: "Plasma Orb", icon: "images/shots/shot_plasma.png", desc: "Plasma shots for about 12 seconds." },
-      { id: "rail", label: "Rail Beam", icon: "images/shots/shot_rail.png", desc: "Rail beam shots for about 12 seconds." }
+      { id: "missile", label: "Missile Shot", icon: "images/shots/shot_missile.png", desc: "Type the correct answer to launch a seeking missile.", unlockType: "shot" },
+      { id: "laser", label: "Laser Burst", icon: "images/shots/shot_laser.png", desc: "High-speed laser shots for about 12 seconds.", unlockType: "shot", defaultUnlocked: true },
+      { id: "fire", label: "Fireball", icon: "images/shots/shot_fire.png", desc: "Fireball shots for about 12 seconds.", unlockType: "shot" },
+      { id: "ice", label: "Ice Shards", icon: "images/shots/shot_ice.png", desc: "Ice shots for about 12 seconds.", unlockType: "shot" },
+      { id: "electric", label: "Electric Bolts", icon: "images/shots/shot_electric.png", desc: "Electric bolts for about 12 seconds.", unlockType: "shot" },
+      { id: "pierce", label: "Bola Shot", icon: "images/shots/shot_bola.png", desc: "Piercing shots for about 12 seconds.", unlockType: "shot" },
+      { id: "plasma", label: "Plasma Orb", icon: "images/shots/shot_plasma.png", desc: "Plasma shots for about 12 seconds.", unlockType: "shot" },
+      { id: "rail", label: "Rail Beam", icon: "images/shots/shot_rail.png", desc: "Rail beam shots for about 12 seconds.", unlockType: "shot" }
     ];
     var homeShipCatalog = [
-      { id: "classic", label: "Scarlet Classic", icon: "images/ships/Scarlet%20Classic.png", desc: "Retro heavy fighter with stable handling." },
-      { id: "spire", label: "Verdant Spire", icon: "images/ships/Verdant%20Spire.png", desc: "Fast scout with flare support and single-center exhaust." },
-      { id: "am2", label: "AM3 Scout", icon: "images/ships/AM3%20Scout.png", desc: "High mobility frame with teleport spin capability." },
-      { id: "mk7", label: "Crimson MK-7", icon: "images/ships/Crimson%20MK-7.png", desc: "Balanced interceptor with broad wing profile." },
-      { id: "fizard", label: "Aurora Dart", icon: "images/ships/Aurora%20Dart.png", desc: "Sleek dart frame tuned for precise movement." },
-      { id: "ember", label: "Ruby Strike", icon: "images/ships/Ruby%20Strike.png", desc: "Neon striker with aggressive profile." },
-      { id: "azure", label: "Azure Lancer", icon: "images/ships/Azure%20Lancer.png", desc: "Aero spear frame with steady control." },
-      { id: "bu2x", label: "BU2X", icon: "images/ships/BU2X.png", desc: "Experimental frame awaiting unlock clearance." },
-      { id: "mantas", label: "Mantas Arc-5", icon: "images/ships/Mantas%20-%20Arc%205.png", desc: "Advanced sweep-frame built for high-speed slalom." },
-      { id: "cyan", label: "Cyan Vector 7", icon: "images/ships/Cyan%20Vector%207.png", desc: "High-precision vector craft with balanced handling." },
-      { id: "veloz", label: "Veloz Mas", icon: "images/ships/Veloz%20Mas.png", desc: "Aggressive chase frame tuned for offensive runs." },
-      { id: "verde9", label: "VER-DE-9", icon: "images/ships/VER-DE-9.png", desc: "Emerald vanguard frame with reinforced lanes and steady recoil control." },
-      { id: "whiteflame8", label: "White Flame 8", icon: "images/ships/White%20Flame%208.png", desc: "Lumen spear chassis with a bright exhaust signature and clean lines." }
+      { id: "classic", label: "Scarlet Classic", icon: "images/ships/Scarlet%20Classic.png", desc: "Retro heavy fighter with stable handling.", unlockType: "ship", defaultUnlocked: true },
+      { id: "spire", label: "Verdant Spire", icon: "images/ships/Verdant%20Spire.png", desc: "Fast scout with flare support and single-center exhaust.", unlockType: "ship", defaultUnlocked: true },
+      { id: "am2", label: "AM3 Scout", icon: "images/ships/AM3%20Scout.png", desc: "High mobility frame with teleport spin capability.", unlockType: "ship", defaultUnlocked: true },
+      { id: "mk7", label: "Crimson MK-7", icon: "images/ships/Crimson%20MK-7.png", desc: "Balanced interceptor with broad wing profile.", unlockType: "ship" },
+      { id: "fizard", label: "Aurora Dart", icon: "images/ships/Aurora%20Dart.png", desc: "Sleek dart frame tuned for precise movement.", unlockType: "ship" },
+      { id: "ember", label: "Ruby Strike", icon: "images/ships/Ruby%20Strike.png", desc: "Neon striker with aggressive profile.", unlockType: "ship" },
+      { id: "azure", label: "Azure Lancer", icon: "images/ships/Azure%20Lancer.png", desc: "Aero spear frame with steady control.", unlockType: "ship" },
+      { id: "bu2x", label: "BU2X", icon: "images/ships/BU2X.png", desc: "Experimental frame awaiting unlock clearance.", unlockType: "ship" },
+      { id: "mantas", label: "Mantas Arc-5", icon: "images/ships/Mantas%20-%20Arc%205.png", desc: "Advanced sweep-frame built for high-speed slalom.", unlockType: "ship" },
+      { id: "cyan", label: "Cyan Vector 7", icon: "images/ships/Cyan%20Vector%207.png", desc: "High-precision vector craft with balanced handling.", unlockType: "ship" },
+      { id: "veloz", label: "Veloz Mas", icon: "images/ships/Veloz%20Mas.png", desc: "Aggressive chase frame tuned for offensive runs.", unlockType: "ship" },
+      { id: "verde9", label: "VER-DE-9", icon: "images/ships/VER-DE-9.png", desc: "Emerald vanguard frame with reinforced lanes and steady recoil control.", unlockType: "ship" },
+      { id: "whiteflame8", label: "White Flame 8", icon: "images/ships/White%20Flame%208.png", desc: "Lumen spear chassis with a bright exhaust signature and clean lines.", unlockType: "ship" }
     ];
 
     var homeSfxCatalog = [
@@ -3628,10 +3668,32 @@
       });
     }
 
+    function loadUnlockListFromStorageHome(key){
+      try{
+        var raw = localStorage.getItem(key);
+        if(raw){
+          var parsed = JSON.parse(raw);
+          if(Array.isArray(parsed)) return parsed;
+        }
+      }catch(e){}
+      return [];
+    }
+
+    function isCatalogItemLockedHome(item, unlockMap){
+      if(!item || !item.unlockType) return false;
+      if(item.defaultUnlocked) return false;
+      var list = unlockMap[item.unlockType] || [];
+      return list.indexOf(item.id) === -1;
+    }
+
     function renderCatalogListHome(listEl, items, filter){
       if(!listEl) return;
       listEl.innerHTML = "";
       var list = items || [];
+      var unlockMap = {
+        ship: loadUnlockListFromStorageHome("mentaris.unlocks.ships"),
+        shot: loadUnlockListFromStorageHome("mentaris.unlocks.shots")
+      };
       if(filter) list = list.filter(filter);
       if(!list.length){
         var empty = document.createElement("li");
@@ -3642,8 +3704,10 @@
       }
       for(var i=0; i<list.length; i++){
         var item = list[i];
+        var itemLocked = isCatalogItemLockedHome(item, unlockMap);
         var li = document.createElement("li");
         li.className = "catalogItem catalogIconOnly";
+        if(itemLocked) li.classList.add("isLocked");
         li.setAttribute("role", "button");
         li.tabIndex = 0;
 
@@ -3672,6 +3736,150 @@
         })(item, li);
 
         li.appendChild(icon);
+        if(itemLocked){
+          var lockTag = document.createElement("div");
+          lockTag.className = "catalogLockTag";
+          lockTag.textContent = "LOCKED";
+          li.appendChild(lockTag);
+        }
+        listEl.appendChild(li);
+      }
+    }
+
+    function renderSfxCatalogListHome(listEl, items, filter){
+      if(!listEl) return;
+      listEl.innerHTML = "";
+      var list = items || [];
+      if(filter) list = list.filter(filter);
+      if(!list.length){
+        var empty = document.createElement("li");
+        empty.className = "catalogEmpty";
+        empty.textContent = "No audio in this category yet.";
+        listEl.appendChild(empty);
+        return;
+      }
+      for(var i=0; i<list.length; i++){
+        var item = list[i];
+        var li = document.createElement("li");
+        li.className = "catalogItem catalogSfxRow";
+
+        var icon = document.createElement("div");
+        icon.className = "catalogIcon";
+        if(item.icon){
+          var img = document.createElement("img");
+          img.src = item.icon;
+          img.alt = item.label + " icon";
+          icon.appendChild(img);
+        }else{
+          var missing = document.createElement("div");
+          missing.className = "catalogMissing";
+          missing.textContent = item.badge || "SFX";
+          icon.appendChild(missing);
+        }
+
+        var text = document.createElement("div");
+        text.className = "catalogText";
+        var title = document.createElement("div");
+        title.className = "catalogTitle";
+        title.textContent = item.label || "Audio";
+        if(item.badge){
+          var tag = document.createElement("span");
+          tag.className = "catalogTag";
+          tag.textContent = String(item.badge);
+          title.appendChild(tag);
+        }
+        text.appendChild(title);
+        if(item.desc){
+          var desc = document.createElement("div");
+          desc.className = "catalogDesc";
+          desc.textContent = item.desc;
+          text.appendChild(desc);
+        }
+        if(item.when){
+          var when = document.createElement("div");
+          when.className = "catalogWhen";
+          when.textContent = "Plays: " + item.when;
+          text.appendChild(when);
+        }
+        if(item.src){
+          var meta = document.createElement("div");
+          meta.className = "catalogMeta";
+          meta.textContent = "File: " + item.src;
+          text.appendChild(meta);
+        }
+
+        var controls = document.createElement("div");
+        controls.className = "catalogControls";
+        var playBtn = document.createElement("button");
+        playBtn.type = "button";
+        playBtn.className = "btn catalogControlBtn";
+        playBtn.textContent = "\u25B6";
+        playBtn.title = "Play";
+        playBtn.setAttribute("aria-label", "Play");
+        var stopBtn = document.createElement("button");
+        stopBtn.type = "button";
+        stopBtn.className = "btn catalogControlBtn";
+        stopBtn.textContent = "\u25A0";
+        stopBtn.title = "Stop";
+        stopBtn.setAttribute("aria-label", "Stop");
+        var duration = document.createElement("span");
+        duration.className = "catalogDuration";
+        duration.textContent = "--:--";
+        controls.appendChild(playBtn);
+        controls.appendChild(stopBtn);
+        controls.appendChild(duration);
+
+        (function(itemRef, durationEl){
+          function ensurePlayer(){
+            if(!itemRef.src) return null;
+            if(!homePreviewPlayers[itemRef.id]){
+              var audio = new Audio();
+              audio.preload = "metadata";
+              audio.src = itemRef.src;
+              homePreviewPlayers[itemRef.id] = audio;
+            }
+            var audioRef = homePreviewPlayers[itemRef.id];
+            function syncDuration(){
+              if(isFinite(audioRef.duration) && audioRef.duration > 0){
+                durationEl.textContent = formatDuration(audioRef.duration);
+              }
+            }
+            audioRef.addEventListener("loadedmetadata", syncDuration);
+            audioRef.addEventListener("durationchange", syncDuration);
+            try{ audioRef.load(); }catch(e){}
+            syncDuration();
+            return audioRef;
+          }
+          var preload = ensurePlayer();
+          if(preload && isFinite(preload.duration) && preload.duration > 0){
+            durationEl.textContent = formatDuration(preload.duration);
+          }
+          playBtn.addEventListener("click", function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            var audio = ensurePlayer();
+            if(!audio) return;
+            if(activeHomePreview && activeHomePreview !== itemRef.id && homePreviewPlayers[activeHomePreview]){
+              stopPreviewAudioHome(homePreviewPlayers[activeHomePreview]);
+            }
+            audio.volume = getPreviewVolumeHome() * getPreviewItemVolumeHome(itemRef.id);
+            audio.currentTime = 0;
+            audio.play().then(function(){
+              activeHomePreview = itemRef.id;
+            }).catch(function(){});
+          });
+          stopBtn.addEventListener("click", function(e){
+            e.preventDefault();
+            e.stopPropagation();
+            var audio = homePreviewPlayers[itemRef.id];
+            if(audio) stopPreviewAudioHome(audio);
+            if(activeHomePreview === itemRef.id) activeHomePreview = null;
+          });
+        })(item, duration);
+
+        li.appendChild(icon);
+        li.appendChild(text);
+        li.appendChild(controls);
         listEl.appendChild(li);
       }
     }
@@ -3683,7 +3891,7 @@
       renderCatalogListHome(powerupsDefenseListHome, homePowerupCatalogDefense);
       renderCatalogListHome(powerupsOffenseListHome, homePowerupCatalogOffense);
       renderCatalogListHome(shipsCatalogListHome, homeShipCatalog);
-      renderCatalogListHome(sfxListHome, homeSfxCatalog, function(item){
+      renderSfxCatalogListHome(sfxListHome, homeSfxCatalog, function(item){
         return activeSfxCategoryHome === "all" || item.category === activeSfxCategoryHome;
       });
       initCatalogFiltersHome();
@@ -4241,19 +4449,176 @@
       closePurchaseOverlay();
       refreshBuyButtons();
     }
+    function getCarouselMetrics(container, options, cardVarName, gapVarName, fallbackCard, fallbackGap){
+      var styles = getComputedStyle(container);
+      var cardW = 0;
+      if(options && options.length){
+        for(var i=0; i<options.length; i++){
+          var rect = options[i].getBoundingClientRect();
+          if(rect && rect.width > 0){
+            cardW = rect.width;
+            break;
+          }
+        }
+      }
+      if(!cardW){
+        cardW = parseFloat(styles.getPropertyValue(cardVarName)) || fallbackCard || 180;
+      }
+      var gap = parseFloat(styles.getPropertyValue(gapVarName)) || fallbackGap || 12;
+      return { cardW: cardW, gap: gap };
+    }
+    function getCarouselOffsetForIndex(container, cardWidth, gap, index){
+      var total = cardWidth + gap;
+      var center = (container.clientWidth - cardWidth) / 2;
+      return center - (index * total);
+    }
+    function getNearestCarouselIndex(container, cardWidth, gap, offset, itemCount){
+      if(!itemCount) return 0;
+      var total = cardWidth + gap;
+      var center = (container.clientWidth - cardWidth) / 2;
+      var raw = (center - offset) / total;
+      return Math.max(0, Math.min(itemCount - 1, Math.round(raw)));
+    }
+    function setTrackOffset(track, offset){
+      if(!track) return;
+      track.dataset.offset = String(offset);
+      track.style.transform = "translateX(" + offset + "px)";
+    }
+    function initDragCarousel(config){
+      if(!config || !config.container || !config.track || !config.options || !config.options.length) return null;
+      var container = config.container;
+      var track = config.track;
+      var options = config.options;
+      var getSelected = config.getSelected;
+      var setSelected = config.setSelected;
+      var getValue = config.getValue || function(option){ return option.getAttribute("data-value"); };
+      var isLocked = config.isLocked || function(){ return false; };
+      var onTapLocked = config.onTapLocked || function(){};
+      var cardVarName = config.cardVarName || "--ship-card";
+      var gapVarName = config.gapVarName || "--ship-gap";
+      var fallbackCard = config.fallbackCard || 180;
+      var fallbackGap = config.fallbackGap || 12;
+      var state = {
+        pointerId: null,
+        startX: 0,
+        dragged: false,
+        baseOffset: 0,
+        movedX: 0,
+        suppressUntil: 0
+      };
+      var dragThreshold = 6;
+      var suppressMs = 220;
+
+      options.forEach(function(option){
+        option.setAttribute("draggable", "false");
+        var imgs = option.querySelectorAll("img");
+        imgs.forEach(function(img){
+          img.setAttribute("draggable", "false");
+          img.addEventListener("dragstart", function(e){ e.preventDefault(); });
+        });
+      });
+
+      function getSelectedIndex(){
+        var selected = getSelected ? getSelected() : null;
+        var index = options.findIndex(function(option){
+          return getValue(option) === selected;
+        });
+        return index >= 0 ? index : 0;
+      }
+
+      function beginPointer(e){
+        if(state.pointerId !== null) return;
+        if(e.pointerType === "mouse" && e.button !== 0) return;
+        if(container.clientWidth <= 0) return;
+        state.pointerId = e.pointerId;
+        state.startX = e.clientX;
+        state.dragged = false;
+        state.movedX = 0;
+        var index = getSelectedIndex();
+        var metrics = getCarouselMetrics(container, options, cardVarName, gapVarName, fallbackCard, fallbackGap);
+        state.baseOffset = getCarouselOffsetForIndex(container, metrics.cardW, metrics.gap, index);
+        track.style.transition = "none";
+        setTrackOffset(track, state.baseOffset);
+        container.classList.add("is-dragging");
+        if(container.setPointerCapture){
+          try{ container.setPointerCapture(e.pointerId); }catch(err){}
+        }
+      }
+
+      function movePointer(e){
+        if(state.pointerId !== e.pointerId) return;
+        var delta = e.clientX - state.startX;
+        state.movedX = delta;
+        if(!state.dragged && Math.abs(delta) > dragThreshold){
+          state.dragged = true;
+        }
+        if(state.dragged){
+          setTrackOffset(track, state.baseOffset + delta);
+          if(e.cancelable) e.preventDefault();
+        }
+      }
+
+      function endPointer(e){
+        if(state.pointerId !== e.pointerId) return;
+        if(container.releasePointerCapture){
+          try{ container.releasePointerCapture(e.pointerId); }catch(err){}
+        }
+        state.pointerId = null;
+        container.classList.remove("is-dragging");
+        track.style.transition = "";
+        var metrics = getCarouselMetrics(container, options, cardVarName, gapVarName, fallbackCard, fallbackGap);
+        var currentOffset = parseFloat(track.dataset.offset || "0");
+        var nearestIndex = getNearestCarouselIndex(container, metrics.cardW, metrics.gap, currentOffset, options.length);
+        var targetOption = options[nearestIndex] || options[0];
+        var value = getValue(targetOption);
+        if(state.dragged){
+          if(isLocked(targetOption, value)){
+            onTapLocked(value, targetOption);
+          }else if(setSelected){
+            setSelected(value, targetOption);
+          }
+          state.suppressUntil = Date.now() + suppressMs;
+        }else{
+          var snapIndex = getSelectedIndex();
+          setTrackOffset(track, getCarouselOffsetForIndex(container, metrics.cardW, metrics.gap, snapIndex));
+        }
+      }
+
+      container.addEventListener("pointerdown", beginPointer);
+      container.addEventListener("pointermove", movePointer);
+      container.addEventListener("pointerup", endPointer);
+      container.addEventListener("pointercancel", endPointer);
+      container.addEventListener("pointerleave", function(e){
+        if(state.pointerId === e.pointerId){
+          endPointer(e);
+        }
+      });
+
+      return {
+        shouldSuppressClick: function(){
+          return Date.now() < state.suppressUntil;
+        },
+        reset: function(){
+          state.pointerId = null;
+          state.dragged = false;
+          state.movedX = 0;
+          container.classList.remove("is-dragging");
+          track.style.transition = "";
+          var metrics = getCarouselMetrics(container, options, cardVarName, gapVarName, fallbackCard, fallbackGap);
+          var idx = getSelectedIndex();
+          setTrackOffset(track, getCarouselOffsetForIndex(container, metrics.cardW, metrics.gap, idx));
+        }
+      };
+    }
     function updateShipCarousel(value){
       if(!shipTrack) return;
       var container = shipTrack.parentElement;
       if(!container) return;
       var index = shipOptions.findIndex(function(option){ return option.dataset.ship === value; });
       if(index < 0) index = 0;
-      var styles = getComputedStyle(container);
-      var cardW = parseFloat(styles.getPropertyValue("--ship-card")) || 180;
-      var gap = parseFloat(styles.getPropertyValue("--ship-gap")) || 12;
-      var total = cardW + gap;
-      var center = (container.clientWidth - cardW) / 2;
-      var offset = center - (index * total);
-      shipTrack.style.transform = "translateX(" + offset + "px)";
+      var metrics = getCarouselMetrics(container, shipOptions, "--ship-card", "--ship-gap", 180, 12);
+      var offset = getCarouselOffsetForIndex(container, metrics.cardW, metrics.gap, index);
+      setTrackOffset(shipTrack, offset);
     }
 
     function syncShipSelection(value){
@@ -4288,6 +4653,9 @@
       return !!(opt && opt.getAttribute("data-locked") === "true");
     }
     var pendingShotType = null;
+    var shipCarouselDrag = null;
+    var shotInlineCarouselDrag = null;
+    var shotOverlayCarouselDrag = null;
     function setShotType(value, persist){
       var selected = shotTypeLabels[value] ? value : "single";
       if(isShotTypeLocked(selected)) selected = "single";
@@ -4327,13 +4695,12 @@
         return option.getAttribute("data-shot") === selected;
       });
       if(index < 0) index = 0;
-      var styles = getComputedStyle(carousel);
-      var cardW = parseFloat(styles.getPropertyValue("--shot-card")) || 300;
-      var gap = parseFloat(styles.getPropertyValue("--shot-gap")) || 16;
-      var total = cardW + gap;
-      var center = (carousel.clientWidth - cardW) / 2;
-      var offset = center - (index * total);
-      track.style.transform = "translateX(" + offset + "px)";
+      if(carousel.clientWidth <= 0){
+        return;
+      }
+      var metrics = getCarouselMetrics(carousel, options, "--shot-card", "--shot-gap", 200, 12);
+      var offset = getCarouselOffsetForIndex(carousel, metrics.cardW, metrics.gap, index);
+      setTrackOffset(track, offset);
     }
     function updateShotTypeCarousel(selected){
       updateShotTypeCarouselFor(shotTypeCarousel, shotTypeTrack, shotTypeOptions, selected);
@@ -4343,6 +4710,7 @@
       if(shotTypeOverlay) shotTypeOverlay.classList.add("show");
       requestAnimationFrame(function(){
         setShotTypePreview((shotTypeInput && shotTypeInput.value) || "single");
+        if(shotOverlayCarouselDrag && shotOverlayCarouselDrag.reset) shotOverlayCarouselDrag.reset();
       });
     }
     function closeShotTypeOverlay(){
@@ -4377,6 +4745,7 @@
     });
     shipOptions.forEach(function(option){
       option.addEventListener("click", function(){
+        if(shipCarouselDrag && shipCarouselDrag.shouldSuppressClick && shipCarouselDrag.shouldSuppressClick()) return;
         syncShipSelection(option.dataset.ship);
       });
     });
@@ -4430,6 +4799,7 @@
     }
     shotTypeOptions.forEach(function(option){
       option.addEventListener("click", function(){
+        if(shotOverlayCarouselDrag && shotOverlayCarouselDrag.shouldSuppressClick && shotOverlayCarouselDrag.shouldSuppressClick()) return;
         var choice = option.getAttribute("data-shot") || "single";
         if(option.getAttribute("data-locked") === "true"){
           playMenuBeep();
@@ -4442,6 +4812,7 @@
     });
     shotTypeInlineOptions.forEach(function(option){
       option.addEventListener("click", function(){
+        if(shotInlineCarouselDrag && shotInlineCarouselDrag.shouldSuppressClick && shotInlineCarouselDrag.shouldSuppressClick()) return;
         var choice = option.getAttribute("data-shot") || "single";
         if(option.getAttribute("data-locked") === "true"){
           playMenuBeep();
@@ -4451,6 +4822,81 @@
         playMenuBeep();
         setShotType(choice, true);
       });
+    });
+    shipCarouselDrag = initDragCarousel({
+      container: shipTrack ? shipTrack.parentElement : null,
+      track: shipTrack,
+      options: shipOptions,
+      cardVarName: "--ship-card",
+      gapVarName: "--ship-gap",
+      fallbackCard: 200,
+      fallbackGap: 12,
+      getValue: function(option){ return option.dataset.ship; },
+      getSelected: function(){
+        var selected = document.querySelector('input[name="ship"]:checked');
+        return selected ? selected.value : "mk7";
+      },
+      setSelected: function(value){
+        syncShipSelection(value);
+      }
+    });
+    shotInlineCarouselDrag = initDragCarousel({
+      container: shotTypeInlineCarousel,
+      track: shotTypeInlineTrack,
+      options: shotTypeInlineOptions,
+      cardVarName: "--shot-card",
+      gapVarName: "--shot-gap",
+      fallbackCard: 200,
+      fallbackGap: 12,
+      getValue: function(option){ return option.getAttribute("data-shot") || "single"; },
+      getSelected: function(){
+        return (shotTypeInput && shotTypeInput.value) || "single";
+      },
+      isLocked: function(option){
+        return option && option.getAttribute("data-locked") === "true";
+      },
+      onTapLocked: function(value){
+        playMenuBeep();
+        focusShotType(value);
+      },
+      setSelected: function(value, option){
+        if(option && option.getAttribute("data-locked") === "true"){
+          playMenuBeep();
+          focusShotType(value);
+          return;
+        }
+        playMenuBeep();
+        setShotType(value, true);
+      }
+    });
+    shotOverlayCarouselDrag = initDragCarousel({
+      container: shotTypeCarousel,
+      track: shotTypeTrack,
+      options: shotTypeOptions,
+      cardVarName: "--shot-card",
+      gapVarName: "--shot-gap",
+      fallbackCard: 200,
+      fallbackGap: 12,
+      getValue: function(option){ return option.getAttribute("data-shot") || "single"; },
+      getSelected: function(){
+        return pendingShotType || ((shotTypeInput && shotTypeInput.value) || "single");
+      },
+      isLocked: function(option){
+        return option && option.getAttribute("data-locked") === "true";
+      },
+      onTapLocked: function(value){
+        playMenuBeep();
+        focusShotType(value);
+      },
+      setSelected: function(value, option){
+        if(option && option.getAttribute("data-locked") === "true"){
+          playMenuBeep();
+          focusShotType(value);
+          return;
+        }
+        playMenuBeep();
+        setShotTypePreview(value);
+      }
     });
     if(shipStatSpecialCard){
       shipStatSpecialCard.addEventListener("mouseenter", function(){
@@ -4463,6 +4909,9 @@
       }, { passive: true });
     }
     window.addEventListener("resize", function(){
+      if(shipCarouselDrag && shipCarouselDrag.reset) shipCarouselDrag.reset();
+      if(shotInlineCarouselDrag && shotInlineCarouselDrag.reset) shotInlineCarouselDrag.reset();
+      if(shotOverlayCarouselDrag && shotOverlayCarouselDrag.reset) shotOverlayCarouselDrag.reset();
       var selected = (document.querySelector('input[name=\"ship\"]:checked') || {}).value || "mk7";
       updateShipCarousel(selected);
       updateShotTypeCarousel((shotTypeInput && shotTypeInput.value) || "single");

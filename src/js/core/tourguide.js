@@ -10,21 +10,26 @@ export function createTourGuide(options){
   var onChoice = typeof opts.onChoice === "function" ? opts.onChoice : null;
   var steps = [
     { id: "intro", title: "Welcome aboard, pilot", body: "Welcome to the Arith Belt. Let's begin your training.", autoAdvanceMs: 2000, showProgress: false },
-    { id: "move_arrows", title: "Step 1: Flight Controls (Arrows)", body: "Use the Up, Down, Left, and Right arrow keys to guide the ship through dots 1-4 in order.", event: "move_arrows", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Formation clean, cadet.", praiseBody: "Arrow control confirmed. Smooth tracking." },
-    { id: "move_wasd", title: "Step 2: Flight Controls (WASD)", body: "Now use W, A, S, and D to guide the ship through the same dots again.", event: "move_wasd", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "WASD verified.", praiseBody: "Sharp handling. You fly like you mean it." },
-    { id: "mousepad_hybrid", title: "Step 3: Mousepad", body: "Press B to enable mousepad. Fly to dots 1-4 in order.", event: "mousepad_hybrid", hideDuringAction: true, actionPauseMs: 700 },
-    { id: "movement_preference", title: "Step 4: Pick Movement", body: "Choose your preferred movement controls for this training run.", choices: [{ id: "arrows", label: "Arrow Keys" }, { id: "wasd", label: "WASD" }, { id: "mouse", label: "Mouse Pilot" }] },
-    { id: "fire_once", title: "Step 5: Fire Once", body: "Press Space (or click) to fire a single shot.", event: "fire", count: 1 },
-    { id: "fire_again", title: "Step 6: Fire Again", body: "Press Space again to fire another shot.", event: "fire", count: 1 },
-    { id: "correct", title: "Step 7: Correct Hit", body: "Hit the asteroid with the correct answer.", event: "correct" },
-    { id: "minerals", title: "Step 8: Minerals", body: "Collect all minerals. Your mineral count is at the top right.", event: "minerals", confirmLabel: "Understood" },
-    { id: "powerup", title: "Step 9: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
-    { id: "secondary_slots", title: "Step 10: Aid Slots", body: "You have 3 aid slots on the top-right. Press 1, 2, or 3 (or numpad 1-3) to select a slot.", event: "secondary_slot", count: 1 },
-    { id: "secondary_aid", title: "Step 11: Aid Weapon", body: "Press E to trigger your aid weapon when the asteroids drop.", event: "secondary" },
-    { id: "correct_after_powerup", title: "Step 12: Correct Hit", body: "Now shoot the correct answer asteroid.", event: "correct" },
-    { id: "dash", title: "Step 13: Dash", body: "Press Shift to dash through danger.", event: "dash" },
-    { id: "ability", title: "Step 14: Ability", body: "Press Q to use your ship ability.", event: "ability" },
-    { id: "alien", title: "Step 15: Alien Contact", body: "Alien contacts incoming, cadet. They will cut you off and block mineral recovery. Take it down.", event: "alien" },
+    { id: "platform_choice", title: "Step 1: Platform", body: "Are you flying on a tablet or a computer/laptop?", choices: [{ id: "tablet", label: "Tablet" }, { id: "desktop", label: "Computer / Laptop" }] },
+    { id: "move_arrows", title: "Step 2: Flight Controls (Arrows)", body: "Use the Up, Down, Left, and Right arrow keys to guide the ship through dots 1-4 in order.", event: "move_arrows", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Formation clean, cadet.", praiseBody: "Arrow control confirmed. Smooth tracking." },
+    { id: "move_wasd", title: "Step 3: Flight Controls (WASD)", body: "Now use W, A, S, and D to guide the ship through the same dots again.", event: "move_wasd", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "WASD verified.", praiseBody: "Sharp handling. You fly like you mean it." },
+    { id: "mousepad_hybrid", title: "Step 4: Mousepad", body: "Press B to enable mousepad. Fly to dots 1-4 in order.", event: "mousepad_hybrid", hideDuringAction: true, actionPauseMs: 700 },
+    { id: "movement_preference", title: "Step 5: Pick Movement", body: "Choose your preferred movement controls for this training run.", choices: [{ id: "arrows", label: "Arrow Keys" }, { id: "wasd", label: "WASD" }, { id: "mouse", label: "Mouse Pilot" }] },
+    { id: "tablet_move", title: "Step 2: Touch Movement", body: "Tablet mode engaged. Use the left movement stick to guide the ship through dots 1-4 in order.", event: "move_touch", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Touch control verified.", praiseBody: "Nice glide, cadet." },
+    { id: "fire_once", title: "Step 6: Fire Once", body: "Press Space (or click) to fire a single shot.", event: "fire", count: 1 },
+    { id: "fire_again", title: "Step 7: Fire Again", body: "Press Space again to fire another shot.", event: "fire", count: 1 },
+    { id: "correct", title: "Step 8: Correct Hit", body: "Hit the asteroid with the correct answer.", event: "correct" },
+    { id: "minerals", title: "Step 9: Minerals", body: "Collect all minerals. Your mineral count is at the top right.", event: "minerals", confirmLabel: "Understood" },
+    { id: "powerup", title: "Step 10: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
+    { id: "secondary_slots", title: "Step 11: Aid Slots", body: "Collect EMP and Magnet so all 3 aid slots are loaded.", event: "secondary_slot", count: 1 },
+    { id: "secondary_time", title: "Step 12: Time Dilation", body: "Use Time Dilation first. Press E to slow everything down.", event: "secondary_time" },
+    { id: "secondary_emp", title: "Step 13: EMP Burst", body: "Now use EMP. Press E to clear out non-answer asteroids.", event: "secondary_emp" },
+    { id: "secondary_magnet", title: "Step 14: Magnet Sweep", body: "Next use Magnet. Press E to pull the answer asteroid closer.", event: "secondary_magnet" },
+    { id: "correct_after_magnet", title: "Step 15: Correct Hit", body: "Good. Now shoot the answer asteroid.", event: "correct" },
+    { id: "ability_intro", title: "Step 16: Ship Ability", body: "Each ship has a different special ability. We'll use your side flares to clear a blocked lane.", autoAdvanceMs: 2600 },
+    { id: "ability_clear", title: "Step 17: Clear the Lane", body: "A decoy is blocking your line. Press Q to blast asteroids out of the way with flares.", event: "ability" },
+    { id: "ability_shot", title: "Step 18: Finish the Shot", body: "Lane is open. Shoot the correct answer asteroid.", event: "correct" },
+    { id: "alien", title: "Step 19: Alien Contact", body: "Alien contacts incoming, cadet. They are out to cut you off and disrupt mineral recovery. Take it down.", event: "alien" },
     { id: "portal", title: "Final Step: Portal", body: "Cadet, fly up into the portal. Mission starts on contact.", event: "portal" }
   ];
   var progressTotal = 0;
@@ -262,7 +267,10 @@ export function createTourGuide(options){
   }
 
   function renderStep(step, immediate, index, total, hideProgress){
-    if(onStep) onStep(step.id, step);
+    if(onStep){
+      // Allow caller to cancel this render cycle (used when jumping steps).
+      if(onStep(step.id, step) === false) return;
+    }
     currentStep = step;
     stepProgress = 0;
     stepAccepting = false;
