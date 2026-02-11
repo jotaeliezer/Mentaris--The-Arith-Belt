@@ -475,6 +475,11 @@
       padding:10px 12px;
       background: rgba(8,12,22,.65);
     }
+    .briefingHintActions{
+      margin-top:12px;
+      display:flex;
+      justify-content:flex-end;
+    }
     .briefingFooter{
       display:flex;
       gap:16px;
@@ -888,6 +893,8 @@
       border-radius:18px;
       letter-spacing:1.2px;
       text-transform:uppercase;
+      border-color: rgba(80,220,120,.45);
+      background: rgba(80,220,120,.26);
       opacity:0;
       transform: scale(0.6);
       pointer-events:none;
@@ -2663,9 +2670,7 @@
               <span class="briefingSpinner" aria-hidden="true"></span>
               <span id="briefingStatusText">Initializing launch sequence...</span>
             </div>
-          </div>
-          <button id="btnBriefingSkip" class="btn">Launch</button>
-        </div>
+          </div>        </div>
       <div class="panel" style="margin-top:10px;">
         <div class="briefingShipRow">
           <img class="briefingShipCard" id="briefingShipCard" src="images/ships/Crimson%20MK-7.png" alt="" />
@@ -2675,6 +2680,7 @@
             <p class="monoSmall" id="briefingDifficulty" style="margin:0;">Difficulty: �?"</p>
             <p class="monoSmall" id="briefingOperation" style="margin:0;">Operation: �?"</p>
             <p class="monoSmall" id="briefingSubmode" style="margin:0;">Submode: �?"</p>
+            <p class="monoSmall" id="briefingShotType" style="margin:0;">Shot Type: ?</p>
           </div>
           <img class="briefingBeltCard" id="briefingBeltCard" src="images/backgrounds/background8.png" alt="" />
         </div>
@@ -2693,6 +2699,9 @@
         <div class="briefingHints">
           <div class="briefingHintLabel">Command Directive</div>
           <div class="briefingHintText" id="briefingHintText">—</div>
+          <div class="briefingHintActions">
+            <button id="btnBriefingSkip" class="btn">Launch</button>
+          </div>
         </div>
       </div>
     </div>
@@ -6475,7 +6484,7 @@
       if(briefingShotType){
         var shotKey = String(config.shotType || "single");
         var shotLabel = shotTypeLabels[shotKey] || shotKey;
-        briefingShotType.textContent = shotLabel.toUpperCase();
+        briefingShotType.textContent = "Shot Type: " + shotLabel.toUpperCase();
       }
       if(briefingBelt){
         var beltKey = String(config.belt || selectedBelt || "dusk");
@@ -7007,3 +7016,7 @@
   <script src="js/ship_preview.js?v=2026-01-27-1"></script>
 </body>
 </html>
+
+
+
+
