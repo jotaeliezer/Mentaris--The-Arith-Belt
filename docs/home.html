@@ -1164,6 +1164,10 @@
       box-shadow:0 18px 45px rgba(0,0,0,.4);
       min-height:240px;
     }
+    .shotDetails{
+      margin-top:12px;
+      min-height:220px;
+    }
     .shipDetailsHeader{
       display:flex;
       flex-direction:column;
@@ -2193,6 +2197,33 @@
                   <div class="shipDetailsStat">
                     <span>Thrusters</span>
                     <span id="shipStatThrusters">Dual</span>
+                  </div>
+                </div>
+              </div>
+              <div class="shipDetails shotDetails" aria-live="polite">
+                <div class="shipDetailsHeader">
+                  <span class="shipDetailsName" id="shotDetailsName">Single</span>
+                  <span class="shipDetailsStyle" id="shotDetailsStyle">Standard Blaster</span>
+                </div>
+                <div class="shipDetailsBody" id="shotDetailsBody">
+                  Reliable baseline projectile with balanced speed and precision.
+                </div>
+                <div class="shipDetailsStats">
+                  <div class="shipDetailsStat">
+                    <span>Impact</span>
+                    <span id="shotStatImpact">Balanced</span>
+                  </div>
+                  <div class="shipDetailsStat">
+                    <span>Pattern</span>
+                    <span id="shotStatPattern">Single Round</span>
+                  </div>
+                  <div class="shipDetailsStat">
+                    <span>Window</span>
+                    <span id="shotStatWindow">Instant</span>
+                  </div>
+                  <div class="shipDetailsStat">
+                    <span>Use Case</span>
+                    <span id="shotStatUseCase">All-Purpose</span>
                   </div>
                 </div>
               </div>
@@ -3729,6 +3760,13 @@
     var shipStatWings = document.getElementById("shipStatWings");
     var shipStatGuns = document.getElementById("shipStatGuns");
     var shipStatThrusters = document.getElementById("shipStatThrusters");
+    var shotDetailsName = document.getElementById("shotDetailsName");
+    var shotDetailsStyle = document.getElementById("shotDetailsStyle");
+    var shotDetailsBody = document.getElementById("shotDetailsBody");
+    var shotStatImpact = document.getElementById("shotStatImpact");
+    var shotStatPattern = document.getElementById("shotStatPattern");
+    var shotStatWindow = document.getElementById("shotStatWindow");
+    var shotStatUseCase = document.getElementById("shotStatUseCase");
     var shipStatSpecialCard = document.getElementById("shipStatSpecialCard");
     var shotTypeInput = document.getElementById("shotType");
     var btnShotType = document.getElementById("btnShotType");
@@ -3881,6 +3919,89 @@
         wings: "Swept",
         special: "Shockwave",
         thrusters: "Dual"
+      }
+    };
+    var shotDetailsMap = {
+      single: {
+        name: "Single",
+        style: "Standard Blaster",
+        body: "Reliable baseline projectile with balanced speed and precision.",
+        impact: "Balanced",
+        pattern: "Single Round",
+        window: "Instant",
+        useCase: "All-Purpose"
+      },
+      laser: {
+        name: "Laser",
+        style: "Pulse Beam",
+        body: "Fast beam bursts that travel quickly for precise sniping lanes.",
+        impact: "High",
+        pattern: "Burst Beam",
+        window: "Timed",
+        useCase: "Fast Targets"
+      },
+      fire: {
+        name: "Fire",
+        style: "Thermal Payload",
+        body: "Heavy fireballs tuned for sustained pressure during its active window.",
+        impact: "Heavy",
+        pattern: "Explosive Bolt",
+        window: "~12s",
+        useCase: "Wave Clearing"
+      },
+      ice: {
+        name: "Ice",
+        style: "Cryo Shards",
+        body: "Shard volleys with stable travel and clean lane control during uptime.",
+        impact: "Medium",
+        pattern: "Shard Spread",
+        window: "~12s",
+        useCase: "Control"
+      },
+      electric: {
+        name: "Electric",
+        style: "Arc Bolts",
+        body: "High-voltage shots that punch through traffic with sharp visual reads.",
+        impact: "High",
+        pattern: "Arc Bolt",
+        window: "~12s",
+        useCase: "Burst Damage"
+      },
+      pierce: {
+        name: "Bola",
+        style: "Piercing Core",
+        body: "Piercing rounds designed to cut straight through dense asteroid lines.",
+        impact: "High",
+        pattern: "Piercing Shot",
+        window: "~12s",
+        useCase: "Line Penetration"
+      },
+      plasma: {
+        name: "Plasma",
+        style: "Orbital Plasma",
+        body: "Charged plasma orbs with strong visual profile and steady pressure.",
+        impact: "Heavy",
+        pattern: "Plasma Orb",
+        window: "~12s",
+        useCase: "Zone Control"
+      },
+      rail: {
+        name: "Rail",
+        style: "Rail Beam",
+        body: "Long-profile rail beam shots built for precision picks at speed.",
+        impact: "Heavy",
+        pattern: "Linear Beam",
+        window: "~12s",
+        useCase: "Precision"
+      },
+      missile: {
+        name: "Missile",
+        style: "Guided Payload",
+        body: "Answer-typed launch that deploys a guided seeker toward targets.",
+        impact: "Very High",
+        pattern: "Guided Missile",
+        window: "On Trigger",
+        useCase: "Key Eliminations"
       }
     };
     var unlockKeys = {
@@ -4150,6 +4271,16 @@
       if(shipStatThrusters) shipStatThrusters.textContent = details.thrusters;
       updateShipCarousel(value);
     }
+    function syncShotDetails(value){
+      var details = shotDetailsMap[value] || shotDetailsMap.single;
+      if(shotDetailsName) shotDetailsName.textContent = details.name;
+      if(shotDetailsStyle) shotDetailsStyle.textContent = details.style;
+      if(shotDetailsBody) shotDetailsBody.textContent = details.body;
+      if(shotStatImpact) shotStatImpact.textContent = details.impact;
+      if(shotStatPattern) shotStatPattern.textContent = details.pattern;
+      if(shotStatWindow) shotStatWindow.textContent = details.window;
+      if(shotStatUseCase) shotStatUseCase.textContent = details.useCase;
+    }
     function isShotTypeLocked(value){
       var opt = shotTypeAllOptions.find(function(option){
         return option.getAttribute("data-shot") === value;
@@ -4166,6 +4297,7 @@
         option.classList.toggle("selected", option.getAttribute("data-shot") === selected);
       });
       updateShotTypeCarousel(selected);
+      syncShotDetails(selected);
       if(persist){
         saved.shotType = selected;
         persistSessionConfig("asteroidConfig", Object.assign({}, saved, { shotType: selected }));
@@ -4179,6 +4311,7 @@
         option.classList.toggle("selected", option.getAttribute("data-shot") === selected);
       });
       updateShotTypeCarousel(selected);
+      syncShotDetails(selected);
     }
     function focusShotType(value){
       var selected = shotTypeLabels[value] ? value : "single";
@@ -4186,6 +4319,7 @@
         option.classList.toggle("selected", option.getAttribute("data-shot") === selected);
       });
       updateShotTypeCarousel(selected);
+      syncShotDetails(selected);
     }
     function updateShotTypeCarouselFor(carousel, track, options, selected){
       if(!carousel || !track || !options || !options.length) return;

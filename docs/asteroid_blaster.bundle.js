@@ -141964,6 +141964,16 @@
     }
     return false;
   }
+  function countActiveSecondarySlots(pilot) {
+    var slots = getSecondarySlotsForPilot(pilot);
+    var total = 0;
+    for (var i = 0; i < slots.length; i++) {
+      var s = slots[i];
+      if (s && s.type && s.count > 0)
+        total += 1;
+    }
+    return total;
+  }
   function syncSelectedSecondary() {
     var slots = getSecondarySlots();
     var idx = clamp(player.secondarySlotIndex | 0, 0, slots.length - 1);
@@ -142200,6 +142210,9 @@
     if (!touchControlsEnabled) {
       resetTouchInputState();
     }
+    if (sandboxGamepadButton) {
+      sandboxGamepadButton.classList.toggle("active", touchControlsEnabled);
+    }
   }
   function loadTouchControlsEnabled() {
     var stored = null;
@@ -142392,6 +142405,7 @@
   var tutorialMineralsPending = false;
   var tutorialMineralsRemaining = 0;
   var tutorialExtraPowerupsSpawned = false;
+  var tutorialFreezeMousepadRestore = false;
   var tutorialMovementPreference = null;
   var tutorialPortalActive = false;
   var tutorialPortalX = 0;
@@ -142405,6 +142419,7 @@
   var sandboxAlienWaveDuration = 20;
   var sandboxAlienWaveRequired = 2;
   var sandboxAlienWaveButton = null;
+  var sandboxGamepadButton = null;
   var tutorialDots = [];
   var tutorialDotsIndex = 0;
   var tutorialDotsActive = false;
@@ -143617,6 +143632,10 @@
   }
   resetMousepadPadSettings();
   function updateCursorVisibility() {
+    if (tutorialActive && tutorialMineralsFreeze) {
+      document.body.style.cursor = "";
+      return;
+    }
     if (missileInputActive) {
       document.body.style.cursor = "";
       return;
@@ -143680,6 +143699,8 @@
     if (!touchControlsEnabled)
       return false;
     if (!state.running || state.paused || state.over)
+      return false;
+    if (tutorialActive && tutorialMineralsFreeze)
       return false;
     if (missileInputActive || missionBriefShowing || countdownActive || introActive)
       return false;
@@ -143904,6 +143925,10 @@
       pointerDown = false;
       return;
     }
+    if (tutorialActive && tutorialMineralsFreeze) {
+      pointerDown = false;
+      return;
+    }
     if (mousepadActive) {
       fire();
       return;
@@ -143922,6 +143947,8 @@
     if (!pointerDown || !pointerDragEnabled)
       return;
     if (mousepadActive)
+      return;
+    if (tutorialActive && tutorialMineralsFreeze)
       return;
     var dx = e.clientX - lastPointerX;
     var dy = e.clientY - lastPointerY;
@@ -144009,6 +144036,8 @@
     if (mousepadMode === "fps") {
       return;
     }
+    if (tutorialActive && tutorialMineralsFreeze)
+      return;
     if (!state.running || state.paused || state.over)
       return;
     var dx = e.movementX || 0;
@@ -147910,6 +147939,9 @@
     if (tutorialActive && tutorialStepId === "correct" && hitAst && hitAst.label != null) {
       var mineralTarget = getHighestDigit(hitAst.label);
       tutorialMineralsFreeze = true;
+      tutorialFreezeMousepadRestore = !!mousepadActive;
+      if (mousepadActive)
+        setMousepadActive(false);
       tutorialMineralsTarget = mineralTarget;
       tutorialMineralsCollected = 0;
       tutorialMineralsComplete = mineralTarget <= 0;
@@ -147920,6 +147952,7 @@
       state.correctInPlay = false;
       state.correctAsteroidId = 0;
       state.spawnTimer = Math.max(state.spawnTimer || 0, 1.6);
+      updateCursorVisibility();
     }
     if (hitAst && hitAst.label != null) {
       spawnMineralBurst(hitAst.x, hitAst.y, getHighestDigit(hitAst.label));
@@ -149748,6 +149781,11 @@
         }
       }
     }
+    if (tutorialActive && tutorialStepId === "secondary_slots" && tourGuide) {
+      if (countActiveSecondarySlots(player) >= 3) {
+        tourGuide.notify("secondary_slot");
+      }
+    }
     var tNow = performance.now() * 1e-3;
     for (var ai = asteroids.length - 1; ai >= 0; ai--) {
       var a = asteroids[ai];
@@ -150836,10 +150874,6 @@
       ctx.fillStyle = "rgba(0,0,0,.35)";
       ctx.fillRect(0, 0, w, h);
     }
-    if (tutorialActive && tutorialMineralsFreeze) {
-      ctx.fillStyle = "rgba(0,0,0,.42)";
-      ctx.fillRect(0, 0, w, h);
-    }
     updateTimerHud();
     drawEmpWave();
     drawSlowMoWave();
@@ -150877,6 +150911,26 @@
     }
     drawClawPrompt();
     ctx.restore();
+    if (tutorialActive && tutorialMineralsFreeze) {
+      ctx.save();
+      ctx.fillStyle = "rgba(0,0,0,.62)";
+      ctx.fillRect(0, 0, w, h);
+      ctx.translate(cam.x || 0, cam.y || 0);
+      for (var pmi = 0; pmi < powerups.length; pmi++) {
+        var pm = powerups[pmi];
+        if (!pm || pm.type !== "mineral")
+          continue;
+        ctx.save();
+        ctx.globalCompositeOperation = "lighter";
+        ctx.fillStyle = "rgba(110,220,255,.26)";
+        ctx.beginPath();
+        ctx.arc(pm.x, pm.y, pm.r * 2.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        drawPowerup(pm);
+      }
+      ctx.restore();
+    }
     if (gameOverFx.active && gameOverFx.reason === "destroyed") {
       ctx.save();
       var t = gameOverFx.t;
@@ -155164,6 +155218,7 @@
     var btnSpawnToggle = null;
     var btnStampede = null;
     var btnAlienWave = null;
+    var btnGamepad = null;
     var btnTwoPilots = null;
     var btnSharedArena = null;
     var btnSplitArena = null;
@@ -155188,6 +155243,11 @@
       btnAlienWave = addButton(actionsContainer, "Alien Wave", function() {
         toggleSandboxAlienWave();
         updateSandboxToggle(btnAlienWave, state.sandboxAlienWaveActive);
+      });
+      btnGamepad = addButton(actionsContainer, "Gamepad", function() {
+        setTouchControlsEnabled(!touchControlsEnabled);
+        updateSandboxToggle(btnGamepad, touchControlsEnabled);
+        showToast(touchControlsEnabled ? "GAMEPAD ON" : "GAMEPAD OFF");
       });
       btnStampede = addButton(actionsContainer, "Stampede", function() {
         state.stampedeMode = !state.stampedeMode;
@@ -155310,6 +155370,7 @@
       showToast("MODE -> " + info.operation.toUpperCase() + " / " + info.modeLabel.toUpperCase());
     }
     sandboxAlienWaveButton = btnAlienWave;
+    sandboxGamepadButton = btnGamepad;
     function setSandboxOperation(op) {
       var fallback = "classic";
       if (op === "add")
@@ -155453,6 +155514,7 @@
     updateSandboxToggle(btnNoScore, state.sandboxNoScore);
     updateSandboxToggle(btnSpawnToggle, state.sandboxSpawnAsteroids);
     updateSandboxToggle(btnAlienWave, state.sandboxAlienWaveActive);
+    updateSandboxToggle(btnGamepad, touchControlsEnabled);
     updateSandboxToggle(btnStampede, state.stampedeMode);
     updateSandboxToggle(btnTwoPilots, state.sandboxTwoPilots);
     updateSandboxToggle(btnSharedArena, state.sandboxTwoPilotsMode !== "split");
@@ -155528,6 +155590,7 @@
         tutorialMineralsPending = false;
         tutorialMineralsRemaining = 0;
         tutorialExtraPowerupsSpawned = false;
+        tutorialFreezeMousepadRestore = false;
         tutorialMovementPreference = null;
         tutorialPortalActive = false;
         tutorialPortalT = 0;
@@ -155635,9 +155698,14 @@
           onConfirm: function(stepId) {
             if (stepId === "minerals") {
               tutorialMineralsFreeze = false;
+              if (tutorialFreezeMousepadRestore && tutorialMovementPreference === "mouse") {
+                setMousepadActive(true);
+              }
+              tutorialFreezeMousepadRestore = false;
               if (tutorialMineralsComplete || tutorialMineralsRemaining <= 0) {
                 tutorialMineralsPending = true;
               }
+              updateCursorVisibility();
             }
           },
           onChoice: function(stepId, choice) {
@@ -155661,6 +155729,7 @@
             tutorialPortalLock = false;
             tutorialPortalNotifyPending = false;
             tutorialMineralsFreeze = false;
+            tutorialFreezeMousepadRestore = false;
             setTutorialQuestionHidden(false);
             try {
               sessionStorage.setItem("asteroidConfig", JSON.stringify({
