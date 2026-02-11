@@ -280,6 +280,42 @@
       pointer-events:none;
     }
 
+    .btn{
+      position:relative;
+    }
+    .btn::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      border-radius:inherit;
+      border:1px solid rgba(255,255,255,.25);
+      box-shadow: 0 0 16px rgba(0,229,255,.22);
+      opacity:0;
+      transition: opacity .2s ease, box-shadow .2s ease, border-color .2s ease;
+      pointer-events:none;
+    }
+    .btn:hover::before{
+      opacity:1;
+    }
+    .btn-continue{
+      border-color: rgba(120,255,170,.65) !important;
+      background: rgba(80,220,120,.18) !important;
+      color: rgba(220,255,235,.95) !important;
+    }
+    .btn-continue::before{
+      border-color: rgba(120,255,170,.55);
+      box-shadow: 0 0 18px rgba(80,220,120,.35);
+    }
+    .btn-back{
+      border-color: rgba(255,120,120,.65) !important;
+      background: rgba(255,80,80,.2) !important;
+      color: rgba(255,220,220,.95) !important;
+    }
+    .btn-back::before{
+      border-color: rgba(255,120,120,.55);
+      box-shadow: 0 0 18px rgba(255,90,90,.35);
+    }
+
     .menuButtons .btn.secondaryLabel{
       display:flex;
       flex-direction:column;
@@ -612,7 +648,8 @@
       box-shadow: 0 6px 18px rgba(0,0,0,.35);
     }
     .shipOption .buyButton,
-    .beltChoice .buyButton{
+    .beltChoice .buyButton,
+    .shotTypeOption .buyButton{
       top:auto;
       left:auto;
       right:12px;
@@ -622,6 +659,36 @@
 
     .purchaseCard{
       width:min(440px, 92vw);
+    }
+    .purchaseLayout{
+      display:grid;
+      grid-template-columns:140px minmax(0, 1fr);
+      gap:14px;
+      align-items:start;
+    }
+    .purchasePreview{
+      width:140px;
+      height:140px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(8,12,22,.75);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+    }
+    .purchasePreview img{
+      width:88%;
+      height:88%;
+      object-fit:contain;
+      filter: drop-shadow(0 8px 14px rgba(0,0,0,.45));
+    }
+    .purchasePreview.is-belt{
+      background-size:cover;
+      background-position:center;
+    }
+    .purchasePreview.is-belt img{
+      display:none;
     }
     .purchaseMeta{
       display:grid;
@@ -738,6 +805,23 @@
       border-radius:14px;
       transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
     }
+    #briefingOverlay #btnBriefingSkip{
+      font-size:18px;
+      padding:16px 26px;
+      border-radius:18px;
+      letter-spacing:1.2px;
+      text-transform:uppercase;
+      opacity:0;
+      transform: scale(0.6);
+      pointer-events:none;
+      transition: opacity .5s ease, transform .5s ease;
+    }
+    #briefingOverlay.ready #btnBriefingSkip{
+      opacity:1;
+      transform: scale(1);
+      pointer-events:auto;
+      animation: launchPop .7s ease;
+    }
     .funnelOverlay .btn:hover,
     #campaignOverlay .btn:hover,
     #campaignConfirmOverlay .btn:hover,
@@ -768,6 +852,12 @@
     #campaignOverlay .campaignSetName,
     #campaignOverlay .campaignListItem{
       font-size:13px;
+    }
+
+    @keyframes launchPop{
+      0%{ transform: scale(0.4); opacity:0; }
+      50%{ transform: scale(1.12); opacity:1; }
+      100%{ transform: scale(1); opacity:1; }
     }
 
     #campaignOverlay .card,
@@ -977,6 +1067,12 @@
       gap:24px;
       align-items:start;
     }
+    .shipColumn{
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+      min-width:720px;
+    }
     .shipGrid{
       --ship-card: 200px;
       --ship-gap: 12px;
@@ -1122,11 +1218,23 @@
       letter-spacing:0.12em;
     }
     .shotTypeCarousel{
-      --shot-card: 260px;
-      --shot-gap: 16px;
+      --shot-card: 200px;
+      --shot-gap: 12px;
       position:relative;
       overflow:hidden;
       padding: 10px 6px 6px;
+    }
+    .shotTypeInlinePanel{
+    }
+    .shotTypeInlinePanel h4{
+      margin:0 0 8px;
+      font-size:12px;
+      letter-spacing:0.2em;
+      text-transform:uppercase;
+      color:rgba(210,225,255,.85);
+    }
+    .shotTypeInlineCarousel{
+      padding:12px 0 6px;
     }
     .shotTypeTrack{
       display:flex;
@@ -1138,11 +1246,12 @@
     .shotTypeOption{
       display:flex;
       flex-direction:column;
-      align-items:flex-start;
+      align-items:center;
+      justify-content:flex-end;
       gap:10px;
-      padding:18px;
-      background:rgba(8,12,22,.7);
-      border:1px solid rgba(255,255,255,.08);
+      padding:12px 12px 46px;
+      background:rgba(0,0,0,.35);
+      border:1px solid var(--line);
       border-radius:16px;
       color:rgba(235,245,255,.9);
       text-align:left;
@@ -1150,7 +1259,8 @@
       transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
       position:relative;
       min-width: var(--shot-card);
-      min-height: 190px;
+      min-height: 170px;
+      overflow:hidden;
     }
     .shotTypeOption:hover{
       border-color: rgba(0,229,255,.45);
@@ -1173,31 +1283,28 @@
       right:12px;
       font-size:10px;
     }
-    .shotTypeIcon{
-      width:92px;
-      height:92px;
-      border-radius:20px;
-      background:rgba(0,0,0,.45);
-      border:1px solid rgba(255,255,255,.1);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
-    .shotTypeIcon img{
-      width:62px;
-      height:62px;
+    .shotTypeImage{
+      width:auto;
+      max-width:62%;
+      max-height:110px;
+      height:auto;
       object-fit:contain;
-      filter: drop-shadow(0 0 10px rgba(0,0,0,.5));
+      filter: drop-shadow(0 0 16px rgba(0,229,255,.25));
     }
     .shotTypeLabel{
-      font-size:14px;
+      position:absolute;
+      bottom:10px;
+      left:12px;
+      font-size:11px;
+      letter-spacing:1.6px;
+      color:rgba(232,236,255,.9);
       text-transform:uppercase;
-      letter-spacing:0.2em;
+      text-shadow: 0 0 8px rgba(0,0,0,.6);
+      font-family:inherit;
+      font-weight:600;
     }
     .shotTypeDesc{
-      font-size:12px;
-      color:rgba(190,210,235,.85);
-      line-height:1.4;
+      display:none;
     }
     @media (max-width: 960px){
       .shipChooser{
@@ -1672,6 +1779,7 @@
               <h3>Ship Frame</h3>
               <input type="hidden" id="shotType" name="shotType" value="single" />
               <div class="shipChooser">
+              <div class="shipColumn">
               <div class="shipGrid" id="shipGrid">
               <div class="shipTrack" id="shipTrack">
                 <label class="shipOption" data-ship="classic" style="--ship-body: rgba(255,180,60,.92); --ship-wing: rgba(200,120,40,.9); --ship-canopy: rgba(90,240,230,.85); --ship-accent: rgba(255,80,200,.9); --ship-highlight: rgba(255,230,120,.9); --ship-thruster: rgba(22,18,28,.85); --ship-flame: rgba(255,140,90,.85); --ship-icon: rgba(255,255,255,.9);">
@@ -2001,6 +2109,66 @@
                 </label>
               </div>
               </div>
+              <div class="shotTypeInlinePanel">
+                <h4>Shot Type</h4>
+                <div class="shotTypeCarousel shotTypeInlineCarousel" id="shotTypeInlineCarousel">
+                  <div class="shotTypeTrack" id="shotTypeInlineTrack">
+                    <button type="button" class="shotTypeOption shotTypeInlineOption" data-shot="single">
+                      <img class="shotTypeImage" src="images/bullets/bullet_single.png" alt="" />
+                      <div class="shotTypeLabel">Single</div>
+                      <div class="shotTypeDesc">Standard blaster shot.</div>
+                    </button>
+                    <button type="button" class="shotTypeOption shotTypeInlineOption" data-shot="laser">
+                      <img class="shotTypeImage" src="images/shots/shot_laser.png" alt="" />
+                      <div class="shotTypeLabel">Laser</div>
+                      <div class="shotTypeDesc">Fast burst beam shots.</div>
+                    </button>
+                    <button type="button" class="shotTypeOption shotTypeInlineOption locked" data-shot="fire" data-locked="true">
+                      <div class="shotTypeCost costTag">450</div>
+                      <img class="shotTypeImage" src="images/shots/shot_fire.png" alt="" />
+                      <div class="shotTypeLabel">Fire</div>
+                      <div class="shotTypeDesc">Fireball shots for about 12 seconds.</div>
+                    </button>
+                    <button type="button" class="shotTypeOption shotTypeInlineOption locked" data-shot="ice" data-locked="true">
+                      <div class="shotTypeCost costTag">450</div>
+                      <img class="shotTypeImage" src="images/shots/shot_ice.png" alt="" />
+                      <div class="shotTypeLabel">Ice</div>
+                      <div class="shotTypeDesc">Ice shards for about 12 seconds.</div>
+                    </button>
+                    <button type="button" class="shotTypeOption shotTypeInlineOption locked" data-shot="electric" data-locked="true">
+                      <div class="shotTypeCost costTag">550</div>
+                      <img class="shotTypeImage" src="images/shots/shot_electric.png" alt="" />
+                      <div class="shotTypeLabel">Electric</div>
+                      <div class="shotTypeDesc">Electric bolts for about 12 seconds.</div>
+                    </button>
+                    <button type="button" class="shotTypeOption shotTypeInlineOption locked" data-shot="pierce" data-locked="true">
+                      <div class="shotTypeCost costTag">600</div>
+                      <img class="shotTypeImage" src="images/shots/shot_lookup.png" alt="" />
+                      <div class="shotTypeLabel">Bola</div>
+                      <div class="shotTypeDesc">Piercing shots for about 12 seconds.</div>
+                    </button>
+                    <button type="button" class="shotTypeOption shotTypeInlineOption locked" data-shot="plasma" data-locked="true">
+                      <div class="shotTypeCost costTag">700</div>
+                      <img class="shotTypeImage" src="images/shots/shot_plasma.png" alt="" />
+                      <div class="shotTypeLabel">Plasma</div>
+                      <div class="shotTypeDesc">Plasma shots for about 12 seconds.</div>
+                    </button>
+                    <button type="button" class="shotTypeOption shotTypeInlineOption locked" data-shot="rail" data-locked="true">
+                      <div class="shotTypeCost costTag">800</div>
+                      <img class="shotTypeImage" src="images/shots/shot_rail.png" alt="" />
+                      <div class="shotTypeLabel">Rail</div>
+                      <div class="shotTypeDesc">Rail beam shots for about 12 seconds.</div>
+                    </button>
+                    <button type="button" class="shotTypeOption shotTypeInlineOption locked" data-shot="missile" data-locked="true">
+                      <div class="shotTypeCost costTag">900</div>
+                      <img class="shotTypeImage" src="images/shots/shot_missile.png" alt="" />
+                      <div class="shotTypeLabel">Missile</div>
+                      <div class="shotTypeDesc">Type the correct answer to launch a seeking missile.</div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              </div>
               <div class="shipDetails" aria-live="polite">
                 <div class="shipDetailsHeader">
                   <span class="shipDetailsName" id="shipDetailsName">Crimson MK-7</span>
@@ -2026,9 +2194,6 @@
                     <span>Thrusters</span>
                     <span id="shipStatThrusters">Dual</span>
                   </div>
-                </div>
-                <div class="shipDetailsActions">
-                  <button id="btnShotType" class="btn secondaryLabel" type="button">Shot Type: Single</button>
                 </div>
               </div>
               </div>
@@ -2093,54 +2258,54 @@
         <div class="shotTypeCarousel" id="shotTypeCarousel">
           <div class="shotTypeTrack" id="shotTypeTrack">
           <button type="button" class="shotTypeOption" data-shot="single">
-            <div class="shotTypeIcon"><img src="images/bullets/bullet_single.png" alt="" /></div>
+            <img class="shotTypeImage" src="images/bullets/bullet_single.png" alt="" />
             <div class="shotTypeLabel">Single</div>
             <div class="shotTypeDesc">Standard blaster shot.</div>
           </button>
           <button type="button" class="shotTypeOption" data-shot="laser">
-            <div class="shotTypeIcon"><img src="images/shots/shot_laser.png" alt="" /></div>
+            <img class="shotTypeImage" src="images/shots/shot_laser.png" alt="" />
             <div class="shotTypeLabel">Laser</div>
             <div class="shotTypeDesc">Fast burst beam shots.</div>
           </button>
           <button type="button" class="shotTypeOption locked" data-shot="fire" data-locked="true">
             <div class="shotTypeCost costTag">450</div>
-            <div class="shotTypeIcon"><img src="images/shots/shot_fire.png" alt="" /></div>
+            <img class="shotTypeImage" src="images/shots/shot_fire.png" alt="" />
             <div class="shotTypeLabel">Fire</div>
             <div class="shotTypeDesc">Fireball shots for about 12 seconds.</div>
           </button>
           <button type="button" class="shotTypeOption locked" data-shot="ice" data-locked="true">
             <div class="shotTypeCost costTag">450</div>
-            <div class="shotTypeIcon"><img src="images/shots/shot_ice.png" alt="" /></div>
+            <img class="shotTypeImage" src="images/shots/shot_ice.png" alt="" />
             <div class="shotTypeLabel">Ice</div>
             <div class="shotTypeDesc">Ice shards for about 12 seconds.</div>
           </button>
           <button type="button" class="shotTypeOption locked" data-shot="electric" data-locked="true">
             <div class="shotTypeCost costTag">550</div>
-            <div class="shotTypeIcon"><img src="images/shots/shot_electric.png" alt="" /></div>
+            <img class="shotTypeImage" src="images/shots/shot_electric.png" alt="" />
             <div class="shotTypeLabel">Electric</div>
             <div class="shotTypeDesc">Electric bolts for about 12 seconds.</div>
           </button>
           <button type="button" class="shotTypeOption locked" data-shot="pierce" data-locked="true">
             <div class="shotTypeCost costTag">600</div>
-            <div class="shotTypeIcon"><img src="images/shots/shot_lookup.png" alt="" /></div>
+            <img class="shotTypeImage" src="images/shots/shot_lookup.png" alt="" />
             <div class="shotTypeLabel">Bola</div>
             <div class="shotTypeDesc">Piercing shots for about 12 seconds.</div>
           </button>
           <button type="button" class="shotTypeOption locked" data-shot="plasma" data-locked="true">
             <div class="shotTypeCost costTag">700</div>
-            <div class="shotTypeIcon"><img src="images/shots/shot_plasma.png" alt="" /></div>
+            <img class="shotTypeImage" src="images/shots/shot_plasma.png" alt="" />
             <div class="shotTypeLabel">Plasma</div>
             <div class="shotTypeDesc">Plasma shots for about 12 seconds.</div>
           </button>
           <button type="button" class="shotTypeOption locked" data-shot="rail" data-locked="true">
             <div class="shotTypeCost costTag">800</div>
-            <div class="shotTypeIcon"><img src="images/shots/shot_rail.png" alt="" /></div>
+            <img class="shotTypeImage" src="images/shots/shot_rail.png" alt="" />
             <div class="shotTypeLabel">Rail</div>
             <div class="shotTypeDesc">Rail beam shots for about 12 seconds.</div>
           </button>
           <button type="button" class="shotTypeOption locked" data-shot="missile" data-locked="true">
             <div class="shotTypeCost costTag">900</div>
-            <div class="shotTypeIcon"><img src="images/shots/shot_missile.png" alt="" /></div>
+            <img class="shotTypeImage" src="images/shots/shot_missile.png" alt="" />
             <div class="shotTypeLabel">Missile</div>
             <div class="shotTypeDesc">Type the correct answer to launch a seeking missile.</div>
           </button>
@@ -2162,19 +2327,26 @@
         <button id="btnPurchaseClose" class="btn">Close</button>
       </div>
       <div class="cardBody">
-        <div class="purchaseMeta">
-          <div class="purchaseRow">
-            <span>Minerals</span>
-            <b id="purchaseMinerals">0</b>
+        <div class="purchaseLayout">
+          <div class="purchasePreview" id="purchasePreview">
+            <img id="purchasePreviewImg" alt="" />
           </div>
-          <div class="purchaseRow">
-            <span>Cost</span>
-            <b id="purchaseCost">0</b>
+          <div>
+            <div class="purchaseMeta">
+              <div class="purchaseRow">
+                <span>Minerals</span>
+                <b id="purchaseMinerals">0</b>
+              </div>
+              <div class="purchaseRow">
+                <span>Cost</span>
+                <b id="purchaseCost">0</b>
+              </div>
+            </div>
+            <div class="row">
+              <button id="btnPurchaseConfirm" class="btn btnConfirm" type="button">Confirm</button>
+              <button id="btnPurchaseCancel" class="btn" type="button">Cancel</button>
+            </div>
           </div>
-        </div>
-        <div class="row">
-          <button id="btnPurchaseConfirm" class="btn btnConfirm" type="button">Confirm</button>
-          <button id="btnPurchaseCancel" class="btn" type="button">Cancel</button>
         </div>
       </div>
     </div>
@@ -3017,6 +3189,7 @@
           saveBtn.type = "button";
           saveBtn.className = "btn";
           saveBtn.textContent = "Save & Continue";
+          applyActionButtonStyles();
           var cancelBtn = document.createElement("button");
           cancelBtn.type = "button";
           cancelBtn.className = "btn";
@@ -3069,6 +3242,7 @@
           continueBtn.type = "button";
           continueBtn.className = "btn";
           continueBtn.textContent = "Continue";
+          applyActionButtonStyles();
           var eraseBtn = document.createElement("button");
           eraseBtn.type = "button";
           eraseBtn.className = "btn btnDanger";
@@ -3562,10 +3736,16 @@
     var shotTypeOverlay = document.getElementById("shotTypeOverlay");
     var shotTypeCarousel = document.getElementById("shotTypeCarousel");
     var shotTypeTrack = document.getElementById("shotTypeTrack");
+    var shotTypeInlineCarousel = document.getElementById("shotTypeInlineCarousel");
+    var shotTypeInlineTrack = document.getElementById("shotTypeInlineTrack");
     var btnCloseShotType = document.getElementById("btnCloseShotType");
-    var shotTypeOptions = Array.prototype.slice.call(document.querySelectorAll(".shotTypeOption"));
+    var shotTypeOptions = Array.prototype.slice.call(document.querySelectorAll("#shotTypeOverlay .shotTypeOption"));
+    var shotTypeInlineOptions = Array.prototype.slice.call(document.querySelectorAll(".shotTypeInlineOption"));
+    var shotTypeAllOptions = shotTypeOptions.concat(shotTypeInlineOptions);
     var purchaseOverlay = document.getElementById("purchaseOverlay");
     var purchaseItemLabel = document.getElementById("purchaseItemLabel");
+    var purchasePreview = document.getElementById("purchasePreview");
+    var purchasePreviewImg = document.getElementById("purchasePreviewImg");
     var purchaseMinerals = document.getElementById("purchaseMinerals");
     var purchaseCost = document.getElementById("purchaseCost");
     var btnPurchaseConfirm = document.getElementById("btnPurchaseConfirm");
@@ -3788,12 +3968,24 @@
       var buyBtn = option.querySelector(".buyButton");
       if(buyBtn) buyBtn.remove();
     }
+    function applyActionButtonStyles(){
+      var buttons = Array.prototype.slice.call(document.querySelectorAll("button.btn"));
+      buttons.forEach(function(btn){
+        var text = (btn.textContent || "").trim().toLowerCase();
+        btn.classList.remove("btn-continue", "btn-back");
+        if(text === "back"){
+          btn.classList.add("btn-back");
+        }else if(text.indexOf("continue") !== -1){
+          btn.classList.add("btn-continue");
+        }
+      });
+    }
     function applyStoredUnlocks(){
       shipOptions.forEach(function(option){
         var key = option.getAttribute("data-ship");
         if(key && isUnlocked("ship", key)) unlockShipOption(option);
       });
-      shotTypeOptions.forEach(function(option){
+      shotTypeAllOptions.forEach(function(option){
         var key = option.getAttribute("data-shot");
         if(key && isUnlocked("shot", key)) unlockShotOption(option);
       });
@@ -3848,7 +4040,7 @@
           if(existing) existing.classList.add("hidden");
         }
       });
-      shotTypeOptions.forEach(function(option){
+      shotTypeAllOptions.forEach(function(option){
         if(option.getAttribute("data-locked") !== "true") return;
         var id = option.getAttribute("data-shot");
         var cost = parseCost(option);
@@ -3879,6 +4071,26 @@
       if(!purchaseOverlay) return;
       var cost = parseCost(el);
       pendingPurchase = { el: el, type: type, id: id, cost: cost };
+      if(purchasePreview){
+        purchasePreview.classList.remove("is-belt");
+        purchasePreview.style.backgroundImage = "";
+      }
+      if(purchasePreviewImg){
+        purchasePreviewImg.src = "";
+      }
+      if(type === "ship" && purchasePreviewImg){
+        var shipImg = el ? el.querySelector(".shipImagePreview") : null;
+        if(shipImg && shipImg.src) purchasePreviewImg.src = shipImg.src;
+      }else if(type === "shot" && purchasePreviewImg){
+        var shotImg = el ? el.querySelector(".shotTypeImage") : null;
+        if(shotImg && shotImg.src) purchasePreviewImg.src = shotImg.src;
+      }else if(type === "belt" && purchasePreview){
+        var bg = el ? el.style.backgroundImage : "";
+        if(bg){
+          purchasePreview.classList.add("is-belt");
+          purchasePreview.style.backgroundImage = bg;
+        }
+      }
       if(purchaseItemLabel) purchaseItemLabel.textContent = getPurchaseLabel(type, id, el);
       if(purchaseMinerals) purchaseMinerals.textContent = String(getMineralsTotal());
       if(purchaseCost) purchaseCost.textContent = String(cost);
@@ -3939,7 +4151,7 @@
       updateShipCarousel(value);
     }
     function isShotTypeLocked(value){
-      var opt = shotTypeOptions.find(function(option){
+      var opt = shotTypeAllOptions.find(function(option){
         return option.getAttribute("data-shot") === value;
       });
       return !!(opt && opt.getAttribute("data-locked") === "true");
@@ -3950,7 +4162,7 @@
       if(isShotTypeLocked(selected)) selected = "single";
       if(shotTypeInput) shotTypeInput.value = selected;
       if(btnShotType) btnShotType.textContent = "Shot Type: " + (shotTypeLabels[selected] || "Single");
-      shotTypeOptions.forEach(function(option){
+      shotTypeAllOptions.forEach(function(option){
         option.classList.toggle("selected", option.getAttribute("data-shot") === selected);
       });
       updateShotTypeCarousel(selected);
@@ -3963,24 +4175,35 @@
       var selected = shotTypeLabels[value] ? value : "single";
       if(isShotTypeLocked(selected)) selected = "single";
       pendingShotType = selected;
-      shotTypeOptions.forEach(function(option){
+      shotTypeAllOptions.forEach(function(option){
         option.classList.toggle("selected", option.getAttribute("data-shot") === selected);
       });
       updateShotTypeCarousel(selected);
     }
-    function updateShotTypeCarousel(selected){
-      if(!shotTypeCarousel || !shotTypeTrack) return;
-      var index = shotTypeOptions.findIndex(function(option){
+    function focusShotType(value){
+      var selected = shotTypeLabels[value] ? value : "single";
+      shotTypeAllOptions.forEach(function(option){
+        option.classList.toggle("selected", option.getAttribute("data-shot") === selected);
+      });
+      updateShotTypeCarousel(selected);
+    }
+    function updateShotTypeCarouselFor(carousel, track, options, selected){
+      if(!carousel || !track || !options || !options.length) return;
+      var index = options.findIndex(function(option){
         return option.getAttribute("data-shot") === selected;
       });
       if(index < 0) index = 0;
-      var styles = getComputedStyle(shotTypeCarousel);
+      var styles = getComputedStyle(carousel);
       var cardW = parseFloat(styles.getPropertyValue("--shot-card")) || 300;
       var gap = parseFloat(styles.getPropertyValue("--shot-gap")) || 16;
       var total = cardW + gap;
-      var center = (shotTypeCarousel.clientWidth - cardW) / 2;
+      var center = (carousel.clientWidth - cardW) / 2;
       var offset = center - (index * total);
-      shotTypeTrack.style.transform = "translateX(" + offset + "px)";
+      track.style.transform = "translateX(" + offset + "px)";
+    }
+    function updateShotTypeCarousel(selected){
+      updateShotTypeCarouselFor(shotTypeCarousel, shotTypeTrack, shotTypeOptions, selected);
+      updateShotTypeCarouselFor(shotTypeInlineCarousel, shotTypeInlineTrack, shotTypeInlineOptions, selected);
     }
     function openShotTypeOverlay(){
       if(shotTypeOverlay) shotTypeOverlay.classList.add("show");
@@ -4009,6 +4232,8 @@
     }
     applyStoredUnlocks();
     refreshBuyButtons();
+    applyActionButtonStyles();
+    applyActionButtonStyles();
     syncShipSelection(saved.ship || "spire");
     shipRadios.forEach(function(radio){
       radio.addEventListener('change', function(){
@@ -4073,11 +4298,24 @@
       option.addEventListener("click", function(){
         var choice = option.getAttribute("data-shot") || "single";
         if(option.getAttribute("data-locked") === "true"){
-          showToast("SHOT TYPE LOCKED");
+          playMenuBeep();
+          focusShotType(choice);
           return;
         }
         playMenuBeep();
         setShotTypePreview(choice);
+      });
+    });
+    shotTypeInlineOptions.forEach(function(option){
+      option.addEventListener("click", function(){
+        var choice = option.getAttribute("data-shot") || "single";
+        if(option.getAttribute("data-locked") === "true"){
+          playMenuBeep();
+          focusShotType(choice);
+          return;
+        }
+        playMenuBeep();
+        setShotType(choice, true);
       });
     });
     if(shipStatSpecialCard){
@@ -5567,6 +5805,7 @@
       if(menuWrap) menuWrap.classList.add("hidden");
       if(funnelOverlay) funnelOverlay.classList.remove("show");
       if(briefingOverlay) briefingOverlay.classList.add("show");
+      if(briefingOverlay) briefingOverlay.classList.remove("ready");
       if(window.homeDrone && !window.homeDrone.paused){
         try{ window.homeDrone.pause(); }catch(e){}
       }
@@ -5575,8 +5814,6 @@
       if(briefingTimerId) clearTimeout(briefingTimerId);
       if(btnBriefingSkip){
         btnBriefingSkip.disabled = true;
-        btnBriefingSkip.style.opacity = "0.6";
-        btnBriefingSkip.style.pointerEvents = "none";
       }
       if(briefingStatusText) briefingStatusText.textContent = "Initializing launch sequence...";
 
@@ -5709,11 +5946,10 @@
         briefingReady = true;
         if(btnBriefingSkip){
           btnBriefingSkip.disabled = false;
-          btnBriefingSkip.style.opacity = "";
-          btnBriefingSkip.style.pointerEvents = "";
         }
         if(briefingStatus) briefingStatus.classList.add("ready");
         if(briefingStatusText) briefingStatusText.textContent = "Launch ready.";
+        if(briefingOverlay) briefingOverlay.classList.add("ready");
       }, 7000);
     }
 
@@ -5842,7 +6078,8 @@
         if(acc >= 0.9) return "S";
         if(acc >= 0.8) return "A";
         if(acc >= 0.7) return "B";
-        if(acc >= 0.6) return "D";
+        if(acc >= 0.6) return "C";
+        if(acc >= 0.5) return "D";
         return "E";
       }
       var stats = null;
@@ -6070,10 +6307,15 @@
         for(var i=0;i<filtered.length;i++){
           var item = filtered[i];
           var rank = item.rank || (item.accuracy != null ? getLetterRank(item.accuracy) : "");
+          rank = String(rank || "").trim().toUpperCase();
+          if(["S","A","B","C","D","E"].indexOf(rank) === -1){
+            rank = "E";
+          }
           var completed = item.date ? new Date(item.date).toLocaleString() : "?";
           var duration = item.duration ? formatDurationLocal(item.duration) : (item.session_seconds ? formatDurationLocal(item.session_seconds) : "?");
           var timerText = normalizeTimer(item.timerMode);
           var tr = document.createElement("tr");
+          tr.className = "lb-rank-grade lb-grade-" + rank.toLowerCase();
           tr.innerHTML = '<td>#' + (i+1) + '</td>' +
             '<td>' + (item.name || '?') + '</td>' +
             '<td>' + (item.score || 0) + '</td>' +

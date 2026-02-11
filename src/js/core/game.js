@@ -147,12 +147,15 @@ var settingsTabButtons = overlayMenu ? overlayMenu.querySelectorAll("[data-setti
 var settingsPanels = overlayMenu ? overlayMenu.querySelectorAll("[data-settings-panel]") : [];
 var toggleWideGameplay = document.getElementById("toggleWideGameplay");
 var toggleMousepadAuto = document.getElementById("toggleMousepadAuto");
+var toggleTouchControls = document.getElementById("toggleTouchControls");
 var btnResume = document.getElementById("btnResume");
 var btnShipCommands = document.getElementById("btnShipCommands");
 
 var wideGameplayKey = "mentaris.gameplay.wide";
 var mousepadAutoKey = "mentaris.mousepad.autostart";
+var touchControlsKey = "mentaris.touch.controls.enabled";
 var mousepadAutoStart = false;
+var touchControlsEnabled = false;
 var pauseAllowed = false;
 var secondaryTypeOrder = ["time", "magnet", "emp", "lock"];
 
@@ -205,6 +208,16 @@ function hasAnySecondary(pilot){
     if(s && s.type && s.count > 0) return true;
   }
   return false;
+}
+
+function countActiveSecondarySlots(pilot){
+  var slots = getSecondarySlotsForPilot(pilot);
+  var total = 0;
+  for(var i=0; i<slots.length; i++){
+    var s = slots[i];
+    if(s && s.type && s.count > 0) total += 1;
+  }
+  return total;
 }
 
 function syncSelectedSecondary(){
@@ -445,6 +458,43 @@ function applyMousepadAutoStart(){
   updateCursorVisibility();
 }
 
+function isTouchCapableDevice(){
+  try{
+    if(window.matchMedia && window.matchMedia("(pointer: coarse)").matches) return true;
+  }catch(e){}
+  return ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+}
+
+function setTouchControlsEnabled(isOn){
+  touchControlsEnabled = !!isOn;
+  document.body.classList.toggle("touchControlsOn", touchControlsEnabled);
+  if(toggleTouchControls) toggleTouchControls.checked = touchControlsEnabled;
+  try{ localStorage.setItem(touchControlsKey, touchControlsEnabled ? "1" : "0"); }catch(e){}
+  if(touchControlsEnabled && mousepadActive){
+    setMousepadActive(false);
+  }
+  if(!touchControlsEnabled){
+    resetTouchInputState();
+  }
+  if(sandboxGamepadButton){
+    sandboxGamepadButton.classList.toggle("active", touchControlsEnabled);
+  }
+}
+
+function loadTouchControlsEnabled(){
+  var stored = null;
+  try{ stored = localStorage.getItem(touchControlsKey); }catch(e){}
+  if(stored === "1" || stored === "true"){
+    setTouchControlsEnabled(true);
+    return;
+  }
+  if(stored === "0" || stored === "false"){
+    setTouchControlsEnabled(false);
+    return;
+  }
+  setTouchControlsEnabled(isTouchCapableDevice());
+}
+
 function setFullscreenLabel(btn, isFull){
   if(!btn) return;
   btn.textContent = isFull ? "EXIT FULLSCREEN" : "FULLSCREEN";
@@ -607,12 +657,15 @@ var tutorialAlienUnlocked = true;
 var tutorialAlienDelayRemaining = 0;
 var tutorialStepId = null;
 var tutorialShootLocked = false;
+var tutorialMineralsFreeze = false;
 var tutorialMineralsTarget = 0;
 var tutorialMineralsCollected = 0;
 var tutorialMineralsComplete = false;
 var tutorialMineralsPending = false;
 var tutorialMineralsRemaining = 0;
 var tutorialExtraPowerupsSpawned = false;
+var tutorialFreezeMousepadRestore = false;
+var tutorialMovementPreference = null;
 var tutorialPortalActive = false;
 var tutorialPortalX = 0;
 var tutorialPortalY = 0;
@@ -621,6 +674,12 @@ var tutorialPortalT = 0;
 var tutorialPortalLock = false;
 var tutorialPortalNotifyPending = false;
 var tutorialHideQuestion = false;
+var sandboxHideQuestion = false;
+var sandboxAlienWaveDuration = 20;
+var sandboxAlienWaveRequired = 2;
+var sandboxAlienWavePrevHideAsteroids = null;
+var sandboxAlienWaveButton = null;
+var sandboxGamepadButton = null;
 var tutorialDots = [];
 var tutorialDotsIndex = 0;
 var tutorialDotsActive = false;
@@ -1220,6 +1279,12 @@ var powerupManager = new PowerupManager(state, player);
 renderSettingsCatalogs();
 
 function configureAliensDifficulty(){
+  if(sandboxMode && state.sandboxAlienWaveActive){
+    alienConfig.enabled = true;
+    alienConfig.maxOnScreen = 7;
+    alienConfig.spawnCooldown = 1.2;
+    return;
+  }
   if(state.alienSwarm){
     alienConfig.enabled = true;
     alienConfig.maxOnScreen = 4;
@@ -1448,6 +1513,11 @@ window.addEventListener("keydown", function(e){
       var p2 = ensurePilot2();
       setPilot2MouseControl(!p2.mouseControlEnabled, false);
     }else{
+      if(tutorialActive && tutorialMovementPreference && tutorialMovementPreference !== "mouse"){
+        if(mousepadActive) setMousepadActive(false);
+        showToast("MOUSE PILOT NOT SELECTED");
+        return;
+      }
       if(!mousepadActive){
         setMousepadActive(true);
         showToast("MOUSEPAD: HYBRID");
@@ -1480,6 +1550,16 @@ var controlPad = document.getElementById("controlPad");
 var padStatus = document.getElementById("padStatus");
 var virtualKnob = document.getElementById("virtualKnob");
 var padMode = document.getElementById("padMode");
+var touchControlDock = document.getElementById("touchControlDock");
+var touchMovePad = document.getElementById("touchMovePad");
+var touchMoveKnob = document.getElementById("touchMoveKnob");
+var touchBtnFire = document.getElementById("touchBtnFire");
+var touchBtnDash = document.getElementById("touchBtnDash");
+var touchBtnSpecial = document.getElementById("touchBtnSpecial");
+var touchBtnSecondary = document.getElementById("touchBtnSecondary");
+var touchBtnSlot1 = document.getElementById("touchBtnSlot1");
+var touchBtnSlot2 = document.getElementById("touchBtnSlot2");
+var touchBtnSlot3 = document.getElementById("touchBtnSlot3");
 var mousepadActive = false;
 var mousepadPaused = false;
 var mousepadSensitivityPad = 0.3;
@@ -1490,6 +1570,12 @@ var padCursor = { x: 0, y: 0 };
 var mousepadMode = "hybrid";
 var mouseImpulse = { x: 0, y: 0 };
 var mousepadDeadzonePad = 0.18;
+var touchMoveAxes = { x: 0, y: 0 };
+var touchMovePointerId = null;
+var touchMoveCenter = { x: 0, y: 0, radius: 0 };
+var touchActionHeld = { fire: false, dash: false, special: false, secondary: false };
+var touchActionPointers = {};
+var touchButtonMap = {};
 var mousepadPadSettingsBackup = {
   sensitivityPad: mousepadSensitivityPad,
   sensitivityPadMode: mousepadSensitivityPadMode,
@@ -1638,6 +1724,7 @@ function tickPilotTimers(pilot, dtReal){
   }
   pilot.recoil = Math.max(0, pilot.recoil - dtReal * 9);
   pilot.flash = Math.max(0, pilot.flash - dtReal * 12);
+  applyEasyRegen(pilot, dtReal);
   if(pilot.secondaryCooldown > 0){
     pilot.secondaryCooldown = Math.max(0, pilot.secondaryCooldown - dtReal);
   }
@@ -1833,6 +1920,10 @@ function setMissionBriefActive(active){
 resetMousepadPadSettings();
 
 function updateCursorVisibility(){
+  if(tutorialActive && tutorialMineralsFreeze){
+    document.body.style.cursor = "";
+    return;
+  }
   if(missileInputActive){
     document.body.style.cursor = "";
     return;
@@ -1874,6 +1965,7 @@ function setMousepadActive(isOn){
 if(controlPad){
   setMousepadActive(false);
 }
+bindTouchControls();
 
 if(inputs.questionMode){
   inputs.questionMode.addEventListener("change", updateDecoyFunctionAvailability);
@@ -1902,6 +1994,173 @@ function setMousepadMode(mode){
     virtualPad.requestPointerLock();
   }else if(document.exitPointerLock){
     document.exitPointerLock();
+  }
+}
+
+function isTouchInputAllowed(){
+  if(!touchControlsEnabled) return false;
+  if(!state.running || state.paused || state.over) return false;
+  if(tutorialActive && tutorialMineralsFreeze) return false;
+  if(missileInputActive || missionBriefShowing || countdownActive || introActive) return false;
+  if(overlayMenu && overlayMenu.classList.contains("show")) return false;
+  if(overlayEnd && overlayEnd.classList.contains("show")) return false;
+  return true;
+}
+
+function setTouchButtonPressed(action, pressed){
+  var btn = touchButtonMap[action];
+  if(!btn) return;
+  btn.classList.toggle("is-pressed", !!pressed);
+}
+
+function resetTouchMovePad(){
+  touchMoveAxes.x = 0;
+  touchMoveAxes.y = 0;
+  touchMovePointerId = null;
+  if(touchMoveKnob){
+    touchMoveKnob.style.transform = "translate(-50%, -50%)";
+  }
+}
+
+function resetTouchInputState(){
+  resetTouchMovePad();
+  touchActionHeld.fire = false;
+  touchActionHeld.dash = false;
+  touchActionHeld.special = false;
+  touchActionHeld.secondary = false;
+  touchActionPointers = {};
+  setTouchButtonPressed("fire", false);
+  setTouchButtonPressed("dash", false);
+  setTouchButtonPressed("special", false);
+  setTouchButtonPressed("secondary", false);
+}
+
+function updateTouchMoveFromPointer(e){
+  if(!touchMovePad) return;
+  var rect = touchMovePad.getBoundingClientRect();
+  var cx = rect.left + rect.width / 2;
+  var cy = rect.top + rect.height / 2;
+  var maxR = Math.min(rect.width, rect.height) * 0.42;
+  touchMoveCenter.x = cx;
+  touchMoveCenter.y = cy;
+  touchMoveCenter.radius = maxR;
+  var dx = clamp(e.clientX - cx, -maxR, maxR);
+  var dy = clamp(e.clientY - cy, -maxR, maxR);
+  touchMoveAxes.x = maxR > 0 ? clamp(dx / maxR, -1, 1) : 0;
+  touchMoveAxes.y = maxR > 0 ? clamp(dy / maxR, -1, 1) : 0;
+  if(touchMoveKnob){
+    touchMoveKnob.style.transform = "translate(calc(-50% + " + dx + "px), calc(-50% + " + dy + "px))";
+  }
+}
+
+function onTouchActionPress(action){
+  if(!isTouchInputAllowed()) return;
+  if(action === "fire"){
+    touchActionHeld.fire = true;
+    setTouchButtonPressed("fire", true);
+    if(!tutorialActive || !tutorialShootLocked){
+      fire();
+    }
+    return;
+  }
+  if(action === "dash"){
+    touchActionHeld.dash = true;
+    setTouchButtonPressed("dash", true);
+    dash();
+    return;
+  }
+  if(action === "special"){
+    touchActionHeld.special = true;
+    setTouchButtonPressed("special", true);
+    shockwave();
+    return;
+  }
+  if(action === "secondary"){
+    touchActionHeld.secondary = true;
+    setTouchButtonPressed("secondary", true);
+    secondaryFire();
+    return;
+  }
+  if(action === "slot1") selectSecondaryByIndex(0);
+  if(action === "slot2") selectSecondaryByIndex(1);
+  if(action === "slot3") selectSecondaryByIndex(2);
+}
+
+function onTouchActionRelease(action){
+  if(action === "fire"){
+    touchActionHeld.fire = false;
+    setTouchButtonPressed("fire", false);
+  }else if(action === "dash"){
+    touchActionHeld.dash = false;
+    setTouchButtonPressed("dash", false);
+  }else if(action === "special"){
+    touchActionHeld.special = false;
+    setTouchButtonPressed("special", false);
+  }else if(action === "secondary"){
+    touchActionHeld.secondary = false;
+    setTouchButtonPressed("secondary", false);
+  }
+}
+
+function bindTouchControls(){
+  touchButtonMap = {
+    fire: touchBtnFire,
+    dash: touchBtnDash,
+    special: touchBtnSpecial,
+    secondary: touchBtnSecondary
+  };
+  if(touchMovePad){
+    touchMovePad.addEventListener("pointerdown", function(e){
+      if(!touchControlsEnabled || !isTouchInputAllowed()) return;
+      if(touchMovePointerId !== null && touchMovePointerId !== e.pointerId) return;
+      touchMovePointerId = e.pointerId;
+      touchMovePad.setPointerCapture(e.pointerId);
+      updateTouchMoveFromPointer(e);
+      e.preventDefault();
+    });
+    touchMovePad.addEventListener("pointermove", function(e){
+      if(!touchControlsEnabled || touchMovePointerId !== e.pointerId) return;
+      updateTouchMoveFromPointer(e);
+      e.preventDefault();
+    });
+    function endMovePointer(e){
+      if(touchMovePointerId !== e.pointerId) return;
+      resetTouchMovePad();
+    }
+    touchMovePad.addEventListener("pointerup", endMovePointer);
+    touchMovePad.addEventListener("pointercancel", endMovePointer);
+  }
+  var actionButtons = [touchBtnFire, touchBtnDash, touchBtnSpecial, touchBtnSecondary, touchBtnSlot1, touchBtnSlot2, touchBtnSlot3];
+  actionButtons.forEach(function(btn){
+    if(!btn) return;
+    btn.addEventListener("pointerdown", function(e){
+      if(!touchControlsEnabled || !isTouchInputAllowed()) return;
+      var action = btn.getAttribute("data-touch-action");
+      touchActionPointers[e.pointerId] = action;
+      btn.setPointerCapture(e.pointerId);
+      onTouchActionPress(action);
+      e.preventDefault();
+    });
+    function endActionPointer(e){
+      var action = touchActionPointers[e.pointerId];
+      if(!action) return;
+      delete touchActionPointers[e.pointerId];
+      onTouchActionRelease(action);
+    }
+    btn.addEventListener("pointerup", endActionPointer);
+    btn.addEventListener("pointercancel", endActionPointer);
+  });
+}
+
+function updateTouchButtonStates(){
+  if(!touchControlsEnabled) return;
+  var blocked = !isTouchInputAllowed();
+  if(touchBtnFire) touchBtnFire.classList.toggle("is-cooldown", blocked);
+  if(touchBtnDash) touchBtnDash.classList.toggle("is-cooldown", blocked || player.cooldown > 0);
+  if(touchBtnSpecial) touchBtnSpecial.classList.toggle("is-cooldown", blocked);
+  if(touchBtnSecondary){
+    var noSecondary = !player.secondaryMode || player.secondaryMode === "none" || player.secondaryCharges <= 0;
+    touchBtnSecondary.classList.toggle("is-cooldown", blocked || player.secondaryCooldown > 0 || noSecondary);
   }
 }
 
@@ -1954,6 +2213,14 @@ canvas.addEventListener("pointerdown", function(e){
     pointerDown = false;
     return;
   }
+  if(tutorialActive && tutorialMineralsFreeze){
+    pointerDown = false;
+    return;
+  }
+  if(mousepadActive){
+    fire();
+    return;
+  }
   pointerDown = true;
   lastPointerX = e.clientX;
   lastPointerY = e.clientY;
@@ -1968,6 +2235,7 @@ canvas.addEventListener("pointermove", function(e){
   }
   if(!pointerDown || !pointerDragEnabled) return;
   if(mousepadActive) return;
+  if(tutorialActive && tutorialMineralsFreeze) return;
   var dx = e.clientX - lastPointerX;
   var dy = e.clientY - lastPointerY;
   lastPointerX = e.clientX;
@@ -2056,6 +2324,7 @@ window.addEventListener("mousemove", function(e){
   if(mousepadMode === "fps"){
     return;
   }
+  if(tutorialActive && tutorialMineralsFreeze) return;
   if(!state.running || state.paused || state.over) return;
   var dx = e.movementX || 0;
   var dy = e.movementY || 0;
@@ -2195,8 +2464,17 @@ function syncHud(){
 
 function setTutorialQuestionHidden(hidden){
   tutorialHideQuestion = hidden;
+  applyQuestionVisibility();
+}
+
+function setSandboxQuestionHidden(hidden){
+  sandboxHideQuestion = hidden;
+  applyQuestionVisibility();
+}
+
+function applyQuestionVisibility(){
   if(promptChip){
-    promptChip.style.visibility = hidden ? "hidden" : "visible";
+    promptChip.style.visibility = (tutorialHideQuestion || sandboxHideQuestion) ? "hidden" : "visible";
   }
 }
 
@@ -2521,6 +2799,23 @@ function updateLowHullAlarm(pilot, dmgHit){
       playSfx(state, "ship_damage_alarm");
     }
   }
+}
+
+function markDamage(pilot){
+  if(!pilot) return;
+  pilot.lastDamageAt = getElapsedSeconds();
+}
+
+function applyEasyRegen(pilot, dtReal){
+  if(!pilot) return;
+  if(pilot.hull >= 1) return;
+  var diff = String(state.difficulty || "normal").toLowerCase();
+  if(diff !== "easy") return;
+  var elapsed = getElapsedSeconds();
+  if(!pilot.lastDamageAt) pilot.lastDamageAt = elapsed;
+  if(elapsed - pilot.lastDamageAt < 6) return;
+  var regenRate = 0.12;
+  pilot.hull = clamp(pilot.hull + regenRate * dtReal, 0, 1);
 }
 
 function getHighestDigit(value){
@@ -4423,6 +4718,9 @@ function resetSession(){
     clearTimeout(launchHoldTimer);
     launchHoldTimer = 0;
   }
+  if(state.sandboxAlienWaveActive){
+    stopSandboxAlienWave();
+  }
   bullets.length = 0;
   asteroids.length = 0;
   powerups.length = 0;
@@ -4557,6 +4855,7 @@ function resetSession(){
 
   player.hull = 1;
   player.lowHullAlarmed = false;
+  player.lastDamageAt = 0;
   player.invuln = 0;
   player.hitFlash = 0;
   player.shipShake = 0;
@@ -4595,6 +4894,7 @@ function resetSession(){
     ensurePilot2();
     pilot2.hull = 1;
     pilot2.lowHullAlarmed = false;
+    pilot2.lastDamageAt = 0;
     pilot2.invuln = 0;
     pilot2.hitFlash = 0;
     pilot2.shipShake = 0;
@@ -4867,6 +5167,7 @@ function openSettings(){
   setSettingsTab("audio");
   loadWideGameplay();
   loadMousepadAutoStart();
+  loadTouchControlsEnabled();
   renderSettingsCatalogs();
   if(sfxCatalogPanel) sfxCatalogPanel.classList.add("open");
 }
@@ -4987,6 +5288,7 @@ function cleanupAutoFireSlots(){
 
 function fireForPilot(pilot, pilotId, cooldownOverride){
   if(!state.running || state.paused || state.over) return;
+  if(tutorialActive && tutorialMineralsFreeze) return false;
   if(pilotId === 1 && tutorialActive && tutorialShootLocked) return false;
   if(pilot.cooldown > 0) return;
 
@@ -5905,6 +6207,9 @@ function handleDivisorCorrectHit(hitAst){
   if(tourGuide) tourGuide.notify("correct");
   if(tutorialActive && tutorialStepId === "correct" && hitAst && hitAst.label != null){
     var mineralTarget = getHighestDigit(hitAst.label);
+    tutorialMineralsFreeze = true;
+    tutorialFreezeMousepadRestore = !!mousepadActive;
+    if(mousepadActive) setMousepadActive(false);
     tutorialMineralsTarget = mineralTarget;
     tutorialMineralsCollected = 0;
     tutorialMineralsComplete = mineralTarget <= 0;
@@ -5915,6 +6220,7 @@ function handleDivisorCorrectHit(hitAst){
     state.correctInPlay = false;
     state.correctAsteroidId = 0;
     state.spawnTimer = Math.max(state.spawnTimer || 0, 1.6);
+    updateCursorVisibility();
   }
   if(hitAst && hitAst.label != null){
     spawnMineralBurst(hitAst.x, hitAst.y, getHighestDigit(hitAst.label));
@@ -6091,6 +6397,15 @@ function onCorrectHit(hitAst){
         spawned = maybeSpawnEventPowerup(0.30, hitAst.x, hitAst.y);
       }
       if(completedQuestion){
+        if(sandboxMode && state.sandboxAlienWave && !state.sandboxAlienWaveActive){
+          state.sandboxAlienWaveQueued = (state.sandboxAlienWaveQueued || 0) + 1;
+          var remainingWave = Math.max(0, sandboxAlienWaveRequired - state.sandboxAlienWaveQueued);
+          if(remainingWave <= 0){
+            startSandboxAlienWave();
+          }else{
+            showToast("ALIEN WAVE IN " + remainingWave);
+          }
+        }
         if(waveHadWrongHit){
           cleanWaveStreak = 0;
         }else{
@@ -6940,6 +7255,11 @@ function update(dt){
     setShipAdvance(state, false);
     return;
   }
+  if(tutorialActive && tutorialMineralsFreeze){
+    setShipIdle(state, false);
+    setShipAdvance(state, false);
+    return;
+  }
 
   if(state.slowMoRemaining > 0){
     state.slowMoRemaining = Math.max(0, state.slowMoRemaining - dtReal);
@@ -6994,6 +7314,12 @@ function update(dt){
       alienConfig.enabled = true;
       alienConfig.maxOnScreen = Math.max(alienConfig.maxOnScreen || 0, 1);
       spawnAlien("scout", "2 / 2", 1, view);
+    }
+  }
+  if(sandboxMode && state.sandboxAlienWaveActive){
+    state.sandboxAlienWaveRemaining = Math.max(0, state.sandboxAlienWaveRemaining - dtReal);
+    if(state.sandboxAlienWaveRemaining <= 0){
+      stopSandboxAlienWave();
     }
   }
   var alienEnabled = alienConfig.enabled;
@@ -7074,6 +7400,15 @@ function update(dt){
   var down  = keys.has("s") || keys.has("arrowdown");
   var inputX = (right ? 1 : 0) - (left ? 1 : 0);
   var inputY = (down ? 1 : 0) - (up ? 1 : 0);
+  if(touchControlsEnabled){
+    if(!isTouchInputAllowed()){
+      resetTouchInputState();
+    }else if(touchMoveAxes.x || touchMoveAxes.y){
+      inputX = clamp(inputX + touchMoveAxes.x, -1, 1);
+      inputY = clamp(inputY + touchMoveAxes.y, -1, 1);
+    }
+    updateTouchButtonStates();
+  }
   if(mousepadActive && (virtualAxes.x || virtualAxes.y)){
     inputX = clamp(inputX + virtualAxes.x, -1, 1);
     inputY = clamp(inputY + virtualAxes.y, -1, 1);
@@ -7089,6 +7424,9 @@ function update(dt){
     inputY = 0;
   }
   var advanceIntent = up && !down;
+  if(touchControlsEnabled && inputY < -0.2){
+    advanceIntent = true;
+  }
   if(mousepadActive && inputY < -0.2){
     advanceIntent = true;
   }
@@ -7196,7 +7534,7 @@ function update(dt){
 
   player.cooldown = Math.max(0, player.cooldown - dtReal);
   if(player.autoFireActive && player.autoFireAmmo > 0){
-    var shootHeld = (!tutorialActive || !tutorialShootLocked) && (keys.has(keyBindings.shoot) || pointerDown);
+    var shootHeld = (!tutorialActive || !tutorialShootLocked) && (keys.has(keyBindings.shoot) || pointerDown || touchActionHeld.fire);
     if(shootHeld){
       if(!player.autoFireSpinning){
         player.autoFireSpinning = true;
@@ -7318,6 +7656,7 @@ function update(dt){
     player.defenseTimer = Math.max(0, player.defenseTimer - dtReal);
     if(player.defenseTimer === 0) player.defenseMode = "none";
   }
+  applyEasyRegen(player, dtReal);
   if(player.magnetTimer > 0){
     player.magnetTimer = Math.max(0, player.magnetTimer - dtReal);
   }
@@ -7393,7 +7732,7 @@ function update(dt){
   }
 
   state.spawnTimer -= dtSlow;
-  if(!state.alienSwarm && !missionBriefShowing && (!tutorialActive || tutorialSpawnUnlocked) && (!sandboxMode || state.sandboxSpawnAsteroids)){
+  if(!state.alienSwarm && !missionBriefShowing && (!tutorialActive || tutorialSpawnUnlocked) && (!sandboxMode || (state.sandboxSpawnAsteroids && !state.sandboxAlienWaveActive))){
     if(state.spawnTimer <= 0){
       spawnOneFromWave();
       if(state.level >= 7 && Math.random() < 0.18) spawnDecoyOnly();
@@ -7753,6 +8092,11 @@ function update(dt){
       if(tourGuide.notify("minerals")){
         tutorialMineralsPending = false;
       }
+    }
+  }
+  if(tutorialActive && tutorialStepId === "secondary_slots" && tourGuide){
+    if(countActiveSecondarySlots(player) >= 3){
+      tourGuide.notify("secondary_slot");
     }
   }
 
@@ -8345,7 +8689,7 @@ function update(dt){
         player.vx = (-dxC / distC) * player.speed * knockBackAlien;
         player.vy = (-dyC / distC) * player.speed * knockBackAlien;
         var dmgHit = 0.45;
-        if(player.defenseMode === "armor") dmgHit = 0;
+        if(player.defenseMode === "armor") dmgHit = dmgHit * 0.4;
         if(player.defenseMode === "shield"){
           impactDebris(player.x, player.y - 8);
           playSfx(state, "impact", 0.4);
@@ -8372,6 +8716,7 @@ function update(dt){
           player.shipShake = Math.max(player.shipShake || 0, 0.34);
           player.invuln = 0.55;
           player.hull = clamp(player.hull - dmgHit, 0, 1);
+          markDamage(player);
           state.streak = 0;
           if(player.hull <= 0 && tutorialActive){
             player.hull = Math.max(player.hull, 0.12);
@@ -8431,7 +8776,7 @@ function update(dt){
             p2.vx = (-dxC2 / distC2) * p2.speed * knockBackAlien2;
             p2.vy = (-dyC2 / distC2) * p2.speed * knockBackAlien2;
             var dmgHit2 = 0.45;
-            if(p2.defenseMode === "armor") dmgHit2 = 0;
+            if(p2.defenseMode === "armor") dmgHit2 = dmgHit2 * 0.4;
             if(p2.defenseMode === "shield"){
               impactDebris(p2.x, p2.y - 8);
               playSfx(state, "impact", 0.4);
@@ -8449,13 +8794,14 @@ function update(dt){
               impactShipHit(p2.x, p2.y - 10);
               playSfx(state, "crash", 0.6);
               p2.hitFlash = 1;
-              p2.invuln = 0.55;
-              p2.hull = clamp(p2.hull - dmgHit2, 0, 1);
-              if(p2.hull <= 0){
-                p2.hull = 0;
-                p2.lives = Math.max(0, (p2.lives || 0) - 1);
-                if(p2.lives <= 0){
-                  p2.dead = true;
+            p2.invuln = 0.55;
+            p2.hull = clamp(p2.hull - dmgHit2, 0, 1);
+            markDamage(p2);
+            if(p2.hull <= 0){
+              p2.hull = 0;
+              p2.lives = Math.max(0, (p2.lives || 0) - 1);
+              if(p2.lives <= 0){
+                p2.dead = true;
                   p2.hidden = true;
                   showToast("PILOT DOWN");
                 }else{
@@ -8500,7 +8846,7 @@ function update(dt){
         player.vx = (-dxp / distP) * player.speed * knockBackBullet;
         player.vy = (-dyp / distP) * player.speed * knockBackBullet;
         var dmgHit = 0.35;
-        if(player.defenseMode === "armor") dmgHit = 0;
+        if(player.defenseMode === "armor") dmgHit = dmgHit * 0.4;
         if(player.defenseMode === "shield"){
           impactDebris(player.x, player.y - 8);
           playSfx(state, "impact", 0.35);
@@ -8527,6 +8873,7 @@ function update(dt){
           player.shipShake = Math.max(player.shipShake || 0, 0.28);
           player.invuln = 0.45;
           player.hull = clamp(player.hull - dmgHit, 0, 1);
+          markDamage(player);
           state.streak = 0;
           if(player.hull <= 0 && tutorialActive){
             player.hull = Math.max(player.hull, 0.12);
@@ -8579,7 +8926,7 @@ function update(dt){
           p2b.vx = (-dxp2 / distP2) * p2b.speed * knockBackBullet2;
           p2b.vy = (-dyp2 / distP2) * p2b.speed * knockBackBullet2;
           var dmgHit2 = 0.35;
-          if(p2b.defenseMode === "armor") dmgHit2 = 0;
+          if(p2b.defenseMode === "armor") dmgHit2 = dmgHit2 * 0.4;
           if(p2b.defenseMode === "shield"){
             impactDebris(p2b.x, p2b.y - 8);
             playSfx(state, "impact", 0.35);
@@ -8599,6 +8946,7 @@ function update(dt){
             p2b.hitFlash = 1;
             p2b.invuln = 0.45;
             p2b.hull = clamp(p2b.hull - dmgHit2, 0, 1);
+            markDamage(p2b);
             if(p2b.hull <= 0){
               p2b.hull = 0;
               p2b.lives = Math.max(0, (p2b.lives || 0) - 1);
@@ -8832,14 +9180,13 @@ function draw(){
       ctx.restore();
     }
   }else if(!phaserActive && tutorialActive && SHOW_STARS){
-    drawStars(w,h,true);
+    drawStars(w,h,true, true);
   }
 
   if(state.paused && state.running){
     ctx.fillStyle = "rgba(0,0,0,.35)";
     ctx.fillRect(0,0,w,h);
   }
-
   updateTimerHud();
 
   drawEmpWave();
@@ -8856,32 +9203,52 @@ function draw(){
 
   drawTutorialPortal();
   if(!phaserActive){
-    if(!state.hideAsteroids){
+    if(!state.hideAsteroids && !(sandboxMode && state.sandboxAlienWaveActive)){
       for(var i=0;i<asteroids.length;i++) drawAsteroid(asteroids[i]);
-      drawAliens(ctx);
-      drawPowerups();
-      drawAlienBullets(ctx);
-      drawBullets();
     }
-  }
-  if(!state.hideAsteroids){
-    drawScopeLaser();
-    drawClaw();
+    if(!state.hideAsteroids || (sandboxMode && state.sandboxAlienWaveActive)){
+      drawAliens(ctx);
+      drawAlienBullets(ctx);
+    }
+    if(!state.hideAsteroids){
+      drawPowerups();
+      drawBullets();
+      drawScopeLaser();
+      drawClaw();
+    }
   }
   drawRings();
   drawParticles();
   drawDashGhosts();
   drawTutorialDots();
 
-  if(!state.hideAsteroids){
-    drawShip();
-    if(isSandboxMultiplayer()){
-      drawPilotShip(ensurePilot2());
-    }
+  drawShip();
+  if(isSandboxMultiplayer()){
+    drawPilotShip(ensurePilot2());
   }
   drawClawPrompt();
 
   ctx.restore();
+
+  if(tutorialActive && tutorialMineralsFreeze){
+    ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,.62)";
+    ctx.fillRect(0,0,w,h);
+    ctx.translate(cam.x || 0, cam.y || 0);
+    for(var pmi=0; pmi<powerups.length; pmi++){
+      var pm = powerups[pmi];
+      if(!pm || pm.type !== "mineral") continue;
+      ctx.save();
+      ctx.globalCompositeOperation = "lighter";
+      ctx.fillStyle = "rgba(110,220,255,.26)";
+      ctx.beginPath();
+      ctx.arc(pm.x, pm.y, pm.r * 2.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      drawPowerup(pm);
+    }
+    ctx.restore();
+  }
 
   if(gameOverFx.active && gameOverFx.reason === "destroyed"){
     ctx.save();
@@ -9008,7 +9375,7 @@ function draw(){
         ctx.restore();
       }
     }
-    if(!(tutorialActive && tutorialHideQuestion) && !missionBriefShowing){
+    if(!(tutorialActive && tutorialHideQuestion) && !(sandboxMode && state.sandboxAlienWaveActive) && !missionBriefShowing){
       if(splitHud){
         var cx1 = (lane1.minX + lane1.maxX) / 2;
         var cx2 = (lane2.minX + lane2.maxX) / 2;
@@ -11011,7 +11378,7 @@ function handlePilotAsteroidCollision(a, pilot, pilotId, hitX, hitY, force, noRe
     pilot.vx = (-dx / Math.max(1, dist)) * pilot.speed * knockBack;
     pilot.vy = (-dy / Math.max(1, dist)) * pilot.speed * knockBack;
     var dmgHit = (a.ghost || a.label === null) ? 0.18 : 0.30;
-    if(pilot.defenseMode === "armor") dmgHit = 0;
+    if(pilot.defenseMode === "armor") dmgHit = dmgHit * 0.4;
 
     if(pilot.defenseMode === "shield"){
       impactDebris(hitX, hitY - 8);
@@ -11036,6 +11403,7 @@ function handlePilotAsteroidCollision(a, pilot, pilotId, hitX, hitY, force, noRe
       pilot.invuln = 0.45;
 
       pilot.hull = clamp(pilot.hull - dmgHit, 0, 1);
+      markDamage(pilot);
       if(pilot.hull <= 0){
         pilot.hull = 0;
         pilot.lives = Math.max(0, (pilot.lives || 0) - 1);
@@ -11109,7 +11477,7 @@ function handleShipAsteroidCollision(a, hitX, hitY, force, noRemove){
     player.vx = (-dx / Math.max(1, dist)) * player.speed * knockBack;
     player.vy = (-dy / Math.max(1, dist)) * player.speed * knockBack;
     var dmgHit = (a.ghost || a.label === null) ? 0.18 : 0.30;
-    if(player.defenseMode === "armor") dmgHit = 0;
+    if(player.defenseMode === "armor") dmgHit = dmgHit * 0.4;
 
     if(player.defenseMode === "shield"){
       impactDebris(hitX, hitY - 8);
@@ -11138,6 +11506,7 @@ function handleShipAsteroidCollision(a, hitX, hitY, force, noRemove){
       player.invuln = 0.45;
 
       player.hull = clamp(player.hull - dmgHit, 0, 1);
+      markDamage(player);
       state.streak = 0;
       if(consumeShipLife("OUT OF LIVES (ASTEROID COLLISION)")) return true;
 
@@ -12083,20 +12452,20 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
     };
     // Thick white outline pass
     ctx.save();
-    ctx.globalAlpha = baseAlpha;
+    ctx.globalAlpha = Math.min(1, baseAlpha * 1.2);
     ctx.shadowBlur = 0;
     ctx.shadowColor = "rgba(0,0,0,0)";
-    ctx.strokeStyle = "rgba(245,250,255,1)";
-    ctx.lineWidth = 8.4;
+    ctx.strokeStyle = "rgba(255,255,255,1)";
+    ctx.lineWidth = 14;
     drawArmorStroke();
     ctx.restore();
     // Opaque bloom pass
     ctx.save();
-    ctx.globalAlpha = baseAlpha;
-    ctx.shadowColor = "rgba(225,245,255,1)";
-    ctx.shadowBlur = 120;
-    ctx.strokeStyle = "rgba(235,245,255,1)";
-    ctx.lineWidth = 12.5;
+    ctx.globalAlpha = Math.min(1, baseAlpha * 1.3);
+    ctx.shadowColor = "rgba(245,255,255,1)";
+    ctx.shadowBlur = 160;
+    ctx.strokeStyle = "rgba(245,255,255,1)";
+    ctx.lineWidth = 18;
     drawArmorStroke();
     ctx.restore();
     ctx.restore();
@@ -12671,6 +13040,12 @@ if(toggleMousepadAuto){
     setMousepadAutoStart(toggleMousepadAuto.checked);
   });
 }
+if(toggleTouchControls){
+  toggleTouchControls.addEventListener("change", function(){
+    playSfx(state, "menu_beep");
+    setTouchControlsEnabled(toggleTouchControls.checked);
+  });
+}
 
 function getCompassTarget(){
   if(state.correctAsteroidId){
@@ -13126,6 +13501,56 @@ function applyQueryParams(){
   }
 }
 
+function syncSandboxAlienWaveButton(){
+  if(!sandboxAlienWaveButton) return;
+  sandboxAlienWaveButton.classList.toggle("active", !!(state.sandboxAlienWave || state.sandboxAlienWaveActive));
+}
+
+function startSandboxAlienWave(){
+  state.sandboxAlienWave = true;
+  state.sandboxAlienWaveActive = true;
+  state.sandboxAlienWaveRemaining = sandboxAlienWaveDuration;
+  state.sandboxAlienWaveQueued = 0;
+  setSandboxQuestionHidden(true);
+  asteroids.length = 0;
+  resetAliens();
+  setAlienUnlocked(true);
+  configureAliensDifficulty();
+  syncSandboxAlienWaveButton();
+  showToast("ALIEN WAVE STARTED");
+}
+
+function queueSandboxAlienWave(){
+  state.sandboxAlienWave = true;
+  state.sandboxAlienWaveActive = false;
+  state.sandboxAlienWaveRemaining = 0;
+  state.sandboxAlienWaveQueued = 0;
+  setSandboxQuestionHidden(false);
+  syncSandboxAlienWaveButton();
+  showToast("ALIEN WAVE QUEUED");
+  showToast("ANSWER 2 QUESTIONS");
+}
+
+function stopSandboxAlienWave(){
+  state.sandboxAlienWave = false;
+  state.sandboxAlienWaveActive = false;
+  state.sandboxAlienWaveRemaining = 0;
+  state.sandboxAlienWaveQueued = 0;
+  setSandboxQuestionHidden(false);
+  resetAliens();
+  configureAliensDifficulty();
+  syncSandboxAlienWaveButton();
+  showToast("ALIEN WAVE ENDED");
+}
+
+function toggleSandboxAlienWave(){
+  if(state.sandboxAlienWaveActive || state.sandboxAlienWave){
+    stopSandboxAlienWave();
+  }else{
+    queueSandboxAlienWave();
+  }
+}
+
 function initSandboxPanel(){
   if(!document.body || sandboxPanel) return;
   var styleId = "sandboxPanelStyles";
@@ -13240,6 +13665,8 @@ function setSandboxShip(type){
   var btnReset = null;
   var btnSpawnToggle = null;
   var btnStampede = null;
+  var btnAlienWave = null;
+  var btnGamepad = null;
   var btnTwoPilots = null;
   var btnSharedArena = null;
   var btnSplitArena = null;
@@ -13260,6 +13687,15 @@ function setSandboxShip(type){
       updateSandboxToggle(btnSpawnToggle, state.sandboxSpawnAsteroids);
       btnSpawnToggle.textContent = state.sandboxSpawnAsteroids ? "Asteroids On" : "Asteroids Off";
       showToast(state.sandboxSpawnAsteroids ? "ASTEROIDS ON" : "ASTEROIDS OFF");
+    });
+    btnAlienWave = addButton(actionsContainer, "Alien Wave", function(){
+      toggleSandboxAlienWave();
+      updateSandboxToggle(btnAlienWave, state.sandboxAlienWaveActive);
+    });
+    btnGamepad = addButton(actionsContainer, "Gamepad", function(){
+      setTouchControlsEnabled(!touchControlsEnabled);
+      updateSandboxToggle(btnGamepad, touchControlsEnabled);
+      showToast(touchControlsEnabled ? "GAMEPAD ON" : "GAMEPAD OFF");
     });
     btnStampede = addButton(actionsContainer, "Stampede", function(){
       state.stampedeMode = !state.stampedeMode;
@@ -13373,6 +13809,8 @@ function setSandboxShip(type){
     resetSession();
     showToast("MODE -> " + info.operation.toUpperCase() + " / " + info.modeLabel.toUpperCase());
   }
+  sandboxAlienWaveButton = btnAlienWave;
+  sandboxGamepadButton = btnGamepad;
 
   function setSandboxOperation(op){
     var fallback = "classic";
@@ -13516,6 +13954,8 @@ function setSandboxShip(type){
   updateSandboxToggle(btnInfLives, state.sandboxInfiniteLives);
   updateSandboxToggle(btnNoScore, state.sandboxNoScore);
   updateSandboxToggle(btnSpawnToggle, state.sandboxSpawnAsteroids);
+  updateSandboxToggle(btnAlienWave, state.sandboxAlienWaveActive);
+  updateSandboxToggle(btnGamepad, touchControlsEnabled);
   updateSandboxToggle(btnStampede, state.stampedeMode);
   updateSandboxToggle(btnTwoPilots, state.sandboxTwoPilots);
   updateSandboxToggle(btnSharedArena, state.sandboxTwoPilotsMode !== "split");
@@ -13551,6 +13991,7 @@ function boot(){
   applySettings();
   loadWideGameplay();
   loadMousepadAutoStart();
+  loadTouchControlsEnabled();
   loadMinerals();
   updateDecoyFunctionAvailability();
   primeFullscreen();
@@ -13570,6 +14011,11 @@ function boot(){
   sandboxMode = params.get("sandbox") === "1" || params.get("sandbox") === "true";
   state.sandbox = sandboxMode;
   state.sandboxSpawnAsteroids = true;
+  state.sandboxAlienWave = false;
+  state.sandboxAlienWaveActive = false;
+  state.sandboxAlienWaveRemaining = 0;
+  state.sandboxAlienWaveQueued = 0;
+  setSandboxQuestionHidden(false);
   if(sandboxMode){
     initSandboxPanel();
   }
@@ -13584,12 +14030,15 @@ function boot(){
       tutorialAlienDelayRemaining = 0;
       tutorialHullRecoveryShown = false;
       tutorialShootLocked = false;
+      tutorialMineralsFreeze = false;
       tutorialMineralsTarget = 0;
       tutorialMineralsCollected = 0;
       tutorialMineralsComplete = false;
       tutorialMineralsPending = false;
       tutorialMineralsRemaining = 0;
       tutorialExtraPowerupsSpawned = false;
+      tutorialFreezeMousepadRestore = false;
+      tutorialMovementPreference = null;
       tutorialPortalActive = false;
       tutorialPortalT = 0;
       tutorialPortalLock = false;
@@ -13682,9 +14131,36 @@ function boot(){
           if(stepId === "alien" && !tutorialAlienSpawned){
             tutorialAlienSpawned = true;
             tutorialAlienUnlocked = false;
-            tutorialAlienDelayRemaining = 5.5;
+            tutorialSpawnUnlocked = false;
+            asteroids.length = 0;
+            state.correctInPlay = false;
+            state.correctAsteroidId = 0;
+            state.spawnTimer = 2.0;
+            tutorialAlienDelayRemaining = 2.2;
             alienConfig.enabled = true;
             alienConfig.maxOnScreen = Math.max(alienConfig.maxOnScreen || 0, 1);
+          }
+        },
+        onConfirm: function(stepId){
+          if(stepId === "minerals"){
+            tutorialMineralsFreeze = false;
+            if(tutorialFreezeMousepadRestore && tutorialMovementPreference === "mouse"){
+              setMousepadActive(true);
+            }
+            tutorialFreezeMousepadRestore = false;
+            if(tutorialMineralsComplete || tutorialMineralsRemaining <= 0){
+              tutorialMineralsPending = true;
+            }
+            updateCursorVisibility();
+          }
+        },
+        onChoice: function(stepId, choice){
+          if(stepId !== "movement_preference") return;
+          tutorialMovementPreference = choice && choice.id ? String(choice.id) : "";
+          if(tutorialMovementPreference === "mouse"){
+            if(!mousepadActive) setMousepadActive(true);
+          }else{
+            if(mousepadActive) setMousepadActive(false);
           }
         },
         onComplete: function(){
@@ -13692,6 +14168,8 @@ function boot(){
           tutorialPortalActive = false;
           tutorialPortalLock = false;
           tutorialPortalNotifyPending = false;
+          tutorialMineralsFreeze = false;
+          tutorialFreezeMousepadRestore = false;
           setTutorialQuestionHidden(false);
           try{
             sessionStorage.setItem("asteroidConfig", JSON.stringify({
@@ -13724,6 +14202,7 @@ function boot(){
       tutorialPowerupUnlocked = true;
       tutorialAlienUnlocked = true;
       tutorialAlienDelayRemaining = 0;
+      tutorialMineralsFreeze = false;
       alienConfig.enabled = true;
       setTutorialQuestionHidden(false);
     }

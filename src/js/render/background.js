@@ -98,11 +98,20 @@ export function createBackground(ctx){
     });
   }
 
-  function drawStars(w,h,noPlanets){
+  function drawStars(w,h,noPlanets, darken){
     if(!bg.stars.length || bg.lastW !== w || bg.lastH !== h) buildStarfield(w,h);
 
     var t = performance.now() * 0.001;
     var dt = bg.dt || (1/60);
+
+    if(darken){
+      ctx.save();
+      ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = "rgba(0,0,0,0.9)";
+      ctx.fillRect(0,0,w,h);
+      ctx.restore();
+    }
 
     if(bg.nebula && bg.nebula.length){
       ctx.save();

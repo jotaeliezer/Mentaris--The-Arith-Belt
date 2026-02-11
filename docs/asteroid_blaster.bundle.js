@@ -139378,6 +139378,10 @@
       sandboxInfiniteLives: false,
       sandboxNoScore: false,
       sandboxSpawnAsteroids: true,
+      sandboxAlienWave: false,
+      sandboxAlienWaveActive: false,
+      sandboxAlienWaveRemaining: 0,
+      sandboxAlienWaveQueued: 0,
       stampedeMode: false,
       sandboxTwoPilots: false,
       sandboxTwoPilotsMode: "shared",
@@ -139436,6 +139440,8 @@
       shockwaveCooldown: 0,
       bankHold: 0,
       hull: 1,
+      lowHullAlarmed: false,
+      lastDamageAt: 0,
       invuln: 0,
       hitFlash: 0,
       shipShake: 0,
@@ -139590,6 +139596,8 @@
       machine_gun_load: new Audio("sfx/shots/machine_gun_load.mp3"),
       camer_ice_shot: new Audio("sfx/shots/camer_ice_shot.mp3"),
       correct: new Audio("sfx/gameplay/correct.mp3"),
+      mineral_collected: new Audio("sfx/gameplay/mineral_collected.mp3"),
+      ship_damage_alarm: new Audio("sfx/gameplay/ship_damage_alarm.mp3"),
       crash: new Audio("sfx/ship/crash.mp3"),
       dash: new Audio("sfx/ship/dash.mp3"),
       armor_pickup: new Audio("sfx/powerups/armor_pickup.mp3"),
@@ -139633,6 +139641,8 @@
     sfxBank.machine_gun_load.volume = 0.55;
     sfxBank.camer_ice_shot.volume = 0.4;
     sfxBank.correct.volume = 0.5;
+    sfxBank.mineral_collected.volume = 0.55;
+    sfxBank.ship_damage_alarm.volume = 0.6;
     sfxBank.crash.volume = 0.6;
     sfxBank.dash.volume = 0.55;
     sfxBank.armor_pickup.volume = 0.55;
@@ -139904,22 +139914,25 @@
     };
     var onSkip = typeof opts.onSkip === "function" ? opts.onSkip : onComplete;
     var onStep = typeof opts.onStep === "function" ? opts.onStep : null;
+    var onConfirm = typeof opts.onConfirm === "function" ? opts.onConfirm : null;
+    var onChoice = typeof opts.onChoice === "function" ? opts.onChoice : null;
     var steps = [
       { id: "intro", title: "Welcome aboard, pilot", body: "Welcome to the Arith Belt. Let's begin your training.", autoAdvanceMs: 2e3, showProgress: false },
       { id: "move_arrows", title: "Step 1: Flight Controls (Arrows)", body: "Use the Up, Down, Left, and Right arrow keys to guide the ship through dots 1-4 in order.", event: "move_arrows", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Formation clean, cadet.", praiseBody: "Arrow control confirmed. Smooth tracking." },
       { id: "move_wasd", title: "Step 2: Flight Controls (WASD)", body: "Now use W, A, S, and D to guide the ship through the same dots again.", event: "move_wasd", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "WASD verified.", praiseBody: "Sharp handling. You fly like you mean it." },
       { id: "mousepad_hybrid", title: "Step 3: Mousepad", body: "Press B to enable mousepad. Fly to dots 1-4 in order.", event: "mousepad_hybrid", hideDuringAction: true, actionPauseMs: 700 },
-      { id: "fire_once", title: "Step 4: Fire Once", body: "Press Space (or click) to fire a single shot.", event: "fire", count: 1 },
-      { id: "fire_again", title: "Step 5: Fire Again", body: "Press Space again to fire another shot.", event: "fire", count: 1 },
-      { id: "correct", title: "Step 6: Correct Hit", body: "Hit the asteroid with the correct answer.", event: "correct" },
-      { id: "minerals", title: "Step 7: Minerals", body: "Collect all minerals. Your mineral count is at the top right.", event: "minerals" },
-      { id: "powerup", title: "Step 8: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
-      { id: "secondary_slots", title: "Step 9: Aid Slots", body: "You have 3 aid slots on the top-right. Press 1, 2, or 3 (or numpad 1-3) to select a slot.", event: "secondary_slot", count: 1 },
-      { id: "secondary_aid", title: "Step 10: Aid Weapon", body: "Press E to trigger your aid weapon when the asteroids drop.", event: "secondary" },
-      { id: "correct_after_powerup", title: "Step 11: Correct Hit", body: "Now shoot the correct answer asteroid.", event: "correct" },
-      { id: "dash", title: "Step 12: Dash", body: "Press Shift to dash through danger.", event: "dash" },
-      { id: "ability", title: "Step 13: Ability", body: "Press Q to use your ship ability.", event: "ability" },
-      { id: "alien", title: "Step 14: Alien Contact", body: "Shoot down the alien target.", event: "alien" },
+      { id: "movement_preference", title: "Step 4: Pick Movement", body: "Choose your preferred movement controls for this training run.", choices: [{ id: "arrows", label: "Arrow Keys" }, { id: "wasd", label: "WASD" }, { id: "mouse", label: "Mouse Pilot" }] },
+      { id: "fire_once", title: "Step 5: Fire Once", body: "Press Space (or click) to fire a single shot.", event: "fire", count: 1 },
+      { id: "fire_again", title: "Step 6: Fire Again", body: "Press Space again to fire another shot.", event: "fire", count: 1 },
+      { id: "correct", title: "Step 7: Correct Hit", body: "Hit the asteroid with the correct answer.", event: "correct" },
+      { id: "minerals", title: "Step 8: Minerals", body: "Collect all minerals. Your mineral count is at the top right.", event: "minerals", confirmLabel: "Understood" },
+      { id: "powerup", title: "Step 9: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
+      { id: "secondary_slots", title: "Step 10: Aid Slots", body: "You have 3 aid slots on the top-right. Press 1, 2, or 3 (or numpad 1-3) to select a slot.", event: "secondary_slot", count: 1 },
+      { id: "secondary_aid", title: "Step 11: Aid Weapon", body: "Press E to trigger your aid weapon when the asteroids drop.", event: "secondary" },
+      { id: "correct_after_powerup", title: "Step 12: Correct Hit", body: "Now shoot the correct answer asteroid.", event: "correct" },
+      { id: "dash", title: "Step 13: Dash", body: "Press Shift to dash through danger.", event: "dash" },
+      { id: "ability", title: "Step 14: Ability", body: "Press Q to use your ship ability.", event: "ability" },
+      { id: "alien", title: "Step 15: Alien Contact", body: "Alien contacts incoming, cadet. They will cut you off and block mineral recovery. Take it down.", event: "alien" },
       { id: "portal", title: "Final Step: Portal", body: "Cadet, fly up into the portal. Mission starts on contact.", event: "portal" }
     ];
     var progressTotal = 0;
@@ -139950,7 +139963,9 @@
     var titleEl = null;
     var bodyEl = null;
     var progressEl = null;
+    var choiceWrapEl = null;
     var skipBtn = null;
+    var confirmBtn = null;
     var launchBtn = null;
     var finishTimer = null;
     var transitionTimer = null;
@@ -139958,6 +139973,7 @@
     var hideTimer = null;
     var typeTimers = [];
     var typeAudio = null;
+    var currentStep = null;
     var stepRevealAt = 0;
     var minStepMs = 2e3;
     var titleTypeMs = 20;
@@ -139968,7 +139984,7 @@
         return;
       var style = document.createElement("style");
       style.id = "tourGuideStyles";
-      style.textContent = '#tourGuide{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:0 18px 28px;pointer-events:none;z-index:20;opacity:0;transition:opacity .4s ease;font-family:"Oxanium",sans-serif;}#tourGuide.show{opacity:1;}#tourGuide .tourGuide-wrap{display:flex;align-items:flex-end;gap:18px;}#tourGuide .tourGuide-avatarWrap{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:220px;}#tourGuide .tourGuide-avatar{width:230px;height:230px;object-fit:contain;filter:drop-shadow(0 12px 26px rgba(0,0,0,.45));}#tourGuide .tourGuide-avatarName{font-size:13px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.85);}#tourGuide .tourGuide-card{pointer-events:auto;background:rgba(8,12,24,.88);border:1px solid rgba(0,229,255,.35);border-radius:18px;padding:18px 20px;max-width:520px;width:min(520px,92%);box-shadow:0 18px 48px rgba(0,0,0,.5);font-family:"Oxanium",sans-serif;opacity:0;transform:translateY(12px);transition:opacity .45s ease, transform .45s ease;}#tourGuide.show .tourGuide-card{opacity:1;transform:translateY(0);}#tourGuide .tourGuide-card.is-fading{opacity:0;transform:translateY(8px);}#tourGuide .tourGuide-title{font-size:16px;letter-spacing:1.4px;text-transform:uppercase;color:#e8ecff;margin:0 0 8px;min-height:18px;}#tourGuide .tourGuide-body{font-size:15px;color:rgba(232,236,255,.82);line-height:1.6;margin:0 0 10px;min-height:32px;}#tourGuide .tourGuide-progress{font-size:13px;letter-spacing:1px;text-transform:uppercase;color:rgba(232,236,255,.6);}#tourGuide .tourGuide-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;}#tourGuide .tourGuide-skip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);color:#e8ecff;border-radius:12px;padding:6px 10px;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:"Oxanium",sans-serif;}';
+      style.textContent = '#tourGuide{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:0 18px 28px;pointer-events:none;z-index:20;opacity:0;transition:opacity .4s ease;font-family:"Oxanium",sans-serif;}#tourGuide.show{opacity:1;}#tourGuide .tourGuide-wrap{display:flex;align-items:flex-end;gap:18px;}#tourGuide .tourGuide-avatarWrap{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:220px;}#tourGuide .tourGuide-avatar{width:230px;height:230px;object-fit:contain;filter:drop-shadow(0 12px 26px rgba(0,0,0,.45));}#tourGuide .tourGuide-avatarName{font-size:13px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.85);}#tourGuide .tourGuide-card{pointer-events:auto;background:rgba(8,12,24,.88);border:1px solid rgba(0,229,255,.35);border-radius:18px;padding:18px 20px;max-width:520px;width:min(520px,92%);box-shadow:0 18px 48px rgba(0,0,0,.5);font-family:"Oxanium",sans-serif;opacity:0;transform:translateY(12px);transition:opacity .45s ease, transform .45s ease;}#tourGuide.show .tourGuide-card{opacity:1;transform:translateY(0);}#tourGuide .tourGuide-card.is-fading{opacity:0;transform:translateY(8px);}#tourGuide .tourGuide-title{font-size:16px;letter-spacing:1.4px;text-transform:uppercase;color:#e8ecff;margin:0 0 8px;min-height:18px;}#tourGuide .tourGuide-body{font-size:15px;color:rgba(232,236,255,.82);line-height:1.6;margin:0 0 10px;min-height:32px;}#tourGuide .tourGuide-progress{font-size:13px;letter-spacing:1px;text-transform:uppercase;color:rgba(232,236,255,.6);}#tourGuide .tourGuide-choices{display:none;gap:8px;flex-wrap:wrap;margin:10px 0 6px;}#tourGuide .tourGuide-choice{background:rgba(0,229,255,.14);border:1px solid rgba(0,229,255,.35);color:#d9f9ff;border-radius:12px;padding:6px 10px;font-size:12px;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;font-family:"Oxanium",sans-serif;}#tourGuide .tourGuide-choice:hover{background:rgba(0,229,255,.2);}#tourGuide .tourGuide-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;}#tourGuide .tourGuide-confirm{background:rgba(80,220,120,.2);border:1px solid rgba(80,220,120,.45);color:#d8ffe7;border-radius:12px;padding:6px 12px;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:"Oxanium",sans-serif;display:none;}#tourGuide .tourGuide-skip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);color:#e8ecff;border-radius:12px;padding:6px 10px;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:"Oxanium",sans-serif;}';
       document.head.appendChild(style);
     }
     function mount() {
@@ -139976,13 +139992,15 @@
         return;
       overlay = document.createElement("div");
       overlay.id = "tourGuide";
-      overlay.innerHTML = '<div class="tourGuide-wrap"><div class="tourGuide-avatarWrap"><img class="tourGuide-avatar" alt="Commander"/><div class="tourGuide-avatarName">COMMANDER SOLVER</div></div><div class="tourGuide-card"><div class="tourGuide-title"></div><div class="tourGuide-body"></div><div class="tourGuide-progress"></div><div class="tourGuide-actions"><button class="tourGuide-skip" type="button">Skip Tutorial</button></div></div></div>';
+      overlay.innerHTML = '<div class="tourGuide-wrap"><div class="tourGuide-avatarWrap"><img class="tourGuide-avatar" alt="Commander"/><div class="tourGuide-avatarName">COMMANDER SOLVER</div></div><div class="tourGuide-card"><div class="tourGuide-title"></div><div class="tourGuide-body"></div><div class="tourGuide-progress"></div><div class="tourGuide-choices"></div><div class="tourGuide-actions"><button class="tourGuide-confirm" type="button">Understood</button><button class="tourGuide-skip" type="button">Skip Tutorial</button></div></div></div>';
       gameShell2.appendChild(overlay);
       cardEl = overlay.querySelector(".tourGuide-card");
       titleEl = overlay.querySelector(".tourGuide-title");
       bodyEl = overlay.querySelector(".tourGuide-body");
       progressEl = overlay.querySelector(".tourGuide-progress");
+      choiceWrapEl = overlay.querySelector(".tourGuide-choices");
       skipBtn = overlay.querySelector(".tourGuide-skip");
+      confirmBtn = overlay.querySelector(".tourGuide-confirm");
       var avatarEl = overlay.querySelector(".tourGuide-avatar");
       if (avatarEl) {
         avatarEl.src = "images/characters/commander1.png";
@@ -139992,6 +140010,18 @@
       if (skipBtn) {
         skipBtn.addEventListener("click", function() {
           finish(true);
+        });
+      }
+      if (confirmBtn) {
+        confirmBtn.addEventListener("click", function() {
+          if (!currentStep || !active)
+            return;
+          if (onConfirm)
+            onConfirm(currentStep.id, currentStep);
+          confirmBtn.style.display = "none";
+          if (!currentStep.autoAdvanceMs) {
+            stepAccepting = true;
+          }
         });
       }
     }
@@ -140153,6 +140183,7 @@
     function renderStep(step, immediate, index, total, hideProgress) {
       if (onStep)
         onStep(step.id, step);
+      currentStep = step;
       stepProgress = 0;
       stepAccepting = false;
       if (advanceTimer) {
@@ -140170,6 +140201,37 @@
       transitionTimer = setTimeout(function() {
         if (cardEl)
           cardEl.classList.remove("is-fading");
+        if (confirmBtn) {
+          if (step.confirmLabel) {
+            confirmBtn.textContent = step.confirmLabel;
+            confirmBtn.style.display = "inline-flex";
+          } else {
+            confirmBtn.style.display = "none";
+          }
+        }
+        if (choiceWrapEl) {
+          choiceWrapEl.innerHTML = "";
+          var hasChoices = Array.isArray(step.choices) && step.choices.length > 0;
+          choiceWrapEl.style.display = hasChoices ? "flex" : "none";
+          if (hasChoices) {
+            for (var ci = 0; ci < step.choices.length; ci++) {
+              (function(choice) {
+                var btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "tourGuide-choice";
+                btn.textContent = choice.label || choice.id || "Select";
+                btn.addEventListener("click", function() {
+                  if (!currentStep || !active || currentStep.id !== step.id)
+                    return;
+                  if (onChoice)
+                    onChoice(step.id, choice, step);
+                  handleStepCompletion(step);
+                });
+                choiceWrapEl.appendChild(btn);
+              })(step.choices[ci]);
+            }
+          }
+        }
         stepRevealAt = Date.now();
         if (progressEl) {
           if (hideProgress || step.showProgress === false) {
@@ -140182,7 +140244,7 @@
         }
         typeText(titleEl, step.title, titleTypeMs, function() {
           typeText(bodyEl, step.body, bodyTypeMs, function() {
-            stepAccepting = !step.autoAdvanceMs;
+            stepAccepting = !step.autoAdvanceMs && !step.confirmLabel && !(Array.isArray(step.choices) && step.choices.length);
             if (step.autoAdvanceMs) {
               scheduleNext(step.autoAdvanceMs);
             }
@@ -140654,11 +140716,19 @@
         hue: Math.random() < 0.5 ? "cyan" : "mag"
       });
     }
-    function drawStars2(w, h, noPlanets) {
+    function drawStars2(w, h, noPlanets, darken) {
       if (!bg2.stars.length || bg2.lastW !== w || bg2.lastH !== h)
         buildStarfield2(w, h);
       var t = performance.now() * 1e-3;
       var dt = bg2.dt || 1 / 60;
+      if (darken) {
+        ctx2.save();
+        ctx2.globalCompositeOperation = "source-over";
+        ctx2.globalAlpha = 1;
+        ctx2.fillStyle = "rgba(0,0,0,0.9)";
+        ctx2.fillRect(0, 0, w, h);
+        ctx2.restore();
+      }
       if (bg2.nebula && bg2.nebula.length) {
         ctx2.save();
         ctx2.globalCompositeOperation = "lighter";
@@ -141315,11 +141385,13 @@
     var pad = 80;
     var x = randi(pad, Math.max(pad + 20, view2.w - pad));
     var y = -40;
+    var answerHits = typeof answer === "number" && Number.isFinite(answer) ? Math.max(1, Math.round(answer)) : t.hp || 1;
     var a = {
       uid: alienId++,
       id: t.id,
       name: t.name,
       hp: t.hp,
+      maxHits: answerHits,
       speed: t.speed,
       score: t.score,
       behavior: t.behavior,
@@ -141579,6 +141651,23 @@
         ctx2.fill();
       }
       ctx2.restore();
+      var totalHits = typeof a.maxHits === "number" && Number.isFinite(a.maxHits) ? Math.max(1, a.maxHits) : typeof a.answer === "number" && Number.isFinite(a.answer) ? Math.max(1, Math.round(a.answer)) : 1;
+      var remainingHits = Math.max(0, totalHits - (a.hitsTaken || 0));
+      var ratio = clamp(remainingHits / Math.max(1, totalHits), 0, 1);
+      var barH = Math.max(18, a.r * 1.7);
+      var barW = 5;
+      var barX = a.x + shakeX + a.r + 8;
+      var barY = a.y + shakeY - barH / 2;
+      ctx2.save();
+      ctx2.globalAlpha = 0.85 * flashAlpha;
+      ctx2.fillStyle = "rgba(0,0,0,.35)";
+      ctx2.fillRect(barX, barY, barW, barH);
+      ctx2.fillStyle = "rgba(70,255,120,.9)";
+      ctx2.fillRect(barX, barY + barH * (1 - ratio), barW, barH * ratio);
+      ctx2.strokeStyle = "rgba(255,255,255,.2)";
+      ctx2.lineWidth = 1;
+      ctx2.strokeRect(barX - 0.5, barY - 0.5, barW + 1, barH + 1);
+      ctx2.restore();
       if (a.showDigitTimer > 0 && a.swarmDigit != null) {
         ctx2.save();
         ctx2.globalAlpha = 0.95;
@@ -141823,11 +141912,14 @@
   var settingsPanels = overlayMenu ? overlayMenu.querySelectorAll("[data-settings-panel]") : [];
   var toggleWideGameplay = document.getElementById("toggleWideGameplay");
   var toggleMousepadAuto = document.getElementById("toggleMousepadAuto");
+  var toggleTouchControls = document.getElementById("toggleTouchControls");
   var btnResume = document.getElementById("btnResume");
   var btnShipCommands = document.getElementById("btnShipCommands");
   var wideGameplayKey = "mentaris.gameplay.wide";
   var mousepadAutoKey = "mentaris.mousepad.autostart";
+  var touchControlsKey = "mentaris.touch.controls.enabled";
   var mousepadAutoStart = false;
+  var touchControlsEnabled = false;
   var pauseAllowed = false;
   function updateAudioFromInputs() {
     if (inputs.sound)
@@ -142085,6 +142177,46 @@
     }
     updateCursorVisibility();
   }
+  function isTouchCapableDevice() {
+    try {
+      if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches)
+        return true;
+    } catch (e) {
+    }
+    return "ontouchstart" in window || navigator.maxTouchPoints > 0;
+  }
+  function setTouchControlsEnabled(isOn) {
+    touchControlsEnabled = !!isOn;
+    document.body.classList.toggle("touchControlsOn", touchControlsEnabled);
+    if (toggleTouchControls)
+      toggleTouchControls.checked = touchControlsEnabled;
+    try {
+      localStorage.setItem(touchControlsKey, touchControlsEnabled ? "1" : "0");
+    } catch (e) {
+    }
+    if (touchControlsEnabled && mousepadActive) {
+      setMousepadActive(false);
+    }
+    if (!touchControlsEnabled) {
+      resetTouchInputState();
+    }
+  }
+  function loadTouchControlsEnabled() {
+    var stored = null;
+    try {
+      stored = localStorage.getItem(touchControlsKey);
+    } catch (e) {
+    }
+    if (stored === "1" || stored === "true") {
+      setTouchControlsEnabled(true);
+      return;
+    }
+    if (stored === "0" || stored === "false") {
+      setTouchControlsEnabled(false);
+      return;
+    }
+    setTouchControlsEnabled(isTouchCapableDevice());
+  }
   function setFullscreenLabel(btn, isFull) {
     if (!btn)
       return;
@@ -142253,11 +142385,14 @@
   var tutorialAlienDelayRemaining = 0;
   var tutorialStepId = null;
   var tutorialShootLocked = false;
+  var tutorialMineralsFreeze = false;
   var tutorialMineralsTarget = 0;
   var tutorialMineralsCollected = 0;
   var tutorialMineralsComplete = false;
   var tutorialMineralsPending = false;
+  var tutorialMineralsRemaining = 0;
   var tutorialExtraPowerupsSpawned = false;
+  var tutorialMovementPreference = null;
   var tutorialPortalActive = false;
   var tutorialPortalX = 0;
   var tutorialPortalY = 0;
@@ -142266,6 +142401,10 @@
   var tutorialPortalLock = false;
   var tutorialPortalNotifyPending = false;
   var tutorialHideQuestion = false;
+  var sandboxHideQuestion = false;
+  var sandboxAlienWaveDuration = 20;
+  var sandboxAlienWaveRequired = 2;
+  var sandboxAlienWaveButton = null;
   var tutorialDots = [];
   var tutorialDotsIndex = 0;
   var tutorialDotsActive = false;
@@ -142625,6 +142764,8 @@
     { id: "impact", label: "Impact", desc: "Collision hit.", when: "Ship hits and alien impacts.", badge: "SFX", src: "sfx/gameplay/impact.mp3", category: "gameplay" },
     { id: "impact_thud", label: "Impact Thud", desc: "Asteroid thud.", when: "Asteroid impacts and EMP cascade hits.", badge: "SFX", src: "sfx/gameplay/impact_thud.mp3", category: "gameplay" },
     { id: "correct", label: "Correct", desc: "Correct hit cue.", when: "Correct answer asteroid destroyed.", badge: "SFX", src: "sfx/gameplay/correct.mp3", category: "gameplay" },
+    { id: "mineral_collected", label: "Mineral Collected", desc: "Mineral pickup.", when: "Collecting mineral drops.", badge: "SFX", src: "sfx/gameplay/mineral_collected.mp3", category: "gameplay" },
+    { id: "ship_damage_alarm", label: "Ship Damage Alarm", desc: "Hull critical alarm.", when: "Ship is one hit from destruction.", badge: "SFX", src: "sfx/gameplay/ship_damage_alarm.mp3", category: "gameplay" },
     { id: "wrong_asteroid", label: "Wrong Asteroid", desc: "Wrong hit cue.", when: "Wrong answer asteroid hit.", badge: "SFX", src: "sfx/gameplay/wrong_asteroid.mp3", category: "gameplay" },
     { id: "missed_answer", label: "Missed Answer", desc: "Missed answer cue.", when: "Correct asteroid escapes.", badge: "SFX", src: "sfx/gameplay/missed_answer.mp3", category: "gameplay" },
     { id: "level_up2", label: "Level Up", desc: "Level up cue.", when: "Level increases.", badge: "SFX", src: "sfx/progress/level_up2.mp3", category: "progress" },
@@ -142830,6 +142971,12 @@
   var powerupManager = new PowerupManager(state, player);
   renderSettingsCatalogs();
   function configureAliensDifficulty() {
+    if (sandboxMode && state.sandboxAlienWaveActive) {
+      alienConfig.enabled = true;
+      alienConfig.maxOnScreen = 7;
+      alienConfig.spawnCooldown = 1.2;
+      return;
+    }
     if (state.alienSwarm) {
       alienConfig.enabled = true;
       alienConfig.maxOnScreen = 4;
@@ -143076,6 +143223,12 @@
         var p2 = ensurePilot2();
         setPilot2MouseControl(!p2.mouseControlEnabled, false);
       } else {
+        if (tutorialActive && tutorialMovementPreference && tutorialMovementPreference !== "mouse") {
+          if (mousepadActive)
+            setMousepadActive(false);
+          showToast("MOUSE PILOT NOT SELECTED");
+          return;
+        }
         if (!mousepadActive) {
           setMousepadActive(true);
           showToast("MOUSEPAD: HYBRID");
@@ -143107,6 +143260,16 @@
   var padStatus = document.getElementById("padStatus");
   var virtualKnob = document.getElementById("virtualKnob");
   var padMode = document.getElementById("padMode");
+  var touchControlDock = document.getElementById("touchControlDock");
+  var touchMovePad = document.getElementById("touchMovePad");
+  var touchMoveKnob = document.getElementById("touchMoveKnob");
+  var touchBtnFire = document.getElementById("touchBtnFire");
+  var touchBtnDash = document.getElementById("touchBtnDash");
+  var touchBtnSpecial = document.getElementById("touchBtnSpecial");
+  var touchBtnSecondary = document.getElementById("touchBtnSecondary");
+  var touchBtnSlot1 = document.getElementById("touchBtnSlot1");
+  var touchBtnSlot2 = document.getElementById("touchBtnSlot2");
+  var touchBtnSlot3 = document.getElementById("touchBtnSlot3");
   var mousepadActive = false;
   var mousepadPaused = false;
   var mousepadSensitivityPad = 0.3;
@@ -143116,6 +143279,12 @@
   var padCursor = { x: 0, y: 0 };
   var mousepadMode = "hybrid";
   var mousepadDeadzonePad = 0.18;
+  var touchMoveAxes = { x: 0, y: 0 };
+  var touchMovePointerId = null;
+  var touchMoveCenter = { x: 0, y: 0, radius: 0 };
+  var touchActionHeld = { fire: false, dash: false, special: false, secondary: false };
+  var touchActionPointers = {};
+  var touchButtonMap = {};
   var mousepadPadDefaults = {
     sensitivityPad: 0.3,
     sensitivityPadMode: 0.18,
@@ -143259,6 +143428,7 @@
     }
     pilot.recoil = Math.max(0, pilot.recoil - dtReal2 * 9);
     pilot.flash = Math.max(0, pilot.flash - dtReal2 * 12);
+    applyEasyRegen(pilot, dtReal2);
     if (pilot.secondaryCooldown > 0) {
       pilot.secondaryCooldown = Math.max(0, pilot.secondaryCooldown - dtReal2);
     }
@@ -143490,6 +143660,7 @@
   if (controlPad) {
     setMousepadActive(false);
   }
+  bindTouchControls();
   if (inputs.questionMode) {
     inputs.questionMode.addEventListener("change", updateDecoyFunctionAvailability);
   }
@@ -143504,6 +143675,185 @@
   }
   if (inputs.sound) {
     inputs.sound.addEventListener("change", updateAudioFromInputs);
+  }
+  function isTouchInputAllowed() {
+    if (!touchControlsEnabled)
+      return false;
+    if (!state.running || state.paused || state.over)
+      return false;
+    if (missileInputActive || missionBriefShowing || countdownActive || introActive)
+      return false;
+    if (overlayMenu && overlayMenu.classList.contains("show"))
+      return false;
+    if (overlayEnd && overlayEnd.classList.contains("show"))
+      return false;
+    return true;
+  }
+  function setTouchButtonPressed(action, pressed) {
+    var btn = touchButtonMap[action];
+    if (!btn)
+      return;
+    btn.classList.toggle("is-pressed", !!pressed);
+  }
+  function resetTouchMovePad() {
+    touchMoveAxes.x = 0;
+    touchMoveAxes.y = 0;
+    touchMovePointerId = null;
+    if (touchMoveKnob) {
+      touchMoveKnob.style.transform = "translate(-50%, -50%)";
+    }
+  }
+  function resetTouchInputState() {
+    resetTouchMovePad();
+    touchActionHeld.fire = false;
+    touchActionHeld.dash = false;
+    touchActionHeld.special = false;
+    touchActionHeld.secondary = false;
+    touchActionPointers = {};
+    setTouchButtonPressed("fire", false);
+    setTouchButtonPressed("dash", false);
+    setTouchButtonPressed("special", false);
+    setTouchButtonPressed("secondary", false);
+  }
+  function updateTouchMoveFromPointer(e) {
+    if (!touchMovePad)
+      return;
+    var rect = touchMovePad.getBoundingClientRect();
+    var cx = rect.left + rect.width / 2;
+    var cy = rect.top + rect.height / 2;
+    var maxR = Math.min(rect.width, rect.height) * 0.42;
+    touchMoveCenter.x = cx;
+    touchMoveCenter.y = cy;
+    touchMoveCenter.radius = maxR;
+    var dx = clamp(e.clientX - cx, -maxR, maxR);
+    var dy = clamp(e.clientY - cy, -maxR, maxR);
+    touchMoveAxes.x = maxR > 0 ? clamp(dx / maxR, -1, 1) : 0;
+    touchMoveAxes.y = maxR > 0 ? clamp(dy / maxR, -1, 1) : 0;
+    if (touchMoveKnob) {
+      touchMoveKnob.style.transform = "translate(calc(-50% + " + dx + "px), calc(-50% + " + dy + "px))";
+    }
+  }
+  function onTouchActionPress(action) {
+    if (!isTouchInputAllowed())
+      return;
+    if (action === "fire") {
+      touchActionHeld.fire = true;
+      setTouchButtonPressed("fire", true);
+      if (!tutorialActive || !tutorialShootLocked) {
+        fire();
+      }
+      return;
+    }
+    if (action === "dash") {
+      touchActionHeld.dash = true;
+      setTouchButtonPressed("dash", true);
+      dash();
+      return;
+    }
+    if (action === "special") {
+      touchActionHeld.special = true;
+      setTouchButtonPressed("special", true);
+      shockwave();
+      return;
+    }
+    if (action === "secondary") {
+      touchActionHeld.secondary = true;
+      setTouchButtonPressed("secondary", true);
+      secondaryFire();
+      return;
+    }
+    if (action === "slot1")
+      selectSecondaryByIndex(0);
+    if (action === "slot2")
+      selectSecondaryByIndex(1);
+    if (action === "slot3")
+      selectSecondaryByIndex(2);
+  }
+  function onTouchActionRelease(action) {
+    if (action === "fire") {
+      touchActionHeld.fire = false;
+      setTouchButtonPressed("fire", false);
+    } else if (action === "dash") {
+      touchActionHeld.dash = false;
+      setTouchButtonPressed("dash", false);
+    } else if (action === "special") {
+      touchActionHeld.special = false;
+      setTouchButtonPressed("special", false);
+    } else if (action === "secondary") {
+      touchActionHeld.secondary = false;
+      setTouchButtonPressed("secondary", false);
+    }
+  }
+  function bindTouchControls() {
+    touchButtonMap = {
+      fire: touchBtnFire,
+      dash: touchBtnDash,
+      special: touchBtnSpecial,
+      secondary: touchBtnSecondary
+    };
+    if (touchMovePad) {
+      let endMovePointer = function(e) {
+        if (touchMovePointerId !== e.pointerId)
+          return;
+        resetTouchMovePad();
+      };
+      touchMovePad.addEventListener("pointerdown", function(e) {
+        if (!touchControlsEnabled || !isTouchInputAllowed())
+          return;
+        if (touchMovePointerId !== null && touchMovePointerId !== e.pointerId)
+          return;
+        touchMovePointerId = e.pointerId;
+        touchMovePad.setPointerCapture(e.pointerId);
+        updateTouchMoveFromPointer(e);
+        e.preventDefault();
+      });
+      touchMovePad.addEventListener("pointermove", function(e) {
+        if (!touchControlsEnabled || touchMovePointerId !== e.pointerId)
+          return;
+        updateTouchMoveFromPointer(e);
+        e.preventDefault();
+      });
+      touchMovePad.addEventListener("pointerup", endMovePointer);
+      touchMovePad.addEventListener("pointercancel", endMovePointer);
+    }
+    var actionButtons = [touchBtnFire, touchBtnDash, touchBtnSpecial, touchBtnSecondary, touchBtnSlot1, touchBtnSlot2, touchBtnSlot3];
+    actionButtons.forEach(function(btn) {
+      if (!btn)
+        return;
+      btn.addEventListener("pointerdown", function(e) {
+        if (!touchControlsEnabled || !isTouchInputAllowed())
+          return;
+        var action = btn.getAttribute("data-touch-action");
+        touchActionPointers[e.pointerId] = action;
+        btn.setPointerCapture(e.pointerId);
+        onTouchActionPress(action);
+        e.preventDefault();
+      });
+      function endActionPointer(e) {
+        var action = touchActionPointers[e.pointerId];
+        if (!action)
+          return;
+        delete touchActionPointers[e.pointerId];
+        onTouchActionRelease(action);
+      }
+      btn.addEventListener("pointerup", endActionPointer);
+      btn.addEventListener("pointercancel", endActionPointer);
+    });
+  }
+  function updateTouchButtonStates() {
+    if (!touchControlsEnabled)
+      return;
+    var blocked = !isTouchInputAllowed();
+    if (touchBtnFire)
+      touchBtnFire.classList.toggle("is-cooldown", blocked);
+    if (touchBtnDash)
+      touchBtnDash.classList.toggle("is-cooldown", blocked || player.cooldown > 0);
+    if (touchBtnSpecial)
+      touchBtnSpecial.classList.toggle("is-cooldown", blocked);
+    if (touchBtnSecondary) {
+      var noSecondary = !player.secondaryMode || player.secondaryMode === "none" || player.secondaryCharges <= 0;
+      touchBtnSecondary.classList.toggle("is-cooldown", blocked || player.secondaryCooldown > 0 || noSecondary);
+    }
   }
   if (virtualPad) {
     virtualPad.addEventListener("pointerdown", function(e) {
@@ -143552,6 +143902,10 @@
     }
     if (tutorialActive && tutorialShootLocked) {
       pointerDown = false;
+      return;
+    }
+    if (mousepadActive) {
+      fire();
       return;
     }
     pointerDown = true;
@@ -143782,8 +144136,15 @@
   }
   function setTutorialQuestionHidden(hidden) {
     tutorialHideQuestion = hidden;
+    applyQuestionVisibility();
+  }
+  function setSandboxQuestionHidden(hidden) {
+    sandboxHideQuestion = hidden;
+    applyQuestionVisibility();
+  }
+  function applyQuestionVisibility() {
     if (promptChip) {
-      promptChip.style.visibility = hidden ? "hidden" : "visible";
+      promptChip.style.visibility = tutorialHideQuestion || sandboxHideQuestion ? "hidden" : "visible";
     }
   }
   function updateTimerHud() {
@@ -144074,6 +144435,42 @@
     state.mineralsEarned = (state.mineralsEarned || 0) + amt;
     saveMinerals();
     showToast("MINERALS +" + amt);
+  }
+  function updateLowHullAlarm(pilot, dmgHit) {
+    if (!pilot)
+      return;
+    var threshold = Math.max(0, dmgHit || 0);
+    if (pilot.hull > threshold + 1e-3) {
+      pilot.lowHullAlarmed = false;
+      return;
+    }
+    if (pilot.hull > 0 && pilot.hull <= threshold) {
+      if (!pilot.lowHullAlarmed) {
+        pilot.lowHullAlarmed = true;
+        playSfx(state, "ship_damage_alarm");
+      }
+    }
+  }
+  function markDamage(pilot) {
+    if (!pilot)
+      return;
+    pilot.lastDamageAt = getElapsedSeconds();
+  }
+  function applyEasyRegen(pilot, dtReal2) {
+    if (!pilot)
+      return;
+    if (pilot.hull >= 1)
+      return;
+    var diff = String(state.difficulty || "normal").toLowerCase();
+    if (diff !== "easy")
+      return;
+    var elapsed = getElapsedSeconds();
+    if (!pilot.lastDamageAt)
+      pilot.lastDamageAt = elapsed;
+    if (elapsed - pilot.lastDamageAt < 6)
+      return;
+    var regenRate = 0.12;
+    pilot.hull = clamp(pilot.hull + regenRate * dtReal2, 0, 1);
   }
   function getHighestDigit(value) {
     if (value == null)
@@ -145972,6 +146369,9 @@
       clearTimeout(launchHoldTimer);
       launchHoldTimer = 0;
     }
+    if (state.sandboxAlienWaveActive) {
+      stopSandboxAlienWave();
+    }
     bullets.length = 0;
     asteroids.length = 0;
     powerups.length = 0;
@@ -146104,6 +146504,8 @@
     player.autoFireSpinSfxPlayed = false;
     applySelectedShotType();
     player.hull = 1;
+    player.lowHullAlarmed = false;
+    player.lastDamageAt = 0;
     player.invuln = 0;
     player.hitFlash = 0;
     player.shipShake = 0;
@@ -146139,6 +146541,8 @@
     if (isSandboxMultiplayer()) {
       ensurePilot2();
       pilot2.hull = 1;
+      pilot2.lowHullAlarmed = false;
+      pilot2.lastDamageAt = 0;
       pilot2.invuln = 0;
       pilot2.hitFlash = 0;
       pilot2.shipShake = 0;
@@ -146417,6 +146821,7 @@
     setSettingsTab("audio");
     loadWideGameplay();
     loadMousepadAutoStart();
+    loadTouchControlsEnabled();
     renderSettingsCatalogs();
     if (sfxCatalogPanel)
       sfxCatalogPanel.classList.add("open");
@@ -146543,6 +146948,8 @@
   function fireForPilot(pilot, pilotId, cooldownOverride) {
     if (!state.running || state.paused || state.over)
       return;
+    if (tutorialActive && tutorialMineralsFreeze)
+      return false;
     if (pilotId === 1 && tutorialActive && tutorialShootLocked)
       return false;
     if (pilot.cooldown > 0)
@@ -146660,6 +147067,7 @@
     }
     if (activeType === "repair") {
       pilot.hull = clamp(pilot.hull + 0.35, 0, 1);
+      pilot.lowHullAlarmed = false;
       spawnRing(pilot.x, pilot.y, 18);
       spawnParticles(pilot.x, pilot.y, "correct");
       showToast("SECONDARY -> HULL REPAIR");
@@ -147501,10 +147909,12 @@
       tourGuide.notify("correct");
     if (tutorialActive && tutorialStepId === "correct" && hitAst && hitAst.label != null) {
       var mineralTarget = getHighestDigit(hitAst.label);
+      tutorialMineralsFreeze = true;
       tutorialMineralsTarget = mineralTarget;
       tutorialMineralsCollected = 0;
       tutorialMineralsComplete = mineralTarget <= 0;
       tutorialMineralsPending = tutorialMineralsComplete;
+      tutorialMineralsRemaining = Math.max(0, mineralTarget);
       tutorialSpawnUnlocked = false;
       asteroids.length = 0;
       state.correctInPlay = false;
@@ -147673,6 +148083,15 @@
           spawned = maybeSpawnEventPowerup(0.3, hitAst.x, hitAst.y);
         }
         if (completedQuestion) {
+          if (sandboxMode && state.sandboxAlienWave && !state.sandboxAlienWaveActive) {
+            state.sandboxAlienWaveQueued = (state.sandboxAlienWaveQueued || 0) + 1;
+            var remainingWave = Math.max(0, sandboxAlienWaveRequired - state.sandboxAlienWaveQueued);
+            if (remainingWave <= 0) {
+              startSandboxAlienWave();
+            } else {
+              showToast("ALIEN WAVE IN " + remainingWave);
+            }
+          }
           if (waveHadWrongHit) {
             cleanWaveStreak = 0;
           } else {
@@ -148478,6 +148897,11 @@
       setShipAdvance(state, false);
       return;
     }
+    if (tutorialActive && tutorialMineralsFreeze) {
+      setShipIdle(state, false);
+      setShipAdvance(state, false);
+      return;
+    }
     if (state.slowMoRemaining > 0) {
       state.slowMoRemaining = Math.max(0, state.slowMoRemaining - dtReal2);
       if (state.slowMoWaveDelay > 0) {
@@ -148530,6 +148954,12 @@
         alienConfig.enabled = true;
         alienConfig.maxOnScreen = Math.max(alienConfig.maxOnScreen || 0, 1);
         spawnAlien("scout", "2 / 2", 1, view);
+      }
+    }
+    if (sandboxMode && state.sandboxAlienWaveActive) {
+      state.sandboxAlienWaveRemaining = Math.max(0, state.sandboxAlienWaveRemaining - dtReal2);
+      if (state.sandboxAlienWaveRemaining <= 0) {
+        stopSandboxAlienWave();
       }
     }
     var alienEnabled = alienConfig.enabled;
@@ -148607,6 +149037,15 @@
     var down = keys.has("s") || keys.has("arrowdown");
     var inputX = (right ? 1 : 0) - (left ? 1 : 0);
     var inputY = (down ? 1 : 0) - (up ? 1 : 0);
+    if (touchControlsEnabled) {
+      if (!isTouchInputAllowed()) {
+        resetTouchInputState();
+      } else if (touchMoveAxes.x || touchMoveAxes.y) {
+        inputX = clamp(inputX + touchMoveAxes.x, -1, 1);
+        inputY = clamp(inputY + touchMoveAxes.y, -1, 1);
+      }
+      updateTouchButtonStates();
+    }
     if (mousepadActive && (virtualAxes.x || virtualAxes.y)) {
       inputX = clamp(inputX + virtualAxes.x, -1, 1);
       inputY = clamp(inputY + virtualAxes.y, -1, 1);
@@ -148622,6 +149061,9 @@
       inputY = 0;
     }
     var advanceIntent = up && !down;
+    if (touchControlsEnabled && inputY < -0.2) {
+      advanceIntent = true;
+    }
     if (mousepadActive && inputY < -0.2) {
       advanceIntent = true;
     }
@@ -148729,7 +149171,7 @@
     }
     player.cooldown = Math.max(0, player.cooldown - dtReal2);
     if (player.autoFireActive && player.autoFireAmmo > 0) {
-      var shootHeld = (!tutorialActive || !tutorialShootLocked) && (keys.has(keyBindings.shoot) || pointerDown);
+      var shootHeld = (!tutorialActive || !tutorialShootLocked) && (keys.has(keyBindings.shoot) || pointerDown || touchActionHeld.fire);
       if (shootHeld) {
         if (!player.autoFireSpinning) {
           player.autoFireSpinning = true;
@@ -148852,6 +149294,7 @@
       if (player.defenseTimer === 0)
         player.defenseMode = "none";
     }
+    applyEasyRegen(player, dtReal2);
     if (player.magnetTimer > 0) {
       player.magnetTimer = Math.max(0, player.magnetTimer - dtReal2);
     }
@@ -148928,7 +149371,7 @@
       }
     }
     state.spawnTimer -= dtSlow;
-    if (!state.alienSwarm && !missionBriefShowing && (!tutorialActive || tutorialSpawnUnlocked) && (!sandboxMode || state.sandboxSpawnAsteroids)) {
+    if (!state.alienSwarm && !missionBriefShowing && (!tutorialActive || tutorialSpawnUnlocked) && (!sandboxMode || state.sandboxSpawnAsteroids && !state.sandboxAlienWaveActive)) {
       if (state.spawnTimer <= 0) {
         spawnOneFromWave();
         if (state.level >= 7 && Math.random() < 0.18)
@@ -149208,8 +149651,12 @@
       if (collectedBy) {
         if (p.type === "mineral") {
           awardMinerals(p.value || 1);
+          playSfx(state, "mineral_collected");
           if (tutorialActive && tutorialMineralsTarget > 0) {
             tutorialMineralsCollected += 1;
+            if (tutorialMineralsRemaining > 0) {
+              tutorialMineralsRemaining -= 1;
+            }
             if (tutorialMineralsCollected >= tutorialMineralsTarget) {
               tutorialMineralsComplete = true;
               tutorialMineralsPending = true;
@@ -149263,6 +149710,13 @@
       }
       if (p.y - p.r > r.height + 40) {
         if (p.type === "mineral") {
+          if (tutorialActive && tutorialMineralsTarget > 0 && tutorialMineralsRemaining > 0) {
+            tutorialMineralsRemaining -= 1;
+            if (tutorialMineralsRemaining <= 0) {
+              tutorialMineralsComplete = true;
+              tutorialMineralsPending = true;
+            }
+          }
           powerups.splice(pi, 1);
           continue;
         }
@@ -149287,9 +149741,11 @@
         powerups.splice(pi, 1);
       }
     }
-    if (tutorialActive && tutorialStepId === "minerals" && tutorialMineralsPending && tutorialMineralsComplete && tourGuide) {
-      if (tourGuide.notify("minerals")) {
-        tutorialMineralsPending = false;
+    if (tutorialActive && tutorialStepId === "minerals" && tourGuide) {
+      if (tutorialMineralsPending && (tutorialMineralsComplete || tutorialMineralsRemaining <= 0)) {
+        if (tourGuide.notify("minerals")) {
+          tutorialMineralsPending = false;
+        }
       }
     }
     var tNow = performance.now() * 1e-3;
@@ -149883,7 +150339,7 @@
           player.vy = -dyC / distC * player.speed * knockBackAlien;
           var dmgHit = 0.45;
           if (player.defenseMode === "armor")
-            dmgHit = 0;
+            dmgHit = dmgHit * 0.4;
           if (player.defenseMode === "shield") {
             impactDebris(player.x, player.y - 8);
             playSfx(state, "impact", 0.4);
@@ -149910,6 +150366,7 @@
             player.shipShake = Math.max(player.shipShake || 0, 0.34);
             player.invuln = 0.55;
             player.hull = clamp(player.hull - dmgHit, 0, 1);
+            markDamage(player);
             state.streak = 0;
             if (player.hull <= 0 && tutorialActive) {
               player.hull = Math.max(player.hull, 0.12);
@@ -149920,6 +150377,7 @@
                 player.invuln = Math.max(player.invuln, 1.2);
                 showToast("HULL CRITICAL");
               }
+              updateLowHullAlarm(player, dmgHit);
               return;
             }
             if (consumeShipLife("OUT OF LIVES (ALIEN COLLISION)"))
@@ -149931,6 +150389,7 @@
               endGame("destroyed");
               return;
             } else {
+              updateLowHullAlarm(player, dmgHit);
               playSfx(state, "ship_damaged");
               showToast("ALIEN COLLISION");
             }
@@ -149970,7 +150429,7 @@
               p2.vy = -dyC2 / distC2 * p2.speed * knockBackAlien2;
               var dmgHit2 = 0.45;
               if (p2.defenseMode === "armor")
-                dmgHit2 = 0;
+                dmgHit2 = dmgHit2 * 0.4;
               if (p2.defenseMode === "shield") {
                 impactDebris(p2.x, p2.y - 8);
                 playSfx(state, "impact", 0.4);
@@ -149990,6 +150449,7 @@
                 p2.hitFlash = 1;
                 p2.invuln = 0.55;
                 p2.hull = clamp(p2.hull - dmgHit2, 0, 1);
+                markDamage(p2);
                 if (p2.hull <= 0) {
                   p2.hull = 0;
                   p2.lives = Math.max(0, (p2.lives || 0) - 1);
@@ -149999,10 +150459,12 @@
                     showToast("PILOT DOWN");
                   } else {
                     p2.hull = 1;
+                    p2.lowHullAlarmed = false;
                     p2.invuln = Math.max(p2.invuln || 0, 0.6);
                     showToast("HULL CRITICAL");
                   }
                 } else {
+                  updateLowHullAlarm(p2, dmgHit2);
                   playSfx(state, "ship_damaged");
                   showToast("ALIEN COLLISION");
                 }
@@ -150037,7 +150499,7 @@
           player.vy = -dyp / distP * player.speed * knockBackBullet;
           var dmgHit = 0.35;
           if (player.defenseMode === "armor")
-            dmgHit = 0;
+            dmgHit = dmgHit * 0.4;
           if (player.defenseMode === "shield") {
             impactDebris(player.x, player.y - 8);
             playSfx(state, "impact", 0.35);
@@ -150064,6 +150526,7 @@
             player.shipShake = Math.max(player.shipShake || 0, 0.28);
             player.invuln = 0.45;
             player.hull = clamp(player.hull - dmgHit, 0, 1);
+            markDamage(player);
             state.streak = 0;
             if (player.hull <= 0 && tutorialActive) {
               player.hull = Math.max(player.hull, 0.12);
@@ -150074,6 +150537,7 @@
                 player.invuln = Math.max(player.invuln, 1.2);
                 showToast("HULL CRITICAL");
               }
+              updateLowHullAlarm(player, dmgHit);
               return;
             }
             if (consumeShipLife("OUT OF LIVES (ALIEN SHOT)"))
@@ -150085,6 +150549,7 @@
               endGame("destroyed");
               return;
             } else {
+              updateLowHullAlarm(player, dmgHit);
               playSfx(state, "ship_damaged");
               showToast("HULL DAMAGED");
             }
@@ -150117,7 +150582,7 @@
             p2b.vy = -dyp2 / distP2 * p2b.speed * knockBackBullet2;
             var dmgHit2 = 0.35;
             if (p2b.defenseMode === "armor")
-              dmgHit2 = 0;
+              dmgHit2 = dmgHit2 * 0.4;
             if (p2b.defenseMode === "shield") {
               impactDebris(p2b.x, p2b.y - 8);
               playSfx(state, "impact", 0.35);
@@ -150137,6 +150602,7 @@
               p2b.hitFlash = 1;
               p2b.invuln = 0.45;
               p2b.hull = clamp(p2b.hull - dmgHit2, 0, 1);
+              markDamage(p2b);
               if (p2b.hull <= 0) {
                 p2b.hull = 0;
                 p2b.lives = Math.max(0, (p2b.lives || 0) - 1);
@@ -150146,10 +150612,12 @@
                   showToast("PILOT DOWN");
                 } else {
                   p2b.hull = 1;
+                  p2b.lowHullAlarmed = false;
                   p2b.invuln = Math.max(p2b.invuln || 0, 0.6);
                   showToast("HULL CRITICAL");
                 }
               } else {
+                updateLowHullAlarm(p2b, dmgHit2);
                 playSfx(state, "ship_damaged");
                 showToast("ALIEN HIT");
               }
@@ -150362,10 +150830,14 @@
         ctx.restore();
       }
     } else if (!phaserActive && tutorialActive && SHOW_STARS) {
-      drawStars(w, h, true);
+      drawStars(w, h, true, true);
     }
     if (state.paused && state.running) {
       ctx.fillStyle = "rgba(0,0,0,.35)";
+      ctx.fillRect(0, 0, w, h);
+    }
+    if (tutorialActive && tutorialMineralsFreeze) {
+      ctx.fillStyle = "rgba(0,0,0,.42)";
       ctx.fillRect(0, 0, w, h);
     }
     updateTimerHud();
@@ -150380,28 +150852,28 @@
     ctx.translate(cam.x || 0, cam.y || 0);
     drawTutorialPortal();
     if (!phaserActive) {
-      if (!state.hideAsteroids) {
+      if (!state.hideAsteroids && !(sandboxMode && state.sandboxAlienWaveActive)) {
         for (var i = 0; i < asteroids.length; i++)
           drawAsteroid(asteroids[i]);
-        drawAliens(ctx);
-        drawPowerups();
-        drawAlienBullets(ctx);
-        drawBullets();
       }
-    }
-    if (!state.hideAsteroids) {
-      drawScopeLaser();
-      drawClaw();
+      if (!state.hideAsteroids || sandboxMode && state.sandboxAlienWaveActive) {
+        drawAliens(ctx);
+        drawAlienBullets(ctx);
+      }
+      if (!state.hideAsteroids) {
+        drawPowerups();
+        drawBullets();
+        drawScopeLaser();
+        drawClaw();
+      }
     }
     drawRings();
     drawParticles();
     drawDashGhosts();
     drawTutorialDots();
-    if (!state.hideAsteroids) {
-      drawShip();
-      if (isSandboxMultiplayer()) {
-        drawPilotShip(ensurePilot2());
-      }
+    drawShip();
+    if (isSandboxMultiplayer()) {
+      drawPilotShip(ensurePilot2());
     }
     drawClawPrompt();
     ctx.restore();
@@ -150657,7 +151129,7 @@
       var splitHud = isSandboxSplitMode();
       var lane1 = splitHud ? getLaneBounds(1) : null;
       var lane2 = splitHud ? getLaneBounds(2) : null;
-      if (!(tutorialActive && tutorialHideQuestion) && !missionBriefShowing) {
+      if (!(tutorialActive && tutorialHideQuestion) && !(sandboxMode && state.sandboxAlienWaveActive) && !missionBriefShowing) {
         if (splitHud) {
           var cx1 = (lane1.minX + lane1.maxX) / 2;
           var cx2 = (lane2.minX + lane2.maxX) / 2;
@@ -152451,7 +152923,7 @@
       pilot.vy = -dy / Math.max(1, dist) * pilot.speed * knockBack;
       var dmgHit = a.ghost || a.label === null ? 0.18 : 0.3;
       if (pilot.defenseMode === "armor")
-        dmgHit = 0;
+        dmgHit = dmgHit * 0.4;
       if (pilot.defenseMode === "shield") {
         impactDebris(hitX, hitY - 8);
         playSfx(state, "impact", 0.35);
@@ -152474,6 +152946,7 @@
         pilot.shipShake = Math.max(pilot.shipShake || 0, 1);
         pilot.invuln = 0.45;
         pilot.hull = clamp(pilot.hull - dmgHit, 0, 1);
+        markDamage(pilot);
         if (pilot.hull <= 0) {
           pilot.hull = 0;
           pilot.lives = Math.max(0, (pilot.lives || 0) - 1);
@@ -152483,11 +152956,13 @@
             showToast("PILOT DOWN");
           } else {
             pilot.hull = 1;
+            pilot.lowHullAlarmed = false;
             pilot.invuln = Math.max(pilot.invuln || 0, 0.6);
             showToast("HULL CRITICAL");
           }
           return true;
         } else {
+          updateLowHullAlarm(pilot, dmgHit);
           playSfx(state, "ship_damaged");
           showToast("HULL DAMAGED");
         }
@@ -152542,7 +153017,7 @@
       player.vy = -dy / Math.max(1, dist) * player.speed * knockBack;
       var dmgHit = a.ghost || a.label === null ? 0.18 : 0.3;
       if (player.defenseMode === "armor")
-        dmgHit = 0;
+        dmgHit = dmgHit * 0.4;
       if (player.defenseMode === "shield") {
         impactDebris(hitX, hitY - 8);
         playSfx(state, "impact", 0.35);
@@ -152569,6 +153044,7 @@
         player.shipShake = Math.max(player.shipShake || 0, 1);
         player.invuln = 0.45;
         player.hull = clamp(player.hull - dmgHit, 0, 1);
+        markDamage(player);
         state.streak = 0;
         if (consumeShipLife("OUT OF LIVES (ASTEROID COLLISION)"))
           return true;
@@ -152576,6 +153052,7 @@
           if (tutorialActive) {
             player.hull = Math.max(player.hull, 0.12);
             syncHud();
+            updateLowHullAlarm(player, dmgHit);
             return triggerTutorialRecovery("HULL CRITICAL");
           }
           player.hull = 0;
@@ -152584,6 +153061,7 @@
           endGame("destroyed");
           return true;
         } else {
+          updateLowHullAlarm(player, dmgHit);
           playSfx(state, "ship_damaged");
           showToast("HULL DAMAGED");
         }
@@ -153472,19 +153950,19 @@
         }
       };
       ctx.save();
-      ctx.globalAlpha = baseAlpha;
+      ctx.globalAlpha = Math.min(1, baseAlpha * 1.2);
       ctx.shadowBlur = 0;
       ctx.shadowColor = "rgba(0,0,0,0)";
-      ctx.strokeStyle = "rgba(245,250,255,1)";
-      ctx.lineWidth = 8.4;
+      ctx.strokeStyle = "rgba(255,255,255,1)";
+      ctx.lineWidth = 14;
       drawArmorStroke();
       ctx.restore();
       ctx.save();
-      ctx.globalAlpha = baseAlpha;
-      ctx.shadowColor = "rgba(225,245,255,1)";
-      ctx.shadowBlur = 120;
-      ctx.strokeStyle = "rgba(235,245,255,1)";
-      ctx.lineWidth = 12.5;
+      ctx.globalAlpha = Math.min(1, baseAlpha * 1.3);
+      ctx.shadowColor = "rgba(245,255,255,1)";
+      ctx.shadowBlur = 160;
+      ctx.strokeStyle = "rgba(245,255,255,1)";
+      ctx.lineWidth = 18;
       drawArmorStroke();
       ctx.restore();
       ctx.restore();
@@ -154056,6 +154534,12 @@
       setMousepadAutoStart(toggleMousepadAuto.checked);
     });
   }
+  if (toggleTouchControls) {
+    toggleTouchControls.addEventListener("change", function() {
+      playSfx(state, "menu_beep");
+      setTouchControlsEnabled(toggleTouchControls.checked);
+    });
+  }
   function getCompassTarget() {
     if (state.correctAsteroidId) {
       for (var i = 0; i < asteroids.length; i++) {
@@ -154548,6 +155032,52 @@
       state.campaignIndex = -1;
     }
   }
+  function syncSandboxAlienWaveButton() {
+    if (!sandboxAlienWaveButton)
+      return;
+    sandboxAlienWaveButton.classList.toggle("active", !!(state.sandboxAlienWave || state.sandboxAlienWaveActive));
+  }
+  function startSandboxAlienWave() {
+    state.sandboxAlienWave = true;
+    state.sandboxAlienWaveActive = true;
+    state.sandboxAlienWaveRemaining = sandboxAlienWaveDuration;
+    state.sandboxAlienWaveQueued = 0;
+    setSandboxQuestionHidden(true);
+    asteroids.length = 0;
+    resetAliens();
+    setAlienUnlocked(true);
+    configureAliensDifficulty();
+    syncSandboxAlienWaveButton();
+    showToast("ALIEN WAVE STARTED");
+  }
+  function queueSandboxAlienWave() {
+    state.sandboxAlienWave = true;
+    state.sandboxAlienWaveActive = false;
+    state.sandboxAlienWaveRemaining = 0;
+    state.sandboxAlienWaveQueued = 0;
+    setSandboxQuestionHidden(false);
+    syncSandboxAlienWaveButton();
+    showToast("ALIEN WAVE QUEUED");
+    showToast("ANSWER 2 QUESTIONS");
+  }
+  function stopSandboxAlienWave() {
+    state.sandboxAlienWave = false;
+    state.sandboxAlienWaveActive = false;
+    state.sandboxAlienWaveRemaining = 0;
+    state.sandboxAlienWaveQueued = 0;
+    setSandboxQuestionHidden(false);
+    resetAliens();
+    configureAliensDifficulty();
+    syncSandboxAlienWaveButton();
+    showToast("ALIEN WAVE ENDED");
+  }
+  function toggleSandboxAlienWave() {
+    if (state.sandboxAlienWaveActive || state.sandboxAlienWave) {
+      stopSandboxAlienWave();
+    } else {
+      queueSandboxAlienWave();
+    }
+  }
   function initSandboxPanel() {
     if (!document.body || sandboxPanel)
       return;
@@ -154633,6 +155163,7 @@
     var btnReset = null;
     var btnSpawnToggle = null;
     var btnStampede = null;
+    var btnAlienWave = null;
     var btnTwoPilots = null;
     var btnSharedArena = null;
     var btnSplitArena = null;
@@ -154653,6 +155184,10 @@
         updateSandboxToggle(btnSpawnToggle, state.sandboxSpawnAsteroids);
         btnSpawnToggle.textContent = state.sandboxSpawnAsteroids ? "Asteroids On" : "Asteroids Off";
         showToast(state.sandboxSpawnAsteroids ? "ASTEROIDS ON" : "ASTEROIDS OFF");
+      });
+      btnAlienWave = addButton(actionsContainer, "Alien Wave", function() {
+        toggleSandboxAlienWave();
+        updateSandboxToggle(btnAlienWave, state.sandboxAlienWaveActive);
       });
       btnStampede = addButton(actionsContainer, "Stampede", function() {
         state.stampedeMode = !state.stampedeMode;
@@ -154774,6 +155309,7 @@
       resetSession();
       showToast("MODE -> " + info.operation.toUpperCase() + " / " + info.modeLabel.toUpperCase());
     }
+    sandboxAlienWaveButton = btnAlienWave;
     function setSandboxOperation(op) {
       var fallback = "classic";
       if (op === "add")
@@ -154916,6 +155452,7 @@
     updateSandboxToggle(btnInfLives, state.sandboxInfiniteLives);
     updateSandboxToggle(btnNoScore, state.sandboxNoScore);
     updateSandboxToggle(btnSpawnToggle, state.sandboxSpawnAsteroids);
+    updateSandboxToggle(btnAlienWave, state.sandboxAlienWaveActive);
     updateSandboxToggle(btnStampede, state.stampedeMode);
     updateSandboxToggle(btnTwoPilots, state.sandboxTwoPilots);
     updateSandboxToggle(btnSharedArena, state.sandboxTwoPilotsMode !== "split");
@@ -154949,6 +155486,7 @@
     applySettings();
     loadWideGameplay();
     loadMousepadAutoStart();
+    loadTouchControlsEnabled();
     loadMinerals();
     updateDecoyFunctionAvailability();
     primeFullscreen();
@@ -154964,6 +155502,11 @@
     sandboxMode = params.get("sandbox") === "1" || params.get("sandbox") === "true";
     state.sandbox = sandboxMode;
     state.sandboxSpawnAsteroids = true;
+    state.sandboxAlienWave = false;
+    state.sandboxAlienWaveActive = false;
+    state.sandboxAlienWaveRemaining = 0;
+    state.sandboxAlienWaveQueued = 0;
+    setSandboxQuestionHidden(false);
     if (sandboxMode) {
       initSandboxPanel();
     }
@@ -154978,11 +155521,14 @@
         tutorialAlienDelayRemaining = 0;
         tutorialHullRecoveryShown = false;
         tutorialShootLocked = false;
+        tutorialMineralsFreeze = false;
         tutorialMineralsTarget = 0;
         tutorialMineralsCollected = 0;
         tutorialMineralsComplete = false;
         tutorialMineralsPending = false;
+        tutorialMineralsRemaining = 0;
         tutorialExtraPowerupsSpawned = false;
+        tutorialMovementPreference = null;
         tutorialPortalActive = false;
         tutorialPortalT = 0;
         tutorialPortalLock = false;
@@ -155027,7 +155573,7 @@
             }
             if (stepId === "minerals") {
               tutorialSpawnUnlocked = false;
-              if (tutorialMineralsComplete) {
+              if (tutorialMineralsComplete || tutorialMineralsRemaining <= 0) {
                 tutorialMineralsPending = true;
               }
             }
@@ -155076,9 +155622,34 @@
             if (stepId === "alien" && !tutorialAlienSpawned) {
               tutorialAlienSpawned = true;
               tutorialAlienUnlocked = false;
-              tutorialAlienDelayRemaining = 5.5;
+              tutorialSpawnUnlocked = false;
+              asteroids.length = 0;
+              state.correctInPlay = false;
+              state.correctAsteroidId = 0;
+              state.spawnTimer = 2;
+              tutorialAlienDelayRemaining = 2.2;
               alienConfig.enabled = true;
               alienConfig.maxOnScreen = Math.max(alienConfig.maxOnScreen || 0, 1);
+            }
+          },
+          onConfirm: function(stepId) {
+            if (stepId === "minerals") {
+              tutorialMineralsFreeze = false;
+              if (tutorialMineralsComplete || tutorialMineralsRemaining <= 0) {
+                tutorialMineralsPending = true;
+              }
+            }
+          },
+          onChoice: function(stepId, choice) {
+            if (stepId !== "movement_preference")
+              return;
+            tutorialMovementPreference = choice && choice.id ? String(choice.id) : "";
+            if (tutorialMovementPreference === "mouse") {
+              if (!mousepadActive)
+                setMousepadActive(true);
+            } else {
+              if (mousepadActive)
+                setMousepadActive(false);
             }
           },
           onComplete: function() {
@@ -155089,6 +155660,7 @@
             tutorialPortalActive = false;
             tutorialPortalLock = false;
             tutorialPortalNotifyPending = false;
+            tutorialMineralsFreeze = false;
             setTutorialQuestionHidden(false);
             try {
               sessionStorage.setItem("asteroidConfig", JSON.stringify({
@@ -155122,6 +155694,7 @@
         tutorialPowerupUnlocked = true;
         tutorialAlienUnlocked = true;
         tutorialAlienDelayRemaining = 0;
+        tutorialMineralsFreeze = false;
         alienConfig.enabled = true;
         setTutorialQuestionHidden(false);
       }

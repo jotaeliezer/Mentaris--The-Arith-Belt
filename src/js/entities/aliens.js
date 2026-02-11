@@ -68,11 +68,13 @@ export function spawnAlien(typeId, question, answer, view){
   var pad = 80;
   var x = randi(pad, Math.max(pad + 20, view.w - pad));
   var y = -40;
+  var answerHits = (typeof answer === "number" && Number.isFinite(answer)) ? Math.max(1, Math.round(answer)) : (t.hp || 1);
   var a = {
     uid: alienId++,
     id: t.id,
     name: t.name,
     hp: t.hp,
+    maxHits: answerHits,
     speed: t.speed,
     score: t.score,
     behavior: t.behavior,
@@ -340,6 +342,25 @@ export function drawAliens(ctx){
       ctx.arc(a.x + shakeX, a.y + shakeY, size * 0.3, 0, Math.PI * 2);
       ctx.fill();
     }
+    ctx.restore();
+
+    var totalHits = (typeof a.maxHits === "number" && Number.isFinite(a.maxHits)) ? Math.max(1, a.maxHits)
+      : ((typeof a.answer === "number" && Number.isFinite(a.answer)) ? Math.max(1, Math.round(a.answer)) : 1);
+    var remainingHits = Math.max(0, totalHits - (a.hitsTaken || 0));
+    var ratio = clamp(remainingHits / Math.max(1, totalHits), 0, 1);
+    var barH = Math.max(18, a.r * 1.7);
+    var barW = 5;
+    var barX = a.x + shakeX + a.r + 8;
+    var barY = a.y + shakeY - barH / 2;
+    ctx.save();
+    ctx.globalAlpha = 0.85 * flashAlpha;
+    ctx.fillStyle = "rgba(0,0,0,.35)";
+    ctx.fillRect(barX, barY, barW, barH);
+    ctx.fillStyle = "rgba(70,255,120,.9)";
+    ctx.fillRect(barX, barY + barH * (1 - ratio), barW, barH * ratio);
+    ctx.strokeStyle = "rgba(255,255,255,.2)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(barX - 0.5, barY - 0.5, barW + 1, barH + 1);
     ctx.restore();
 
     if(a.showDigitTimer > 0 && a.swarmDigit != null){

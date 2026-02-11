@@ -138,6 +138,11 @@
                   <span>Auto-enable Mousepad (B) on mission start</span>
                   <input id="toggleMousepadAuto" type="checkbox" />
                 </label>
+                <label class="toggleRow">
+                  <span>Enable Tablet Touch Controls</span>
+                  <input id="toggleTouchControls" type="checkbox" />
+                </label>
+                <p class="monoSmall">Shows virtual gamepad buttons outside gameplay shell for touch play.</p>
                 <p class="monoSmall">Note: If you have Steam, you can remap your controller to the keys used in the game and play with a controller.</p>
               </div>
 
@@ -497,6 +502,27 @@
           <div id="virtualKnob" class="padKnob"></div>
         </div>
         <div class="padHint">Press <b>B</b> to toggle</div>
+      </div>
+    </div>
+    <div id="touchControlDock" aria-label="Tablet touch controls">
+      <div class="touchDock touchDock-left">
+        <div class="touchTitle">Move</div>
+        <div id="touchMovePad" class="touchMovePad" role="application" aria-label="Touch movement stick">
+          <div id="touchMoveKnob" class="touchMoveKnob"></div>
+        </div>
+      </div>
+      <div class="touchDock touchDock-right">
+        <div class="touchActionGrid">
+          <button id="touchBtnFire" class="touchBtn touchBtnPrimary" type="button" data-touch-action="fire" aria-label="Fire">FIRE</button>
+          <button id="touchBtnDash" class="touchBtn" type="button" data-touch-action="dash" aria-label="Dash">DASH</button>
+          <button id="touchBtnSpecial" class="touchBtn" type="button" data-touch-action="special" aria-label="Special ability">SPECIAL</button>
+          <button id="touchBtnSecondary" class="touchBtn" type="button" data-touch-action="secondary" aria-label="Secondary powerup">AID</button>
+        </div>
+        <div class="touchSlotRow" aria-label="Secondary slot selection">
+          <button id="touchBtnSlot1" class="touchBtn touchBtnSlot" type="button" data-touch-action="slot1" aria-label="Select slot 1">1</button>
+          <button id="touchBtnSlot2" class="touchBtn touchBtnSlot" type="button" data-touch-action="slot2" aria-label="Select slot 2">2</button>
+          <button id="touchBtnSlot3" class="touchBtn touchBtnSlot" type="button" data-touch-action="slot3" aria-label="Select slot 3">3</button>
+        </div>
       </div>
     </div>
   </div>
