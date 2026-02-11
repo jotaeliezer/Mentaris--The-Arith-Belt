@@ -809,6 +809,7 @@ var precisionWindowSec = 2.5;
 // ======= Systems
 var fx = createFx(ctx, state, player, null);
 var particles = fx.particles;
+var mineralPopups = [];
 var rings = fx.rings;
 var cam = fx.cam;
 var kickShake = fx.kickShake;
@@ -1281,6 +1282,66 @@ function openCatalogDetail(item){
 
 function closeCatalogDetail(){
   if(catalogDetailOverlay) catalogDetailOverlay.classList.remove("show");
+}
+
+function spawnMineralPickupFx(x, y){
+  var beams = 7;
+  var baseAngle = -Math.PI / 2;
+  for(var i=0; i<beams; i++){
+    var ang = baseAngle + (i / beams) * Math.PI * 2;
+    var dirX = Math.cos(ang);
+    var dirY = Math.sin(ang);
+    spawnDirectedSparks(x, y, dirX, dirY, 0.20, 12, 220, 520, 0.10, 0.24, "mineral");
+    spawnDirectedSparks(x, y, dirX, dirY, 0.18, 6, 180, 360, 0.10, 0.22, "spark_white");
+  }
+  spawnParticles(x, y, "mineral");
+}
+
+function spawnMineralValuePopup(x, y, amount){
+  var value = Math.max(1, Number(amount) || 1);
+  mineralPopups.push({
+    x: x,
+    y: y - 8,
+    vy: -42,
+    drift: rand(-12, 12),
+    life: 0.8,
+    alpha: 1,
+    text: "+" + value
+  });
+  if(mineralPopups.length > 40){
+    mineralPopups.splice(0, mineralPopups.length - 40);
+  }
+}
+
+function updateMineralPopups(dt){
+  for(var i=mineralPopups.length-1; i>=0; i--){
+    var pop = mineralPopups[i];
+    pop.life -= dt;
+    if(pop.life <= 0){
+      mineralPopups.splice(i,1);
+      continue;
+    }
+    pop.y += pop.vy * dt;
+    pop.x += pop.drift * dt;
+    pop.alpha = Math.max(0, Math.min(1, pop.life / 0.8));
+  }
+}
+
+function drawMineralPopups(){
+  if(!mineralPopups.length) return;
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "700 20px Oxanium, sans-serif";
+  for(var i=0; i<mineralPopups.length; i++){
+    var pop = mineralPopups[i];
+    ctx.globalAlpha = pop.alpha;
+    ctx.shadowColor = "rgba(120,220,255,.85)";
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = "rgba(182,240,255,.98)";
+    ctx.fillText(pop.text, pop.x, pop.y);
+  }
+  ctx.restore();
 }
 
 function loadUnlockIds(key){
@@ -1852,6 +1913,8 @@ var mousepadDeadzonePad = 0.18;
 var touchMoveAxes = { x: 0, y: 0 };
 var touchMovePointerId = null;
 var touchMoveCenter = { x: 0, y: 0, radius: 0 };
+var touchMoveDeadzone = 0.22;
+var touchMoveKnobDistance = 0.82;
 var touchActionHeld = { fire: false, dash: false, special: false, secondary: false };
 var touchActionPointers = {};
 var touchButtonMap = {};
@@ -2361,10 +2424,25 @@ function updateTouchMoveFromPointer(e){
   touchMoveCenter.x = cx;
   touchMoveCenter.y = cy;
   touchMoveCenter.radius = maxR;
-  var dx = clamp(e.clientX - cx, -maxR, maxR);
-  var dy = clamp(e.clientY - cy, -maxR, maxR);
-  touchMoveAxes.x = maxR > 0 ? clamp(dx / maxR, -1, 1) : 0;
-  touchMoveAxes.y = maxR > 0 ? clamp(dy / maxR, -1, 1) : 0;
+  var rawDx = clamp(e.clientX - cx, -maxR, maxR);
+  var rawDy = clamp(e.clientY - cy, -maxR, maxR);
+  var rawDist = Math.hypot(rawDx, rawDy);
+  if(maxR <= 0 || rawDist <= (maxR * touchMoveDeadzone)){
+    touchMoveAxes.x = 0;
+    touchMoveAxes.y = 0;
+    if(touchMoveKnob){
+      touchMoveKnob.style.transform = "translate(-50%, -50%)";
+    }
+    return;
+  }
+  var angle = Math.atan2(rawDy, rawDx);
+  var step = Math.PI / 4;
+  var snappedAngle = Math.round(angle / step) * step;
+  touchMoveAxes.x = Math.cos(snappedAngle);
+  touchMoveAxes.y = Math.sin(snappedAngle);
+  var knobR = maxR * touchMoveKnobDistance;
+  var dx = touchMoveAxes.x * knobR;
+  var dy = touchMoveAxes.y * knobR;
   if(touchMoveKnob){
     touchMoveKnob.style.transform = "translate(calc(-50% + " + dx + "px), calc(-50% + " + dy + "px))";
   }
@@ -8594,6 +8672,7 @@ function update(dt){
   updateAlienBullets(dtSlow, view);
 
   updateParticles(dtReal);
+  updateMineralPopups(dtReal);
   updateRings(dtReal);
 
   emitDamageSmoke(dtReal);
@@ -8645,7 +8724,8 @@ function update(dt){
     }
     if(collectedBy){
       if(p.type === "mineral"){
-        awardMinerals(p.value || 1);
+        var mineralValue = p.value || 1;
+        awardMinerals(mineralValue);
         playSfx(state, "mineral_collected");
         if(tutorialActive && tutorialMineralsTarget > 0){
           tutorialMineralsCollected += 1;
@@ -8657,8 +8737,8 @@ function update(dt){
             tutorialMineralsPending = true;
           }
         }
-        var targetPilotMineral = collectedBy === 2 ? ensurePilot2() : player;
-        spawnPickupFx(targetPilotMineral.x, targetPilotMineral.y - 6);
+        spawnMineralValuePopup(p.x, p.y, mineralValue);
+        spawnMineralPickupFx(p.x, p.y);
         powerups.splice(pi,1);
         continue;
       }
@@ -9865,6 +9945,7 @@ function draw(){
   }
   drawRings();
   drawParticles();
+  drawMineralPopups();
   drawDashGhosts();
   drawTutorialDots();
 

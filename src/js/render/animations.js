@@ -66,12 +66,14 @@ export function createFx(ctx, state, player, beepFn){
   function spawnParticles(x,y, kind){
     var n = (kind === "correct") ? 36
           : (kind === "wrong") ? 22
+          : (kind === "mineral") ? 24
           : (kind === "spark") ? 26
           : (kind === "smoke") ? 8
           : 12;
 
     var sp = (kind === "correct") ? 520
            : (kind === "wrong") ? 420
+           : (kind === "mineral") ? 640
            : (kind === "spark") ? 780
            : (kind === "smoke") ? 90
            : 320;
@@ -98,9 +100,10 @@ export function createFx(ctx, state, player, beepFn){
         x:x, y:y,
         vx: Math.cos(ang)*v,
         vy: Math.sin(ang)*v,
-        r: rand(1.2, (kind === "correct") ? 3.0 : (kind === "spark" ? 2.2 : 2.4)),
+        r: rand(1.2, (kind === "correct") ? 3.0 : (kind === "spark" ? 2.2 : (kind === "mineral" ? 2.6 : 2.4))),
         a: rand(0.55, 0.95),
         life: (kind === "correct") ? rand(0.22, 0.38)
+             : (kind === "mineral") ? rand(0.12, 0.26)
              : (kind === "spark") ? rand(0.10, 0.22)
              : rand(0.18, 0.32),
         kind: kind,
@@ -189,6 +192,7 @@ export function createFx(ctx, state, player, beepFn){
 
       if(q.kind === "correct") ctx.fillStyle = "rgba(0,229,255,.9)";
       else if(q.kind === "wrong") ctx.fillStyle = "rgba(255,77,109,.9)";
+      else if(q.kind === "mineral") ctx.fillStyle = "rgba(130,225,255,.95)";
       else if(q.kind === "spark") ctx.fillStyle = "rgba(255,221,0,.90)";
       else if(q.kind === "spark_white") ctx.fillStyle = "rgba(255,255,255,.95)";
       else ctx.fillStyle = "rgba(232,236,255,.7)";
