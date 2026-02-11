@@ -821,6 +821,19 @@ body.launching #menuWrap{
   transition: opacity .35s ease, transform .35s ease;
 }
 
+.endStage{
+  display:none;
+  opacity:0;
+  transform:translateY(10px);
+  transition: opacity .28s ease, transform .28s ease;
+}
+
+.endStage.isActive{
+  display:block;
+  opacity:1;
+  transform:translateY(0);
+}
+
 .campaignBanner{
   display:flex;
   flex-direction:column;
@@ -940,6 +953,67 @@ body.launching #menuWrap{
   overflow:hidden;
 }
 
+#overlayEnd .card{
+  width:min(980px, 100%);
+}
+
+#endStageEngagement .endStatsWrap{
+  max-height:none;
+  transform:none;
+}
+
+#endStageEngagement .endStatsWrap .panel{
+  max-height:none;
+  min-height:420px;
+  overflow:hidden;
+}
+
+.endPlacementPanel{
+  display:grid;
+  gap:10px;
+  text-align:center;
+}
+
+.endPlacementLine{
+  font-size:18px;
+  letter-spacing:.8px;
+  line-height:1.45;
+  color:#dff7ff;
+}
+
+.endMineralsSummary{
+  margin-top:12px;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:rgba(0,0,0,.22);
+  display:grid;
+  gap:6px;
+}
+
+.endMineralsValue{
+  font-size:34px;
+  font-weight:700;
+  line-height:1;
+  letter-spacing:1.5px;
+  color:#bff2ff;
+  text-shadow:0 0 16px rgba(0,229,255,.3);
+}
+
+.endActionRow{
+  justify-content:center;
+  gap:14px;
+}
+
+#endStageActions .btn{
+  min-height:56px;
+  min-width:190px;
+  font-size:26px;
+  letter-spacing:1.8px;
+  border-width:2px;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset, 0 0 24px rgba(0,229,255,.18);
+}
+
 body.splitGameplayMode{
   overflow:auto;
 }
@@ -1016,6 +1090,12 @@ body.splitGameplayMode #gameShell::after{
 
 @media (max-width: 880px){
   .endStatsWrap{ grid-template-columns: 1fr; }
+  #endStageActions .btn{
+    min-height:48px;
+    min-width:0;
+    flex:1 1 auto;
+    font-size:20px;
+  }
 }
 
 .endNameBlock{
@@ -1025,6 +1105,11 @@ body.splitGameplayMode #gameShell::after{
 .endSequence.reveal-sequence{
   opacity:1;
   transform: translateY(0);
+}
+
+.endSequence.reveal-sequence.phase-fade-out{
+  opacity:0;
+  transform: translateY(8px);
 }
 
 .breakdownBlock{
@@ -1743,6 +1828,13 @@ input[type="checkbox"]{ transform: translateY(1px); }
   overflow:auto;
 }
 
+#endStageEngagement #statsListSecondary{
+  max-height:none;
+  min-height:0;
+  overflow:visible;
+  align-content:start;
+}
+
 #statsListSecondary .endStatsSection{
   grid-column: 1 / -1;
 }
@@ -1764,6 +1856,15 @@ input[type="checkbox"]{ transform: translateY(1px); }
   #statsListSecondary .endStatsSection.endStatsCompact{
     grid-column: 1 / -1;
     width: 100%;
+  }
+}
+
+@media (max-width: 980px){
+  #overlayEnd .card{
+    width:min(940px, 100%);
+  }
+  #endStageEngagement .endStatsWrap .panel{
+    min-height:0;
   }
 }
 

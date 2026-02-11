@@ -61,15 +61,6 @@
       pointer-events:none;
     }
 
-    .heroPanel::after{
-      content:"";
-      position:absolute;
-      inset:0;
-      background: repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 1px, rgba(0,0,0,0) 18px);
-      opacity:.5;
-      pointer-events:none;
-    }
-
     .stepper{
       margin-top:6px;
       font-size:11px;
@@ -664,11 +655,15 @@
     }
     .purchaseLayout{
       display:grid;
-      grid-template-columns:140px minmax(0, 1fr) minmax(150px, auto);
+      grid-template-columns:140px minmax(0, 1fr);
+      grid-template-areas:
+        "preview info"
+        "preview actions";
       gap:16px;
       align-items:start;
     }
     .purchasePreview{
+      grid-area:preview;
       width:140px;
       height:140px;
       border-radius:14px;
@@ -692,10 +687,14 @@
     .purchasePreview.is-belt img{
       display:none;
     }
+    .purchaseInfo{
+      grid-area:info;
+      min-width:0;
+    }
     .purchaseMeta{
       display:grid;
-      grid-template-columns:repeat(2, minmax(130px, 160px));
-      gap:18px;
+      grid-template-columns:repeat(2, minmax(140px, 170px));
+      gap:20px;
       margin-bottom:0;
       justify-content:start;
     }
@@ -719,10 +718,12 @@
       letter-spacing:0.1em;
     }
     .purchaseActions{
+      grid-area:actions;
       display:flex;
       flex-direction:column;
       gap:10px;
-      align-self:center;
+      align-self:end;
+      justify-self:end;
       min-width:160px;
     }
     @media (max-width: 760px){
@@ -731,6 +732,10 @@
       }
       .purchaseLayout{
         grid-template-columns:1fr;
+        grid-template-areas:
+          "preview"
+          "info"
+          "actions";
       }
       .purchasePreview{
         width:120px;
@@ -738,6 +743,7 @@
       }
       .purchaseActions{
         min-width:0;
+        justify-self:stretch;
       }
     }
     .purchaseActions .btn{
@@ -2402,7 +2408,7 @@
           <div class="purchasePreview" id="purchasePreview">
             <img id="purchasePreviewImg" alt="" />
           </div>
-          <div>
+          <div class="purchaseInfo">
             <div class="purchaseMeta">
               <div class="purchaseRow">
                 <span>Minerals</span>

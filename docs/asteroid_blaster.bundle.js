@@ -142409,9 +142409,28 @@
   var endScoreBlock = document.getElementById("endScoreBlock");
   var endStatsWrap = document.getElementById("endStatsWrap");
   var endNameBlock = document.getElementById("endNameBlock");
+  var endStageSummary = document.getElementById("endStageSummary");
+  var endStageEngagement = document.getElementById("endStageEngagement");
+  var endStageName = document.getElementById("endStageName");
+  var endStagePlacement = document.getElementById("endStagePlacement");
+  var endStageActions = document.getElementById("endStageActions");
+  var endPlacementTitle = document.getElementById("endPlacementTitle");
+  var endPlacementLine = document.getElementById("endPlacementLine");
+  var endMineralsCollected = document.getElementById("endMineralsCollected");
+  var endMineralsTotal = document.getElementById("endMineralsTotal");
   var endSequenceTimers = [];
+  var endSequenceActive = false;
+  var endPhase = "";
+  var endPhaseTimeoutId = 0;
+  var endNameConfirmed = false;
+  var endMineralAnimId = 0;
+  var endMineralAnimStart = 0;
+  var endSequenceContext = null;
   var gameOverSfxTimer = 0;
   var mineralsTotal = 0;
+  var END_PHASE_SUMMARY_MS = 4e3;
+  var END_PHASE_ENGAGEMENT_MS = 4e3;
+  var END_PHASE_PLACEMENT_MS = 4e3;
   var state = createState();
   var player = createPlayer();
   player.spinManeuver = { active: false, phase: 0, x0: 0, y0: 0, x1: 0, y1: 0, x2: 0, y2: 0 };
@@ -148659,29 +148678,199 @@
       clearTimeout(endSequenceTimers[i]);
     }
     endSequenceTimers.length = 0;
+    if (endPhaseTimeoutId) {
+      clearTimeout(endPhaseTimeoutId);
+      endPhaseTimeoutId = 0;
+    }
+    if (endMineralAnimId) {
+      cancelAnimationFrame(endMineralAnimId);
+      endMineralAnimId = 0;
+    }
+  }
+  function setEndStageVisible(stageId) {
+    var all = [
+      endStageSummary,
+      endStageEngagement,
+      endStageName,
+      endStagePlacement,
+      endStageActions
+    ];
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i];
+      if (!el)
+        continue;
+      el.classList.toggle("isActive", el.id === stageId);
+    }
   }
   function resetEndSequence() {
-    if (!endSequence)
+    clearEndSequenceTimers();
+    endSequenceActive = false;
+    endPhase = "";
+    endNameConfirmed = false;
+    endSequenceContext = null;
+    setEndStageVisible("");
+    if (endSequence) {
+      endSequence.classList.remove("reveal-sequence", "reveal-score", "reveal-stats", "reveal-name");
+    }
+    if (overlayEnd) {
+      overlayEnd.classList.remove("reveal-reason");
+    }
+  }
+  function animateMineralsCount(target, durationMs, onDone) {
+    if (!endMineralsCollected) {
+      if (typeof onDone === "function")
+        onDone();
       return;
-    endSequence.classList.remove("reveal-sequence", "reveal-score", "reveal-stats", "reveal-name");
-    overlayEnd.classList.remove("reveal-reason");
+    }
+    if (endMineralAnimId) {
+      cancelAnimationFrame(endMineralAnimId);
+      endMineralAnimId = 0;
+    }
+    var safeTarget = Math.max(0, Math.round(Number(target) || 0));
+    var duration = Math.max(1, Number(durationMs) || 1200);
+    endMineralAnimStart = performance.now();
+    function tick2(now) {
+      var t = Math.min(1, (now - endMineralAnimStart) / duration);
+      var eased = 1 - Math.pow(1 - t, 2);
+      var value = Math.round(safeTarget * eased);
+      endMineralsCollected.textContent = String(value);
+      if (t < 1) {
+        endMineralAnimId = requestAnimationFrame(tick2);
+        return;
+      }
+      endMineralAnimId = 0;
+      if (typeof onDone === "function")
+        onDone();
+    }
+    endMineralAnimId = requestAnimationFrame(tick2);
+  }
+  function resolveEndPlacementText() {
+    var ctx2 = endSequenceContext;
+    if (!ctx2 || !ctx2.lifetime || !ctx2.modeInfo) {
+      return "Position unavailable for this run.";
+    }
+    var allScores = Array.isArray(ctx2.lifetime.allScores) ? ctx2.lifetime.allScores : [];
+    var filtered = allScores.filter(function(entry) {
+      return entry && entry.modeKey === ctx2.modeInfo.key;
+    }).sort(function(a, b) {
+      var scoreA = Number(a && a.score) || 0;
+      var scoreB = Number(b && b.score) || 0;
+      if (scoreB !== scoreA)
+        return scoreB - scoreA;
+      var dateA = Date.parse(a && a.date || 0) || 0;
+      var dateB = Date.parse(b && b.date || 0) || 0;
+      return dateA - dateB;
+    });
+    var pos = -1;
+    for (var i = 0; i < filtered.length; i++) {
+      if (filtered[i] && filtered[i].id === state.lastSessionId) {
+        pos = i + 1;
+        break;
+      }
+    }
+    if (pos < 1) {
+      return "Score saved. Placement is updating.";
+    }
+    return "You placed #" + pos + " with " + (Number(state.score) || 0) + " points.";
+  }
+  function scheduleEndPhaseAdvance(delayMs) {
+    var safeDelay = Math.max(0, Number(delayMs) || 0);
+    endPhaseTimeoutId = setTimeout(function() {
+      endPhaseTimeoutId = 0;
+      advanceEndSequencePhase();
+    }, safeDelay);
+    endSequenceTimers.push(endPhaseTimeoutId);
+  }
+  function showEndSummaryPhase() {
+    endPhase = "summary";
+    setEndStageVisible("endStageSummary");
+    scheduleEndPhaseAdvance(END_PHASE_SUMMARY_MS);
+  }
+  function showEndEngagementPhase() {
+    endPhase = "engagement";
+    setEndStageVisible("endStageEngagement");
+    if (endMineralsCollected) {
+      endMineralsCollected.textContent = "0";
+    }
+    if (endMineralsTotal) {
+      endMineralsTotal.textContent = "TOTAL MINERALS: --";
+    }
+    animateMineralsCount(state.mineralsEarned || 0, 1400, function() {
+      if (endMineralsTotal) {
+        endMineralsTotal.textContent = "TOTAL MINERALS: " + (Number(mineralsTotal) || 0);
+      }
+    });
+    scheduleEndPhaseAdvance(END_PHASE_ENGAGEMENT_MS);
+  }
+  function showEndNamePhase() {
+    endPhase = "name";
+    setEndStageVisible("endStageName");
+    if (btnHighScoresToggle) {
+      btnHighScoresToggle.textContent = "CONTINUE";
+    }
+    if (endNameInput) {
+      endNameInput.focus();
+      endNameInput.select();
+    }
+  }
+  function showEndPlacementPhase() {
+    endPhase = "placement";
+    setEndStageVisible("endStagePlacement");
+    if (endPlacementTitle) {
+      endPlacementTitle.textContent = "PILOT POSITION";
+    }
+    if (endPlacementLine) {
+      endPlacementLine.textContent = resolveEndPlacementText();
+    }
+    scheduleEndPhaseAdvance(END_PHASE_PLACEMENT_MS);
+  }
+  function showEndActionsPhase() {
+    endPhase = "actions";
+    setEndStageVisible("endStageActions");
+  }
+  function advanceEndSequencePhase() {
+    if (!endSequenceActive)
+      return;
+    if (endPhase === "summary") {
+      showEndEngagementPhase();
+      return;
+    }
+    if (endPhase === "engagement") {
+      showEndNamePhase();
+      return;
+    }
+    if (endPhase === "placement") {
+      showEndActionsPhase();
+    }
+  }
+  function handleEndNameConfirm() {
+    if (!endSequenceActive || endPhase !== "name")
+      return false;
+    saveScoreName(endNameInput ? endNameInput.value : "");
+    endNameConfirmed = true;
+    playSfx(state, "menu_beep");
+    showToast("NAME SAVED");
+    showEndPlacementPhase();
+    return true;
   }
   function startEndSequence() {
     if (!endSequence)
       return;
     clearEndSequenceTimers();
-    resetEndSequence();
+    endSequenceActive = true;
+    endNameConfirmed = false;
+    endPhase = "";
+    setEndStageVisible("");
     void endSequence.offsetWidth;
-    endSequenceTimers.push(setTimeout(function() {
+    var reasonTimer = setTimeout(function() {
       overlayEnd.classList.add("reveal-reason");
-    }, 180));
-    endSequenceTimers.push(setTimeout(function() {
+    }, 180);
+    endSequenceTimers.push(reasonTimer);
+    var sequenceTimer = setTimeout(function() {
       endSequence.classList.add("reveal-sequence");
-      if (endNameInput) {
-        endNameInput.focus();
-        endNameInput.select();
-      }
-    }, 120));
+      showEndSummaryPhase();
+    }, 120);
+    endSequenceTimers.push(sequenceTimer);
   }
   function showEndOverlay() {
     overlayEnd.classList.add("show");
@@ -149131,33 +149320,24 @@
       }
     }
     renderHighScores(lifetime, modeInfo.key, modeInfo);
+    endSequenceContext = {
+      lifetime,
+      modeInfo
+    };
     if (endScoresPanel) {
       endScoresPanel.classList.add("endStatsHidden");
     }
-    if (endStatsWrap) {
-      endStatsWrap.classList.remove("endStatsHidden");
-    }
     if (btnHighScoresToggle) {
-      btnHighScoresToggle.textContent = "SHOW SCORES";
+      btnHighScoresToggle.textContent = "CONTINUE";
       btnHighScoresToggle.onclick = function() {
-        if (!endScoresPanel)
-          return;
-        var hidden = endScoresPanel.classList.contains("endStatsHidden");
-        endScoresPanel.classList.toggle("endStatsHidden", !hidden);
-        if (endStatsWrap) {
-          endStatsWrap.classList.toggle("endStatsHidden", hidden);
-        }
-        btnHighScoresToggle.textContent = hidden ? "HIDE SCORES" : "SHOW SCORES";
-        if (hidden) {
-          renderHighScores(lifetime, modeInfo.key, modeInfo);
-        }
+        handleEndNameConfirm();
       };
     }
     if (btnEndNext) {
       btnEndNext.style.display = campaignResult.hasNext ? "inline-flex" : "none";
     }
     if (btnEndSettings) {
-      btnEndSettings.style.display = reason === "questions" ? "inline-flex" : "none";
+      btnEndSettings.style.display = "none";
     }
     if (endNameInput) {
       endNameInput.value = storedName;
@@ -155299,9 +155479,11 @@
     endNameInput.addEventListener("keydown", function(e) {
       if (e.key === "Enter") {
         e.preventDefault();
-        saveScoreName(endNameInput.value);
-        showToast("NAME SAVED");
-        playSfx(state, "menu_beep");
+        if (!handleEndNameConfirm()) {
+          saveScoreName(endNameInput.value);
+          showToast("NAME SAVED");
+          playSfx(state, "menu_beep");
+        }
       }
     });
     endNameInput.addEventListener("blur", function() {
