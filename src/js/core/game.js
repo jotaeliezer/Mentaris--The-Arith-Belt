@@ -435,11 +435,11 @@ function setWideGameplay(isWide){
 }
 
 function setSplitGameplay(isSplit){
-  var on = !!isSplit;
+  var on = false;
   document.body.classList.toggle("splitGameplayMode", on);
   if(wrap) wrap.classList.toggle("splitGameplay", on);
   if(gameShell) gameShell.classList.toggle("splitGameplay", on);
-  if(on && isSandboxMultiplayer()){
+  if(!!isSplit && isSandboxMultiplayer()){
     positionSandboxPilots();
   }
 }
@@ -764,6 +764,7 @@ var tutorialMineralsPending = false;
 var tutorialMineralsRemaining = 0;
 var tutorialFreezeDimAlpha = 0;
 var tutorialFreezeDimTarget = 0;
+var tutorialSecondChanceBusy = false;
 var tutorialPowerupBatchSpawned = false;
 var tutorialExtraPowerupsSpawned = false;
 var tutorialFreezeMousepadRestore = false;
@@ -6714,6 +6715,38 @@ function beginTutorialMineralsFreeze(hitAst){
   updateCursorVisibility();
 }
 
+function isTutorialCorrectShotStep(){
+  return tutorialActive && (tutorialStepId === "correct" || tutorialStepId === "correct_after_magnet" || tutorialStepId === "ability_shot");
+}
+
+function queueTutorialSecondChance(){
+  if(!isTutorialCorrectShotStep() || tutorialSecondChanceBusy) return;
+  tutorialSecondChanceBusy = true;
+  tutorialSpawnUnlocked = false;
+  state.correctInPlay = false;
+  state.correctAsteroidId = 0;
+  state.spawnTimer = Math.max(state.spawnTimer || 0, 1.5);
+  asteroids.length = 0;
+  showToast("SECOND CHANCE");
+  var spawnRetryPool = function(){
+    tutorialSecondChanceBusy = false;
+    setupTutorialPowerupField({ decoys: 0, blocker: false, answerVy: 74 });
+  };
+  if(tourGuide){
+    tourGuide.interject([
+      {
+        id: "tutorial_second_chance",
+        title: "Second Chance",
+        body: "Sometimes there are second chances. Take a breath and line up the correct asteroid.",
+        autoAdvanceMs: 2200,
+        showProgress: false
+      }
+    ], spawnRetryPool);
+  }else{
+    spawnRetryPool();
+  }
+}
+
 function handleDivisorCorrectHit(hitAst){
   if(warningClip){
     try{
@@ -8926,6 +8959,20 @@ function update(dt){
 
     if(a.y - a.r > r.height + 40){
       if(a.isCorrect && a.waveId === state.waveId){
+        if(isTutorialCorrectShotStep()){
+          if(a.hiddenPowerup){
+            hiddenPowerupActive = false;
+            answerHitsSincePowerup = 0;
+          }
+          if(state.correctAsteroidId === a.id){
+            state.correctAsteroidId = 0;
+            state.correctInPlay = false;
+          }
+          playSfx(state, "missed_answer");
+          asteroids.splice(ai,1);
+          queueTutorialSecondChance();
+          continue;
+        }
         if(isDivisorsMode()){
           if(isSandboxSplitMode()){
             var missPilotDiv = a.laneId || getLaneIdForX(a.x);
@@ -14844,6 +14891,7 @@ function boot(){
       tutorialMineralsFreeze = false;
       tutorialFreezeDimAlpha = 0;
       tutorialFreezeDimTarget = 0;
+      tutorialSecondChanceBusy = false;
       tutorialMineralsTarget = 0;
       tutorialMineralsCollected = 0;
       tutorialMineralsComplete = false;
@@ -15068,8 +15116,9 @@ function boot(){
           tutorialMineralsFreeze = false;
           tutorialFreezeDimTarget = 0;
           tutorialFreezeDimAlpha = 0;
-          tutorialPowerupBatchSpawned = false;
-          tutorialFreezeMousepadRestore = false;
+      tutorialPowerupBatchSpawned = false;
+      tutorialSecondChanceBusy = false;
+      tutorialFreezeMousepadRestore = false;
           setTutorialQuestionHidden(false);
           try{
             sessionStorage.setItem("asteroidConfig", JSON.stringify({
