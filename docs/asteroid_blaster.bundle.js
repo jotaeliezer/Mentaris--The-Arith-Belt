@@ -140454,8 +140454,8 @@
       ctx2.globalCompositeOperation = "source-over";
     }
     function spawnParticles2(x, y, kind) {
-      var n = kind === "correct" ? 36 : kind === "wrong" ? 22 : kind === "spark" ? 26 : kind === "smoke" ? 8 : 12;
-      var sp = kind === "correct" ? 520 : kind === "wrong" ? 420 : kind === "spark" ? 780 : kind === "smoke" ? 90 : 320;
+      var n = kind === "correct" ? 36 : kind === "wrong" ? 22 : kind === "mineral" ? 24 : kind === "spark" ? 26 : kind === "smoke" ? 8 : 12;
+      var sp = kind === "correct" ? 520 : kind === "wrong" ? 420 : kind === "mineral" ? 640 : kind === "spark" ? 780 : kind === "smoke" ? 90 : 320;
       for (var i = 0; i < n; i++) {
         var ang = Math.random() * Math.PI * 2;
         var v = rand(sp * 0.35, sp);
@@ -140478,9 +140478,9 @@
           y,
           vx: Math.cos(ang) * v,
           vy: Math.sin(ang) * v,
-          r: rand(1.2, kind === "correct" ? 3 : kind === "spark" ? 2.2 : 2.4),
+          r: rand(1.2, kind === "correct" ? 3 : kind === "spark" ? 2.2 : kind === "mineral" ? 2.6 : 2.4),
           a: rand(0.55, 0.95),
-          life: kind === "correct" ? rand(0.22, 0.38) : kind === "spark" ? rand(0.1, 0.22) : rand(0.18, 0.32),
+          life: kind === "correct" ? rand(0.22, 0.38) : kind === "mineral" ? rand(0.12, 0.26) : kind === "spark" ? rand(0.1, 0.22) : rand(0.18, 0.32),
           kind,
           spin: rand(-6, 6)
         });
@@ -140568,6 +140568,8 @@
           ctx2.fillStyle = "rgba(0,229,255,.9)";
         else if (q.kind === "wrong")
           ctx2.fillStyle = "rgba(255,77,109,.9)";
+        else if (q.kind === "mineral")
+          ctx2.fillStyle = "rgba(130,225,255,.95)";
         else if (q.kind === "spark")
           ctx2.fillStyle = "rgba(255,221,0,.90)";
         else if (q.kind === "spark_white")
@@ -142426,11 +142428,13 @@
   var endMineralAnimId = 0;
   var endMineralAnimStart = 0;
   var endSequenceContext = null;
+  var endStageFadeTimer = 0;
   var gameOverSfxTimer = 0;
   var mineralsTotal = 0;
   var END_PHASE_SUMMARY_MS = 4e3;
   var END_PHASE_ENGAGEMENT_MS = 4e3;
   var END_PHASE_PLACEMENT_MS = 4e3;
+  var END_STAGE_FADE_MS = 220;
   var state = createState();
   var player = createPlayer();
   player.spinManeuver = { active: false, phase: 0, x0: 0, y0: 0, x1: 0, y1: 0, x2: 0, y2: 0 };
@@ -142513,6 +142517,9 @@
   var tutorialMineralsComplete = false;
   var tutorialMineralsPending = false;
   var tutorialMineralsRemaining = 0;
+  var tutorialFreezeDimAlpha = 0;
+  var tutorialFreezeDimTarget = 0;
+  var tutorialPowerupBatchSpawned = false;
   var tutorialExtraPowerupsSpawned = false;
   var tutorialFreezeMousepadRestore = false;
   var tutorialMovementPreference = null;
@@ -142554,6 +142561,7 @@
   var precisionWindowSec = 2.5;
   var fx = createFx(ctx, state, player, null);
   var particles = fx.particles;
+  var mineralPopups = [];
   var rings = fx.rings;
   var cam = fx.cam;
   var kickShake = fx.kickShake;
@@ -143030,6 +143038,63 @@
   function closeCatalogDetail() {
     if (catalogDetailOverlay)
       catalogDetailOverlay.classList.remove("show");
+  }
+  function spawnMineralPickupFx(x, y) {
+    var beams = 7;
+    var baseAngle = -Math.PI / 2;
+    for (var i = 0; i < beams; i++) {
+      var ang = baseAngle + i / beams * Math.PI * 2;
+      var dirX = Math.cos(ang);
+      var dirY = Math.sin(ang);
+      spawnDirectedSparks(x, y, dirX, dirY, 0.2, 12, 220, 520, 0.1, 0.24, "mineral");
+      spawnDirectedSparks(x, y, dirX, dirY, 0.18, 6, 180, 360, 0.1, 0.22, "spark_white");
+    }
+    spawnParticles(x, y, "mineral");
+  }
+  function spawnMineralValuePopup(x, y, amount) {
+    var value = Math.max(1, Number(amount) || 1);
+    mineralPopups.push({
+      x,
+      y: y - 8,
+      vy: -42,
+      drift: rand(-12, 12),
+      life: 0.8,
+      alpha: 1,
+      text: "+" + value
+    });
+    if (mineralPopups.length > 40) {
+      mineralPopups.splice(0, mineralPopups.length - 40);
+    }
+  }
+  function updateMineralPopups(dt) {
+    for (var i = mineralPopups.length - 1; i >= 0; i--) {
+      var pop = mineralPopups[i];
+      pop.life -= dt;
+      if (pop.life <= 0) {
+        mineralPopups.splice(i, 1);
+        continue;
+      }
+      pop.y += pop.vy * dt;
+      pop.x += pop.drift * dt;
+      pop.alpha = Math.max(0, Math.min(1, pop.life / 0.8));
+    }
+  }
+  function drawMineralPopups() {
+    if (!mineralPopups.length)
+      return;
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = "700 20px Oxanium, sans-serif";
+    for (var i = 0; i < mineralPopups.length; i++) {
+      var pop = mineralPopups[i];
+      ctx.globalAlpha = pop.alpha;
+      ctx.shadowColor = "rgba(120,220,255,.85)";
+      ctx.shadowBlur = 12;
+      ctx.fillStyle = "rgba(182,240,255,.98)";
+      ctx.fillText(pop.text, pop.x, pop.y);
+    }
+    ctx.restore();
   }
   function loadUnlockIds(key) {
     try {
@@ -143621,6 +143686,8 @@
   var touchMoveAxes = { x: 0, y: 0 };
   var touchMovePointerId = null;
   var touchMoveCenter = { x: 0, y: 0, radius: 0 };
+  var touchMoveDeadzone = 0.22;
+  var touchMoveKnobDistance = 0.82;
   var touchActionHeld = { fire: false, dash: false, special: false, secondary: false };
   var touchActionPointers = {};
   var touchButtonMap = {};
@@ -143975,8 +144042,21 @@
     updateCursorVisibility();
   }
   resetMousepadPadSettings();
+  window.addEventListener("unhandledrejection", function(evt) {
+    var reason = evt && evt.reason;
+    if (!reason)
+      return;
+    var msg = String(reason && reason.message || reason || "");
+    if (reason.name === "AbortError" && /play\(\) request was interrupted/i.test(msg)) {
+      evt.preventDefault();
+    }
+  });
   function updateCursorVisibility() {
     if (tutorialActive && tutorialStepId === "platform_choice" && !tutorialPlatformChoiceResolved) {
+      document.body.style.cursor = "";
+      return;
+    }
+    if (tutorialActive && tutorialStepId === "movement_preference") {
       document.body.style.cursor = "";
       return;
     }
@@ -144096,10 +144176,25 @@
     touchMoveCenter.x = cx;
     touchMoveCenter.y = cy;
     touchMoveCenter.radius = maxR;
-    var dx = clamp(e.clientX - cx, -maxR, maxR);
-    var dy = clamp(e.clientY - cy, -maxR, maxR);
-    touchMoveAxes.x = maxR > 0 ? clamp(dx / maxR, -1, 1) : 0;
-    touchMoveAxes.y = maxR > 0 ? clamp(dy / maxR, -1, 1) : 0;
+    var rawDx = clamp(e.clientX - cx, -maxR, maxR);
+    var rawDy = clamp(e.clientY - cy, -maxR, maxR);
+    var rawDist = Math.hypot(rawDx, rawDy);
+    if (maxR <= 0 || rawDist <= maxR * touchMoveDeadzone) {
+      touchMoveAxes.x = 0;
+      touchMoveAxes.y = 0;
+      if (touchMoveKnob) {
+        touchMoveKnob.style.transform = "translate(-50%, -50%)";
+      }
+      return;
+    }
+    var angle = Math.atan2(rawDy, rawDx);
+    var step = Math.PI / 4;
+    var snappedAngle = Math.round(angle / step) * step;
+    touchMoveAxes.x = Math.cos(snappedAngle);
+    touchMoveAxes.y = Math.sin(snappedAngle);
+    var knobR = maxR * touchMoveKnobDistance;
+    var dx = touchMoveAxes.x * knobR;
+    var dy = touchMoveAxes.y * knobR;
     if (touchMoveKnob) {
       touchMoveKnob.style.transform = "translate(calc(-50% + " + dx + "px), calc(-50% + " + dy + "px))";
     }
@@ -148383,6 +148478,7 @@
       return;
     var mineralTarget = getHighestDigit(hitAst.label);
     tutorialMineralsFreeze = true;
+    tutorialFreezeDimTarget = 1;
     tutorialFreezeMousepadRestore = !!mousepadActive;
     if (mousepadActive)
       setMousepadActive(false);
@@ -148682,6 +148778,10 @@
       clearTimeout(endPhaseTimeoutId);
       endPhaseTimeoutId = 0;
     }
+    if (endStageFadeTimer) {
+      clearTimeout(endStageFadeTimer);
+      endStageFadeTimer = 0;
+    }
     if (endMineralAnimId) {
       cancelAnimationFrame(endMineralAnimId);
       endMineralAnimId = 0;
@@ -148701,6 +148801,27 @@
         continue;
       el.classList.toggle("isActive", el.id === stageId);
     }
+  }
+  function transitionEndStage(stageId, onShown) {
+    if (!endSequence || !endSequence.classList.contains("reveal-sequence")) {
+      setEndStageVisible(stageId);
+      if (typeof onShown === "function")
+        onShown();
+      return;
+    }
+    if (endStageFadeTimer) {
+      clearTimeout(endStageFadeTimer);
+      endStageFadeTimer = 0;
+    }
+    endSequence.classList.add("phase-fade-out");
+    endStageFadeTimer = setTimeout(function() {
+      endStageFadeTimer = 0;
+      setEndStageVisible(stageId);
+      endSequence.classList.remove("phase-fade-out");
+      if (typeof onShown === "function")
+        onShown();
+    }, END_STAGE_FADE_MS);
+    endSequenceTimers.push(endStageFadeTimer);
   }
   function resetEndSequence() {
     clearEndSequenceTimers();
@@ -148783,50 +148904,54 @@
   }
   function showEndSummaryPhase() {
     endPhase = "summary";
-    setEndStageVisible("endStageSummary");
-    scheduleEndPhaseAdvance(END_PHASE_SUMMARY_MS);
+    transitionEndStage("endStageSummary", function() {
+      scheduleEndPhaseAdvance(END_PHASE_SUMMARY_MS);
+    });
   }
   function showEndEngagementPhase() {
     endPhase = "engagement";
-    setEndStageVisible("endStageEngagement");
-    if (endMineralsCollected) {
-      endMineralsCollected.textContent = "0";
-    }
-    if (endMineralsTotal) {
-      endMineralsTotal.textContent = "TOTAL MINERALS: --";
-    }
-    animateMineralsCount(state.mineralsEarned || 0, 1400, function() {
-      if (endMineralsTotal) {
-        endMineralsTotal.textContent = "TOTAL MINERALS: " + (Number(mineralsTotal) || 0);
+    transitionEndStage("endStageEngagement", function() {
+      if (endMineralsCollected) {
+        endMineralsCollected.textContent = "0";
       }
+      if (endMineralsTotal) {
+        endMineralsTotal.textContent = "TOTAL MINERALS: --";
+      }
+      animateMineralsCount(state.mineralsEarned || 0, 1400, function() {
+        if (endMineralsTotal) {
+          endMineralsTotal.textContent = "TOTAL MINERALS: " + (Number(mineralsTotal) || 0);
+        }
+      });
+      scheduleEndPhaseAdvance(END_PHASE_ENGAGEMENT_MS);
     });
-    scheduleEndPhaseAdvance(END_PHASE_ENGAGEMENT_MS);
   }
   function showEndNamePhase() {
     endPhase = "name";
-    setEndStageVisible("endStageName");
-    if (btnHighScoresToggle) {
-      btnHighScoresToggle.textContent = "CONTINUE";
-    }
-    if (endNameInput) {
-      endNameInput.focus();
-      endNameInput.select();
-    }
+    transitionEndStage("endStageName", function() {
+      if (btnHighScoresToggle) {
+        btnHighScoresToggle.textContent = "CONTINUE";
+      }
+      if (endNameInput) {
+        endNameInput.focus();
+        endNameInput.select();
+      }
+    });
   }
   function showEndPlacementPhase() {
     endPhase = "placement";
-    setEndStageVisible("endStagePlacement");
-    if (endPlacementTitle) {
-      endPlacementTitle.textContent = "PILOT POSITION";
-    }
-    if (endPlacementLine) {
-      endPlacementLine.textContent = resolveEndPlacementText();
-    }
-    scheduleEndPhaseAdvance(END_PHASE_PLACEMENT_MS);
+    transitionEndStage("endStagePlacement", function() {
+      if (endPlacementTitle) {
+        endPlacementTitle.textContent = "PILOT POSITION";
+      }
+      if (endPlacementLine) {
+        endPlacementLine.textContent = resolveEndPlacementText();
+      }
+      scheduleEndPhaseAdvance(END_PHASE_PLACEMENT_MS);
+    });
   }
   function showEndActionsPhase() {
     endPhase = "actions";
-    setEndStageVisible("endStageActions");
+    transitionEndStage("endStageActions");
   }
   function advanceEndSequencePhase() {
     if (!endSequenceActive)
@@ -149523,6 +149648,14 @@
   function update(dt) {
     var dtReal2 = dt;
     var dtSlow = dtReal2;
+    if (tutorialFreezeDimAlpha !== tutorialFreezeDimTarget) {
+      var fadeStep = Math.max(0.01, dtReal2 * 4.5);
+      if (tutorialFreezeDimAlpha < tutorialFreezeDimTarget) {
+        tutorialFreezeDimAlpha = Math.min(tutorialFreezeDimTarget, tutorialFreezeDimAlpha + fadeStep);
+      } else {
+        tutorialFreezeDimAlpha = Math.max(tutorialFreezeDimTarget, tutorialFreezeDimAlpha - fadeStep);
+      }
+    }
     bg.dt = dt;
     if (state.lightningFlash > 0) {
       state.lightningFlash = Math.max(0, state.lightningFlash - dtReal2);
@@ -150269,6 +150402,7 @@
     }
     updateAlienBullets(dtSlow, view);
     updateParticles(dtReal2);
+    updateMineralPopups(dtReal2);
     updateRings(dtReal2);
     emitDamageSmoke(dtReal2);
     for (var pi = powerups.length - 1; pi >= 0; pi--) {
@@ -150318,7 +150452,8 @@
       }
       if (collectedBy) {
         if (p.type === "mineral") {
-          awardMinerals(p.value || 1);
+          var mineralValue = p.value || 1;
+          awardMinerals(mineralValue);
           playSfx(state, "mineral_collected");
           if (tutorialActive && tutorialMineralsTarget > 0) {
             tutorialMineralsCollected += 1;
@@ -150330,8 +150465,8 @@
               tutorialMineralsPending = true;
             }
           }
-          var targetPilotMineral = collectedBy === 2 ? ensurePilot2() : player;
-          spawnPickupFx(targetPilotMineral.x, targetPilotMineral.y - 6);
+          spawnMineralValuePopup(p.x, p.y, mineralValue);
+          spawnMineralPickupFx(p.x, p.y);
           powerups.splice(pi, 1);
           continue;
         }
@@ -151538,6 +151673,7 @@
     }
     drawRings();
     drawParticles();
+    drawMineralPopups();
     drawDashGhosts();
     drawTutorialDots();
     drawShip();
@@ -151546,9 +151682,10 @@
     }
     drawClawPrompt();
     ctx.restore();
-    if (tutorialActive && tutorialMineralsFreeze) {
+    if (tutorialActive && (tutorialMineralsFreeze || tutorialFreezeDimAlpha > 0.01)) {
       ctx.save();
-      ctx.fillStyle = "rgba(0,0,0,.62)";
+      var dimAlpha = 0.62 * clamp(tutorialFreezeDimAlpha, 0, 1);
+      ctx.fillStyle = "rgba(0,0,0," + dimAlpha.toFixed(3) + ")";
       ctx.fillRect(0, 0, w, h);
       ctx.translate(cam.x || 0, cam.y || 0);
       for (var pmi = 0; pmi < powerups.length; pmi++) {
@@ -151562,7 +151699,11 @@
         ctx.arc(pm.x, pm.y, pm.r * 2.4, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
-        drawPowerup(pm);
+        ctx.save();
+        ctx.translate(pm.x, pm.y);
+        ctx.rotate(pm.rot || 0);
+        drawPowerupIcon(pm, getPowerupColor(pm));
+        ctx.restore();
       }
       ctx.restore();
     }
@@ -156306,11 +156447,14 @@
         tutorialHullRecoveryShown = false;
         tutorialShootLocked = false;
         tutorialMineralsFreeze = false;
+        tutorialFreezeDimAlpha = 0;
+        tutorialFreezeDimTarget = 0;
         tutorialMineralsTarget = 0;
         tutorialMineralsCollected = 0;
         tutorialMineralsComplete = false;
         tutorialMineralsPending = false;
         tutorialMineralsRemaining = 0;
+        tutorialPowerupBatchSpawned = false;
         tutorialExtraPowerupsSpawned = false;
         tutorialFreezeMousepadRestore = false;
         tutorialMovementPreference = null;
@@ -156433,17 +156577,18 @@
             if (stepId === "secondary_time") {
               tutorialShootLocked = true;
               selectTutorialSecondary("time");
-              setupTutorialPowerupField({ decoys: 4, answerY: view.hudH + 138 });
+              if (!tutorialPowerupBatchSpawned) {
+                tutorialPowerupBatchSpawned = true;
+                setupTutorialPowerupField({ decoys: 6, answerY: view.hudH + 132, answerX: view.w * 0.62 });
+              }
             }
             if (stepId === "secondary_emp") {
               tutorialShootLocked = true;
               selectTutorialSecondary("emp");
-              setupTutorialPowerupField({ decoys: 6, answerY: view.hudH + 132 });
             }
             if (stepId === "secondary_magnet") {
               tutorialShootLocked = true;
               selectTutorialSecondary("magnet");
-              setupTutorialPowerupField({ decoys: 4, answerY: view.hudH + 118, answerX: view.w * 0.68 });
             }
             if (stepId === "correct_after_magnet") {
               tutorialShootLocked = false;
@@ -156483,6 +156628,7 @@
           onConfirm: function(stepId) {
             if (stepId === "minerals") {
               tutorialMineralsFreeze = false;
+              tutorialFreezeDimTarget = 0;
               if (tutorialFreezeMousepadRestore && tutorialMovementPreference === "mouse") {
                 setMousepadActive(true);
               }
@@ -156524,6 +156670,7 @@
               if (mousepadActive)
                 setMousepadActive(false);
             }
+            updateCursorVisibility();
           },
           onComplete: function() {
             try {
@@ -156534,6 +156681,9 @@
             tutorialPortalLock = false;
             tutorialPortalNotifyPending = false;
             tutorialMineralsFreeze = false;
+            tutorialFreezeDimTarget = 0;
+            tutorialFreezeDimAlpha = 0;
+            tutorialPowerupBatchSpawned = false;
             tutorialFreezeMousepadRestore = false;
             setTutorialQuestionHidden(false);
             try {
@@ -156569,6 +156719,9 @@
         tutorialAlienUnlocked = true;
         tutorialAlienDelayRemaining = 0;
         tutorialMineralsFreeze = false;
+        tutorialFreezeDimTarget = 0;
+        tutorialFreezeDimAlpha = 0;
+        tutorialPowerupBatchSpawned = false;
         alienConfig.enabled = true;
         setTutorialQuestionHidden(false);
       }

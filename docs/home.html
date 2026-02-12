@@ -576,6 +576,26 @@
       position: relative;
       overflow: hidden;
     }
+    #beltChoices{
+      grid-template-columns: repeat(6, minmax(138px, 1fr));
+      gap:10px;
+      align-items:stretch;
+    }
+    #beltChoices .beltChoice{
+      min-height:210px;
+      padding:10px 10px 12px;
+      background-size: 145% 145%;
+      background-position: center center;
+    }
+    #beltChoices .beltChoice h4{
+      font-size:11px;
+      letter-spacing:1.2px;
+      line-height:1.2;
+    }
+    #beltChoices .beltChoice p{
+      font-size:11px;
+      line-height:1.35;
+    }
     .beltChoice::before{
       content:"";
       position:absolute;
@@ -629,6 +649,13 @@
       border:1px solid rgba(255,255,255,.2);
       color: rgba(232,236,255,.75);
     }
+    #beltChoices .beltChoice.locked .beltLockTag{
+      top:auto;
+      bottom:62px;
+      right:12px;
+      background: rgba(8,12,24,.88);
+      border-color: rgba(140,220,255,.35);
+    }
     .buyButton{
       position:absolute;
       top:10px;
@@ -652,6 +679,16 @@
       left:auto;
       right:12px;
       bottom:12px;
+    }
+    .beltChoice .buyButton{
+      border-color: rgba(80,220,120,.75);
+      background: rgba(80,220,120,.5);
+      color: rgba(235,255,242,.98);
+      box-shadow: 0 10px 26px rgba(40,190,95,.32), 0 0 0 1px rgba(255,255,255,.08) inset;
+    }
+    .beltChoice .buyButton:hover{
+      background: rgba(80,220,120,.68);
+      border-color: rgba(120,245,155,.9);
     }
     .buyButton.hidden{ display:none; }
 
@@ -749,6 +786,9 @@
       .purchaseActions{
         min-width:0;
         justify-self:stretch;
+      }
+      #beltChoices{
+        grid-template-columns: repeat(3, minmax(138px, 1fr));
       }
     }
     .purchaseActions .btn{
@@ -4545,13 +4585,20 @@
         if(state.pointerId !== null) return;
         if(e.pointerType === "mouse" && e.button !== 0) return;
         if(container.clientWidth <= 0) return;
+        var interactive = e.target && e.target.closest ? e.target.closest(".buyButton, input, select, textarea, a, label.toggleRow") : null;
+        if(interactive) return;
         state.pointerId = e.pointerId;
         state.startX = e.clientX;
         state.dragged = false;
         state.movedX = 0;
-        var index = getSelectedIndex();
-        var metrics = getCarouselMetrics(container, options, cardVarName, gapVarName, fallbackCard, fallbackGap);
-        state.baseOffset = getCarouselOffsetForIndex(container, metrics.cardW, metrics.gap, index);
+        var currentOffset = parseFloat(track.dataset.offset || "");
+        if(Number.isFinite(currentOffset)){
+          state.baseOffset = currentOffset;
+        }else{
+          var index = getSelectedIndex();
+          var metrics = getCarouselMetrics(container, options, cardVarName, gapVarName, fallbackCard, fallbackGap);
+          state.baseOffset = getCarouselOffsetForIndex(container, metrics.cardW, metrics.gap, index);
+        }
         track.style.transition = "none";
         setTrackOffset(track, state.baseOffset);
         container.classList.add("is-dragging");

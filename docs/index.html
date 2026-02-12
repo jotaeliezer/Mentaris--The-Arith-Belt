@@ -61,15 +61,6 @@
       pointer-events:none;
     }
 
-    .heroPanel::after{
-      content:"";
-      position:absolute;
-      inset:0;
-      background: repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 1px, rgba(0,0,0,0) 18px);
-      opacity:.5;
-      pointer-events:none;
-    }
-
     .stepper{
       margin-top:6px;
       font-size:11px;
@@ -484,6 +475,11 @@
       padding:10px 12px;
       background: rgba(8,12,22,.65);
     }
+    .briefingHintActions{
+      margin-top:12px;
+      display:flex;
+      justify-content:flex-end;
+    }
     .briefingFooter{
       display:flex;
       gap:16px;
@@ -580,6 +576,26 @@
       position: relative;
       overflow: hidden;
     }
+    #beltChoices{
+      grid-template-columns: repeat(6, minmax(138px, 1fr));
+      gap:10px;
+      align-items:stretch;
+    }
+    #beltChoices .beltChoice{
+      min-height:210px;
+      padding:10px 10px 12px;
+      background-size: 145% 145%;
+      background-position: center center;
+    }
+    #beltChoices .beltChoice h4{
+      font-size:11px;
+      letter-spacing:1.2px;
+      line-height:1.2;
+    }
+    #beltChoices .beltChoice p{
+      font-size:11px;
+      line-height:1.35;
+    }
     .beltChoice::before{
       content:"";
       position:absolute;
@@ -633,6 +649,13 @@
       border:1px solid rgba(255,255,255,.2);
       color: rgba(232,236,255,.75);
     }
+    #beltChoices .beltChoice.locked .beltLockTag{
+      top:auto;
+      bottom:62px;
+      right:12px;
+      background: rgba(8,12,24,.88);
+      border-color: rgba(140,220,255,.35);
+    }
     .buyButton{
       position:absolute;
       top:10px;
@@ -656,6 +679,16 @@
       left:auto;
       right:12px;
       bottom:12px;
+    }
+    .beltChoice .buyButton{
+      border-color: rgba(80,220,120,.75);
+      background: rgba(80,220,120,.5);
+      color: rgba(235,255,242,.98);
+      box-shadow: 0 10px 26px rgba(40,190,95,.32), 0 0 0 1px rgba(255,255,255,.08) inset;
+    }
+    .beltChoice .buyButton:hover{
+      background: rgba(80,220,120,.68);
+      border-color: rgba(120,245,155,.9);
     }
     .buyButton.hidden{ display:none; }
 
@@ -753,6 +786,9 @@
       .purchaseActions{
         min-width:0;
         justify-self:stretch;
+      }
+      #beltChoices{
+        grid-template-columns: repeat(3, minmax(138px, 1fr));
       }
     }
     .purchaseActions .btn{
@@ -857,6 +893,8 @@
       border-radius:18px;
       letter-spacing:1.2px;
       text-transform:uppercase;
+      border-color: rgba(80,220,120,.45);
+      background: rgba(80,220,120,.26);
       opacity:0;
       transform: scale(0.6);
       pointer-events:none;
@@ -2632,9 +2670,7 @@
               <span class="briefingSpinner" aria-hidden="true"></span>
               <span id="briefingStatusText">Initializing launch sequence...</span>
             </div>
-          </div>
-          <button id="btnBriefingSkip" class="btn">Launch</button>
-        </div>
+          </div>        </div>
       <div class="panel" style="margin-top:10px;">
         <div class="briefingShipRow">
           <img class="briefingShipCard" id="briefingShipCard" src="images/ships/Crimson%20MK-7.png" alt="" />
@@ -2644,6 +2680,7 @@
             <p class="monoSmall" id="briefingDifficulty" style="margin:0;">Difficulty: �?"</p>
             <p class="monoSmall" id="briefingOperation" style="margin:0;">Operation: �?"</p>
             <p class="monoSmall" id="briefingSubmode" style="margin:0;">Submode: �?"</p>
+            <p class="monoSmall" id="briefingShotType" style="margin:0;">Shot Type: ?</p>
           </div>
           <img class="briefingBeltCard" id="briefingBeltCard" src="images/backgrounds/background8.png" alt="" />
         </div>
@@ -2662,6 +2699,9 @@
         <div class="briefingHints">
           <div class="briefingHintLabel">Command Directive</div>
           <div class="briefingHintText" id="briefingHintText">—</div>
+          <div class="briefingHintActions">
+            <button id="btnBriefingSkip" class="btn">Launch</button>
+          </div>
         </div>
       </div>
     </div>
@@ -4545,13 +4585,20 @@
         if(state.pointerId !== null) return;
         if(e.pointerType === "mouse" && e.button !== 0) return;
         if(container.clientWidth <= 0) return;
+        var interactive = e.target && e.target.closest ? e.target.closest(".buyButton, input, select, textarea, a, label.toggleRow") : null;
+        if(interactive) return;
         state.pointerId = e.pointerId;
         state.startX = e.clientX;
         state.dragged = false;
         state.movedX = 0;
-        var index = getSelectedIndex();
-        var metrics = getCarouselMetrics(container, options, cardVarName, gapVarName, fallbackCard, fallbackGap);
-        state.baseOffset = getCarouselOffsetForIndex(container, metrics.cardW, metrics.gap, index);
+        var currentOffset = parseFloat(track.dataset.offset || "");
+        if(Number.isFinite(currentOffset)){
+          state.baseOffset = currentOffset;
+        }else{
+          var index = getSelectedIndex();
+          var metrics = getCarouselMetrics(container, options, cardVarName, gapVarName, fallbackCard, fallbackGap);
+          state.baseOffset = getCarouselOffsetForIndex(container, metrics.cardW, metrics.gap, index);
+        }
         track.style.transition = "none";
         setTrackOffset(track, state.baseOffset);
         container.classList.add("is-dragging");
@@ -6437,7 +6484,7 @@
       if(briefingShotType){
         var shotKey = String(config.shotType || "single");
         var shotLabel = shotTypeLabels[shotKey] || shotKey;
-        briefingShotType.textContent = shotLabel.toUpperCase();
+        briefingShotType.textContent = "Shot Type: " + shotLabel.toUpperCase();
       }
       if(briefingBelt){
         var beltKey = String(config.belt || selectedBelt || "dusk");
@@ -6969,3 +7016,7 @@
   <script src="js/ship_preview.js?v=2026-01-27-1"></script>
 </body>
 </html>
+
+
+
+

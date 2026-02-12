@@ -953,6 +953,21 @@ body.launching #menuWrap{
   overflow:hidden;
 }
 
+#overlayEnd .card{
+  width:min(980px, 100%);
+}
+
+#endStageEngagement .endStatsWrap{
+  max-height:none;
+  transform:none;
+}
+
+#endStageEngagement .endStatsWrap .panel{
+  max-height:none;
+  min-height:420px;
+  overflow:hidden;
+}
+
 .endPlacementPanel{
   display:grid;
   gap:10px;
@@ -1090,6 +1105,11 @@ body.splitGameplayMode #gameShell::after{
 .endSequence.reveal-sequence{
   opacity:1;
   transform: translateY(0);
+}
+
+.endSequence.reveal-sequence.phase-fade-out{
+  opacity:0;
+  transform: translateY(8px);
 }
 
 .breakdownBlock{
@@ -1808,6 +1828,13 @@ input[type="checkbox"]{ transform: translateY(1px); }
   overflow:auto;
 }
 
+#endStageEngagement #statsListSecondary{
+  max-height:none;
+  min-height:0;
+  overflow:visible;
+  align-content:start;
+}
+
 #statsListSecondary .endStatsSection{
   grid-column: 1 / -1;
 }
@@ -1829,6 +1856,15 @@ input[type="checkbox"]{ transform: translateY(1px); }
   #statsListSecondary .endStatsSection.endStatsCompact{
     grid-column: 1 / -1;
     width: 100%;
+  }
+}
+
+@media (max-width: 980px){
+  #overlayEnd .card{
+    width:min(940px, 100%);
+  }
+  #endStageEngagement .endStatsWrap .panel{
+    min-height:0;
   }
 }
 
