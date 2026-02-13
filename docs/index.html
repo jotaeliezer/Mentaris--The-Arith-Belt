@@ -394,6 +394,15 @@
       object-fit: cover;
       box-shadow: inset 0 0 24px rgba(0,0,0,.35);
     }
+    .briefingShotCard{
+      width:120px;
+      height:120px;
+      border-radius:16px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(8,12,22,.6);
+      object-fit: contain;
+      box-shadow: inset 0 0 24px rgba(0,0,0,.35);
+    }
     .briefingShipCard{
       width:120px;
       height:120px;
@@ -474,6 +483,12 @@
       border-radius:14px;
       padding:10px 12px;
       background: rgba(8,12,22,.65);
+    }
+    .briefingLaunch{
+      display:flex;
+      align-items:flex-end;
+      justify-content:flex-end;
+      margin-left:auto;
     }
     .briefingHintActions{
       margin-top:12px;
@@ -2680,12 +2695,14 @@
             <p class="monoSmall" id="briefingDifficulty" style="margin:0;">Difficulty: �?"</p>
             <p class="monoSmall" id="briefingOperation" style="margin:0;">Operation: �?"</p>
             <p class="monoSmall" id="briefingSubmode" style="margin:0;">Submode: �?"</p>
-            <p class="monoSmall" id="briefingShotType" style="margin:0;">Shot Type: ?</p>
           </div>
           <img class="briefingBeltCard" id="briefingBeltCard" src="images/backgrounds/background8.png" alt="" />
+          <img class="briefingShotCard" id="briefingShotCard" src="images/bullets/bullet_single.png" alt="" />
         </div>
       </div>
       <div class="briefingGrid">
+        <div class="briefingStat"><span>Cluster</span><b id="briefingBelt">â€”</b></div>
+        <div class="briefingStat"><span>Shot Type</span><b id="briefingShotType">â€”</b></div>
         <div class="briefingStat"><span>Lives</span><b id="briefingLives">—</b></div>
         <div class="briefingStat"><span>Strikes</span><b id="briefingStrikes">—</b></div>
         <div class="briefingStat"><span>Targeted Asteroids</span><b id="briefingTargeted">—</b></div>
@@ -2699,9 +2716,9 @@
         <div class="briefingHints">
           <div class="briefingHintLabel">Command Directive</div>
           <div class="briefingHintText" id="briefingHintText">—</div>
-          <div class="briefingHintActions">
-            <button id="btnBriefingSkip" class="btn">Launch</button>
-          </div>
+        </div>
+        <div class="briefingLaunch">
+          <button id="btnBriefingSkip" class="btn">Launch</button>
         </div>
       </div>
     </div>
@@ -4065,6 +4082,17 @@
       rail: "Rail",
       missile: "Missile"
     };
+    var shotTypeImages = {
+      single: "images/bullets/bullet_single.png",
+      laser: "images/shots/shot_laser.png",
+      fire: "images/shots/shot_fire.png",
+      ice: "images/shots/shot_ice.png",
+      electric: "images/shots/shot_electric.png",
+      pierce: "images/shots/shot_bola.png",
+      plasma: "images/shots/shot_plasma.png",
+      rail: "images/shots/shot_rail.png",
+      missile: "images/shots/shot_missile.png"
+    };
     var shipDetailsMap = {
       mk7: {
         name: "Crimson MK-7",
@@ -5385,6 +5413,7 @@
     var briefingShotType = document.getElementById("briefingShotType");
     var briefingBelt = document.getElementById("briefingBelt");
     var briefingBeltCard = document.getElementById("briefingBeltCard");
+    var briefingShotCard = document.getElementById("briefingShotCard");
     var briefingLives = document.getElementById("briefingLives");
     var briefingStrikes = document.getElementById("briefingStrikes");
     var briefingTargeted = document.getElementById("briefingTargeted");
@@ -6485,6 +6514,9 @@
         var shotKey = String(config.shotType || "single");
         var shotLabel = shotTypeLabels[shotKey] || shotKey;
         briefingShotType.textContent = "Shot Type: " + shotLabel.toUpperCase();
+        if(briefingShotCard){
+          briefingShotCard.src = shotTypeImages[shotKey] || shotTypeImages.single;
+        }
       }
       if(briefingBelt){
         var beltKey = String(config.belt || selectedBelt || "dusk");

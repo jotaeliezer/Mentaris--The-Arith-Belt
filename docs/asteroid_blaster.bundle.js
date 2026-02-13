@@ -142520,6 +142520,7 @@
   var tutorialFreezeDimAlpha = 0;
   var tutorialFreezeDimTarget = 0;
   var tutorialSecondChanceBusy = false;
+  var mineralHudPulse = 0;
   var tutorialPowerupBatchSpawned = false;
   var tutorialExtraPowerupsSpawned = false;
   var tutorialFreezeMousepadRestore = false;
@@ -143052,21 +143053,6 @@
     }
     spawnParticles(x, y, "mineral");
   }
-  function spawnMineralValuePopup(x, y, amount) {
-    var value = Math.max(1, Number(amount) || 1);
-    mineralPopups.push({
-      x,
-      y: y - 8,
-      vy: -42,
-      drift: rand(-12, 12),
-      life: 0.8,
-      alpha: 1,
-      text: "+" + value
-    });
-    if (mineralPopups.length > 40) {
-      mineralPopups.splice(0, mineralPopups.length - 40);
-    }
-  }
   function updateMineralPopups(dt) {
     for (var i = mineralPopups.length - 1; i >= 0; i--) {
       var pop = mineralPopups[i];
@@ -143078,6 +143064,11 @@
       pop.y += pop.vy * dt;
       pop.x += pop.drift * dt;
       pop.alpha = Math.max(0, Math.min(1, pop.life / 0.8));
+    }
+  }
+  function updateMineralHudPulse(dt) {
+    if (mineralHudPulse > 0) {
+      mineralHudPulse = Math.max(0, mineralHudPulse - dt * 2.6);
     }
   }
   function drawMineralPopups() {
@@ -146497,6 +146488,10 @@
     }
   }
   function applyPowerup(p) {
+    if (tutorialActive && p.group === "offense") {
+      resetShotType();
+      return;
+    }
     if (p.group === "offense") {
       if (p.type === "missile" && !isMissileAllowed()) {
         p.type = "laser";
@@ -146558,6 +146553,12 @@
   }
   function applyPowerupForPilot(pilot, pilotId, powerup) {
     var p = powerup;
+    if (tutorialActive && p.group === "offense" && pilotId === 1) {
+      pilot.blasterMode = "single";
+      pilot.blasterHitsRemaining = 0;
+      pilot.blasterTimer = 0;
+      return;
+    }
     if (p.group === "offense") {
       if (p.type === "missile" && !isMissileAllowed()) {
         p.type = "laser";
@@ -146671,6 +146672,12 @@
     player.blasterTimer = 0;
   }
   function applySelectedShotType() {
+    if (tutorialActive) {
+      if (inputs.shotType)
+        inputs.shotType.value = "single";
+      resetShotType();
+      return;
+    }
     if (sandboxMode || !inputs.shotType)
       return;
     var selected = String(inputs.shotType.value || "single");
@@ -146799,7 +146806,11 @@
     if (inputs.ship && inputs.ship.value) {
       player.shipType = inputs.ship.value;
     }
-    if (!sandboxMode && inputs.shotType) {
+    if (tutorialActive) {
+      if (inputs.shotType)
+        inputs.shotType.value = "single";
+      resetShotType();
+    } else if (!sandboxMode && inputs.shotType) {
       var selectedShotType = String(inputs.shotType.value || "single");
       if (selectedShotType !== "single" && selectedShotType !== "missile" && !shotIcons[selectedShotType]) {
         selectedShotType = "single";
@@ -147833,6 +147844,9 @@
       return;
     player.shockwaveCooldown = profile.shockwaveCooldown || 3.5;
     state.specialUses = (state.specialUses || 0) + 1;
+    if (tutorialActive && tutorialStepId === "ability_clear" && tourGuide) {
+      tourGuide.notify("ability");
+    }
     if (profile.ability === "flares") {
       state.flaresActive = true;
       state.flaresTimer = 0.9;
@@ -150435,6 +150449,7 @@
     updateAlienBullets(dtSlow, view);
     updateParticles(dtReal2);
     updateMineralPopups(dtReal2);
+    updateMineralHudPulse(dtReal2);
     updateRings(dtReal2);
     emitDamageSmoke(dtReal2);
     for (var pi = powerups.length - 1; pi >= 0; pi--) {
@@ -150487,6 +150502,7 @@
           var mineralValue = p.value || 1;
           awardMinerals(mineralValue);
           playSfx(state, "mineral_collected");
+          mineralHudPulse = 1;
           if (tutorialActive && tutorialMineralsTarget > 0) {
             tutorialMineralsCollected += 1;
             if (tutorialMineralsRemaining > 0) {
@@ -150497,7 +150513,6 @@
               tutorialMineralsPending = true;
             }
           }
-          spawnMineralValuePopup(p.x, p.y, mineralValue);
           spawnMineralPickupFx(p.x, p.y);
           powerups.splice(pi, 1);
           continue;
@@ -151855,9 +151870,9 @@
           var fillColor = "rgba(0,169,255,.9)";
           var glowColor = "rgba(0,169,255,.35)";
           if (remainingProg <= 15) {
-            var pulse = 0.65 + 0.35 * Math.sin(performance.now() * 0.02);
-            fillColor = "rgba(255,80,80," + (0.7 + 0.2 * pulse).toFixed(2) + ")";
-            glowColor = "rgba(255,80,80," + (0.4 + 0.35 * pulse).toFixed(2) + ")";
+            var pulse2 = 0.65 + 0.35 * Math.sin(performance.now() * 0.02);
+            fillColor = "rgba(255,80,80," + (0.7 + 0.2 * pulse2).toFixed(2) + ")";
+            glowColor = "rgba(255,80,80," + (0.4 + 0.35 * pulse2).toFixed(2) + ")";
           } else if (remainingProg <= 30) {
             fillColor = "rgba(255,180,60,.92)";
             glowColor = "rgba(255,180,60,.35)";
@@ -152117,8 +152132,14 @@
         var mSize = 62;
         var mX = leftX - radius * 2 - 120;
         var mY = cy - mSize / 2;
+        var pulse = 1 + mineralHudPulse * 0.18;
+        var centerX = mX + mSize / 2;
+        var centerY = mY + mSize / 2;
         ctx.save();
-        ctx.globalAlpha = 0.95 * hudFade;
+        ctx.globalAlpha = (0.95 + mineralHudPulse * 0.2) * hudFade;
+        ctx.translate(centerX, centerY);
+        ctx.scale(pulse, pulse);
+        ctx.translate(-centerX, -centerY);
         ctx.drawImage(mineralIconImg.img, mX, mY, mSize, mSize);
         ctx.fillStyle = "rgba(232,236,255,.95)";
         ctx.font = "700 18px Oxanium, sans-serif";
@@ -156516,7 +156537,10 @@
         alienConfig.maxOnScreen = 0;
         if (inputs.ship)
           inputs.ship.value = "spire";
+        if (inputs.shotType)
+          inputs.shotType.value = "single";
         player.shipType = "spire";
+        resetShotType();
         tourGuide = createTourGuide({
           gameShell,
           state,
