@@ -673,6 +673,7 @@ var endNameConfirmed = false;
 var endMineralAnimId = 0;
 var endMineralAnimStart = 0;
 var endSequenceContext = null;
+var endSequenceContextPending = null;
 var endStageFadeTimer = 0;
 var gameOverSfxTimer = 0;
 var mineralsTotal = 0;
@@ -7166,8 +7167,15 @@ function animateMineralsCount(target, durationMs, onDone){
 
 function resolveEndPlacementText(){
   var ctx = endSequenceContext;
+  if(!ctx){
+    var lifetimeFallback = loadLifetimeStats();
+    var modeInfoFallback = describeQuestionMode(state.questionMode || "classic");
+    if(lifetimeFallback && modeInfoFallback){
+      ctx = { lifetime: lifetimeFallback, modeInfo: modeInfoFallback };
+    }
+  }
   if(!ctx || !ctx.lifetime || !ctx.modeInfo){
-    return "Position unavailable for this run.";
+    return "Score saved. Placement is updating.";
   }
   var allScores = Array.isArray(ctx.lifetime.allScores) ? ctx.lifetime.allScores : [];
   var filtered = allScores.filter(function(entry){
@@ -7303,8 +7311,12 @@ function startEndSequence(){
 }
 
 function showEndOverlay(){
+  if(!endSequenceContext && endSequenceContextPending){
+    endSequenceContext = endSequenceContextPending;
+  }
   overlayEnd.classList.add("show");
   startEndSequence();
+  endSequenceContextPending = null;
 }
 
 function hideEndOverlay(){
@@ -7760,6 +7772,7 @@ function addIconStackRow(section, label, entries){
     lifetime: lifetime,
     modeInfo: modeInfo
   };
+  endSequenceContextPending = endSequenceContext;
 
   if(endScoresPanel){
     endScoresPanel.classList.add("endStatsHidden");
