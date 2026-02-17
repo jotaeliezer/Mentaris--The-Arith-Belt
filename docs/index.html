@@ -4601,9 +4601,10 @@
         dragged: false,
         baseOffset: 0,
         movedX: 0,
+        maxDelta: 0,
         suppressUntil: 0
       };
-      var dragThreshold = 6;
+      var dragThreshold = 10;
       var suppressMs = 220;
 
       options.forEach(function(option){
@@ -4633,6 +4634,7 @@
         state.startX = e.clientX;
         state.dragged = false;
         state.movedX = 0;
+        state.maxDelta = 0;
         var currentOffset = parseFloat(track.dataset.offset || "");
         if(Number.isFinite(currentOffset)){
           state.baseOffset = currentOffset;
@@ -4653,6 +4655,8 @@
         if(state.pointerId !== e.pointerId) return;
         var delta = e.clientX - state.startX;
         state.movedX = delta;
+        var absDelta = Math.abs(delta);
+        if(absDelta > state.maxDelta) state.maxDelta = absDelta;
         if(!state.dragged && Math.abs(delta) > dragThreshold){
           state.dragged = true;
         }
@@ -4672,10 +4676,12 @@
         track.style.transition = "";
         var metrics = getCarouselMetrics(container, options, cardVarName, gapVarName, fallbackCard, fallbackGap);
         var currentOffset = parseFloat(track.dataset.offset || "0");
+        var didDrag = state.maxDelta >= dragThreshold;
+        state.dragged = didDrag;
         var nearestIndex = getNearestCarouselIndex(container, metrics.cardW, metrics.gap, currentOffset, options.length);
         var targetOption = options[nearestIndex] || options[0];
         var value = getValue(targetOption);
-        if(state.dragged){
+        if(didDrag){
           if(isLocked(targetOption, value)){
             onTapLocked(value, targetOption);
           }else if(setSelected){

@@ -968,6 +968,21 @@ body.launching #menuWrap{
   overflow:hidden;
 }
 
+#endStageEngagement .panel{
+  overflow:hidden;
+}
+
+.engagementTopRow{
+  display:grid;
+  grid-template-columns: 1fr;
+  margin-top:10px;
+}
+
+.engagementIconRows{
+  margin-top:10px;
+  overflow:hidden;
+}
+
 .endPlacementPanel{
   display:grid;
   gap:10px;
@@ -982,7 +997,7 @@ body.launching #menuWrap{
 }
 
 .endMineralsSummary{
-  margin-top:12px;
+  margin-top:0;
   padding:12px;
   border-radius:12px;
   border:1px solid var(--line);
@@ -1063,6 +1078,7 @@ body.splitGameplayMode #gameShell::after{
 .endScoresTableWrap{
   max-height:260px;
   overflow:auto;
+  scroll-behavior:auto;
 }
 
 .endScoresTable{
@@ -1087,6 +1103,42 @@ body.splitGameplayMode #gameShell::after{
 }
 
 .endStatsHidden{ display:none; }
+
+.endSequence.placementLeaderboardActive .endScoresPanel{
+  display:block;
+}
+
+.endSequence.placementLeaderboardActive .endScoresTableWrap{
+  max-height:360px;
+}
+
+.endScoreRowCurrent{
+  background:rgba(120,220,255,.12);
+  box-shadow: inset 0 0 0 1px rgba(170,240,255,.5);
+  transform-origin:center;
+}
+
+.endScoreRowPop{
+  animation:endScorePopGlow .7s ease-out;
+}
+
+@keyframes endScorePopGlow{
+  0%{
+    transform:scale(1);
+    box-shadow: inset 0 0 0 1px rgba(170,240,255,.45), 0 0 0 rgba(120,220,255,0);
+    background:rgba(120,220,255,.12);
+  }
+  35%{
+    transform:scale(1.03);
+    box-shadow: inset 0 0 0 1px rgba(230,250,255,.95), 0 0 18px rgba(120,220,255,.5);
+    background:rgba(170,240,255,.24);
+  }
+  100%{
+    transform:scale(1);
+    box-shadow: inset 0 0 0 1px rgba(170,240,255,.5), 0 0 0 rgba(120,220,255,0);
+    background:rgba(120,220,255,.12);
+  }
+}
 
 @media (max-width: 880px){
   .endStatsWrap{ grid-template-columns: 1fr; }
@@ -1820,19 +1872,79 @@ input[type="checkbox"]{ transform: translateY(1px); }
 }
 
 #statsListSecondary{
-  display:grid;
-  grid-template-columns: repeat(3, max-content);
-  justify-content:start;
+  display:flex;
+  flex-direction:column;
   gap:12px;
-  max-height:260px;
-  overflow:auto;
+  max-height:none;
+  overflow:hidden;
 }
 
 #endStageEngagement #statsListSecondary{
   max-height:none;
   min-height:0;
-  overflow:visible;
+  overflow:hidden;
   align-content:start;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+#endStageEngagement #statsListSecondary .engagementRow{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap:10px;
+}
+
+#endStageEngagement #statsListSecondary .endStatsMiniTile{
+  min-width:0;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:rgba(255,255,255,.05);
+  padding:8px 10px;
+  display:grid;
+  grid-template-columns: 68px 1fr;
+  align-items:center;
+  gap:10px;
+}
+
+#endStageEngagement #statsListSecondary .endStatsMiniIcon{
+  width:68px;
+  height:68px;
+  border-radius:12px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+}
+
+#endStageEngagement #statsListSecondary .endStatsMiniIcon img{
+  width:60px;
+  height:60px;
+  object-fit:contain;
+}
+
+#endStageEngagement #statsListSecondary .endStatsMiniMeta{
+  min-width:0;
+  display:grid;
+  gap:2px;
+}
+
+#endStageEngagement #statsListSecondary .endStatsMiniLabel{
+  font-size:11px;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  color:var(--muted);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+#endStageEngagement #statsListSecondary .endStatsMiniCount{
+  font-size:22px;
+  line-height:1;
+  font-weight:700;
+  color:#e8ecff;
 }
 
 #statsListSecondary .endStatsSection{
@@ -1851,11 +1963,14 @@ input[type="checkbox"]{ transform: translateY(1px); }
     grid-template-columns: 1fr;
   }
   #statsListSecondary{
-    grid-template-columns: 1fr;
+    width:100%;
   }
   #statsListSecondary .endStatsSection.endStatsCompact{
     grid-column: 1 / -1;
     width: 100%;
+  }
+  #endStageEngagement #statsListSecondary .engagementRow{
+    grid-template-columns: 1fr;
   }
 }
 

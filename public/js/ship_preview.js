@@ -1067,6 +1067,12 @@
     var forwardBoost = Math.max(0, -vyN);
     var flame = 12 + speedMag * 18 + (Math.sin(t*0.03) * 2.6) + forwardBoost * 22;
     flame *= ghostFlameBoost;
+    var dualFlameSpread = shipType === "classic" ? 9.5 : 12;
+    var dualFlameOuter = dualFlameSpread + 6;
+    var dualFlameWide = dualFlameSpread * 2;
+    var dualFlameInnerA = dualFlameSpread - 2;
+    var dualFlameInnerB = dualFlameSpread - 0.5;
+    var dualFlameInnerC = dualFlameSpread + 2;
 
     var bloom = 0.35 + speedMag * 0.5 + forwardBoost * 0.6 + (Math.sin(t * 0.02) * 0.08);
     bloom *= ghostFlameBoost;
@@ -1804,8 +1810,8 @@ function renderShipPreviewMatched(ctx, ship, x, y, alpha, ghost, overrideVX, ove
     if(isSpire){
       ctx.arc(thrusterOffsetX, thrusterBaseY + 7, 7 + bloom * 5, 0, Math.PI*2);
     }else{
-      ctx.arc(-12 + thrusterOffsetX, thrusterBaseY + 6, 5 + bloom * 4, 0, Math.PI*2);
-      ctx.arc(12 + thrusterOffsetX, thrusterBaseY + 6, 5 + bloom * 4, 0, Math.PI*2);
+      ctx.arc(-dualFlameSpread + thrusterOffsetX, thrusterBaseY + 6, 5 + bloom * 4, 0, Math.PI*2);
+      ctx.arc(dualFlameSpread + thrusterOffsetX, thrusterBaseY + 6, 5 + bloom * 4, 0, Math.PI*2);
       if(isAm2){
         ctx.arc(thrusterOffsetX, thrusterBaseY + 8, 4.5 + bloom * 3.5, 0, Math.PI*2);
       }
@@ -1822,12 +1828,12 @@ function renderShipPreviewMatched(ctx, ship, x, y, alpha, ghost, overrideVX, ove
       ctx.lineTo(thrusterOffsetX + flameWiggle, thrusterBaseY + flame * 1.1);
       ctx.lineTo(6 + thrusterOffsetX, thrusterBaseY);
     }else{
-      ctx.moveTo(-18 + thrusterOffsetX, thrusterBaseY);
-      ctx.lineTo(-12 + thrusterOffsetX + flameWiggle, thrusterBaseY + flame);
-      ctx.lineTo(-6 + thrusterOffsetX, thrusterBaseY);
-      ctx.moveTo(6 + thrusterOffsetX, thrusterBaseY);
-      ctx.lineTo(12 + thrusterOffsetX + flameWiggle, thrusterBaseY + flame);
-      ctx.lineTo(18 + thrusterOffsetX, thrusterBaseY);
+      ctx.moveTo(-dualFlameOuter + thrusterOffsetX, thrusterBaseY);
+      ctx.lineTo(-dualFlameSpread + thrusterOffsetX + flameWiggle, thrusterBaseY + flame);
+      ctx.lineTo(-dualFlameInnerA + thrusterOffsetX, thrusterBaseY);
+      ctx.moveTo(dualFlameInnerA + thrusterOffsetX, thrusterBaseY);
+      ctx.lineTo(dualFlameSpread + thrusterOffsetX + flameWiggle, thrusterBaseY + flame);
+      ctx.lineTo(dualFlameOuter + thrusterOffsetX, thrusterBaseY);
     }
     ctx.closePath();
     ctx.fill();
@@ -1840,12 +1846,12 @@ function renderShipPreviewMatched(ctx, ship, x, y, alpha, ghost, overrideVX, ove
       ctx.lineTo(thrusterOffsetX + flameWiggle, thrusterBaseY + flame*1.22);
       ctx.lineTo(10 + thrusterOffsetX, thrusterBaseY);
     }else{
-      ctx.moveTo(-24 + thrusterOffsetX, thrusterBaseY);
-      ctx.lineTo(-12 + thrusterOffsetX + flameWiggle, thrusterBaseY + flame*1.18);
+      ctx.moveTo(-dualFlameWide + thrusterOffsetX, thrusterBaseY);
+      ctx.lineTo(-dualFlameSpread + thrusterOffsetX + flameWiggle, thrusterBaseY + flame*1.18);
       ctx.lineTo(thrusterOffsetX, thrusterBaseY);
       ctx.moveTo(thrusterOffsetX, thrusterBaseY);
-      ctx.lineTo(12 + thrusterOffsetX + flameWiggle, thrusterBaseY + flame*1.18);
-      ctx.lineTo(24 + thrusterOffsetX, thrusterBaseY);
+      ctx.lineTo(dualFlameSpread + thrusterOffsetX + flameWiggle, thrusterBaseY + flame*1.18);
+      ctx.lineTo(dualFlameWide + thrusterOffsetX, thrusterBaseY);
     }
     ctx.closePath();
     ctx.fill();
@@ -1858,12 +1864,12 @@ function renderShipPreviewMatched(ctx, ship, x, y, alpha, ghost, overrideVX, ove
       ctx.lineTo(thrusterOffsetX + flameWiggle * 0.6, thrusterBaseY + flame*0.8);
       ctx.lineTo(4 + thrusterOffsetX, thrusterBaseY);
     }else{
-      ctx.moveTo(-14 + thrusterOffsetX, thrusterBaseY);
-      ctx.lineTo(-12 + thrusterOffsetX + flameWiggle * 0.5, thrusterBaseY + flame*0.7);
-      ctx.lineTo(-10 + thrusterOffsetX, thrusterBaseY);
-      ctx.moveTo(10 + thrusterOffsetX, thrusterBaseY);
-      ctx.lineTo(12 + thrusterOffsetX + flameWiggle * 0.5, thrusterBaseY + flame*0.7);
-      ctx.lineTo(14 + thrusterOffsetX, thrusterBaseY);
+      ctx.moveTo(-dualFlameInnerC + thrusterOffsetX, thrusterBaseY);
+      ctx.lineTo(-dualFlameSpread + thrusterOffsetX + flameWiggle * 0.5, thrusterBaseY + flame*0.7);
+      ctx.lineTo(-dualFlameInnerB + thrusterOffsetX, thrusterBaseY);
+      ctx.moveTo(dualFlameInnerB + thrusterOffsetX, thrusterBaseY);
+      ctx.lineTo(dualFlameSpread + thrusterOffsetX + flameWiggle * 0.5, thrusterBaseY + flame*0.7);
+      ctx.lineTo(dualFlameInnerC + thrusterOffsetX, thrusterBaseY);
     }
     ctx.closePath();
     ctx.fill();
