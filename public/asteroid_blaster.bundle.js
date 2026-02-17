@@ -139389,6 +139389,23 @@
       alienSwarm: false,
       alienSwarmPoolId: 0,
       alienSwarmDigitBag: [],
+      alienMode: "ambient",
+      alienFinaleActive: false,
+      alienFinaleStage: "none",
+      alienWaveTargetKills: 0,
+      alienWaveKillsStart: 0,
+      alienWaveSpawnRemaining: 0,
+      alienWaveSpawnTimer: 0,
+      alienWaveSpawnInterval: 0.9,
+      alienWaveMaxOnScreen: 2,
+      alienBossActive: false,
+      alienBossUid: 0,
+      alienBossBonusAwarded: false,
+      endlessAlienWaveActive: false,
+      endlessAlienWaveSpawnRemaining: 0,
+      endlessAlienWaveTriggerEveryCorrect: 4,
+      endlessAlienWaveSize: 4,
+      endlessAlienWaveProgressBase: 0,
       sandbox: false,
       sandboxInfiniteLives: false,
       sandboxNoScore: false,
@@ -141374,6 +141391,7 @@
   var spawnTimer = alienConfig.spawnCooldown;
   var alienId = 1;
   var unlocked = false;
+  var bossFireMode = 0;
   var alienSprites = [
     { src: "images/aliens/alien_ET.png", img: null },
     { src: "images/aliens/alien_brain.png", img: null },
@@ -141406,26 +141424,68 @@
       spawnTimer = 0;
     }
   }
-  function spawnAlien(typeId, question, answer, view2) {
+  function spawnAlienBullet(x, y, vx, vy, radius, life) {
+    alienBullets.push({
+      x,
+      y,
+      vx,
+      vy,
+      r: radius || 4,
+      life: life || 2.8
+    });
+  }
+  function fireBossSpread(a, player2) {
+    var dx = player2.x - a.x;
+    var dy = player2.y - a.y;
+    var baseAngle = Math.atan2(dy, dx);
+    var speed = 350;
+    var offsets = [-0.22, 0, 0.22];
+    for (var i = 0; i < offsets.length; i++) {
+      var ang = baseAngle + offsets[i];
+      spawnAlienBullet(a.x, a.y, Math.cos(ang) * speed, Math.sin(ang) * speed, 5, 3);
+    }
+  }
+  function fireBossBurst(a, player2) {
+    var dx = player2.x - a.x;
+    var dy = player2.y - a.y;
+    var dist = Math.max(1, Math.hypot(dx, dy));
+    var speed = 390;
+    var jitter = Math.random() * 0.16 - 0.08;
+    var ang = Math.atan2(dy, dx) + jitter;
+    spawnAlienBullet(a.x, a.y, Math.cos(ang) * speed, Math.sin(ang) * speed, 5, 3.1);
+  }
+  function spawnAlien(typeId, question, answer, view2, opts) {
     var t = alienTypes[typeId] || alienTypes.scout;
+    var options = opts || {};
     var pad = 80;
     var x = randi(pad, Math.max(pad + 20, view2.w - pad));
     var y = -40;
+    if (typeof options.x === "number" && Number.isFinite(options.x))
+      x = options.x;
+    if (typeof options.y === "number" && Number.isFinite(options.y))
+      y = options.y;
+    var hp = typeof options.hp === "number" && Number.isFinite(options.hp) ? Math.max(1, Math.round(options.hp)) : t.hp;
+    var radius = typeof options.radius === "number" && Number.isFinite(options.radius) ? Math.max(14, options.radius) : t.radius;
+    var speed = typeof options.speed === "number" && Number.isFinite(options.speed) ? Math.max(20, options.speed) : t.speed;
+    var score = typeof options.score === "number" && Number.isFinite(options.score) ? Math.max(0, Math.round(options.score)) : t.score;
     var answerHits = typeof answer === "number" && Number.isFinite(answer) ? Math.max(1, Math.round(answer)) : t.hp || 1;
+    if (options.isBoss) {
+      answerHits = hp;
+    }
     var a = {
       uid: alienId++,
-      id: t.id,
-      name: t.name,
-      hp: t.hp,
+      id: options.id || t.id,
+      name: options.name || t.name,
+      hp,
       maxHits: answerHits,
-      speed: t.speed,
-      score: t.score,
-      behavior: t.behavior,
-      r: t.radius,
+      speed,
+      score,
+      behavior: options.behavior || t.behavior,
+      r: radius,
       x,
       y,
       vx: 0,
-      vy: t.speed * 0.4,
+      vy: speed * 0.4,
       t: 0,
       life: 0,
       question,
@@ -141434,8 +141494,15 @@
       fireCooldown: 1.4 + Math.random() * 1.2,
       strafeTimer: 0.3 + Math.random() * 0.6,
       strafeTarget: x,
-      flipState: false
+      flipState: false,
+      isBoss: !!options.isBoss,
+      fireMode: options.fireMode || "normal",
+      burstShots: 0
     };
+    if (a.isBoss) {
+      a.fireCooldown = 0.95;
+      a.strafeTimer = 0.45;
+    }
     aliens.push(a);
     return a;
   }
@@ -141591,20 +141658,31 @@
           a.fireCooldown = 0.2 + Math.random() * 0.3;
           continue;
         }
-        var dx = player2.x - a.x;
-        var dy = player2.y - a.y;
-        var dist = Math.max(1, Math.hypot(dx, dy));
-        var spd = 320;
-        playSfx(state2, "alien_shooting");
-        alienBullets.push({
-          x: a.x,
-          y: a.y,
-          vx: dx / dist * spd,
-          vy: dy / dist * spd,
-          r: 4,
-          life: 2.8
-        });
-        a.fireCooldown = 1.6 + Math.random() * 1.2;
+        if (a.isBoss) {
+          playSfx(state2, "alien_shooting", 0.8);
+          if (a.burstShots > 0) {
+            fireBossBurst(a, player2);
+            a.burstShots -= 1;
+            a.fireCooldown = 0.22;
+          } else {
+            if (bossFireMode++ % 2 === 0) {
+              fireBossSpread(a, player2);
+              a.fireCooldown = 1.15;
+            } else {
+              fireBossBurst(a, player2);
+              a.burstShots = 1;
+              a.fireCooldown = 0.24;
+            }
+          }
+        } else {
+          var dx = player2.x - a.x;
+          var dy = player2.y - a.y;
+          var dist = Math.max(1, Math.hypot(dx, dy));
+          var spd = 320;
+          playSfx(state2, "alien_shooting");
+          spawnAlienBullet(a.x, a.y, dx / dist * spd, dy / dist * spd, 4, 2.8);
+          a.fireCooldown = 1.6 + Math.random() * 1.2;
+        }
       }
       if (a.life >= alienConfig.escapeSeconds) {
         aliens.splice(i, 1);
@@ -141633,8 +141711,8 @@
       var shake = a.hitShake ? a.hitShake * 18 : 0;
       var shakeX = shake ? (Math.sin((a.t || 0) * 80) + Math.cos((a.t || 0) * 54)) * 0.6 * shake : 0;
       var shakeY = shake ? (Math.cos((a.t || 0) * 92) + Math.sin((a.t || 0) * 66)) * 0.6 * shake : 0;
-      var glow = ctx2.createRadialGradient(a.x, a.y, a.r * 0.2, a.x, a.y, a.r * 1.5);
-      glow.addColorStop(0, "rgba(80,255,220,.35)");
+      var glow = ctx2.createRadialGradient(a.x, a.y, a.r * 0.2, a.x, a.y, a.r * (a.isBoss ? 1.95 : 1.5));
+      glow.addColorStop(0, a.isBoss ? "rgba(170,240,255,.44)" : "rgba(80,255,220,.35)");
       glow.addColorStop(1, "rgba(0,0,0,0)");
       var flashAlpha = 1;
       if (a.hitFlashTimer > 0) {
@@ -141646,14 +141724,14 @@
       ctx2.globalAlpha = 0.9 * flashAlpha;
       ctx2.fillStyle = glow;
       ctx2.beginPath();
-      ctx2.arc(a.x + shakeX, a.y + shakeY, a.r * 1.35, 0, Math.PI * 2);
+      ctx2.arc(a.x + shakeX, a.y + shakeY, a.r * (a.isBoss ? 1.55 : 1.35), 0, Math.PI * 2);
       ctx2.fill();
       var pulse = 1 + Math.sin((a.t || 0) * 3.2) * 0.08;
       var size = Math.max(20, Math.round(a.r * 1.85 * pulse));
       ctx2.save();
       ctx2.globalAlpha = 0.9 * flashAlpha;
-      ctx2.shadowColor = "rgba(80,255,220,.9)";
-      ctx2.shadowBlur = 26;
+      ctx2.shadowColor = a.isBoss ? "rgba(200,245,255,.95)" : "rgba(80,255,220,.9)";
+      ctx2.shadowBlur = a.isBoss ? 38 : 26;
       if (sprite && sprite.img && sprite.img.complete && sprite.img.naturalWidth) {
         var iw = sprite.img.naturalWidth || sprite.img.width || size;
         var ih = sprite.img.naturalHeight || sprite.img.height || size;
@@ -141681,7 +141759,7 @@
       var remainingHits = Math.max(0, totalHits - (a.hitsTaken || 0));
       var ratio = clamp(remainingHits / Math.max(1, totalHits), 0, 1);
       var barH = Math.max(18, a.r * 1.7);
-      var barW = 5;
+      var barW = a.isBoss ? 7 : 5;
       var barX = a.x + shakeX + a.r + 8;
       var barY = a.y + shakeY - barH / 2;
       ctx2.save();
@@ -141702,6 +141780,20 @@
         ctx2.textAlign = "center";
         ctx2.textBaseline = "middle";
         ctx2.fillText(String(a.swarmDigit), a.x + shakeX, a.y + shakeY);
+        ctx2.restore();
+      }
+      if (a.isBoss) {
+        ctx2.save();
+        ctx2.globalAlpha = 0.95;
+        ctx2.fillStyle = "rgba(236,244,255,.98)";
+        ctx2.strokeStyle = "rgba(80,220,255,.65)";
+        ctx2.lineWidth = 1.5;
+        ctx2.font = "700 13px Oxanium, sans-serif";
+        ctx2.textAlign = "center";
+        ctx2.textBaseline = "middle";
+        var bossY = a.y - a.r - 30;
+        ctx2.strokeText("BOSS", a.x, bossY);
+        ctx2.fillText("BOSS", a.x, bossY);
         ctx2.restore();
       }
       ctx2.globalAlpha = 0.8;
@@ -142584,6 +142676,10 @@
   var precisionWindowSec = 2.5;
   var FRONTCLEAR_HALF_WIDTH = 80;
   var FRONTCLEAR_RANGE = 500;
+  var TARGET_ALIEN_WAVE_KILLS = 8;
+  var TARGET_ALIEN_BOSS_HP = 24;
+  var TARGET_ALIEN_BOSS_BONUS_SCORE = 5e3;
+  var TARGET_ALIEN_BOSS_MINERAL_BONUS = 120;
   var fx = createFx(ctx, state, player, null);
   var particles = fx.particles;
   var mineralPopups = [];
@@ -143390,6 +143486,27 @@
       alienConfig.enabled = true;
       alienConfig.maxOnScreen = 7;
       alienConfig.spawnCooldown = 1.2;
+      return;
+    }
+    if (tutorialActive) {
+      return;
+    }
+    if (isTargetFinaleSession()) {
+      if (state.alienFinaleActive) {
+        alienConfig.enabled = false;
+        alienConfig.maxOnScreen = 0;
+        alienConfig.spawnCooldown = 9999;
+      } else {
+        alienConfig.enabled = false;
+        alienConfig.maxOnScreen = 0;
+        alienConfig.spawnCooldown = 9999;
+      }
+      return;
+    }
+    if (isEndlessSession()) {
+      alienConfig.enabled = false;
+      alienConfig.maxOnScreen = 0;
+      alienConfig.spawnCooldown = 9999;
       return;
     }
     if (state.alienSwarm) {
@@ -145517,6 +145634,204 @@
   function shouldEndByQuestionLimit() {
     return state.questionLimit > 0 && state.questionsCompleted >= state.questionLimit;
   }
+  function isTargetFinaleSession() {
+    return state.questionLimit > 0 && !!(state.targetMode && String(state.targetMode).charAt(0) === "q");
+  }
+  function isEndlessSession() {
+    return (state.timeLimitSec || 0) <= 0 && (state.questionLimit || 0) <= 0;
+  }
+  function isAlienCombatOnlyPhase() {
+    if (state.alienFinaleActive && (state.alienFinaleStage === "wave" || state.alienFinaleStage === "boss")) {
+      return true;
+    }
+    if (state.endlessAlienWaveActive) {
+      return true;
+    }
+    return false;
+  }
+  function stopAlienWaveVisualMode() {
+    state.alienMode = "ambient";
+    state.alienWaveSpawnRemaining = 0;
+    state.alienWaveSpawnTimer = 0;
+    state.endlessAlienWaveActive = false;
+    state.endlessAlienWaveSpawnRemaining = 0;
+    configureAliensDifficulty();
+    if (!sandboxMode || !state.sandboxAlienWaveActive) {
+      setSandboxQuestionHidden(false);
+    }
+  }
+  function startTargetAlienWave() {
+    state.alienMode = "wave";
+    state.alienFinaleActive = true;
+    state.alienFinaleStage = "wave";
+    state.alienWaveTargetKills = TARGET_ALIEN_WAVE_KILLS;
+    state.alienWaveKillsStart = state.aliensShot || 0;
+    state.alienWaveSpawnRemaining = TARGET_ALIEN_WAVE_KILLS;
+    state.alienWaveSpawnTimer = 0;
+    state.alienWaveSpawnInterval = 0.9;
+    state.alienWaveMaxOnScreen = 2;
+    state.alienBossActive = false;
+    state.alienBossUid = 0;
+    state.alienBossBonusAwarded = false;
+    state.hideAsteroids = true;
+    asteroids.length = 0;
+    bullets.length = 0;
+    state.correctInPlay = false;
+    state.correctAsteroidId = 0;
+    setSandboxQuestionHidden(true);
+    resetAliens();
+    setAlienUnlocked(false);
+    alienConfig.enabled = true;
+    alienConfig.maxOnScreen = 0;
+    alienConfig.spawnCooldown = 9999;
+    showToast("ALIEN WAVE INBOUND");
+  }
+  function startTargetAlienFinale() {
+    if (!isTargetFinaleSession())
+      return;
+    if (state.alienFinaleActive && state.alienFinaleStage !== "done")
+      return;
+    startTargetAlienWave();
+  }
+  function startAlienBoss() {
+    if (!state.alienFinaleActive || state.alienFinaleStage !== "wave")
+      return;
+    state.alienMode = "boss";
+    state.alienFinaleStage = "boss";
+    state.alienBossActive = true;
+    state.alienBossBonusAwarded = false;
+    state.alienWaveSpawnRemaining = 0;
+    state.alienWaveSpawnTimer = 0;
+    resetAliens();
+    alienConfig.enabled = true;
+    alienConfig.maxOnScreen = 0;
+    alienConfig.spawnCooldown = 9999;
+    var boss = spawnAlien("scout", "BOSS", TARGET_ALIEN_BOSS_HP, view, {
+      isBoss: true,
+      name: "Overmind",
+      hp: TARGET_ALIEN_BOSS_HP,
+      score: 3e3,
+      radius: 52,
+      speed: 70,
+      fireMode: "boss",
+      x: view.w * 0.5,
+      y: view.hudH + 80
+    });
+    state.alienBossUid = boss ? boss.uid : 0;
+    showToast("WAVE CLEARED - BOSS APPROACHING");
+  }
+  function isBossAlive() {
+    if (!state.alienBossUid)
+      return false;
+    for (var i = 0; i < aliens.length; i++) {
+      if (aliens[i] && aliens[i].uid === state.alienBossUid) {
+        return true;
+      }
+    }
+    return false;
+  }
+  function finishTargetAlienFinaleSuccess() {
+    if (!state.alienFinaleActive)
+      return;
+    state.alienFinaleStage = "done";
+    state.alienFinaleActive = false;
+    state.alienBossActive = false;
+    state.alienBossUid = 0;
+    state.hideAsteroids = false;
+    stopAlienWaveVisualMode();
+    setSandboxQuestionHidden(false);
+    endGame("questions");
+  }
+  function updateTargetAlienWave(dt) {
+    if (!state.alienFinaleActive)
+      return;
+    if (state.alienFinaleStage === "wave") {
+      var kills = Math.max(0, (state.aliensShot || 0) - (state.alienWaveKillsStart || 0));
+      var remaining = Math.max(0, (state.alienWaveTargetKills || TARGET_ALIEN_WAVE_KILLS) - kills);
+      state.alienWaveSpawnRemaining = remaining;
+      if (remaining > 0) {
+        state.alienWaveSpawnTimer -= dt;
+        if (state.alienWaveSpawnTimer <= 0 && aliens.length < (state.alienWaveMaxOnScreen || 2)) {
+          spawnAlien("scout", "WAVE", 1, view, {
+            x: randi(70, Math.max(90, view.w - 70)),
+            y: view.hudH + 18
+          });
+          state.alienWaveSpawnTimer = state.alienWaveSpawnInterval || 0.9;
+        }
+      } else if (aliens.length === 0) {
+        startAlienBoss();
+      }
+      return;
+    }
+    if (state.alienFinaleStage === "boss") {
+      if (!isBossAlive()) {
+        if (!state.alienBossBonusAwarded) {
+          state.alienBossBonusAwarded = true;
+          state.score += TARGET_ALIEN_BOSS_BONUS_SCORE;
+          awardMinerals(TARGET_ALIEN_BOSS_MINERAL_BONUS);
+        }
+        showToast("ALIEN BOSS ELIMINATED");
+        finishTargetAlienFinaleSuccess();
+      }
+    }
+  }
+  function startEndlessMiniWave() {
+    state.endlessAlienWaveActive = true;
+    state.alienMode = "wave";
+    state.endlessAlienWaveSpawnRemaining = Math.max(1, state.endlessAlienWaveSize || 4);
+    state.alienWaveSpawnTimer = 0;
+    state.hideAsteroids = true;
+    asteroids.length = 0;
+    state.correctInPlay = false;
+    state.correctAsteroidId = 0;
+    setSandboxQuestionHidden(true);
+    resetAliens();
+    setAlienUnlocked(false);
+    alienConfig.enabled = true;
+    alienConfig.maxOnScreen = 0;
+    alienConfig.spawnCooldown = 9999;
+    showToast("ALIEN WAVE INBOUND");
+  }
+  function updateEndlessMiniWave(dt) {
+    if (!isEndlessSession() || tutorialActive || sandboxMode)
+      return;
+    if (state.alienFinaleActive)
+      return;
+    if (!state.endlessAlienWaveActive) {
+      var triggerEvery = Math.max(1, state.endlessAlienWaveTriggerEveryCorrect || 4);
+      var progressBase = state.endlessAlienWaveProgressBase || 0;
+      if ((state.correct || 0) - progressBase >= triggerEvery) {
+        state.endlessAlienWaveProgressBase = state.correct || 0;
+        startEndlessMiniWave();
+      }
+      return;
+    }
+    state.alienWaveSpawnTimer -= dt;
+    if (state.endlessAlienWaveSpawnRemaining > 0) {
+      if (state.alienWaveSpawnTimer <= 0 && aliens.length < (state.alienWaveMaxOnScreen || 2)) {
+        spawnAlien("scout", "WAVE", 1, view, {
+          x: randi(70, Math.max(90, view.w - 70)),
+          y: view.hudH + 18
+        });
+        state.endlessAlienWaveSpawnRemaining--;
+        state.alienWaveSpawnTimer = state.alienWaveSpawnInterval || 0.9;
+      }
+    } else if (aliens.length === 0) {
+      state.hideAsteroids = false;
+      stopAlienWaveVisualMode();
+      setSandboxQuestionHidden(false);
+    }
+  }
+  function handleQuestionLimitCompletion() {
+    if (!shouldEndByQuestionLimit())
+      return false;
+    if (isTargetFinaleSession()) {
+      startTargetAlienFinale();
+      return true;
+    }
+    endGame("questions");
+    return true;
+  }
   function nextProblem() {
     var rr = normalizeRangesFromInputs();
     state.questionReady = false;
@@ -147056,6 +147371,23 @@
     state.knock3FxBursts = [];
     state.alienSwarmPoolId = 0;
     state.alienSwarmDigitBag = [];
+    state.alienMode = "ambient";
+    state.alienFinaleActive = false;
+    state.alienFinaleStage = "none";
+    state.alienWaveTargetKills = 0;
+    state.alienWaveKillsStart = 0;
+    state.alienWaveSpawnRemaining = 0;
+    state.alienWaveSpawnTimer = 0;
+    state.alienWaveSpawnInterval = 0.9;
+    state.alienWaveMaxOnScreen = 2;
+    state.alienBossActive = false;
+    state.alienBossUid = 0;
+    state.alienBossBonusAwarded = false;
+    state.endlessAlienWaveActive = false;
+    state.endlessAlienWaveSpawnRemaining = 0;
+    state.endlessAlienWaveTriggerEveryCorrect = 4;
+    state.endlessAlienWaveSize = 4;
+    state.endlessAlienWaveProgressBase = 0;
     player.cooldown = 0;
     player.vx = 0;
     player.vy = 0;
@@ -148813,10 +149145,8 @@
     }
     if (state.divisorRemaining <= 0) {
       state.questionsCompleted++;
-      if (shouldEndByQuestionLimit()) {
-        endGame("questions");
+      if (handleQuestionLimitCompletion())
         return;
-      }
       nextProblem();
     }
   }
@@ -148884,19 +149214,15 @@
       } else {
         state.questionsCompleted++;
         completedQuestion = true;
-        if (shouldEndByQuestionLimit()) {
-          endGame("questions");
+        if (handleQuestionLimitCompletion())
           return;
-        }
         nextProblem();
       }
     } else {
       state.questionsCompleted++;
       completedQuestion = true;
-      if (shouldEndByQuestionLimit()) {
-        endGame("questions");
+      if (handleQuestionLimitCompletion())
         return;
-      }
       nextProblem();
     }
     if (!tutorialActive) {
@@ -148965,19 +149291,15 @@
       } else {
         state.questionsCompleted++;
         completedQuestion = true;
-        if (shouldEndByQuestionLimit()) {
-          endGame("questions");
+        if (handleQuestionLimitCompletion())
           return;
-        }
         nextProblem();
       }
     } else {
       state.questionsCompleted++;
       completedQuestion = true;
-      if (shouldEndByQuestionLimit()) {
-        endGame("questions");
+      if (handleQuestionLimitCompletion())
         return;
-      }
       nextProblem();
     }
   }
@@ -150038,6 +150360,13 @@
         stopSandboxAlienWave();
       }
     }
+    updateTargetAlienWave(dtReal2);
+    updateEndlessMiniWave(dtReal2);
+    if (state.alienFinaleActive || state.endlessAlienWaveActive) {
+      alienConfig.enabled = true;
+      alienConfig.maxOnScreen = 0;
+      alienConfig.spawnCooldown = 9999;
+    }
     var alienEnabled = alienConfig.enabled;
     if (tutorialActive && (!tutorialAlienUnlocked || tutorialAlienDelayRemaining > 0)) {
       alienConfig.enabled = false;
@@ -150448,7 +150777,7 @@
       }
     }
     state.spawnTimer -= dtSlow;
-    if (!state.alienSwarm && !missionBriefShowing && (!tutorialActive || tutorialSpawnUnlocked) && (!sandboxMode || state.sandboxSpawnAsteroids && !state.sandboxAlienWaveActive)) {
+    if (!state.alienSwarm && !missionBriefShowing && (!tutorialActive || tutorialSpawnUnlocked) && (!sandboxMode || state.sandboxSpawnAsteroids && !state.sandboxAlienWaveActive) && !isAlienCombatOnlyPhase()) {
       if (state.spawnTimer <= 0) {
         spawnOneFromWave();
         if (state.level >= 7 && Math.random() < 0.18)
@@ -151023,10 +151352,8 @@
               prepareWave();
             } else {
               state.questionsCompleted++;
-              if (shouldEndByQuestionLimit()) {
-                endGame("questions");
+              if (handleQuestionLimitCompletion())
                 return;
-              }
               nextProblem();
             }
           }
@@ -151980,20 +152307,20 @@
     ctx.translate(cam.x || 0, cam.y || 0);
     drawTutorialPortal();
     if (!phaserActive) {
-      if (!state.hideAsteroids && !(sandboxMode && state.sandboxAlienWaveActive)) {
+      if (!state.hideAsteroids && !(sandboxMode && state.sandboxAlienWaveActive) && !isAlienCombatOnlyPhase()) {
         for (var i = 0; i < asteroids.length; i++)
           drawAsteroid(asteroids[i]);
       }
-      if (!state.hideAsteroids || sandboxMode && state.sandboxAlienWaveActive) {
+      if (!state.hideAsteroids || sandboxMode && state.sandboxAlienWaveActive || isAlienCombatOnlyPhase()) {
         drawAliens(ctx);
         drawAlienBullets(ctx);
       }
-      if (!state.hideAsteroids) {
+      if (!state.hideAsteroids && !isAlienCombatOnlyPhase()) {
         drawPowerups();
-        drawBullets();
-        drawScopeLaser();
-        drawClaw();
       }
+      drawBullets();
+      drawScopeLaser();
+      drawClaw();
     }
     drawRings();
     drawParticles();
@@ -152295,7 +152622,7 @@
       var splitHud = isSandboxSplitMode();
       var lane1 = splitHud ? getLaneBounds(1) : null;
       var lane2 = splitHud ? getLaneBounds(2) : null;
-      if (!(tutorialActive && tutorialHideQuestion) && !(sandboxMode && state.sandboxAlienWaveActive) && !missionBriefShowing) {
+      if (!(tutorialActive && tutorialHideQuestion) && !(sandboxMode && state.sandboxAlienWaveActive) && !isAlienCombatOnlyPhase() && !missionBriefShowing) {
         if (splitHud) {
           var cx1 = (lane1.minX + lane1.maxX) / 2;
           var cx2 = (lane2.minX + lane2.maxX) / 2;

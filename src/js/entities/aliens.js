@@ -28,6 +28,7 @@ export var alienTypes = {
 var spawnTimer = alienConfig.spawnCooldown;
 var alienId = 1;
 var unlocked = false;
+var bossFireMode = 0;
 var alienSprites = [
   { src: "images/aliens/alien_ET.png", img: null },
   { src: "images/aliens/alien_brain.png", img: null },
@@ -63,26 +64,69 @@ export function setAlienUnlocked(value){
   }
 }
 
-export function spawnAlien(typeId, question, answer, view){
+function spawnAlienBullet(x, y, vx, vy, radius, life){
+  alienBullets.push({
+    x: x,
+    y: y,
+    vx: vx,
+    vy: vy,
+    r: radius || 4,
+    life: life || 2.8
+  });
+}
+
+function fireBossSpread(a, player){
+  var dx = player.x - a.x;
+  var dy = player.y - a.y;
+  var baseAngle = Math.atan2(dy, dx);
+  var speed = 350;
+  var offsets = [-0.22, 0, 0.22];
+  for(var i=0; i<offsets.length; i++){
+    var ang = baseAngle + offsets[i];
+    spawnAlienBullet(a.x, a.y, Math.cos(ang) * speed, Math.sin(ang) * speed, 5, 3.0);
+  }
+}
+
+function fireBossBurst(a, player){
+  var dx = player.x - a.x;
+  var dy = player.y - a.y;
+  var dist = Math.max(1, Math.hypot(dx, dy));
+  var speed = 390;
+  var jitter = (Math.random() * 0.16) - 0.08;
+  var ang = Math.atan2(dy, dx) + jitter;
+  spawnAlienBullet(a.x, a.y, Math.cos(ang) * speed, Math.sin(ang) * speed, 5, 3.1);
+}
+
+export function spawnAlien(typeId, question, answer, view, opts){
   var t = alienTypes[typeId] || alienTypes.scout;
+  var options = opts || {};
   var pad = 80;
   var x = randi(pad, Math.max(pad + 20, view.w - pad));
   var y = -40;
+  if(typeof options.x === "number" && Number.isFinite(options.x)) x = options.x;
+  if(typeof options.y === "number" && Number.isFinite(options.y)) y = options.y;
+  var hp = (typeof options.hp === "number" && Number.isFinite(options.hp)) ? Math.max(1, Math.round(options.hp)) : t.hp;
+  var radius = (typeof options.radius === "number" && Number.isFinite(options.radius)) ? Math.max(14, options.radius) : t.radius;
+  var speed = (typeof options.speed === "number" && Number.isFinite(options.speed)) ? Math.max(20, options.speed) : t.speed;
+  var score = (typeof options.score === "number" && Number.isFinite(options.score)) ? Math.max(0, Math.round(options.score)) : t.score;
   var answerHits = (typeof answer === "number" && Number.isFinite(answer)) ? Math.max(1, Math.round(answer)) : (t.hp || 1);
+  if(options.isBoss){
+    answerHits = hp;
+  }
   var a = {
     uid: alienId++,
-    id: t.id,
-    name: t.name,
-    hp: t.hp,
+    id: options.id || t.id,
+    name: options.name || t.name,
+    hp: hp,
     maxHits: answerHits,
-    speed: t.speed,
-    score: t.score,
-    behavior: t.behavior,
-    r: t.radius,
+    speed: speed,
+    score: score,
+    behavior: options.behavior || t.behavior,
+    r: radius,
     x: x,
     y: y,
     vx: 0,
-    vy: t.speed * 0.4,
+    vy: speed * 0.4,
     t: 0,
     life: 0,
     question: question,
@@ -91,8 +135,15 @@ export function spawnAlien(typeId, question, answer, view){
     fireCooldown: 1.4 + Math.random() * 1.2,
     strafeTimer: 0.3 + Math.random() * 0.6,
     strafeTarget: x,
-    flipState: false
+    flipState: false,
+    isBoss: !!options.isBoss,
+    fireMode: options.fireMode || "normal",
+    burstShots: 0
   };
+  if(a.isBoss){
+    a.fireCooldown = 0.95;
+    a.strafeTimer = 0.45;
+  }
   aliens.push(a);
   return a;
 }
@@ -253,20 +304,31 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
         a.fireCooldown = 0.2 + Math.random() * 0.3;
         continue;
       }
-      var dx = player.x - a.x;
-      var dy = player.y - a.y;
-      var dist = Math.max(1, Math.hypot(dx, dy));
-      var spd = 320;
-      playSfx(state, "alien_shooting");
-      alienBullets.push({
-        x: a.x,
-        y: a.y,
-        vx: (dx / dist) * spd,
-        vy: (dy / dist) * spd,
-        r: 4,
-        life: 2.8
-      });
-      a.fireCooldown = 1.6 + Math.random() * 1.2;
+      if(a.isBoss){
+        playSfx(state, "alien_shooting", 0.8);
+        if(a.burstShots > 0){
+          fireBossBurst(a, player);
+          a.burstShots -= 1;
+          a.fireCooldown = 0.22;
+        }else{
+          if((bossFireMode++ % 2) === 0){
+            fireBossSpread(a, player);
+            a.fireCooldown = 1.15;
+          }else{
+            fireBossBurst(a, player);
+            a.burstShots = 1;
+            a.fireCooldown = 0.24;
+          }
+        }
+      }else{
+        var dx = player.x - a.x;
+        var dy = player.y - a.y;
+        var dist = Math.max(1, Math.hypot(dx, dy));
+        var spd = 320;
+        playSfx(state, "alien_shooting");
+        spawnAlienBullet(a.x, a.y, (dx / dist) * spd, (dy / dist) * spd, 4, 2.8);
+        a.fireCooldown = 1.6 + Math.random() * 1.2;
+      }
     }
 
     if(a.life >= alienConfig.escapeSeconds){
@@ -299,8 +361,8 @@ export function drawAliens(ctx){
     var shake = a.hitShake ? a.hitShake * 18 : 0;
     var shakeX = shake ? (Math.sin((a.t || 0) * 80) + Math.cos((a.t || 0) * 54)) * 0.6 * shake : 0;
     var shakeY = shake ? (Math.cos((a.t || 0) * 92) + Math.sin((a.t || 0) * 66)) * 0.6 * shake : 0;
-    var glow = ctx.createRadialGradient(a.x, a.y, a.r * 0.2, a.x, a.y, a.r * 1.5);
-    glow.addColorStop(0, "rgba(80,255,220,.35)");
+    var glow = ctx.createRadialGradient(a.x, a.y, a.r * 0.2, a.x, a.y, a.r * (a.isBoss ? 1.95 : 1.5));
+    glow.addColorStop(0, a.isBoss ? "rgba(170,240,255,.44)" : "rgba(80,255,220,.35)");
     glow.addColorStop(1, "rgba(0,0,0,0)");
     var flashAlpha = 1;
     if(a.hitFlashTimer > 0){
@@ -312,14 +374,14 @@ export function drawAliens(ctx){
     ctx.globalAlpha = 0.9 * flashAlpha;
     ctx.fillStyle = glow;
     ctx.beginPath();
-    ctx.arc(a.x + shakeX, a.y + shakeY, a.r * 1.35, 0, Math.PI*2);
+    ctx.arc(a.x + shakeX, a.y + shakeY, a.r * (a.isBoss ? 1.55 : 1.35), 0, Math.PI*2);
     ctx.fill();
     var pulse = 1 + Math.sin((a.t || 0) * 3.2) * 0.08;
     var size = Math.max(20, Math.round(a.r * 1.85 * pulse));
     ctx.save();
     ctx.globalAlpha = 0.9 * flashAlpha;
-    ctx.shadowColor = "rgba(80,255,220,.9)";
-    ctx.shadowBlur = 26;
+    ctx.shadowColor = a.isBoss ? "rgba(200,245,255,.95)" : "rgba(80,255,220,.9)";
+    ctx.shadowBlur = a.isBoss ? 38 : 26;
     if(sprite && sprite.img && sprite.img.complete && sprite.img.naturalWidth){
       var iw = sprite.img.naturalWidth || sprite.img.width || size;
       var ih = sprite.img.naturalHeight || sprite.img.height || size;
@@ -349,7 +411,7 @@ export function drawAliens(ctx){
     var remainingHits = Math.max(0, totalHits - (a.hitsTaken || 0));
     var ratio = clamp(remainingHits / Math.max(1, totalHits), 0, 1);
     var barH = Math.max(18, a.r * 1.7);
-    var barW = 5;
+    var barW = a.isBoss ? 7 : 5;
     var barX = a.x + shakeX + a.r + 8;
     var barY = a.y + shakeY - barH / 2;
     ctx.save();
@@ -371,6 +433,21 @@ export function drawAliens(ctx){
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(String(a.swarmDigit), a.x + shakeX, a.y + shakeY);
+      ctx.restore();
+    }
+
+    if(a.isBoss){
+      ctx.save();
+      ctx.globalAlpha = 0.95;
+      ctx.fillStyle = "rgba(236,244,255,.98)";
+      ctx.strokeStyle = "rgba(80,220,255,.65)";
+      ctx.lineWidth = 1.5;
+      ctx.font = "700 13px Oxanium, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      var bossY = a.y - a.r - 30;
+      ctx.strokeText("BOSS", a.x, bossY);
+      ctx.fillText("BOSS", a.x, bossY);
       ctx.restore();
     }
 
