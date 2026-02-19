@@ -29,16 +29,36 @@ var spawnTimer = alienConfig.spawnCooldown;
 var alienId = 1;
 var unlocked = false;
 var bossFireMode = 0;
+var forcedAlienSpriteKey = "";
 var alienSprites = [
-  { src: "images/aliens/alien_ET.png", img: null },
-  { src: "images/aliens/alien_brain.png", img: null },
-  { src: "images/aliens/alien_golem.png", img: null },
-  { src: "images/aliens/alien_galaga.png", img: null },
-  { src: "images/aliens/alien_eye.png", img: null },
-  { src: "images/aliens/alien_saucer.png", img: null },
-  { src: "images/aliens/alien_robot.png", img: null },
-  { src: "images/aliens/alien_spider.png", img: null }
+  { key: "et", src: "images/aliens/alien_ET.png", img: null },
+  { key: "brain", src: "images/aliens/alien_brain.png", img: null },
+  { key: "golem", src: "images/aliens/alien_golem.png", img: null },
+  { key: "galaga", src: "images/aliens/alien_galaga.png", img: null },
+  { key: "eye", src: "images/aliens/alien_eye.png", img: null },
+  { key: "saucer", src: "images/aliens/alien_saucer.png", img: null },
+  { key: "robot", src: "images/aliens/alien_robot.png", img: null },
+  { key: "spider", src: "images/aliens/alien_spider.png", img: null }
 ];
+
+function normalizeAlienSpriteKey(key){
+  if(key == null) return "";
+  return String(key).trim().toLowerCase();
+}
+
+function getAlienSpriteIndexByKey(key){
+  var normalized = normalizeAlienSpriteKey(key);
+  if(!normalized) return -1;
+  for(var i=0; i<alienSprites.length; i++){
+    if(alienSprites[i].key === normalized) return i;
+  }
+  return -1;
+}
+
+export function setAlienSessionSpriteKey(key){
+  var idx = getAlienSpriteIndexByKey(key);
+  forcedAlienSpriteKey = idx >= 0 ? alienSprites[idx].key : "";
+}
 
 function ensureAlienSprites(){
   if(alienSprites[0].img) return;
@@ -138,8 +158,14 @@ export function spawnAlien(typeId, question, answer, view, opts){
     flipState: false,
     isBoss: !!options.isBoss,
     fireMode: options.fireMode || "normal",
-    burstShots: 0
+    burstShots: 0,
+    spriteIndex: -1
   };
+  var spriteKey = normalizeAlienSpriteKey(options.spriteKey || forcedAlienSpriteKey);
+  var spriteIndex = getAlienSpriteIndexByKey(spriteKey);
+  if(spriteIndex >= 0){
+    a.spriteIndex = spriteIndex;
+  }
   if(a.isBoss){
     a.fireCooldown = 0.95;
     a.strafeTimer = 0.45;
@@ -357,7 +383,10 @@ export function drawAliens(ctx){
   ctx.save();
   for(var i=0; i<aliens.length; i++){
     var a = aliens[i];
-    var sprite = alienSprites[a.uid % alienSprites.length];
+    var spriteIndex = (typeof a.spriteIndex === "number" && a.spriteIndex >= 0 && a.spriteIndex < alienSprites.length)
+      ? a.spriteIndex
+      : (a.uid % alienSprites.length);
+    var sprite = alienSprites[spriteIndex];
     var shake = a.hitShake ? a.hitShake * 18 : 0;
     var shakeX = shake ? (Math.sin((a.t || 0) * 80) + Math.cos((a.t || 0) * 54)) * 0.6 * shake : 0;
     var shakeY = shake ? (Math.cos((a.t || 0) * 92) + Math.sin((a.t || 0) * 66)) * 0.6 * shake : 0;
@@ -436,21 +465,6 @@ export function drawAliens(ctx){
       ctx.restore();
     }
 
-    if(a.isBoss){
-      ctx.save();
-      ctx.globalAlpha = 0.95;
-      ctx.fillStyle = "rgba(236,244,255,.98)";
-      ctx.strokeStyle = "rgba(80,220,255,.65)";
-      ctx.lineWidth = 1.5;
-      ctx.font = "700 13px Oxanium, sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      var bossY = a.y - a.r - 30;
-      ctx.strokeText("BOSS", a.x, bossY);
-      ctx.fillText("BOSS", a.x, bossY);
-      ctx.restore();
-    }
-
     ctx.globalAlpha = 0.8;
     ctx.fillStyle = "rgba(255,255,255,.95)";
     ctx.font = "700 14px Orbitron, sans-serif";
@@ -478,7 +492,10 @@ export function drawAlienBullets(ctx){
 
 export function getAlienSpriteSrcFor(alien){
   if(!alien) return null;
-  var sprite = alienSprites[alien.uid % alienSprites.length];
+  var spriteIndex = (typeof alien.spriteIndex === "number" && alien.spriteIndex >= 0 && alien.spriteIndex < alienSprites.length)
+    ? alien.spriteIndex
+    : (alien.uid % alienSprites.length);
+  var sprite = alienSprites[spriteIndex];
   return sprite ? sprite.src : null;
 }
 

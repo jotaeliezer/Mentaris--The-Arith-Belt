@@ -7,7 +7,7 @@ import { createTourGuide } from "./tourguide.js";
 import { createFx } from "../render/animations.js";
 import { createBackground } from "../render/background.js";
 import { createPhaserRenderer } from "../render/phaser_renderer.js";
-import { aliens, alienBullets, alienConfig, resetAliens, setAlienUnlocked, spawnAlien, updateAliens, updateAlienBullets, drawAliens, drawAlienBullets, getAlienSpriteSrcFor } from "../entities/aliens.js";
+import { aliens, alienBullets, alienConfig, resetAliens, setAlienUnlocked, setAlienSessionSpriteKey, spawnAlien, updateAliens, updateAlienBullets, drawAliens, drawAlienBullets, getAlienSpriteSrcFor } from "../entities/aliens.js";
 import { computeSpawnInterval } from "./levels.js";
 import { PowerupManager } from "../entities/powerups.js";
 
@@ -117,6 +117,8 @@ var btnEndRestart  = document.getElementById("btnEndRestart");
 var btnEndSettings = document.getElementById("btnEndSettings");
 var btnEndNext = document.getElementById("btnEndNext");
 var btnEndHome = document.getElementById("btnEndHome");
+var endStageJumpRow = document.getElementById("endStageJumpRow");
+var endStageJumpButtons = endStageJumpRow ? endStageJumpRow.querySelectorAll(".endStageJumpBtn") : [];
 
 var toast = document.getElementById("toast");
 var countdownEl = document.getElementById("countdown");
@@ -678,6 +680,7 @@ var endMineralAnimStart = 0;
 var endSequenceContext = null;
 var endSequenceContextPending = null;
 var endStageFadeTimer = 0;
+var endManualStageBrowse = false;
 var gameOverSfxTimer = 0;
 var mineralsTotal = 0;
 var END_PHASE_SUMMARY_MS = 4000;
@@ -722,6 +725,41 @@ var campaignDefaultId = "sector_run";
 var campaignMaxFailures = 3;
 var alienSwarmDigitBag = [];
 var campaignProfileId = "";
+var campaignAlienKey = "";
+var campaignBossLabel = "";
+var campaignAlienKeys = ["et", "brain", "golem", "galaga", "eye", "saucer", "robot", "spider"];
+
+function normalizeCampaignAlienKey(key){
+  if(key == null) return "";
+  return String(key).trim().toLowerCase();
+}
+
+function isSessionConfigNonEndless(targetMode, timerMode){
+  var target = String(targetMode || "off");
+  var timer = String(timerMode || "off");
+  return target !== "off" || timer !== "off";
+}
+
+function toCampaignBossLabel(key){
+  var normalized = normalizeCampaignAlienKey(key);
+  if(!normalized) return "";
+  return "THE " + normalized.toUpperCase();
+}
+
+function hashCampaignAlienSeed(seed){
+  var str = String(seed || "");
+  var hash = 0;
+  for(var i=0; i<str.length; i++){
+    hash = ((hash * 31) + str.charCodeAt(i)) >>> 0;
+  }
+  return hash >>> 0;
+}
+
+function deriveCampaignAlienKeyForMission(cId, missionId, index){
+  var seed = String(cId || campaignDefaultId) + ":" + String(missionId || index || 0);
+  var idx = hashCampaignAlienSeed(seed) % campaignAlienKeys.length;
+  return campaignAlienKeys[idx];
+}
 
 var tourGuide = null;
 if(usePhaserRenderer && phaserRoot){
@@ -804,6 +842,8 @@ var tutorialRecoveryResumeStepId = null;
 var tutorialRespawnActive = false;
 var tutorialRespawnTargetY = 0;
 var tutorialHullRecoveryShown = false;
+var tutorialPendingCorrectNotify = false;
+var tutorialPendingAidNotify = "";
 var answerHitsSincePowerup = 0;
 var hiddenPowerupActive = false;
 var survivorTimer = 0;
@@ -815,8 +855,8 @@ var FRONTCLEAR_HALF_WIDTH = 80;
 var FRONTCLEAR_RANGE = 500;
 var TARGET_ALIEN_WAVE_KILLS = 8;
 var TARGET_ALIEN_BOSS_HP = 24;
-var TARGET_ALIEN_BOSS_BONUS_SCORE = 5000;
-var TARGET_ALIEN_BOSS_MINERAL_BONUS = 120;
+var TARGET_ALIEN_BOSS_BONUS_SCORE = 600;
+var TARGET_ALIEN_BOSS_MINERAL_BONUS = 15;
 
 // ======= Systems
 var fx = createFx(ctx, state, player, null);
@@ -1905,7 +1945,7 @@ window.addEventListener("keydown", function(e){
   if((k === "w" || k === "arrowup") && !e.repeat && state.running && !state.paused && !state.over){
     playSfx(state, "ship_advance");
   }
-  if(keyNorm === keyBindings.secondary){
+  if(keyNorm === keyBindings.secondary && !e.repeat){
     secondaryFire();
   }
   if(k === "1" || code === "Digit1" || code === "Numpad1") selectSecondaryByIndex(0);
@@ -2058,6 +2098,31 @@ function clearScopeOnHitForPilot(pilot){
   }
 }
 
+function isShieldActiveForPilot(pilot){
+  if(!pilot) return false;
+  return (pilot.defenseTimer || 0) > 0;
+}
+
+function isArmorActiveForPilot(pilot){
+  if(!pilot) return false;
+  return (pilot.armorBlocksRemaining || 0) > 0;
+}
+
+function syncPilotDefenseMode(pilot){
+  if(!pilot) return;
+  var shieldOn = isShieldActiveForPilot(pilot);
+  var armorOn = isArmorActiveForPilot(pilot);
+  if(shieldOn && armorOn){
+    pilot.defenseMode = "shield+armor";
+  }else if(shieldOn){
+    pilot.defenseMode = "shield";
+  }else if(armorOn){
+    pilot.defenseMode = "armor";
+  }else{
+    pilot.defenseMode = "none";
+  }
+}
+
 function registerShotTypeHitForPilot(pilot, amount, forceClear){
   if(!pilot) return;
   if(pilot.blasterMode === "single") return;
@@ -2166,15 +2231,13 @@ function tickPilotTimers(pilot, dtReal){
   if(pilot.blasterMode !== "single" && !(pilot.blasterHitsRemaining > 0)){
     resetPilotShotType(pilot);
   }
-  if(pilot.defenseMode === "armor"){
-    if(!(pilot.armorBlocksRemaining > 0)){
-      pilot.defenseMode = "none";
-      pilot.defenseTimer = 0;
-    }
-  }else if(pilot.defenseTimer > 0){
+  if(pilot.defenseTimer > 0){
     pilot.defenseTimer = Math.max(0, pilot.defenseTimer - dtReal);
-    if(pilot.defenseTimer === 0) pilot.defenseMode = "none";
   }
+  if(!(pilot.armorBlocksRemaining > 0)){
+    pilot.armorBlocksRemaining = 0;
+  }
+  syncPilotDefenseMode(pilot);
   if(pilot.magnetTimer > 0){
     pilot.magnetTimer = Math.max(0, pilot.magnetTimer - dtReal);
   }
@@ -3007,15 +3070,21 @@ function inferToastTone(text){
 function showToast(msg, tone){
   var text = String(msg || "");
   toast.textContent = "";
-  toast.classList.remove("toast-good", "toast-bad");
+  toast.classList.remove("toast-good", "toast-bad", "toast-alert");
   var appliedTone = tone || inferToastTone(text);
   if(appliedTone === "bad") toast.classList.add("toast-bad");
   else if(appliedTone === "good") toast.classList.add("toast-good");
+  else if(appliedTone === "alert") toast.classList.add("toast-alert");
   toast.classList.add("show");
   clearTimeout(toastTimer);
   if(toastTypeTimer){
     clearInterval(toastTypeTimer);
     toastTypeTimer = null;
+  }
+  if(appliedTone === "alert"){
+    toast.textContent = text;
+    toastTimer = setTimeout(function(){ toast.classList.remove("show"); }, 900);
+    return;
   }
   var idx = 0;
   var typeMs = 28;
@@ -3275,6 +3344,7 @@ function updateLowHullAlarm(pilot, dmgHit){
   var threshold = Math.max(0, dmgHit || 0);
   if(pilot.hull > threshold + 0.001){
     pilot.lowHullAlarmed = false;
+    pilot.lowHullPulse = 0;
     return;
   }
   if(pilot.hull > 0 && pilot.hull <= threshold){
@@ -3880,7 +3950,9 @@ function stopAlienWaveVisualMode(){
   state.alienMode = "ambient";
   state.alienWaveSpawnRemaining = 0;
   state.alienWaveSpawnTimer = 0;
+  state.alienFinaleAwaitingClear = false;
   state.endlessAlienWaveActive = false;
+  state.endlessAlienWavePending = false;
   state.endlessAlienWaveSpawnRemaining = 0;
   configureAliensDifficulty();
   if(!sandboxMode || !state.sandboxAlienWaveActive){
@@ -3892,6 +3964,9 @@ function startTargetAlienWave(){
   state.alienMode = "wave";
   state.alienFinaleActive = true;
   state.alienFinaleStage = "wave";
+  state.alienFinaleAwaitingClear = false;
+  state.alienWaveWarningPending = false;
+  state.alienWaveWarningTimer = 0;
   state.alienWaveTargetKills = TARGET_ALIEN_WAVE_KILLS;
   state.alienWaveKillsStart = state.aliensShot || 0;
   state.alienWaveSpawnRemaining = TARGET_ALIEN_WAVE_KILLS;
@@ -3902,8 +3977,6 @@ function startTargetAlienWave(){
   state.alienBossUid = 0;
   state.alienBossBonusAwarded = false;
   state.hideAsteroids = true;
-  asteroids.length = 0;
-  bullets.length = 0;
   state.correctInPlay = false;
   state.correctAsteroidId = 0;
   setSandboxQuestionHidden(true);
@@ -3918,7 +3991,16 @@ function startTargetAlienWave(){
 function startTargetAlienFinale(){
   if(!isTargetFinaleSession()) return;
   if(state.alienFinaleActive && state.alienFinaleStage !== "done") return;
-  startTargetAlienWave();
+  state.alienMode = "ambient";
+  state.alienFinaleActive = true;
+  state.alienFinaleStage = "queue";
+  state.alienFinaleAwaitingClear = true;
+  state.alienWaveWarningPending = false;
+  state.alienWaveWarningTimer = 0;
+  state.hideAsteroids = false;
+  state.correctInPlay = false;
+  state.correctAsteroidId = 0;
+  showToast("CLEAR REMAINING ASTEROIDS");
 }
 
 function startAlienBoss(){
@@ -3933,16 +4015,20 @@ function startAlienBoss(){
   alienConfig.enabled = true;
   alienConfig.maxOnScreen = 0;
   alienConfig.spawnCooldown = 9999;
-  var boss = spawnAlien("scout", "BOSS", TARGET_ALIEN_BOSS_HP, view, {
+  var bossLabel = state.campaignAlienIdentityActive
+    ? (state.campaignBossLabel || toCampaignBossLabel(state.campaignAlienKey))
+    : "BOSS";
+  var boss = spawnAlien("scout", bossLabel, TARGET_ALIEN_BOSS_HP, view, {
     isBoss: true,
     name: "Overmind",
     hp: TARGET_ALIEN_BOSS_HP,
     score: 3000,
-    radius: 52,
+    radius: 78,
     speed: 70,
     fireMode: "boss",
     x: view.w * 0.5,
-    y: view.hudH + 80
+    y: view.hudH + 80,
+    spriteKey: state.campaignAlienIdentityActive ? state.campaignAlienKey : ""
   });
   state.alienBossUid = boss ? boss.uid : 0;
   showToast("WAVE CLEARED - BOSS APPROACHING");
@@ -3972,6 +4058,21 @@ function finishTargetAlienFinaleSuccess(){
 
 function updateTargetAlienWave(dt){
   if(!state.alienFinaleActive) return;
+  if(state.alienFinaleStage === "queue"){
+    if(asteroids.length === 0){
+      if(!state.alienWaveWarningPending){
+        state.alienWaveWarningPending = true;
+        state.alienWaveWarningTimer = 0.95;
+        showToast("⚠️", "alert");
+      }else{
+        state.alienWaveWarningTimer = Math.max(0, (state.alienWaveWarningTimer || 0) - dt);
+        if(state.alienWaveWarningTimer <= 0){
+          startTargetAlienWave();
+        }
+      }
+    }
+    return;
+  }
   if(state.alienFinaleStage === "wave"){
     var kills = Math.max(0, (state.aliensShot || 0) - (state.alienWaveKillsStart || 0));
     var remaining = Math.max(0, (state.alienWaveTargetKills || TARGET_ALIEN_WAVE_KILLS) - kills);
@@ -3979,9 +4080,11 @@ function updateTargetAlienWave(dt){
     if(remaining > 0){
       state.alienWaveSpawnTimer -= dt;
       if(state.alienWaveSpawnTimer <= 0 && aliens.length < (state.alienWaveMaxOnScreen || 2)){
-        spawnAlien("scout", "WAVE", 1, view, {
+        var waveQuestion = getAlienQuestion();
+        spawnAlien("scout", waveQuestion.question, waveQuestion.answer, view, {
           x: randi(70, Math.max(90, view.w - 70)),
-          y: view.hudH + 18
+          y: view.hudH + 18,
+          spriteKey: state.campaignAlienIdentityActive ? state.campaignAlienKey : ""
         });
         state.alienWaveSpawnTimer = state.alienWaveSpawnInterval || 0.9;
       }
@@ -4005,6 +4108,7 @@ function updateTargetAlienWave(dt){
 
 function startEndlessMiniWave(){
   state.endlessAlienWaveActive = true;
+  state.endlessAlienWavePending = false;
   state.alienMode = "wave";
   state.endlessAlienWaveSpawnRemaining = Math.max(1, state.endlessAlienWaveSize || 4);
   state.alienWaveSpawnTimer = 0;
@@ -4036,7 +4140,8 @@ function updateEndlessMiniWave(dt){
   state.alienWaveSpawnTimer -= dt;
   if(state.endlessAlienWaveSpawnRemaining > 0){
     if(state.alienWaveSpawnTimer <= 0 && aliens.length < (state.alienWaveMaxOnScreen || 2)){
-      spawnAlien("scout", "WAVE", 1, view, {
+      var endlessQuestion = getAlienQuestion();
+      spawnAlien("scout", endlessQuestion.question, endlessQuestion.answer, view, {
         x: randi(70, Math.max(90, view.w - 70)),
         y: view.hudH + 18
       });
@@ -4052,6 +4157,10 @@ function updateEndlessMiniWave(dt){
 
 function handleQuestionLimitCompletion(){
   if(!shouldEndByQuestionLimit()) return false;
+  if(tutorialActive){
+    endGame("questions");
+    return true;
+  }
   if(isTargetFinaleSession()){
     startTargetAlienFinale();
     return true;
@@ -5096,15 +5205,14 @@ function applyPowerup(p){
     else if(p.type === "plasma") showToast("OFFENSE -> PLASMA ORB");
     else if(p.type === "rail") showToast("OFFENSE -> RAIL BEAM");
   }else if(p.group === "defense" && p.type === "shield"){
-    player.defenseMode = "shield";
     player.defenseTimer = 10;
+    syncPilotDefenseMode(player);
     showToast("DEFENSE -> SHIELD");
   }else if(p.group === "defense" && p.type === "armor"){
-    player.defenseMode = "armor";
-    player.defenseTimer = 0;
     player.armorBlocksRemaining = 5;
     player.armorFlashTimer = 0;
     player.armorFlashDur = 0.14;
+    syncPilotDefenseMode(player);
     showToast("DEFENSE -> ARMOR");
   }else if(p.group === "defense" && p.type === "scope"){
     player.scopeTimer = 1;
@@ -5120,11 +5228,11 @@ function applyPowerup(p){
       showToast("HULL REPAIRED");
     }else{
       addSecondaryPowerup(p.type);
-      if(p.type === "time") showToast("SECONDARY -> TIME DILATION (F)");
-      else if(p.type === "magnet") showToast("SECONDARY -> MAGNET SWEEP (F)");
-      else if(p.type === "emp") showToast("SECONDARY -> EMP BURST (F)");
-      else if(p.type === "lock") showToast("SECONDARY -> TARGET LOCK (F)");
-      else if(p.type === "autofire") showToast("SECONDARY -> AUTO-FIRE (F)");
+      if(p.type === "time") showToast("SECONDARY -> TIME DILATION (E)");
+      else if(p.type === "magnet") showToast("SECONDARY -> MAGNET SWEEP (E)");
+      else if(p.type === "emp") showToast("SECONDARY -> EMP BURST (E)");
+      else if(p.type === "lock") showToast("SECONDARY -> TARGET LOCK (E)");
+      else if(p.type === "autofire") showToast("SECONDARY -> AUTO-FIRE (E)");
     }
   }
 }
@@ -5153,15 +5261,14 @@ function applyPowerupForPilot(pilot, pilotId, powerup){
     else if(p.type === "plasma") showToast("OFFENSE -> PLASMA ORB");
     else if(p.type === "rail") showToast("OFFENSE -> RAIL BEAM");
   }else if(p.group === "defense" && p.type === "shield"){
-    pilot.defenseMode = "shield";
     pilot.defenseTimer = 10;
+    syncPilotDefenseMode(pilot);
     showToast("DEFENSE -> SHIELD");
   }else if(p.group === "defense" && p.type === "armor"){
-    pilot.defenseMode = "armor";
-    pilot.defenseTimer = 0;
     pilot.armorBlocksRemaining = 5;
     pilot.armorFlashTimer = 0;
     pilot.armorFlashDur = 0.14;
+    syncPilotDefenseMode(pilot);
     showToast("DEFENSE -> ARMOR");
   }else if(p.group === "defense" && p.type === "scope"){
     pilot.scopeTimer = 1;
@@ -5177,11 +5284,11 @@ function applyPowerupForPilot(pilot, pilotId, powerup){
       showToast("HULL REPAIRED");
     }else{
       addSecondaryPowerupForPilot(pilot, p.type);
-      if(p.type === "time") showToast("SECONDARY -> TIME DILATION (F)");
-      else if(p.type === "magnet") showToast("SECONDARY -> MAGNET SWEEP (F)");
-      else if(p.type === "emp") showToast("SECONDARY -> EMP BURST (F)");
-      else if(p.type === "lock") showToast("SECONDARY -> TARGET LOCK (F)");
-      else if(p.type === "autofire") showToast("SECONDARY -> AUTO-FIRE (F)");
+      if(p.type === "time") showToast("SECONDARY -> TIME DILATION (E)");
+      else if(p.type === "magnet") showToast("SECONDARY -> MAGNET SWEEP (E)");
+      else if(p.type === "emp") showToast("SECONDARY -> EMP BURST (E)");
+      else if(p.type === "lock") showToast("SECONDARY -> TARGET LOCK (E)");
+      else if(p.type === "autofire") showToast("SECONDARY -> AUTO-FIRE (E)");
     }
   }
 }
@@ -5428,6 +5535,8 @@ function beginRun(){
 }
 
 function resetSession(){
+  tutorialPendingCorrectNotify = false;
+  tutorialPendingAidNotify = "";
   if(gameOverSfxTimer){
     clearTimeout(gameOverSfxTimer);
     gameOverSfxTimer = 0;
@@ -5560,6 +5669,9 @@ function resetSession(){
   state.alienMode = "ambient";
   state.alienFinaleActive = false;
   state.alienFinaleStage = "none";
+  state.alienFinaleAwaitingClear = false;
+  state.alienWaveWarningPending = false;
+  state.alienWaveWarningTimer = 0;
   state.alienWaveTargetKills = 0;
   state.alienWaveKillsStart = 0;
   state.alienWaveSpawnRemaining = 0;
@@ -5570,10 +5682,15 @@ function resetSession(){
   state.alienBossUid = 0;
   state.alienBossBonusAwarded = false;
   state.endlessAlienWaveActive = false;
+  state.endlessAlienWavePending = false;
   state.endlessAlienWaveSpawnRemaining = 0;
   state.endlessAlienWaveTriggerEveryCorrect = 4;
   state.endlessAlienWaveSize = 4;
   state.endlessAlienWaveProgressBase = 0;
+  state.campaignAlienKey = campaignAlienKey;
+  state.campaignBossLabel = campaignBossLabel;
+  state.campaignAlienIdentityActive = !!(campaignActive && campaignAlienKey && isSessionConfigNonEndless(state.targetMode, state.timerMode));
+  setAlienSessionSpriteKey(state.campaignAlienIdentityActive ? state.campaignAlienKey : "");
 
   player.cooldown = 0;
   player.vx = 0;
@@ -6110,10 +6227,12 @@ function secondaryFireForPilot(pilot, pilotId){
   var slots = getSecondarySlotsForPilot(pilot);
   var idx = clamp(pilot.secondarySlotIndex | 0, 0, slots.length - 1);
   var slot = slots[idx];
-  if(!slot || !slot.type || !(slot.count > 0)){
+  var canUseEmptyAutofireSlot = !!(slot && slot.type === "autofire" && pilot.autoFireActive);
+  if(!slot || !slot.type || (!(slot.count > 0) && !canUseEmptyAutofireSlot)){
     syncSelectedSecondaryForPilot(pilot);
     slot = slots[pilot.secondarySlotIndex];
-    if(!slot || !slot.type || !(slot.count > 0)) return;
+    canUseEmptyAutofireSlot = !!(slot && slot.type === "autofire" && pilot.autoFireActive);
+    if(!slot || !slot.type || (!(slot.count > 0) && !canUseEmptyAutofireSlot)) return;
   }
   var activeType = slot.type;
   if(activeType === "autofire" && !(slot.count > 0)){
@@ -6163,6 +6282,7 @@ function secondaryFireForPilot(pilot, pilotId){
   if(activeType === "repair"){
     pilot.hull = clamp(pilot.hull + 0.35, 0, 1);
     pilot.lowHullAlarmed = false;
+    pilot.lowHullPulse = 0;
     spawnRing(pilot.x, pilot.y, 18);
     spawnParticles(pilot.x, pilot.y, "correct");
     showToast("SECONDARY -> HULL REPAIR");
@@ -6217,9 +6337,9 @@ function secondaryFireForPilot(pilot, pilotId){
     }
   }
   if(tourGuide){
-    if(activeType === "time") tourGuide.notify("secondary_time");
-    if(activeType === "emp") tourGuide.notify("secondary_emp");
-    if(activeType === "magnet") tourGuide.notify("secondary_magnet");
+    if(activeType === "time") notifyTutorialAidStep("secondary_time");
+    if(activeType === "emp") notifyTutorialAidStep("secondary_emp");
+    if(activeType === "magnet") notifyTutorialAidStep("secondary_magnet");
     tourGuide.notify("secondary");
   }
 }
@@ -7083,8 +7203,12 @@ function setupTutorialPowerupField(config){
   if(!tutorialActive) return;
   var cfg = config || {};
   var centerX = view.w * 0.5;
+  var spawnFromTop = !!cfg.spawnFromTop;
   var answerX = (typeof cfg.answerX === "number") ? cfg.answerX : centerX;
   var answerY = (typeof cfg.answerY === "number") ? cfg.answerY : (view.hudH + 150);
+  if(spawnFromTop){
+    answerY = (typeof cfg.answerYTop === "number") ? cfg.answerYTop : -150;
+  }
   var answerVy = (typeof cfg.answerVy === "number") ? cfg.answerVy : 72;
   var decoys = Math.max(0, cfg.decoys | 0);
   var addBlocker = !!cfg.blocker;
@@ -7100,6 +7224,9 @@ function setupTutorialPowerupField(config){
 
   if(addBlocker){
     var blockerY = Math.min(view.h - 180, answerY + 96);
+    if(spawnFromTop){
+      blockerY = Math.min(view.hudH - 30, answerY + 58);
+    }
     spawnTutorialAsteroidAt(getTutorialDecoyLabel(answerLabel), false, answerX, blockerY, answerVy * 0.92);
   }
 
@@ -7107,6 +7234,9 @@ function setupTutorialPowerupField(config){
     var offset = ((i % 2) ? 1 : -1) * (90 + i * 28);
     var x = clamp(answerX + offset, 56, view.w - 56);
     var y = answerY + 22 + i * 34;
+    if(spawnFromTop){
+      y = Math.min(view.hudH - 30, answerY + 18 + i * 22);
+    }
     spawnTutorialAsteroidAt(getTutorialDecoyLabel(answerLabel), false, x, y, answerVy * (0.88 + Math.random() * 0.2));
   }
 }
@@ -7135,6 +7265,30 @@ function beginTutorialMineralsFreeze(hitAst){
 
 function isTutorialCorrectShotStep(){
   return tutorialActive && (tutorialStepId === "correct" || tutorialStepId === "correct_after_magnet" || tutorialStepId === "ability_shot");
+}
+
+function notifyTutorialCorrectStep(){
+  if(!tourGuide) return;
+  var accepted = !!tourGuide.notify("correct");
+  if(!accepted && isTutorialCorrectShotStep()){
+    tutorialPendingCorrectNotify = true;
+  }
+}
+
+function expectedTutorialAidEventForStep(stepId){
+  if(stepId === "secondary_time") return "secondary_time";
+  if(stepId === "secondary_emp") return "secondary_emp";
+  if(stepId === "secondary_magnet") return "secondary_magnet";
+  return "";
+}
+
+function notifyTutorialAidStep(eventName){
+  if(!tourGuide || !eventName) return;
+  var accepted = !!tourGuide.notify(eventName);
+  var expected = expectedTutorialAidEventForStep(tutorialStepId);
+  if(!accepted && tutorialActive && expected && expected === eventName){
+    tutorialPendingAidNotify = eventName;
+  }
 }
 
 function queueTutorialSecondChance(){
@@ -7218,7 +7372,7 @@ function handleDivisorCorrectHit(hitAst){
   state.hits++;
   state.streak++;
   playSfx(state, "correct");
-  if(tourGuide) tourGuide.notify("correct");
+  notifyTutorialCorrectStep();
   beginTutorialMineralsFreeze(hitAst);
   if(hitAst && hitAst.label != null){
     spawnMineralBurst(hitAst.x, hitAst.y, getHighestDigit(hitAst.label));
@@ -7314,7 +7468,7 @@ function onCorrectHit(hitAst){
   state.hits++;
   state.streak++;
   playSfx(state, "correct");
-  if(tourGuide) tourGuide.notify("correct");
+  notifyTutorialCorrectStep();
   beginTutorialMineralsFreeze(hitAst);
   if(hitAst && hitAst.label != null){
     spawnMineralBurst(hitAst.x, hitAst.y, getHighestDigit(hitAst.label));
@@ -7427,7 +7581,7 @@ function onStampedeCorrect(hitAst){
   state.hits++;
   state.streak = 0;
   playSfx(state, "correct");
-  if(tourGuide) tourGuide.notify("correct");
+  notifyTutorialCorrectStep();
   beginTutorialMineralsFreeze(hitAst);
   syncHud();
   var completedQuestion = false;
@@ -7526,6 +7680,103 @@ function setEndStageVisible(stageId){
     if(!el) continue;
     el.classList.toggle("isActive", el.id === stageId);
   }
+  syncEndStageJumpButtons(stageId);
+  updateEndStageJumpVisibility();
+}
+
+function syncEndStageJumpButtons(stageId){
+  if(!endStageJumpButtons || !endStageJumpButtons.length) return;
+  for(var i=0; i<endStageJumpButtons.length; i++){
+    var btn = endStageJumpButtons[i];
+    if(!btn) continue;
+    btn.classList.toggle("isActive", btn.getAttribute("data-end-stage") === stageId);
+  }
+}
+
+function updateEndStageJumpVisibility(){
+  if(!endStageJumpRow) return;
+  var show = !!(endPhase === "actions" || endManualStageBrowse);
+  endStageJumpRow.style.display = show ? "flex" : "none";
+}
+
+function showEndPlacementLeaderboard(revealPlacementLine){
+  if(endPlacementTitle){
+    endPlacementTitle.textContent = "GLOBAL LEADERBOARD";
+  }
+  if(endPlacementLine){
+    endPlacementLine.textContent = revealPlacementLine ? resolveEndPlacementText() : "";
+  }
+  if(endScoresPanel){
+    endScoresPanel.classList.remove("endStatsHidden");
+  }
+  if(endSequence){
+    endSequence.classList.add("placementLeaderboardActive");
+  }
+  var lifetime = loadLifetimeStats();
+  var reveal = renderPlacementLeaderboardAllModes(lifetime);
+  if(reveal.found && reveal.currentRow){
+    if(endScoresTableWrap){
+      endScoresTableWrap.scrollTop = 0;
+    }
+    requestAnimationFrame(function(){
+      animateEndScoresScrollToRow(reveal.currentRow, endScoresTableWrap, 850, function(){
+        reveal.currentRow.classList.add("endScoreRowPop");
+        var clearPopTimer = setTimeout(function(){
+          reveal.currentRow.classList.remove("endScoreRowPop");
+        }, 700);
+        endSequenceTimers.push(clearPopTimer);
+      });
+    });
+  }else if(endScoresTableWrap){
+    endScoresTableWrap.scrollTop = 0;
+  }
+}
+
+function jumpEndStage(stageId){
+  if(!overlayEnd || !overlayEnd.classList.contains("show")) return;
+  clearEndSequenceTimers();
+  endManualStageBrowse = stageId !== "endStageActions";
+  if(stageId === "endStageSummary"){
+    endPhase = "summary";
+    transitionEndStage("endStageSummary");
+    return;
+  }
+  if(stageId === "endStageEngagement"){
+    endPhase = "engagement";
+    transitionEndStage("endStageEngagement", function(){
+      if(endMineralsCollected){
+        endMineralsCollected.textContent = "0";
+      }
+      if(endMineralsTotal){
+        endMineralsTotal.textContent = "TOTAL MINERALS: --";
+      }
+      animateMineralsCount(state.mineralsEarned || 0, 1400, function(){
+        if(endMineralsTotal){
+          endMineralsTotal.textContent = "TOTAL MINERALS: " + (Number(mineralsTotal) || 0);
+        }
+      });
+    });
+    return;
+  }
+  if(stageId === "endStageName"){
+    endPhase = "name";
+    transitionEndStage("endStageName", function(){
+      if(endNameInput){
+        endNameInput.focus();
+        endNameInput.select();
+      }
+    });
+    return;
+  }
+  if(stageId === "endStagePlacement"){
+    endPhase = "placement";
+    transitionEndStage("endStagePlacement", function(){
+      showEndPlacementLeaderboard(true);
+    });
+    return;
+  }
+  endManualStageBrowse = false;
+  showEndActionsPhase();
 }
 
 function transitionEndStage(stageId, onShown){
@@ -7554,6 +7805,7 @@ function resetEndSequence(){
   endPhase = "";
   endNameConfirmed = false;
   endSequenceContext = null;
+  endManualStageBrowse = false;
   setEndStageVisible("");
   if(endSequence){
     endSequence.classList.remove("reveal-sequence", "reveal-score", "reveal-stats", "reveal-name");
@@ -7752,42 +8004,14 @@ function showEndNamePhase(){
 function showEndPlacementPhase(){
   endPhase = "placement";
   transitionEndStage("endStagePlacement", function(){
-    if(endPlacementTitle){
-      endPlacementTitle.textContent = "GLOBAL LEADERBOARD";
-    }
-    if(endPlacementLine){
-      endPlacementLine.textContent = resolveEndPlacementText();
-    }
-    if(endScoresPanel){
-      endScoresPanel.classList.remove("endStatsHidden");
-    }
-    if(endSequence){
-      endSequence.classList.add("placementLeaderboardActive");
-    }
-    var lifetime = loadLifetimeStats();
-    var reveal = renderPlacementLeaderboardAllModes(lifetime);
-    if(reveal.found && reveal.currentRow){
-      if(endScoresTableWrap){
-        endScoresTableWrap.scrollTop = 0;
-      }
-      requestAnimationFrame(function(){
-        animateEndScoresScrollToRow(reveal.currentRow, endScoresTableWrap, 850, function(){
-          reveal.currentRow.classList.add("endScoreRowPop");
-          var clearPopTimer = setTimeout(function(){
-            reveal.currentRow.classList.remove("endScoreRowPop");
-          }, 700);
-          endSequenceTimers.push(clearPopTimer);
-        });
-      });
-    }else if(endScoresTableWrap){
-      endScoresTableWrap.scrollTop = 0;
-    }
+    showEndPlacementLeaderboard(true);
     scheduleEndPhaseAdvance(END_PHASE_PLACEMENT_MS);
   });
 }
 
 function showEndActionsPhase(){
   endPhase = "actions";
+  endManualStageBrowse = false;
   transitionEndStage("endStageActions", function(){
     resetEndScoresRevealState();
   });
@@ -8879,15 +9103,13 @@ function update(dt){
   if(player.blasterMode !== "single" && (!(player.blasterHitsRemaining > 0))){
     resetShotType();
   }
-  if(player.defenseMode === "armor"){
-    if(!(player.armorBlocksRemaining > 0)){
-      player.defenseMode = "none";
-      player.defenseTimer = 0;
-    }
-  }else if(player.defenseTimer > 0){
+  if(player.defenseTimer > 0){
     player.defenseTimer = Math.max(0, player.defenseTimer - dtReal);
-    if(player.defenseTimer === 0) player.defenseMode = "none";
   }
+  if(!(player.armorBlocksRemaining > 0)){
+    player.armorBlocksRemaining = 0;
+  }
+  syncPilotDefenseMode(player);
   applyEasyRegen(player, dtReal);
   if(player.magnetTimer > 0){
     player.magnetTimer = Math.max(0, player.magnetTimer - dtReal);
@@ -8937,7 +9159,6 @@ function update(dt){
     }
   }
 
-  if(keys.has(keyBindings.secondary) && !isStampedeMode()) secondaryFire();
   if(keys.has(keyBindings.special)) shockwave();
   if(state.flaresActive){
     state.flaresTimer = Math.max(0, state.flaresTimer - dtReal);
@@ -8964,7 +9185,7 @@ function update(dt){
   }
 
   state.spawnTimer -= dtSlow;
-  if(!state.alienSwarm && !missionBriefShowing && (!tutorialActive || tutorialSpawnUnlocked) && (!sandboxMode || (state.sandboxSpawnAsteroids && !state.sandboxAlienWaveActive)) && !isAlienCombatOnlyPhase()){
+  if(!state.alienSwarm && !missionBriefShowing && (!tutorialActive || tutorialSpawnUnlocked) && (!sandboxMode || (state.sandboxSpawnAsteroids && !state.sandboxAlienWaveActive)) && !isAlienCombatOnlyPhase() && !state.alienFinaleActive){
     if(state.spawnTimer <= 0){
       spawnOneFromWave();
       if(state.level >= 7 && Math.random() < 0.18) spawnDecoyOnly();
@@ -9337,6 +9558,21 @@ function update(dt){
   if(tutorialActive && tutorialStepId === "secondary_slots" && tourGuide){
     if(countActiveSecondarySlots(player) >= 3){
       tourGuide.notify("secondary_slot");
+    }
+  }
+  if(tutorialPendingCorrectNotify && tutorialActive && tourGuide && isTutorialCorrectShotStep()){
+    if(tourGuide.notify("correct")){
+      tutorialPendingCorrectNotify = false;
+    }
+  }
+  if(tutorialPendingAidNotify && tutorialActive && tourGuide){
+    var expectedAid = expectedTutorialAidEventForStep(tutorialStepId);
+    if(expectedAid && tutorialPendingAidNotify === expectedAid){
+      if(tourGuide.notify(tutorialPendingAidNotify)){
+        tutorialPendingAidNotify = "";
+      }
+    }else{
+      tutorialPendingAidNotify = "";
     }
   }
 
@@ -9970,8 +10206,8 @@ function update(dt){
         player.vx = (-dxC / distC) * player.speed * knockBackAlien;
         player.vy = (-dyC / distC) * player.speed * knockBackAlien;
         var dmgHit = 0.45;
-        if(player.defenseMode === "armor") dmgHit = dmgHit * 0.4;
-        if(player.defenseMode === "shield"){
+        if(isArmorActiveForPilot(player)) dmgHit = dmgHit * 0.4;
+        if(isShieldActiveForPilot(player)){
           impactDebris(player.x, player.y - 8);
           playSfx(state, "impact", 0.4);
           player.hitFlash = 1;
@@ -9980,7 +10216,7 @@ function update(dt){
           state.streak = 0;
           syncHud();
           showToast("SHIELD BLOCK");
-        }else if(player.defenseMode === "armor"){
+        }else if(isArmorActiveForPilot(player)){
           impactShipHit(player.x, player.y - 10);
           playSfx(state, "impact_thud", 0.45);
           player.hitFlash = 1;
@@ -10057,14 +10293,14 @@ function update(dt){
             p2.vx = (-dxC2 / distC2) * p2.speed * knockBackAlien2;
             p2.vy = (-dyC2 / distC2) * p2.speed * knockBackAlien2;
             var dmgHit2 = 0.45;
-            if(p2.defenseMode === "armor") dmgHit2 = dmgHit2 * 0.4;
-            if(p2.defenseMode === "shield"){
+            if(isArmorActiveForPilot(p2)) dmgHit2 = dmgHit2 * 0.4;
+            if(isShieldActiveForPilot(p2)){
               impactDebris(p2.x, p2.y - 8);
               playSfx(state, "impact", 0.4);
               p2.hitFlash = 1;
               p2.invuln = 0.45;
               showToast("SHIELD BLOCK");
-            }else if(p2.defenseMode === "armor"){
+            }else if(isArmorActiveForPilot(p2)){
               impactShipHit(p2.x, p2.y - 10);
               playSfx(state, "impact_thud", 0.45);
               p2.hitFlash = 1;
@@ -10127,8 +10363,8 @@ function update(dt){
         player.vx = (-dxp / distP) * player.speed * knockBackBullet;
         player.vy = (-dyp / distP) * player.speed * knockBackBullet;
         var dmgHit = 0.35;
-        if(player.defenseMode === "armor") dmgHit = dmgHit * 0.4;
-        if(player.defenseMode === "shield"){
+        if(isArmorActiveForPilot(player)) dmgHit = dmgHit * 0.4;
+        if(isShieldActiveForPilot(player)){
           impactDebris(player.x, player.y - 8);
           playSfx(state, "impact", 0.35);
           player.hitFlash = 1;
@@ -10137,7 +10373,7 @@ function update(dt){
           state.streak = 0;
           syncHud();
           showToast("SHIELD BLOCK");
-        }else if(player.defenseMode === "armor"){
+        }else if(isArmorActiveForPilot(player)){
           impactShipHit(player.x, player.y - 10);
           playSfx(state, "impact_thud", 0.45);
           player.hitFlash = 1;
@@ -10207,14 +10443,14 @@ function update(dt){
           p2b.vx = (-dxp2 / distP2) * p2b.speed * knockBackBullet2;
           p2b.vy = (-dyp2 / distP2) * p2b.speed * knockBackBullet2;
           var dmgHit2 = 0.35;
-          if(p2b.defenseMode === "armor") dmgHit2 = dmgHit2 * 0.4;
-          if(p2b.defenseMode === "shield"){
+          if(isArmorActiveForPilot(p2b)) dmgHit2 = dmgHit2 * 0.4;
+          if(isShieldActiveForPilot(p2b)){
             impactDebris(p2b.x, p2b.y - 8);
             playSfx(state, "impact", 0.35);
             p2b.hitFlash = 1;
             p2b.invuln = 0.35;
             showToast("SHIELD BLOCK");
-          }else if(p2b.defenseMode === "armor"){
+          }else if(isArmorActiveForPilot(p2b)){
             impactShipHit(p2b.x, p2b.y - 10);
             playSfx(state, "impact_thud", 0.45);
             p2b.hitFlash = 1;
@@ -11309,14 +11545,19 @@ function drawActivePickupHud(hudFade, rightX, cy, radius, w){
     if(shotCharges >= 9999) shotCharges = null;
     entries.push({ type: mode, group: "offense", charges: shotCharges });
   }
-  if(player.defenseMode && player.defenseMode !== "none"){
-    if(player.defenseMode === "armor" ? (player.armorBlocksRemaining > 0) : (player.defenseTimer > 0)){
-      entries.push({
-        type: player.defenseMode,
-        group: "defense",
-        charges: player.defenseMode === "armor" ? player.armorBlocksRemaining : null
-      });
-    }
+  if(isShieldActiveForPilot(player)){
+    entries.push({
+      type: "shield",
+      group: "defense",
+      charges: null
+    });
+  }
+  if(isArmorActiveForPilot(player)){
+    entries.push({
+      type: "armor",
+      group: "defense",
+      charges: player.armorBlocksRemaining
+    });
   }
   if(player.scopeTimer > 0){
     entries.push({
@@ -12771,13 +13012,12 @@ function findDashAsteroidCollision(sx, sy, ex, ey){
 }
 
 function consumeArmorBlock(){
-  if(player.defenseMode !== "armor") return;
+  if(!isArmorActiveForPilot(player)) return;
   player.armorBlocksRemaining = Math.max(0, (player.armorBlocksRemaining || 0) - 1);
   player.armorFlashDur = 0.14;
   player.armorFlashTimer = player.armorFlashDur;
   if(player.armorBlocksRemaining <= 0){
-    player.defenseMode = "none";
-    player.defenseTimer = 0;
+    syncPilotDefenseMode(player);
     showToast("ARMOR DEPLETED");
   }
 }
@@ -12789,13 +13029,12 @@ function clearScopeOnHit(){
 }
 
 function consumeArmorBlockForPilot(pilot){
-  if(!pilot || pilot.defenseMode !== "armor") return;
+  if(!isArmorActiveForPilot(pilot)) return;
   pilot.armorBlocksRemaining = Math.max(0, (pilot.armorBlocksRemaining || 0) - 1);
   pilot.armorFlashDur = 0.14;
   pilot.armorFlashTimer = pilot.armorFlashDur;
   if(pilot.armorBlocksRemaining <= 0){
-    pilot.defenseMode = "none";
-    pilot.defenseTimer = 0;
+    syncPilotDefenseMode(pilot);
     showToast("ARMOR DEPLETED");
   }
 }
@@ -12840,16 +13079,16 @@ function handlePilotAsteroidCollision(a, pilot, pilotId, hitX, hitY, force, noRe
     pilot.vx = (-dx / Math.max(1, dist)) * pilot.speed * knockBack;
     pilot.vy = (-dy / Math.max(1, dist)) * pilot.speed * knockBack;
     var dmgHit = (a.ghost || a.label === null) ? 0.18 : 0.30;
-    if(pilot.defenseMode === "armor") dmgHit = dmgHit * 0.4;
+    if(isArmorActiveForPilot(pilot)) dmgHit = dmgHit * 0.4;
 
-    if(pilot.defenseMode === "shield"){
+    if(isShieldActiveForPilot(pilot)){
       impactDebris(hitX, hitY - 8);
       playSfx(state, "impact", 0.35);
       pilot.hitFlash = 1;
       pilot.shipShake = Math.max(pilot.shipShake || 0, 1.0);
       pilot.invuln = 0.35;
       showToast("SHIELD BLOCK");
-    }else if(pilot.defenseMode === "armor"){
+    }else if(isArmorActiveForPilot(pilot)){
       impactShipHit(hitX, hitY - 10);
       playSfx(state, "impact_thud", 0.45);
       pilot.hitFlash = 1;
@@ -12939,9 +13178,9 @@ function handleShipAsteroidCollision(a, hitX, hitY, force, noRemove){
     player.vx = (-dx / Math.max(1, dist)) * player.speed * knockBack;
     player.vy = (-dy / Math.max(1, dist)) * player.speed * knockBack;
     var dmgHit = (a.ghost || a.label === null) ? 0.18 : 0.30;
-    if(player.defenseMode === "armor") dmgHit = dmgHit * 0.4;
+    if(isArmorActiveForPilot(player)) dmgHit = dmgHit * 0.4;
 
-    if(player.defenseMode === "shield"){
+    if(isShieldActiveForPilot(player)){
       impactDebris(hitX, hitY - 8);
       playSfx(state, "impact", 0.35);
       player.hitFlash = 1;
@@ -12950,7 +13189,7 @@ function handleShipAsteroidCollision(a, hitX, hitY, force, noRemove){
       state.streak = 0;
       syncHud();
       showToast("SHIELD BLOCK");
-    }else if(player.defenseMode === "armor"){
+    }else if(isArmorActiveForPilot(player)){
       impactShipHit(hitX, hitY - 10);
       playSfx(state, "impact_thud", 0.45);
       player.hitFlash = 1;
@@ -13247,7 +13486,7 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
   ctx.transform(1, 0, shear, 1, 0, 0);
   ctx.scale(squashX * (1 + sway) * (1 - backwardShrink * 0.4), (1 - sway * 0.6) * (1 + forwardStretch - backwardShrink));
 
-  if(player.defenseMode === "shield" && !ghost){
+  if(isShieldActiveForPilot(player) && !ghost){
     ctx.save();
     var shieldY = -28;
     var arcR = 38;
@@ -13874,69 +14113,46 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
   }
   ctx.restore();
 
-  if(player.defenseMode === "armor" && !ghost){
+  if(isArmorActiveForPilot(player) && !ghost){
     ctx.save();
     ctx.globalCompositeOperation = "source-over";
     ctx.translate(0, recoilShift * 1.15);
     if(useShipSprite){
       var armorFlashDur = Math.max(0.01, player.armorFlashDur || 0.14);
       var armorFlash = clamp((player.armorFlashTimer || 0) / armorFlashDur, 0, 1);
-      var armorPulse = 0.75 + 0.25 * Math.sin(t * 0.007);
-      var armorFlicker = 0.03 + ((Math.sin(t * 0.043) + 1) * 0.5) * 0.03;
-      var armorAlpha = clamp(baseAlpha * (0.58 + armorPulse * 0.34 + armorFlicker), 0.28, 1);
-      var armorFlashBoost = 1 + armorFlash * 0.85;
+      var armorPulse = 0.78 + 0.22 * Math.sin(t * 0.0065);
+      var armorFlicker = 0.02 + ((Math.sin(t * 0.029) + 1) * 0.5) * 0.03;
+      var armorAlpha = clamp(baseAlpha * (0.46 + armorPulse * 0.28 + armorFlicker), 0.24, 0.95);
+      var armorFlashBoost = 1 + armorFlash * 0.8;
 
-      // Crisp inner edge contour.
+      // Performance-safe armor: no per-frame drop-shadow filters.
       ctx.save();
-      ctx.globalAlpha = Math.min(1, armorAlpha * armorFlashBoost);
-      ctx.filter = "drop-shadow(0 0 2px rgba(230,245,255,.95)) drop-shadow(0 0 7px rgba(230,245,255,.78))";
-      drawShipSpriteSilhouette(1.005);
-      ctx.restore();
-
-      // Cyan outer bloom pass.
-      ctx.save();
-      ctx.globalAlpha = Math.min(1, armorAlpha * 0.88 * armorFlashBoost);
-      ctx.filter = "drop-shadow(0 0 10px rgba(110,220,255,.85)) drop-shadow(0 0 24px rgba(110,220,255,.62))";
+      ctx.globalCompositeOperation = "lighter";
+      ctx.globalAlpha = Math.min(1, armorAlpha * 0.6 * armorFlashBoost);
+      ctx.shadowColor = "rgba(110,220,255,.9)";
+      ctx.shadowBlur = 18 + armorFlash * 10;
       drawShipSpriteSilhouette(1.01);
       ctx.restore();
 
-      // Steel-toned secondary pass (skip when almost invisible).
-      if(baseAlpha > 0.3 || armorFlash > 0){
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, armorAlpha * 0.85 * armorFlashBoost);
+      ctx.shadowColor = "rgba(230,245,255,.95)";
+      ctx.shadowBlur = 7 + armorFlash * 4;
+      drawShipSpriteSilhouette(1.004);
+      ctx.restore();
+
+      if(armorFlash > 0){
         ctx.save();
-        ctx.globalAlpha = Math.min(1, armorAlpha * 0.66 * armorFlashBoost);
-        ctx.filter = "drop-shadow(0 0 5px rgba(170,200,220,.5)) drop-shadow(0 0 14px rgba(170,200,220,.38))";
-        drawShipSpriteSilhouette(1.016);
+        ctx.globalCompositeOperation = "lighter";
+        ctx.globalAlpha = Math.min(1, armorAlpha * 0.55 * armorFlash);
+        ctx.shadowColor = "rgba(255,255,255,.96)";
+        ctx.shadowBlur = 16;
+        drawShipSpriteSilhouette(1.014);
         ctx.restore();
       }
-
-      // Plating tracers + directional sweep (composite-safe, no source-in masking).
-      ctx.save();
-      ctx.globalCompositeOperation = "lighter";
-      ctx.globalAlpha = Math.min(1, armorAlpha * 0.58 * armorFlashBoost);
-
-      // 2.5s cycle with 1.2s idle pause before restarting from the left.
-      var sweepPhase = (t * 0.0004) % 1;
-      var sweepActiveWindow = 0.52;
-      if(sweepPhase <= sweepActiveWindow){
-        var sweepProgress = sweepPhase / sweepActiveWindow;
-        var sweepX = -36 + sweepProgress * 72;
-        var sweepGrad = ctx.createLinearGradient(sweepX - 14, -26, sweepX + 14, 16);
-        sweepGrad.addColorStop(0, "rgba(255,255,255,0)");
-        sweepGrad.addColorStop(0.4, "rgba(190,230,255,.14)");
-        sweepGrad.addColorStop(0.5, "rgba(235,248,255,.68)");
-        sweepGrad.addColorStop(0.6, "rgba(190,230,255,.14)");
-        sweepGrad.addColorStop(1, "rgba(255,255,255,0)");
-        ctx.strokeStyle = sweepGrad;
-        ctx.lineWidth = 9 + armorFlash * 1.6;
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(sweepX - 7, -24);
-        ctx.lineTo(sweepX + 9, 12);
-        ctx.stroke();
-      }
-      ctx.restore();
       ctx.globalCompositeOperation = "source-over";
-      ctx.filter = "none";
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = "rgba(0,0,0,0)";
     }else{
       var drawArmorStroke = function(){
         var drawPoly = function(points){
@@ -13965,7 +14181,7 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
       ctx.save();
       ctx.globalAlpha = Math.min(1, baseAlpha * 1.3);
       ctx.shadowColor = "rgba(245,255,255,1)";
-      ctx.shadowBlur = 160;
+      ctx.shadowBlur = 52;
       ctx.strokeStyle = "rgba(245,255,255,1)";
       ctx.lineWidth = 18;
       drawArmorStroke();
@@ -14682,6 +14898,18 @@ if(btnEndHome){
     window.location.href = "home.html";
   });
 }
+if(endStageJumpButtons && endStageJumpButtons.length){
+  for(var endJumpIdx=0; endJumpIdx<endStageJumpButtons.length; endJumpIdx++){
+    (function(btn){
+      btn.addEventListener("click", function(){
+        var stageId = btn.getAttribute("data-end-stage");
+        if(!stageId) return;
+        playSfx(state, "menu_beep");
+        jumpEndStage(stageId);
+      });
+    })(endStageJumpButtons[endJumpIdx]);
+  }
+}
 
 overlayMenu.addEventListener("click", function(e){
   if(e.target === overlayMenu){
@@ -14999,12 +15227,34 @@ function applyQueryParams(){
     state.campaignIndex = campaignIndex;
     var data = loadCampaignData();
     if(data && data.maxFailures) campaignMaxFailures = data.maxFailures;
+    var parsedAlienKey = normalizeCampaignAlienKey(params.get("campaignAlienKey"));
+    var parsedBossLabel = String(params.get("campaignBossLabel") || "").trim();
+    var missionInfo = null;
+    if(data && data.missions && data.missions[campaignIndex]){
+      missionInfo = data.missions[campaignIndex];
+    }
+    if(!parsedAlienKey){
+      var missionId = missionInfo && missionInfo.id ? missionInfo.id : String(campaignIndex);
+      parsedAlienKey = deriveCampaignAlienKeyForMission(campaignId, missionId, campaignIndex);
+    }
+    if(parsedBossLabel){
+      campaignBossLabel = parsedBossLabel;
+    }else{
+      campaignBossLabel = toCampaignBossLabel(parsedAlienKey);
+    }
+    campaignAlienKey = parsedAlienKey;
   }else{
     campaignActive = false;
     campaignIndex = -1;
     state.campaignActive = false;
     state.campaignIndex = -1;
+    campaignAlienKey = "";
+    campaignBossLabel = "";
   }
+  state.campaignAlienKey = campaignAlienKey;
+  state.campaignBossLabel = campaignBossLabel;
+  state.campaignAlienIdentityActive = !!(campaignActive && campaignAlienKey && isSessionConfigNonEndless(cfg.targetMode, cfg.timerMode));
+  setAlienSessionSpriteKey(state.campaignAlienIdentityActive ? campaignAlienKey : "");
 }
 
 function syncSandboxAlienWaveButton(){
@@ -15605,6 +15855,8 @@ function boot(){
       tutorialFreezeDimAlpha = 0;
       tutorialFreezeDimTarget = 0;
       tutorialSecondChanceBusy = false;
+      tutorialPendingCorrectNotify = false;
+      tutorialPendingAidNotify = "";
       tutorialMineralsTarget = 0;
       tutorialMineralsCollected = 0;
       tutorialMineralsComplete = false;
@@ -15633,6 +15885,12 @@ function boot(){
         player: player,
         onStep: function(stepId){
           tutorialStepId = stepId;
+          if(stepId !== "correct" && stepId !== "correct_after_magnet" && stepId !== "ability_shot"){
+            tutorialPendingCorrectNotify = false;
+          }
+          if(expectedTutorialAidEventForStep(stepId) !== tutorialPendingAidNotify){
+            tutorialPendingAidNotify = "";
+          }
           if(stepId === "platform_choice"){
             tutorialPlatform = "desktop";
             tutorialMovementPreference = null;
@@ -15735,7 +15993,7 @@ function boot(){
             selectTutorialSecondary("time");
             if(!tutorialPowerupBatchSpawned){
               tutorialPowerupBatchSpawned = true;
-              setupTutorialPowerupField({ decoys: 6, answerY: view.hudH + 132, answerX: view.w * 0.62 });
+              setupTutorialPowerupField({ decoys: 6, answerX: view.w * 0.62, spawnFromTop: true, answerYTop: -170 });
             }
           }
           if(stepId === "secondary_emp"){
@@ -15751,7 +16009,7 @@ function boot(){
             tutorialSpawnUnlocked = false;
             state.spawnTimer = Math.max(state.spawnTimer || 0, 1.1);
             if(!state.correctInPlay){
-              setupTutorialPowerupField({ decoys: 2, answerY: view.hudH + 142 });
+              setupTutorialPowerupField({ decoys: 2, spawnFromTop: true, answerYTop: -160 });
             }
           }
           if(stepId === "ability_intro"){
@@ -15759,13 +16017,13 @@ function boot(){
           }
           if(stepId === "ability_clear"){
             tutorialShootLocked = false;
-            setupTutorialPowerupField({ blocker: true, decoys: 3, answerY: view.hudH + 118, answerX: view.w * 0.52 });
+            setupTutorialPowerupField({ blocker: true, decoys: 3, answerX: view.w * 0.52, spawnFromTop: true, answerYTop: -168 });
           }
           if(stepId === "ability_shot"){
             tutorialSpawnUnlocked = false;
             state.spawnTimer = Math.max(state.spawnTimer || 0, 1.0);
             if(!state.correctInPlay){
-              setupTutorialPowerupField({ decoys: 2, answerY: view.hudH + 128, answerX: view.w * 0.56 });
+              setupTutorialPowerupField({ decoys: 2, answerX: view.w * 0.56, spawnFromTop: true, answerYTop: -160 });
             }
           }
           if(stepId === "alien" && !tutorialAlienSpawned){
@@ -15833,6 +16091,8 @@ function boot(){
           tutorialFreezeDimAlpha = 0;
       tutorialPowerupBatchSpawned = false;
       tutorialSecondChanceBusy = false;
+      tutorialPendingCorrectNotify = false;
+      tutorialPendingAidNotify = "";
       tutorialFreezeMousepadRestore = false;
           setTutorialQuestionHidden(false);
           try{
@@ -15870,6 +16130,8 @@ function boot(){
       tutorialFreezeDimTarget = 0;
       tutorialFreezeDimAlpha = 0;
       tutorialPowerupBatchSpawned = false;
+      tutorialPendingCorrectNotify = false;
+      tutorialPendingAidNotify = "";
       alienConfig.enabled = true;
       setTutorialQuestionHidden(false);
     }

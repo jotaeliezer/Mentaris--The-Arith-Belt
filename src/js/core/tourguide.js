@@ -9,7 +9,7 @@ export function createTourGuide(options){
   var onConfirm = typeof opts.onConfirm === "function" ? opts.onConfirm : null;
   var onChoice = typeof opts.onChoice === "function" ? opts.onChoice : null;
   var steps = [
-    { id: "intro", title: "Welcome aboard, pilot", body: "Welcome to the Arith Belt. Let's begin your training.", autoAdvanceMs: 2000, showProgress: false },
+    { id: "intro", title: "Welcome aboard, pilot", body: "Welcome to the Arith Belt. Let's begin your training.", showProgress: false, startSfx: "sfx/commander_solver/training/t_start.mp3", muteTypeAudio: true, confirmLabel: "Sir, Yes Sir" },
     { id: "platform_choice", title: "Step 1: Platform", body: "Are you flying on a tablet or a computer/laptop?", choices: [{ id: "tablet", label: "Tablet" }, { id: "desktop", label: "Computer / Laptop" }] },
     { id: "move_arrows", title: "Step 2: Flight Controls (Arrows)", body: "Use the Up, Down, Left, and Right arrow keys to guide the ship through dots 1-4 in order.", event: "move_arrows", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Formation clean, cadet.", praiseBody: "Arrow control confirmed. Smooth tracking." },
     { id: "move_wasd", title: "Step 3: Flight Controls (WASD)", body: "Now use W, A, S, and D to guide the ship through the same dots again.", event: "move_wasd", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "WASD verified.", praiseBody: "Sharp handling. You fly like you mean it." },
@@ -68,6 +68,9 @@ export function createTourGuide(options){
   var hideTimer = null;
   var typeTimers = [];
   var typeAudio = null;
+  var oneShotAudio = null;
+  var stepSfxCache = {};
+  var stepStartSfxPlayed = false;
   var currentStep = null;
   var stepRevealAt = 0;
   var minStepMs = 2000;
@@ -79,7 +82,7 @@ export function createTourGuide(options){
     if(document.getElementById("tourGuideStyles")) return;
     var style = document.createElement("style");
     style.id = "tourGuideStyles";
-    style.textContent = "#tourGuide{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:0 18px 28px;pointer-events:none;z-index:20;opacity:0;transition:opacity .4s ease;font-family:\"Oxanium\",sans-serif;}#tourGuide.show{opacity:1;}#tourGuide .tourGuide-wrap{display:flex;align-items:flex-end;gap:18px;}#tourGuide .tourGuide-avatarWrap{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:220px;}#tourGuide .tourGuide-avatar{width:230px;height:230px;object-fit:contain;filter:drop-shadow(0 12px 26px rgba(0,0,0,.45));}#tourGuide .tourGuide-avatarName{font-size:13px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.85);}#tourGuide .tourGuide-card{pointer-events:auto;background:rgba(8,12,24,.88);border:1px solid rgba(0,229,255,.35);border-radius:18px;padding:18px 20px;max-width:520px;width:min(520px,92%);box-shadow:0 18px 48px rgba(0,0,0,.5);font-family:\"Oxanium\",sans-serif;opacity:0;transform:translateY(12px);transition:opacity .45s ease, transform .45s ease;}#tourGuide.show .tourGuide-card{opacity:1;transform:translateY(0);}#tourGuide .tourGuide-card.is-fading{opacity:0;transform:translateY(8px);}#tourGuide .tourGuide-title{font-size:16px;letter-spacing:1.4px;text-transform:uppercase;color:#e8ecff;margin:0 0 8px;min-height:18px;}#tourGuide .tourGuide-body{font-size:15px;color:rgba(232,236,255,.82);line-height:1.6;margin:0 0 10px;min-height:32px;}#tourGuide .tourGuide-progress{font-size:13px;letter-spacing:1px;text-transform:uppercase;color:rgba(232,236,255,.6);}#tourGuide .tourGuide-choices{display:none;gap:8px;flex-wrap:wrap;margin:10px 0 6px;}#tourGuide .tourGuide-choice{background:rgba(0,229,255,.14);border:1px solid rgba(0,229,255,.35);color:#d9f9ff;border-radius:12px;padding:6px 10px;font-size:12px;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;font-family:\"Oxanium\",sans-serif;}#tourGuide .tourGuide-choice:hover{background:rgba(0,229,255,.2);}#tourGuide .tourGuide-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;}#tourGuide .tourGuide-confirm{background:rgba(80,220,120,.2);border:1px solid rgba(80,220,120,.45);color:#d8ffe7;border-radius:12px;padding:6px 12px;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:\"Oxanium\",sans-serif;display:none;}#tourGuide .tourGuide-skip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);color:#e8ecff;border-radius:12px;padding:6px 10px;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:\"Oxanium\",sans-serif;}";
+    style.textContent = "#tourGuide{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:0 18px 28px;pointer-events:none;z-index:20;opacity:0;transition:opacity .4s ease;font-family:\"Oxanium\",sans-serif;}#tourGuide.show{opacity:1;}#tourGuide .tourGuide-wrap{display:flex;align-items:flex-end;gap:18px;}#tourGuide .tourGuide-avatarWrap{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:220px;}#tourGuide .tourGuide-avatar{width:230px;height:230px;object-fit:contain;filter:drop-shadow(0 12px 26px rgba(0,0,0,.45));}#tourGuide .tourGuide-avatarName{font-size:13px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.85);}#tourGuide .tourGuide-card{pointer-events:auto;background:rgba(8,12,24,.88);border:1px solid rgba(0,229,255,.35);border-radius:18px;padding:18px 20px;width:520px;max-width:min(520px,92vw);box-shadow:0 18px 48px rgba(0,0,0,.5);font-family:\"Oxanium\",sans-serif;opacity:0;transform:translateY(12px);transition:opacity .45s ease, transform .45s ease;}#tourGuide.show .tourGuide-card{opacity:1;transform:translateY(0);}#tourGuide .tourGuide-card.is-fading{opacity:0;transform:translateY(8px);}#tourGuide .tourGuide-title{font-size:16px;letter-spacing:1.4px;text-transform:uppercase;color:#e8ecff;margin:0 0 8px;min-height:18px;}#tourGuide .tourGuide-body{font-size:15px;color:rgba(232,236,255,.82);line-height:1.6;margin:0 0 10px;min-height:32px;}#tourGuide .tourGuide-progress{font-size:13px;letter-spacing:1px;text-transform:uppercase;color:rgba(232,236,255,.6);}#tourGuide .tourGuide-choices{display:none;gap:8px;flex-wrap:wrap;margin:10px 0 6px;}#tourGuide .tourGuide-choice{background:rgba(0,229,255,.14);border:1px solid rgba(0,229,255,.35);color:#d9f9ff;border-radius:12px;padding:6px 10px;font-size:12px;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;font-family:\"Oxanium\",sans-serif;}#tourGuide .tourGuide-choice:hover{background:rgba(0,229,255,.2);}#tourGuide .tourGuide-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;}#tourGuide .tourGuide-confirm{background:rgba(42,176,92,.34);border:1px solid rgba(90,240,150,.65);color:#e8ffef;border-radius:12px;padding:6px 12px;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:\"Oxanium\",sans-serif;display:none;}#tourGuide .tourGuide-skip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);color:#e8ecff;border-radius:12px;padding:6px 10px;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:\"Oxanium\",sans-serif;}";
     document.head.appendChild(style);
   }
 
@@ -112,6 +115,10 @@ export function createTourGuide(options){
         if(!currentStep || !active) return;
         if(onConfirm) onConfirm(currentStep.id, currentStep);
         confirmBtn.style.display = "none";
+        if(!currentStep.event && !(Array.isArray(currentStep.choices) && currentStep.choices.length)){
+          handleStepCompletion(currentStep);
+          return;
+        }
         if(!currentStep.autoAdvanceMs){
           stepAccepting = true;
         }
@@ -156,6 +163,7 @@ export function createTourGuide(options){
   }
 
   function startTypeAudio(){
+    if(currentStep && currentStep.muteTypeAudio) return;
     try{
       if(!typeAudio){
         typeAudio = new Audio("sfx/ui/tutorial_messages.mp3");
@@ -174,6 +182,27 @@ export function createTourGuide(options){
     }catch(e){}
   }
 
+  function playStepSfx(src){
+    if(!src) return;
+    try{
+      var cached = stepSfxCache[src];
+      if(!cached){
+        cached = new Audio(src);
+        cached.preload = "auto";
+        try{ cached.load(); }catch(e){}
+        stepSfxCache[src] = cached;
+      }
+      if(oneShotAudio){
+        oneShotAudio.pause();
+        oneShotAudio.currentTime = 0;
+      }
+      oneShotAudio = cached;
+      oneShotAudio.volume = 0.48;
+      oneShotAudio.currentTime = 0;
+      oneShotAudio.play().catch(function(){});
+    }catch(e){}
+  }
+
   function typeText(el, text, speed, done){
     if(!el){
       if(done) done();
@@ -186,7 +215,23 @@ export function createTourGuide(options){
       if(done) done();
       return;
     }
+    if(currentStep && currentStep.startSfx && !stepStartSfxPlayed){
+      playStepSfx(currentStep.startSfx);
+      stepStartSfxPlayed = true;
+    }
     startTypeAudio();
+    i = 1;
+    el.textContent = text.slice(0, i);
+    var firstChar = text.charAt(0);
+    if(firstChar && firstChar.trim().length > 0){
+      setCommanderTalking(true);
+    }
+    if(i >= text.length){
+      stopTypeAudio();
+      setCommanderTalking(false);
+      if(done) done();
+      return;
+    }
     var timer = setInterval(function(){
       i += 1;
       el.textContent = text.slice(0, i);
@@ -278,9 +323,9 @@ export function createTourGuide(options){
       clearTimeout(advanceTimer);
       advanceTimer = null;
     }
-    clearTypeTimers();
-    if(transitionTimer) clearTimeout(transitionTimer);
-    showOverlay();
+      clearTypeTimers();
+      if(transitionTimer) clearTimeout(transitionTimer);
+      showOverlay();
     if(cardEl && !immediate){
       cardEl.classList.add("is-fading");
     }
@@ -317,6 +362,11 @@ export function createTourGuide(options){
         }
       }
       stepRevealAt = Date.now();
+      stepStartSfxPlayed = false;
+      if(step.startSfx && !stepStartSfxPlayed){
+        playStepSfx(step.startSfx);
+        stepStartSfxPlayed = true;
+      }
       if(progressEl){
         if(hideProgress || step.showProgress === false){
           progressEl.textContent = "";
@@ -394,6 +444,19 @@ export function createTourGuide(options){
     interjectIndex = 0;
     interjectOnDone = null;
     if(skipBtn) skipBtn.style.display = "inline-flex";
+    for(var pi=0; pi<steps.length; pi++){
+      if(steps[pi] && steps[pi].startSfx){
+        try{
+          var src = steps[pi].startSfx;
+          if(!stepSfxCache[src]){
+            var preloadAudio = new Audio(src);
+            preloadAudio.preload = "auto";
+            try{ preloadAudio.load(); }catch(e){}
+            stepSfxCache[src] = preloadAudio;
+          }
+        }catch(e){}
+      }
+    }
     requestAnimationFrame(function(){
       if(!overlay) return;
       overlay.classList.add("show");
@@ -404,6 +467,12 @@ export function createTourGuide(options){
   function stop(){
     active = false;
     clearTypeTimers();
+    if(oneShotAudio){
+      try{
+        oneShotAudio.pause();
+        oneShotAudio.currentTime = 0;
+      }catch(e){}
+    }
     if(advanceTimer) clearTimeout(advanceTimer);
     if(transitionTimer) clearTimeout(transitionTimer);
     if(overlay){

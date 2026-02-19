@@ -415,6 +415,21 @@
       object-fit: contain;
       box-shadow: inset 0 0 24px rgba(0,0,0,.35);
     }
+    .briefingShotWrap{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:8px;
+      min-width:120px;
+    }
+    .briefingShotLabel{
+      font-size:10px;
+      letter-spacing:1.6px;
+      text-transform:uppercase;
+      color:rgba(232,236,255,.7);
+      text-align:center;
+      min-height:12px;
+    }
     .briefingShipCard{
       width:120px;
       height:120px;
@@ -2712,7 +2727,10 @@
             <div class="briefingBeltLabel" id="briefingBelt">â€”</div>
             <img class="briefingBeltCard" id="briefingBeltCard" src="images/backgrounds/background8.png" alt="" />
           </div>
-          <img class="briefingShotCard" id="briefingShotCard" src="images/bullets/bullet_single.png" alt="" />
+          <div class="briefingShotWrap">
+            <div class="briefingShotLabel" id="briefingShotLabel">â€”</div>
+            <img class="briefingShotCard" id="briefingShotCard" src="images/bullets/bullet_single.png" alt="" />
+          </div>
         </div>
       </div>
       <div class="briefingGrid">
@@ -5431,6 +5449,7 @@
     var briefingOperation = document.getElementById("briefingOperation");
     var briefingSubmode = document.getElementById("briefingSubmode");
     var briefingShotType = document.getElementById("briefingShotType");
+    var briefingShotLabel = document.getElementById("briefingShotLabel");
     var briefingBelt = document.getElementById("briefingBelt");
     var briefingBeltCard = document.getElementById("briefingBeltCard");
     var briefingShotCard = document.getElementById("briefingShotCard");
@@ -6205,6 +6224,52 @@
       return "Endless";
     }
 
+    var campaignAlienKeys = ["et", "brain", "golem", "galaga", "eye", "saucer", "robot", "spider"];
+
+    function normalizeCampaignAlienKey(key){
+      if(key == null) return "";
+      return String(key).trim().toLowerCase();
+    }
+
+    function hashCampaignAlienSeed(seed){
+      var str = String(seed || "");
+      var hash = 0;
+      for(var i=0; i<str.length; i++){
+        hash = ((hash * 31) + str.charCodeAt(i)) >>> 0;
+      }
+      return hash >>> 0;
+    }
+
+    function isCampaignMissionNonEndless(config){
+      var cfg = config || {};
+      var target = String(cfg.targetMode || "off");
+      var timer = String(cfg.timerMode || "off");
+      return target !== "off" || timer !== "off";
+    }
+
+    function toBossLabelFromAlienKey(key){
+      var normalized = normalizeCampaignAlienKey(key);
+      if(!normalized) return "";
+      return "THE " + normalized.toUpperCase();
+    }
+
+    function getCampaignMissionAlienKey(campaignId, mission, index){
+      var missionId = mission && mission.id ? mission.id : String(index || 0);
+      var seed = String(campaignId || getActiveCampaignId() || campaignDefaultId) + ":" + missionId;
+      var idx = hashCampaignAlienSeed(seed) % campaignAlienKeys.length;
+      return campaignAlienKeys[idx];
+    }
+
+    function getCampaignMissionBossLabel(campaignId, mission, index){
+      return toBossLabelFromAlienKey(getCampaignMissionAlienKey(campaignId, mission, index));
+    }
+
+    function getCampaignMissionDisplayTitle(campaignId, mission, index){
+      if(!mission) return "";
+      if(!isCampaignMissionNonEndless(mission.config)) return mission.title;
+      return mission.title + " — " + getCampaignMissionBossLabel(campaignId, mission, index);
+    }
+
     function getActiveCampaignMissions(){
       var campaign = getActiveCampaign();
       return (campaign && campaign.missions) ? campaign.missions : [];
@@ -6325,7 +6390,7 @@
         subLabel = isAdd ? (sub + "x" + sub) : ("1x" + sub);
       }
       var detailsHtml = ""
-        + "<div><b>Mission:</b> " + m.title + "</div>"
+        + "<div><b>Mission:</b> " + getCampaignMissionDisplayTitle(getActiveCampaignId(), m, index) + "</div>"
         + "<div><b>Operation:</b> " + (isRational ? "Rationals" : (isSquare ? "Squares" : (isAdd ? "Addition" : "Multiplication"))) + "</div>"
         + "<div><b>Mode:</b> " + (modeMap[modeLabel] || modeLabel.toUpperCase()) + "</div>"
         + "<div><b>Submode:</b> " + subLabel + "</div>"
@@ -6352,9 +6417,10 @@
         var isCurrent = i === (state.index || 0);
         var status = isDone ? "COMPLETED" : (isCurrent ? "CURRENT" : "LOCKED");
         var win = describeWin(m.config);
+        var displayTitle = getCampaignMissionDisplayTitle(getActiveCampaignId(), m, i);
         li.className = "campaignListItem" + (isDone ? " completed" : "") + (isCurrent ? " current" : "");
         li.setAttribute("data-index", String(i));
-        li.innerHTML = "<span>" + (i + 1) + ". " + m.title + " - " + win + "</span>"
+        li.innerHTML = "<span>" + (i + 1) + ". " + displayTitle + " - " + win + "</span>"
           + "<span class=\"campaignStatus\">" + (isDone ? "\u2713" : "") + " " + status + "</span>";
         li.addEventListener("click", function(){
           var idx = parseInt(this.getAttribute("data-index"), 10);
@@ -6534,6 +6600,9 @@
         var shotKey = String(config.shotType || "single");
         var shotLabel = shotTypeLabels[shotKey] || shotKey;
         briefingShotType.textContent = "Shot Type: " + shotLabel.toUpperCase();
+        if(briefingShotLabel){
+          briefingShotLabel.textContent = shotLabel.toUpperCase();
+        }
         if(briefingShotCard){
           briefingShotCard.src = shotTypeImages[shotKey] || shotTypeImages.single;
         }
@@ -6703,6 +6772,14 @@
         state.failed = false;
         state.index = pendingCampaign.index;
         saveCampaignState(state, activeId, profileId);
+        var missionList = getCampaignSet(activeId).missions || [];
+        var mission = missionList[pendingCampaign.index] || null;
+        if(mission && isCampaignMissionNonEndless(mission.config)){
+          var alienKey = getCampaignMissionAlienKey(activeId, mission, pendingCampaign.index);
+          var bossLabel = getCampaignMissionBossLabel(activeId, mission, pendingCampaign.index);
+          params.set("campaignAlienKey", alienKey);
+          params.set("campaignBossLabel", bossLabel);
+        }
         params.set("campaign", "1");
         params.set("campaignIndex", String(pendingCampaign.index));
         params.set("campaignId", activeId);
