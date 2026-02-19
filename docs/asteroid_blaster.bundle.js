@@ -142697,8 +142697,7 @@
   }
   function isSessionConfigNonEndless(targetMode, timerMode) {
     var target = String(targetMode || "off");
-    var timer = String(timerMode || "off");
-    return target !== "off" || timer !== "off";
+    return target.charAt(0) === "q";
   }
   function toCampaignBossLabel(key) {
     var normalized = normalizeCampaignAlienKey(key);
@@ -144375,6 +144374,10 @@
     }
   });
   function updateCursorVisibility() {
+    if (tutorialActive && tutorialStepId === "intro") {
+      document.body.style.cursor = "";
+      return;
+    }
     if (tutorialActive && tutorialStepId === "platform_choice" && !tutorialPlatformChoiceResolved) {
       document.body.style.cursor = "";
       return;
@@ -145899,7 +145902,6 @@
       speed: 70,
       fireMode: "boss",
       x: view.w * 0.5,
-      y: view.hudH + 80,
       spriteKey: state.campaignAlienIdentityActive ? state.campaignAlienKey : ""
     });
     state.alienBossUid = boss ? boss.uid : 0;

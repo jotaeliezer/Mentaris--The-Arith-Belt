@@ -986,7 +986,13 @@
       100%{ transform: scale(1); opacity:1; }
     }
 
-    #campaignOverlay .card,
+    #campaignOverlay .card{
+      width:min(1340px, 98vw);
+      max-width:none;
+      transform: scale(1.04);
+      transform-origin: top center;
+    }
+
     #campaignConfirmOverlay .card,
     #campaignEraseOverlay .card{
       transform: scale(1.06);
@@ -6243,8 +6249,7 @@
     function isCampaignMissionNonEndless(config){
       var cfg = config || {};
       var target = String(cfg.targetMode || "off");
-      var timer = String(cfg.timerMode || "off");
-      return target !== "off" || timer !== "off";
+      return target.charAt(0) === "q";
     }
 
     function toBossLabelFromAlienKey(key){
