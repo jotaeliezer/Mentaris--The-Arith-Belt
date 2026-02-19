@@ -139383,6 +139383,10 @@
       campaignAlienKey: "",
       campaignBossLabel: "",
       campaignAlienIdentityActive: false,
+      sessionAlienKey: "",
+      sessionBossLabel: "",
+      sessionAlienIdentityActive: false,
+      alienBossRetreatMode: false,
       redemptionEnabled: false,
       redemptionUsed: false,
       timerWarningPlayed: false,
@@ -139958,7 +139962,7 @@
     var onConfirm = typeof opts.onConfirm === "function" ? opts.onConfirm : null;
     var onChoice = typeof opts.onChoice === "function" ? opts.onChoice : null;
     var steps = [
-      { id: "intro", title: "Welcome aboard, pilot", body: "Welcome to the Arith Belt. Let's begin your training.", showProgress: false, startSfx: "sfx/commander_solver/training/t_start.mp3", muteTypeAudio: true, confirmLabel: "Sir, Yes Sir" },
+      { id: "intro", title: "Welcome aboard, pilot", body: "Welcome to the Arith Belt. Let's start your training.", showProgress: false, startSfx: "sfx/commander_solver/training/t_start.mp3", muteTypeAudio: true, confirmLabel: "Sir, Yes Sir" },
       { id: "platform_choice", title: "Step 1: Platform", body: "Are you flying on a tablet or a computer/laptop?", choices: [{ id: "tablet", label: "Tablet" }, { id: "desktop", label: "Computer / Laptop" }] },
       { id: "move_arrows", title: "Step 2: Flight Controls (Arrows)", body: "Use the Up, Down, Left, and Right arrow keys to guide the ship through dots 1-4 in order.", event: "move_arrows", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Formation clean, cadet.", praiseBody: "Arrow control confirmed. Smooth tracking." },
       { id: "move_wasd", title: "Step 3: Flight Controls (WASD)", body: "Now use W, A, S, and D to guide the ship through the same dots again.", event: "move_wasd", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "WASD verified.", praiseBody: "Sharp handling. You fly like you mean it." },
@@ -139967,18 +139971,19 @@
       { id: "tablet_move", title: "Step 2: Touch Movement", body: "Tablet mode engaged. Use the left movement stick to guide the ship through dots 1-4 in order.", event: "move_touch", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Touch control verified.", praiseBody: "Nice glide, cadet." },
       { id: "fire_once", title: "Step 6: Fire Once", body: "Press Space (or click) to fire a single shot.", event: "fire", count: 1 },
       { id: "fire_again", title: "Step 7: Fire Again", body: "Press Space again to fire another shot.", event: "fire", count: 1 },
-      { id: "correct", title: "Step 8: Correct Hit", body: "Hit the asteroid with the correct answer.", event: "correct" },
-      { id: "minerals", title: "Step 9: Minerals", body: "Collect all minerals. Your mineral count is at the top right.", event: "minerals", confirmLabel: "Understood" },
-      { id: "powerup", title: "Step 10: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
-      { id: "secondary_slots", title: "Step 11: Aid Slots", body: "Collect EMP and Magnet so all 3 aid slots are loaded.", event: "secondary_slot", count: 1 },
-      { id: "secondary_time", title: "Step 12: Time Dilation", body: "Use Time Dilation first. Press E to slow everything down.", event: "secondary_time" },
-      { id: "secondary_emp", title: "Step 13: EMP Burst", body: "Now use EMP. Press E to clear out non-answer asteroids.", event: "secondary_emp" },
-      { id: "secondary_magnet", title: "Step 14: Magnet Sweep", body: "Next use Magnet. Press E to pull the answer asteroid closer.", event: "secondary_magnet" },
-      { id: "correct_after_magnet", title: "Step 15: Correct Hit", body: "Good. Now shoot the answer asteroid.", event: "correct" },
-      { id: "ability_intro", title: "Step 16: Ship Ability", body: "Each ship has a different special ability. We'll use your side flares to clear a blocked lane.", autoAdvanceMs: 2600 },
-      { id: "ability_clear", title: "Step 17: Clear the Lane", body: "A decoy is blocking your line. Press Q to blast asteroids out of the way with flares.", event: "ability" },
-      { id: "ability_shot", title: "Step 18: Finish the Shot", body: "Lane is open. Shoot the correct answer asteroid.", event: "correct" },
-      { id: "alien", title: "Step 19: Alien Contact", body: "Alien contacts incoming, cadet. They are out to cut you off and disrupt mineral recovery. Take it down.", event: "alien" },
+      { id: "dash_step", title: "Step 8: Dash Marker", body: "Use DASH (Shift or the dash button) and pass through the marker.", event: "dash_marker" },
+      { id: "correct", title: "Step 9: Correct Hit", body: "Hit the asteroid with the correct answer.", event: "correct" },
+      { id: "minerals", title: "Step 10: Minerals", body: "Collect all minerals. Your mineral count is at the top right.", event: "minerals", confirmLabel: "Understood" },
+      { id: "powerup", title: "Step 11: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
+      { id: "secondary_slots", title: "Step 12: Aid Slots", body: "Collect EMP and Magnet so all 3 aid slots are loaded.", event: "secondary_slot", count: 1 },
+      { id: "secondary_time", title: "Step 13: Time Dilation", body: "Use Time Dilation first. Press E to slow everything down.", event: "secondary_time" },
+      { id: "secondary_emp", title: "Step 14: EMP Burst", body: "Now use EMP. Press E to clear out non-answer asteroids.", event: "secondary_emp" },
+      { id: "secondary_magnet", title: "Step 15: Magnet Sweep", body: "Next use Magnet. Press E to pull the answer asteroid closer.", event: "secondary_magnet" },
+      { id: "correct_after_magnet", title: "Step 16: Correct Hit", body: "Good. Now shoot the answer asteroid.", event: "correct" },
+      { id: "ability_intro", title: "Step 17: Ship Ability", body: "Each ship has a different special ability. We'll use your side flares to clear a blocked lane.", autoAdvanceMs: 2600 },
+      { id: "ability_clear", title: "Step 18: Clear the Lane", body: "A decoy is blocking your line. Press Q to blast asteroids out of the way with flares.", event: "ability" },
+      { id: "ability_shot", title: "Step 19: Finish the Shot", body: "Lane is open. Shoot the correct answer asteroid.", event: "correct" },
+      { id: "alien", title: "Step 20: Alien Contact", body: "Alien contacts incoming, cadet. They are out to cut you off and disrupt mineral recovery. Take it down.", event: "alien" },
       { id: "portal", title: "Final Step: Portal", body: "Cadet, fly up into the portal. Mission starts on contact.", event: "portal" }
     ];
     var progressTotal = 0;
@@ -141644,6 +141649,21 @@
       var a = aliens[i];
       a.t += dt;
       a.life += dt;
+      if (a.retreating) {
+        a.fireCooldown = 99;
+        a.vx = (a.retreatDrift || 0) + Math.sin((a.t || 0) * 2.2 + a.uid) * 12;
+        a.vy = -Math.max(52, a.retreatSpeed || 82);
+        a.x += a.vx * dt;
+        a.y += a.vy * dt;
+        if (a.x < a.r + 10)
+          a.x = a.r + 10;
+        if (a.x > view2.w - a.r - 10)
+          a.x = view2.w - a.r - 10;
+        if (a.y + a.r < -60) {
+          aliens.splice(i, 1);
+        }
+        continue;
+      }
       if (a.escapeSequence) {
         a.escapeTimer = (a.escapeTimer || 0) + dt;
         if (a.escapePhase === "loop") {
@@ -142346,6 +142366,28 @@
     }
     syncSelectedSecondaryForPilot(pilot);
   }
+  function isMissileModeActiveForPilot(pilot) {
+    if (!pilot)
+      return false;
+    return pilot.blasterMode === "missile" && (pilot.blasterHitsRemaining || 0) > 0;
+  }
+  function pilotHasAutofireAvailable(pilot) {
+    if (!pilot)
+      return false;
+    if (pilot.autoFireActive)
+      return true;
+    var slots = getSecondarySlotsForPilot(pilot);
+    for (var i = 0; i < slots.length; i++) {
+      var slot = slots[i];
+      if (slot && slot.type === "autofire" && (slot.count || 0) > 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+  function shouldBlockMissilePickupForPilot(pilot) {
+    return pilotHasAutofireAvailable(pilot);
+  }
   function setSettingsTab(tabId) {
     if (!settingsTabButtons || !settingsPanels)
       return;
@@ -142689,6 +142731,9 @@
   var campaignProfileId = "";
   var campaignAlienKey = "";
   var campaignBossLabel = "";
+  var sessionAlienKey = "";
+  var sessionBossLabel = "";
+  var sessionBossRetreatMode = false;
   var campaignAlienKeys = ["et", "brain", "golem", "galaga", "eye", "saucer", "robot", "spider"];
   function normalizeCampaignAlienKey(key) {
     if (key == null)
@@ -142717,6 +142762,24 @@
     var seed = String(cId || campaignDefaultId) + ":" + String(missionId || index || 0);
     var idx = hashCampaignAlienSeed(seed) % campaignAlienKeys.length;
     return campaignAlienKeys[idx];
+  }
+  function getActiveAlienIdentityKey() {
+    if (state.campaignAlienIdentityActive && state.campaignAlienKey) {
+      return state.campaignAlienKey;
+    }
+    if (state.sessionAlienIdentityActive && state.sessionAlienKey) {
+      return state.sessionAlienKey;
+    }
+    return "";
+  }
+  function getActiveAlienBossLabel() {
+    if (state.campaignAlienIdentityActive) {
+      return state.campaignBossLabel || toCampaignBossLabel(state.campaignAlienKey) || "OVERMIND";
+    }
+    if (state.sessionAlienIdentityActive) {
+      return state.sessionBossLabel || toCampaignBossLabel(state.sessionAlienKey) || "OVERMIND";
+    }
+    return "OVERMIND";
   }
   var tourGuide = null;
   if (usePhaserRenderer && phaserRoot) {
@@ -142805,6 +142868,12 @@
   var tutorialHullRecoveryShown = false;
   var tutorialPendingCorrectNotify = false;
   var tutorialPendingAidNotify = "";
+  var tutorialDashMarkerActive = false;
+  var tutorialDashMarkerX = 0;
+  var tutorialDashMarkerY = 0;
+  var tutorialDashMarkerR = 34;
+  var tutorialDashMarkerArmed = false;
+  var tutorialDashMarkerT = 0;
   var answerHitsSincePowerup = 0;
   var hiddenPowerupActive = false;
   var survivorTimer = 0;
@@ -142814,6 +142883,9 @@
   var precisionWindowSec = 2.5;
   var FRONTCLEAR_HALF_WIDTH = 80;
   var FRONTCLEAR_RANGE = 500;
+  var STAMPEDE_HOMING_ACCEL = 170;
+  var STAMPEDE_HOMING_VERTICAL_ACCEL = 62;
+  var STAMPEDE_HOMING_MAX_VX = 135;
   var TARGET_ALIEN_WAVE_KILLS = 8;
   var TARGET_ALIEN_BOSS_HP = 24;
   var TARGET_ALIEN_BOSS_BONUS_SCORE = 600;
@@ -144954,6 +145026,11 @@
     tutorialHideQuestion = hidden;
     applyQuestionVisibility();
   }
+  function clearTutorialDashMarker() {
+    tutorialDashMarkerActive = false;
+    tutorialDashMarkerArmed = false;
+    tutorialDashMarkerT = 0;
+  }
   function setSandboxQuestionHidden(hidden) {
     sandboxHideQuestion = hidden;
     applyQuestionVisibility();
@@ -145892,7 +145969,8 @@
     alienConfig.enabled = true;
     alienConfig.maxOnScreen = 0;
     alienConfig.spawnCooldown = 9999;
-    var bossLabel = state.campaignAlienIdentityActive ? state.campaignBossLabel || toCampaignBossLabel(state.campaignAlienKey) : "BOSS";
+    var bossLabel = getActiveAlienBossLabel();
+    var bossSpriteKey = getActiveAlienIdentityKey();
     var boss = spawnAlien("scout", bossLabel, TARGET_ALIEN_BOSS_HP, view, {
       isBoss: true,
       name: "Overmind",
@@ -145901,8 +145979,7 @@
       radius: 78,
       speed: 70,
       fireMode: "boss",
-      x: view.w * 0.5,
-      spriteKey: state.campaignAlienIdentityActive ? state.campaignAlienKey : ""
+      spriteKey: bossSpriteKey
     });
     state.alienBossUid = boss ? boss.uid : 0;
     showToast("WAVE CLEARED - BOSS APPROACHING");
@@ -145955,10 +146032,9 @@
         state.alienWaveSpawnTimer -= dt;
         if (state.alienWaveSpawnTimer <= 0 && aliens.length < (state.alienWaveMaxOnScreen || 2)) {
           var waveQuestion = getAlienQuestion();
+          var waveSpriteKey = getActiveAlienIdentityKey();
           spawnAlien("scout", waveQuestion.question, waveQuestion.answer, view, {
-            x: randi(70, Math.max(90, view.w - 70)),
-            y: view.hudH + 18,
-            spriteKey: state.campaignAlienIdentityActive ? state.campaignAlienKey : ""
+            spriteKey: waveSpriteKey
           });
           state.alienWaveSpawnTimer = state.alienWaveSpawnInterval || 0.9;
         }
@@ -147080,27 +147156,32 @@
       return;
     }
     if (p.group === "offense") {
-      if (p.type === "missile" && !isMissileAllowed()) {
-        p.type = "laser";
+      var offenseType = p.type;
+      if (offenseType === "missile" && shouldBlockMissilePickupForPilot(player)) {
+        showToast("MISSILE BLOCKED (AUTO-FIRE ACTIVE)");
+        return;
       }
-      player.blasterMode = p.type;
+      if (offenseType === "missile" && !isMissileAllowed()) {
+        offenseType = "laser";
+      }
+      player.blasterMode = offenseType;
       player.blasterHitsRemaining = 2;
       player.blasterTimer = 0;
-      if (p.type === "missile")
+      if (offenseType === "missile")
         showToast("OFFENSE -> MISSILE SHOT");
-      else if (p.type === "laser")
+      else if (offenseType === "laser")
         showToast("OFFENSE -> LASER BURST");
-      else if (p.type === "fire")
+      else if (offenseType === "fire")
         showToast("OFFENSE -> FIREBALL");
-      else if (p.type === "ice")
+      else if (offenseType === "ice")
         showToast("OFFENSE -> ICE SHARDS");
-      else if (p.type === "electric")
+      else if (offenseType === "electric")
         showToast("OFFENSE -> ELECTRIC BOLTS");
-      else if (p.type === "pierce")
+      else if (offenseType === "pierce")
         showToast("OFFENSE -> BOLA");
-      else if (p.type === "plasma")
+      else if (offenseType === "plasma")
         showToast("OFFENSE -> PLASMA ORB");
-      else if (p.type === "rail")
+      else if (offenseType === "rail")
         showToast("OFFENSE -> RAIL BEAM");
     } else if (p.group === "defense" && p.type === "shield") {
       player.defenseTimer = 10;
@@ -147148,27 +147229,32 @@
       return;
     }
     if (p.group === "offense") {
-      if (p.type === "missile" && !isMissileAllowed()) {
-        p.type = "laser";
+      var offenseType = p.type;
+      if (offenseType === "missile" && shouldBlockMissilePickupForPilot(pilot)) {
+        showToast("MISSILE BLOCKED (AUTO-FIRE ACTIVE)");
+        return;
       }
-      pilot.blasterMode = p.type;
+      if (offenseType === "missile" && !isMissileAllowed()) {
+        offenseType = "laser";
+      }
+      pilot.blasterMode = offenseType;
       pilot.blasterHitsRemaining = 2;
       pilot.blasterTimer = 0;
-      if (p.type === "missile")
+      if (offenseType === "missile")
         showToast("OFFENSE -> MISSILE SHOT");
-      else if (p.type === "laser")
+      else if (offenseType === "laser")
         showToast("OFFENSE -> LASER BURST");
-      else if (p.type === "fire")
+      else if (offenseType === "fire")
         showToast("OFFENSE -> FIREBALL");
-      else if (p.type === "ice")
+      else if (offenseType === "ice")
         showToast("OFFENSE -> ICE SHARDS");
-      else if (p.type === "electric")
+      else if (offenseType === "electric")
         showToast("OFFENSE -> ELECTRIC BOLTS");
-      else if (p.type === "pierce")
+      else if (offenseType === "pierce")
         showToast("OFFENSE -> BOLA");
-      else if (p.type === "plasma")
+      else if (offenseType === "plasma")
         showToast("OFFENSE -> PLASMA ORB");
-      else if (p.type === "rail")
+      else if (offenseType === "rail")
         showToast("OFFENSE -> RAIL BEAM");
     } else if (p.group === "defense" && p.type === "shield") {
       pilot.defenseTimer = 10;
@@ -147605,7 +147691,11 @@
     state.campaignAlienKey = campaignAlienKey;
     state.campaignBossLabel = campaignBossLabel;
     state.campaignAlienIdentityActive = !!(campaignActive && campaignAlienKey && isSessionConfigNonEndless(state.targetMode, state.timerMode));
-    setAlienSessionSpriteKey(state.campaignAlienIdentityActive ? state.campaignAlienKey : "");
+    state.sessionAlienKey = sessionAlienKey;
+    state.sessionBossLabel = sessionBossLabel;
+    state.sessionAlienIdentityActive = !!(!campaignActive && sessionAlienKey && isSessionConfigNonEndless(state.targetMode, state.timerMode));
+    state.alienBossRetreatMode = !!(state.sessionAlienIdentityActive && sessionBossRetreatMode);
+    setAlienSessionSpriteKey(getActiveAlienIdentityKey());
     player.cooldown = 0;
     player.vx = 0;
     player.vy = 0;
@@ -148183,12 +148273,9 @@
         showToast("SECONDARY -> AUTO-FIRE OFF");
         return;
       }
-      if (pilot.blasterMode === "missile" && pilot.blasterHitsRemaining > 0) {
-        pilot.blasterMode = "single";
-        pilot.blasterHitsRemaining = 0;
-        pilot.blasterTimer = 0;
+      if (isMissileModeActiveForPilot(pilot)) {
         pilot.secondaryCooldown = 0.35;
-        showToast("SECONDARY -> MISSILE OFF");
+        showToast("AUTO-FIRE UNAVAILABLE DURING MISSILE");
         return;
       }
     }
@@ -148472,6 +148559,16 @@
     }
     playSfx(state, "dash");
     showToast("DASH");
+    if (tutorialActive && tutorialStepId === "dash_step" && tutorialDashMarkerActive) {
+      tutorialDashMarkerArmed = true;
+      var dashDx = player.x - tutorialDashMarkerX;
+      var dashDy = player.y - tutorialDashMarkerY;
+      if (Math.hypot(dashDx, dashDy) <= tutorialDashMarkerR * 0.78) {
+        clearTutorialDashMarker();
+        if (tourGuide)
+          tourGuide.notify("dash_marker");
+      }
+    }
     if (tourGuide)
       tourGuide.notify("dash");
   }
@@ -150654,6 +150751,7 @@
     updateCamera(dtReal2);
     updateDashGhosts(dtReal2);
     if (tutorialActive) {
+      tutorialDashMarkerT += dtReal2;
       tutorialPortalT += dtReal2;
       if (tutorialPortalActive) {
         var rectP = canvas.getBoundingClientRect();
@@ -150664,6 +150762,15 @@
         var dyPortal = player.y - tutorialPortalY;
         if (!tutorialPortalLock && Math.hypot(dxPortal, dyPortal) <= tutorialPortalR * 0.7) {
           startTutorialPortalExit();
+        }
+      }
+      if (tutorialDashMarkerActive && tutorialDashMarkerArmed) {
+        var dxDashMark = player.x - tutorialDashMarkerX;
+        var dyDashMark = player.y - tutorialDashMarkerY;
+        if (Math.hypot(dxDashMark, dyDashMark) <= tutorialDashMarkerR * 0.78) {
+          clearTutorialDashMarker();
+          if (tourGuide)
+            tourGuide.notify("dash_marker");
         }
       }
     }
@@ -151502,6 +151609,7 @@
       }
     }
     var tNow = performance.now() * 1e-3;
+    var stampedeHomingActive = isStampedeMode();
     for (var ai = asteroids.length - 1; ai >= 0; ai--) {
       var a = asteroids[ai];
       if (a.spawnFade != null && a.spawnFade < 1) {
@@ -151553,6 +151661,21 @@
         slowFactor = a.y >= state.slowMoWaveY ? state.slowMoScale || 0.42 : 1;
       }
       var dtAst = dtSlow * slowFactor;
+      if (stampedeHomingActive && !a.ghost && a.label != null) {
+        var targetYStampede = player.y - 14;
+        var dxStampede = player.x - a.x;
+        var dyStampede = targetYStampede - a.y;
+        var distStampede = Math.max(1, Math.hypot(dxStampede, dyStampede));
+        var pullStampede = Math.min(1, 210 / distStampede);
+        a.vx += dxStampede / distStampede * STAMPEDE_HOMING_ACCEL * pullStampede * dtAst;
+        if (dyStampede > 0) {
+          a.vy += dyStampede / distStampede * STAMPEDE_HOMING_VERTICAL_ACCEL * pullStampede * dtAst;
+        }
+        if (a.vx > STAMPEDE_HOMING_MAX_VX)
+          a.vx = STAMPEDE_HOMING_MAX_VX;
+        else if (a.vx < -STAMPEDE_HOMING_MAX_VX)
+          a.vx = -STAMPEDE_HOMING_MAX_VX;
+      }
       a.y += a.vy * dtAst * empScale;
       a.x += a.vx * dtAst;
       if (a.baseVy != null) {
@@ -152024,6 +152147,8 @@
     }
     for (var ai3 = aliens.length - 1; ai3 >= 0; ai3--) {
       var al = aliens[ai3];
+      if (!al || al.retreating || al.noHit)
+        continue;
       for (var bj2 = bullets.length - 1; bj2 >= 0; bj2--) {
         var bb2 = bullets[bj2];
         if (bb2.noHit)
@@ -152053,6 +152178,30 @@
           al.stunTimer = Math.max(al.stunTimer || 0, 0.4);
           al.hitsTaken += 1;
           if (al.hitsTaken >= al.answer) {
+            if (al.isBoss && state.alienBossRetreatMode) {
+              state.aliensShot += 1;
+              if (!state.aliensShotByType)
+                state.aliensShotByType = {};
+              var retreatSrc = getAlienSpriteSrcFor(al);
+              if (retreatSrc) {
+                state.aliensShotByType[retreatSrc] = (state.aliensShotByType[retreatSrc] || 0) + 1;
+              }
+              state.score += al.score || 0;
+              playSfx(state, "alien_kill", 0.45);
+              al.retreating = true;
+              al.noHit = true;
+              al.hitShake = 0;
+              al.stunTimer = 0;
+              al.fireCooldown = 99;
+              al.escapeActive = false;
+              al.escapeSequence = false;
+              al.escapePhase = "";
+              al.escapeTimer = 0;
+              al.retreatSpeed = 82;
+              al.retreatDrift = (Math.random() * 2 - 1) * 18;
+              showToast("BOSS RETREATING");
+              break;
+            }
             if (state.alienSwarm && al.swarmDigit != null && al.swarmCorrectDigit != null && al.swarmDigit === al.swarmCorrectDigit) {
               var poolId = al.poolId;
               var removed = 0;
@@ -152640,6 +152789,7 @@
     ctx.save();
     ctx.translate(cam.x || 0, cam.y || 0);
     drawTutorialPortal();
+    drawTutorialDashMarker();
     if (!phaserActive) {
       if (!state.hideAsteroids && !(sandboxMode && state.sandboxAlienWaveActive) && !isAlienCombatOnlyPhase()) {
         for (var i = 0; i < asteroids.length; i++)
@@ -153489,9 +153639,15 @@
         var ringR = boxSize / 2 - 4;
         ctx.save();
         ctx.lineWidth = 2.4;
-        ctx.strokeStyle = "rgba(0,229,255,.65)";
+        ctx.strokeStyle = "rgba(0,229,255,.26)";
         ctx.beginPath();
-        ctx.arc(x + boxSize / 2, y + boxSize / 2, ringR, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * ammoRatio);
+        ctx.arc(x + boxSize / 2, y + boxSize / 2, ringR, 0, Math.PI * 2, false);
+        ctx.stroke();
+        ctx.strokeStyle = "rgba(0,229,255,.8)";
+        var ringStart = -Math.PI / 2;
+        var ringEnd = ringStart + Math.PI * 2 * ammoRatio;
+        ctx.beginPath();
+        ctx.arc(x + boxSize / 2, y + boxSize / 2, ringR, ringStart, ringEnd, false);
         ctx.stroke();
         ctx.restore();
       }
@@ -153553,6 +153709,37 @@
     ctx.arc(0, 0, ringR * 0.6, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
+    ctx.restore();
+    ctx.globalCompositeOperation = "source-over";
+  }
+  function drawTutorialDashMarker() {
+    if (!tutorialActive || !tutorialDashMarkerActive)
+      return;
+    var x = tutorialDashMarkerX;
+    var y = tutorialDashMarkerY;
+    var r = tutorialDashMarkerR;
+    var pulse = 1 + Math.sin(tutorialDashMarkerT * 5.2) * 0.08;
+    var ringR = r * pulse;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    var glow = ctx.createRadialGradient(x, y, ringR * 0.25, x, y, ringR * 1.9);
+    glow.addColorStop(0, "rgba(0,229,255,.44)");
+    glow.addColorStop(0.45, "rgba(0,229,255,.14)");
+    glow.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(x, y, ringR * 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(0,229,255,.95)";
+    ctx.lineWidth = 2.8;
+    ctx.beginPath();
+    ctx.arc(x, y, ringR, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = "rgba(255,255,255,.88)";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(x, y, ringR * 0.62, 0, Math.PI * 2);
+    ctx.stroke();
     ctx.restore();
     ctx.globalCompositeOperation = "source-over";
   }
@@ -155634,6 +155821,10 @@
     var ghostFlameBoost = ghost && ghostStyle.thrustFocus ? 1.45 : 1;
     var shipSprite = shipSprites[shipType];
     var useShipSprite = !!(shipSprite && shipSprite.ready && shipSprite.img);
+    var waitingForShipSprite = !!(shipSprite && !useShipSprite);
+    if (waitingForShipSprite) {
+      return;
+    }
     var drawShipSpriteSilhouette = function(scaleBoost) {
       if (!useShipSprite)
         return;
@@ -157028,6 +157219,10 @@
       cfg.sound = !(soundParam === "0" || soundParam === "false");
     }
     applyConfigToInputs(cfg);
+    var parsedSessionAlienKey = normalizeCampaignAlienKey(params.get("sessionAlienKey"));
+    var parsedSessionBossLabel = String(params.get("sessionBossLabel") || "").trim();
+    var sessionBossRetreatParam = String(params.get("sessionBossRetreat") || "").toLowerCase();
+    var parsedSessionBossRetreat = sessionBossRetreatParam === "1" || sessionBossRetreatParam === "true";
     var campaignParam = params.get("campaign");
     if (campaignParam === "1" || campaignParam === "true") {
       var profileParam = params.get("campaignProfile");
@@ -157067,6 +157262,9 @@
         campaignBossLabel = toCampaignBossLabel(parsedAlienKey);
       }
       campaignAlienKey = parsedAlienKey;
+      sessionAlienKey = "";
+      sessionBossLabel = "";
+      sessionBossRetreatMode = false;
     } else {
       campaignActive = false;
       campaignIndex = -1;
@@ -157074,11 +157272,18 @@
       state.campaignIndex = -1;
       campaignAlienKey = "";
       campaignBossLabel = "";
+      sessionAlienKey = parsedSessionAlienKey;
+      sessionBossLabel = parsedSessionBossLabel || (parsedSessionAlienKey ? toCampaignBossLabel(parsedSessionAlienKey) : "");
+      sessionBossRetreatMode = parsedSessionBossRetreat;
     }
     state.campaignAlienKey = campaignAlienKey;
     state.campaignBossLabel = campaignBossLabel;
     state.campaignAlienIdentityActive = !!(campaignActive && campaignAlienKey && isSessionConfigNonEndless(cfg.targetMode, cfg.timerMode));
-    setAlienSessionSpriteKey(state.campaignAlienIdentityActive ? campaignAlienKey : "");
+    state.sessionAlienKey = sessionAlienKey;
+    state.sessionBossLabel = sessionBossLabel;
+    state.sessionAlienIdentityActive = !!(!campaignActive && sessionAlienKey && isSessionConfigNonEndless(cfg.targetMode, cfg.timerMode));
+    state.alienBossRetreatMode = !!(state.sessionAlienIdentityActive && sessionBossRetreatMode);
+    setAlienSessionSpriteKey(getActiveAlienIdentityKey());
   }
   function syncSandboxAlienWaveButton() {
     if (!sandboxAlienWaveButton)
@@ -157908,8 +158113,8 @@
                 ship: "spire",
                 belt: "dusk",
                 questionMode: "classic",
-                timerMode: "90",
-                targetMode: "off"
+                timerMode: "off",
+                targetMode: "q8"
               }));
             } catch (e) {
             }
@@ -157918,8 +158123,11 @@
               ship: "spire",
               belt: "dusk",
               questionMode: "classic",
-              timerMode: "90",
-              targetMode: "off"
+              timerMode: "off",
+              targetMode: "q8",
+              sessionAlienKey: "brain",
+              sessionBossLabel: "THE BRAIN",
+              sessionBossRetreat: "1"
             });
             window.location.href = "asteroid_blaster.html?" + params2.toString();
           }

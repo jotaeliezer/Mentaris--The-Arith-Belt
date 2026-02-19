@@ -200,6 +200,19 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
     var a = aliens[i];
     a.t += dt;
     a.life += dt;
+    if(a.retreating){
+      a.fireCooldown = 99;
+      a.vx = (a.retreatDrift || 0) + Math.sin((a.t || 0) * 2.2 + a.uid) * 12;
+      a.vy = -Math.max(52, a.retreatSpeed || 82);
+      a.x += a.vx * dt;
+      a.y += a.vy * dt;
+      if(a.x < a.r + 10) a.x = a.r + 10;
+      if(a.x > view.w - a.r - 10) a.x = view.w - a.r - 10;
+      if(a.y + a.r < -60){
+        aliens.splice(i, 1);
+      }
+      continue;
+    }
     if(a.escapeSequence){
       a.escapeTimer = (a.escapeTimer || 0) + dt;
       if(a.escapePhase === "loop"){

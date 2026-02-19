@@ -9,7 +9,7 @@ export function createTourGuide(options){
   var onConfirm = typeof opts.onConfirm === "function" ? opts.onConfirm : null;
   var onChoice = typeof opts.onChoice === "function" ? opts.onChoice : null;
   var steps = [
-    { id: "intro", title: "Welcome aboard, pilot", body: "Welcome to the Arith Belt. Let's begin your training.", showProgress: false, startSfx: "sfx/commander_solver/training/t_start.mp3", muteTypeAudio: true, confirmLabel: "Sir, Yes Sir" },
+    { id: "intro", title: "Welcome aboard, pilot", body: "Welcome to the Arith Belt. Let's start your training.", showProgress: false, startSfx: "sfx/commander_solver/training/t_start.mp3", muteTypeAudio: true, confirmLabel: "Sir, Yes Sir" },
     { id: "platform_choice", title: "Step 1: Platform", body: "Are you flying on a tablet or a computer/laptop?", choices: [{ id: "tablet", label: "Tablet" }, { id: "desktop", label: "Computer / Laptop" }] },
     { id: "move_arrows", title: "Step 2: Flight Controls (Arrows)", body: "Use the Up, Down, Left, and Right arrow keys to guide the ship through dots 1-4 in order.", event: "move_arrows", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Formation clean, cadet.", praiseBody: "Arrow control confirmed. Smooth tracking." },
     { id: "move_wasd", title: "Step 3: Flight Controls (WASD)", body: "Now use W, A, S, and D to guide the ship through the same dots again.", event: "move_wasd", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "WASD verified.", praiseBody: "Sharp handling. You fly like you mean it." },
@@ -18,18 +18,19 @@ export function createTourGuide(options){
     { id: "tablet_move", title: "Step 2: Touch Movement", body: "Tablet mode engaged. Use the left movement stick to guide the ship through dots 1-4 in order.", event: "move_touch", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Touch control verified.", praiseBody: "Nice glide, cadet." },
     { id: "fire_once", title: "Step 6: Fire Once", body: "Press Space (or click) to fire a single shot.", event: "fire", count: 1 },
     { id: "fire_again", title: "Step 7: Fire Again", body: "Press Space again to fire another shot.", event: "fire", count: 1 },
-    { id: "correct", title: "Step 8: Correct Hit", body: "Hit the asteroid with the correct answer.", event: "correct" },
-    { id: "minerals", title: "Step 9: Minerals", body: "Collect all minerals. Your mineral count is at the top right.", event: "minerals", confirmLabel: "Understood" },
-    { id: "powerup", title: "Step 10: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
-    { id: "secondary_slots", title: "Step 11: Aid Slots", body: "Collect EMP and Magnet so all 3 aid slots are loaded.", event: "secondary_slot", count: 1 },
-    { id: "secondary_time", title: "Step 12: Time Dilation", body: "Use Time Dilation first. Press E to slow everything down.", event: "secondary_time" },
-    { id: "secondary_emp", title: "Step 13: EMP Burst", body: "Now use EMP. Press E to clear out non-answer asteroids.", event: "secondary_emp" },
-    { id: "secondary_magnet", title: "Step 14: Magnet Sweep", body: "Next use Magnet. Press E to pull the answer asteroid closer.", event: "secondary_magnet" },
-    { id: "correct_after_magnet", title: "Step 15: Correct Hit", body: "Good. Now shoot the answer asteroid.", event: "correct" },
-    { id: "ability_intro", title: "Step 16: Ship Ability", body: "Each ship has a different special ability. We'll use your side flares to clear a blocked lane.", autoAdvanceMs: 2600 },
-    { id: "ability_clear", title: "Step 17: Clear the Lane", body: "A decoy is blocking your line. Press Q to blast asteroids out of the way with flares.", event: "ability" },
-    { id: "ability_shot", title: "Step 18: Finish the Shot", body: "Lane is open. Shoot the correct answer asteroid.", event: "correct" },
-    { id: "alien", title: "Step 19: Alien Contact", body: "Alien contacts incoming, cadet. They are out to cut you off and disrupt mineral recovery. Take it down.", event: "alien" },
+    { id: "dash_step", title: "Step 8: Dash Marker", body: "Use DASH (Shift or the dash button) and pass through the marker.", event: "dash_marker" },
+    { id: "correct", title: "Step 9: Correct Hit", body: "Hit the asteroid with the correct answer.", event: "correct" },
+    { id: "minerals", title: "Step 10: Minerals", body: "Collect all minerals. Your mineral count is at the top right.", event: "minerals", confirmLabel: "Understood" },
+    { id: "powerup", title: "Step 11: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
+    { id: "secondary_slots", title: "Step 12: Aid Slots", body: "Collect EMP and Magnet so all 3 aid slots are loaded.", event: "secondary_slot", count: 1 },
+    { id: "secondary_time", title: "Step 13: Time Dilation", body: "Use Time Dilation first. Press E to slow everything down.", event: "secondary_time" },
+    { id: "secondary_emp", title: "Step 14: EMP Burst", body: "Now use EMP. Press E to clear out non-answer asteroids.", event: "secondary_emp" },
+    { id: "secondary_magnet", title: "Step 15: Magnet Sweep", body: "Next use Magnet. Press E to pull the answer asteroid closer.", event: "secondary_magnet" },
+    { id: "correct_after_magnet", title: "Step 16: Correct Hit", body: "Good. Now shoot the answer asteroid.", event: "correct" },
+    { id: "ability_intro", title: "Step 17: Ship Ability", body: "Each ship has a different special ability. We'll use your side flares to clear a blocked lane.", autoAdvanceMs: 2600 },
+    { id: "ability_clear", title: "Step 18: Clear the Lane", body: "A decoy is blocking your line. Press Q to blast asteroids out of the way with flares.", event: "ability" },
+    { id: "ability_shot", title: "Step 19: Finish the Shot", body: "Lane is open. Shoot the correct answer asteroid.", event: "correct" },
+    { id: "alien", title: "Step 20: Alien Contact", body: "Alien contacts incoming, cadet. They are out to cut you off and disrupt mineral recovery. Take it down.", event: "alien" },
     { id: "portal", title: "Final Step: Portal", body: "Cadet, fly up into the portal. Mission starts on contact.", event: "portal" }
   ];
   var progressTotal = 0;
