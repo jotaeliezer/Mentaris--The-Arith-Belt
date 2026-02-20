@@ -157,6 +157,7 @@ var btnShipCommands = document.getElementById("btnShipCommands");
 var wideGameplayKey = "mentaris.gameplay.wide";
 var mousepadAutoKey = "mentaris.mousepad.autostart";
 var touchControlsKey = "mentaris.touch.controls.enabled";
+var canvasBootstrapRepairFrames = 0;
 var touchControlsDockHiddenKey = "mentaris.touch.controls.hidden";
 var sandboxSectionsKey = "mentaris.sandbox.sections";
 var mousepadAutoStart = false;
@@ -458,14 +459,35 @@ function setWideGameplay(isWide){
   try{ localStorage.setItem(wideGameplayKey, isWide ? "1" : "0"); }catch(e){}
 }
 
-function setSplitGameplay(isSplit){
-  var on = false;
+function applySplitGameplayClasses(isSplit){
+  var on = !!isSplit;
   document.body.classList.toggle("splitGameplayMode", on);
   if(wrap) wrap.classList.toggle("splitGameplay", on);
   if(gameShell) gameShell.classList.toggle("splitGameplay", on);
+}
+
+function setSplitGameplay(isSplit){
+  var on = !!isSplit;
+  applySplitGameplayClasses(on);
+  // Split mode changes shell width; force canvas/view to resync immediately.
+  resize();
+  requestAnimationFrame(resize);
   if(!!isSplit && isSandboxMultiplayer()){
     positionSandboxPilots();
   }
+}
+
+function queueCanvasBootstrapRepair(frames){
+  var total = Math.max(1, frames || 1);
+  canvasBootstrapRepairFrames = Math.max(canvasBootstrapRepairFrames, total);
+}
+
+function runCanvasBootstrapRepair(){
+  if(canvasBootstrapRepairFrames <= 0) return;
+  // Clear stale split-shell classes left from previous mode and hard-resync canvas metrics.
+  applySplitGameplayClasses(isSandboxSplitMode());
+  resize();
+  canvasBootstrapRepairFrames--;
 }
 
 function loadWideGameplay(){
@@ -8352,65 +8374,85 @@ function endGame(reason){
     function appendEntry(entries, groupLabel, itemLabel, src, count){
       if(!src || !(count > 0)) return;
       entries.push({
-        label: groupLabel + " · " + itemLabel,
+        label: groupLabel + " - " + itemLabel,
         src: src,
         count: count
       });
     }
 
-    function renderEngagementRows(entries, maxPerRow){
+    function renderEngagementRowsBySection(sectionList, maxPerRow){
       if(!statsListSecondary) return;
       statsListSecondary.innerHTML = "";
       var perRow = Math.max(1, Number(maxPerRow) || 3);
-      for(var i=0; i<entries.length; i += perRow){
-        var rowEntries = entries.slice(i, i + perRow);
-        var row = document.createElement("div");
-        row.className = "engagementRow";
-        for(var j=0; j<rowEntries.length; j++){
-          var entry = rowEntries[j];
-          var tile = document.createElement("div");
-          tile.className = "endStatsMiniTile";
-          var iconWrap = document.createElement("div");
-          iconWrap.className = "endStatsMiniIcon";
-          var img = document.createElement("img");
-          img.src = entry.src;
-          img.alt = entry.label;
-          iconWrap.appendChild(img);
-          var meta = document.createElement("div");
-          meta.className = "endStatsMiniMeta";
-          var labelEl = document.createElement("div");
-          labelEl.className = "endStatsMiniLabel";
-          labelEl.textContent = entry.label;
-          var countEl = document.createElement("div");
-          countEl.className = "endStatsMiniCount";
-          countEl.textContent = String(entry.count);
-          meta.appendChild(labelEl);
-          meta.appendChild(countEl);
-          tile.appendChild(iconWrap);
-          tile.appendChild(meta);
-          row.appendChild(tile);
+      for(var s=0; s<sectionList.length; s++){
+        var section = sectionList[s];
+        if(!section || !section.entries || !section.entries.length) continue;
+        var sectionWrap = document.createElement("div");
+        sectionWrap.className = "engagementSection";
+        var title = document.createElement("div");
+        title.className = "engagementSectionTitle";
+        title.textContent = section.title;
+        sectionWrap.appendChild(title);
+        for(var i=0; i<section.entries.length; i += perRow){
+          var rowEntries = section.entries.slice(i, i + perRow);
+          var row = document.createElement("div");
+          row.className = "engagementRow";
+          for(var j=0; j<rowEntries.length; j++){
+            var entry = rowEntries[j];
+            var tile = document.createElement("div");
+            tile.className = "endStatsMiniTile";
+            var iconWrap = document.createElement("div");
+            iconWrap.className = "endStatsMiniIcon";
+            var img = document.createElement("img");
+            img.src = entry.src;
+            img.alt = entry.label;
+            iconWrap.appendChild(img);
+            var meta = document.createElement("div");
+            meta.className = "endStatsMiniMeta";
+            var labelEl = document.createElement("div");
+            labelEl.className = "endStatsMiniLabel";
+            labelEl.textContent = entry.label;
+            var countEl = document.createElement("div");
+            countEl.className = "endStatsMiniCount";
+            countEl.textContent = String(entry.count);
+            meta.appendChild(labelEl);
+            meta.appendChild(countEl);
+            tile.appendChild(iconWrap);
+            tile.appendChild(meta);
+            row.appendChild(tile);
+          }
+          sectionWrap.appendChild(row);
         }
-        statsListSecondary.appendChild(row);
+        statsListSecondary.appendChild(sectionWrap);
       }
     }
 
-    var engagementEntries = [];
+    var shotEntries = [];
+    var powerupEntries = [];
+    var maneuverEntries = [];
+    var shotTypes = { single:true, laser:true, fire:true, ice:true, electric:true, pierce:true, plasma:true, rail:true, missile:true };
     if(state.aliensShotByType){
+      var totalAliensShot = 0;
       Object.keys(state.aliensShotByType).forEach(function(key){
         var count = state.aliensShotByType[key] || 0;
-        var src = (alienIconsByType && alienIconsByType[key]) ? alienIconsByType[key] : key;
-        appendEntry(engagementEntries, "ALIENS", formatStatTypeLabel(key), src, count);
+        totalAliensShot += count;
+        var src = (alienIconsByType && alienIconsByType[key]) ? alienIconsByType[key] : null;
+        appendEntry(shotEntries, "ALIENS", formatStatTypeLabel(key), src, count);
       });
+      var fallbackAlienIcon = (alienIconsByType && (alienIconsByType.brain || alienIconsByType.ET || alienIconsByType.eye || alienIconsByType.galaga || alienIconsByType.robot || alienIconsByType.golem || alienIconsByType.saucer || alienIconsByType.spider)) || null;
+      appendEntry(shotEntries, "SHOTS", "TOTAL ALIENS", fallbackAlienIcon, totalAliensShot);
     }
 
     var collectedMap = state.powerupsCollectedByType || state.powerupsCollectedByTypeAlt || {};
-    var activatableTypes = { time:true, magnet:true, emp:true, lock:true, autofire:true, scope:true };
     Object.keys(collectedMap).forEach(function(type){
-      if(activatableTypes[type]) return;
       var count = collectedMap[type] || 0;
       var icon = powerupIcons[type];
       if(!icon && shotIcons && shotIcons[type]) icon = shotIcons[type];
-      appendEntry(engagementEntries, "COLLECTED", formatStatTypeLabel(type), icon ? icon.src : null, count);
+      if(shotTypes[type]){
+        appendEntry(shotEntries, "COLLECTED", formatStatTypeLabel(type), icon ? icon.src : null, count);
+      }else{
+        appendEntry(powerupEntries, "COLLECTED", formatStatTypeLabel(type), icon ? icon.src : null, count);
+      }
     });
 
     if(state.powerupsUsedByType){
@@ -8418,7 +8460,11 @@ function endGame(reason){
         var count = state.powerupsUsedByType[type] || 0;
         var icon = powerupIcons[type];
         if(!icon && shotIcons && shotIcons[type]) icon = shotIcons[type];
-        appendEntry(engagementEntries, "USED", formatStatTypeLabel(type), icon ? icon.src : null, count);
+        if(shotTypes[type]){
+          appendEntry(shotEntries, "USED", formatStatTypeLabel(type), icon ? icon.src : null, count);
+        }else{
+          appendEntry(powerupEntries, "USED", formatStatTypeLabel(type), icon ? icon.src : null, count);
+        }
       });
     }
 
@@ -8427,7 +8473,11 @@ function endGame(reason){
         var count = state.powerupsMissedByType[type] || 0;
         var icon = powerupIcons[type];
         if(!icon && shotIcons && shotIcons[type]) icon = shotIcons[type];
-        appendEntry(engagementEntries, "MISSED", formatStatTypeLabel(type), icon ? icon.src : null, count);
+        if(shotTypes[type]){
+          appendEntry(shotEntries, "MISSED", formatStatTypeLabel(type), icon ? icon.src : null, count);
+        }else{
+          appendEntry(powerupEntries, "MISSED", formatStatTypeLabel(type), icon ? icon.src : null, count);
+        }
       });
     }
 
@@ -8437,15 +8487,21 @@ function endGame(reason){
     if(profile && profile.ability === "flares") abilityKey = "flares";
     else if(profile && profile.ability === "spin") abilityKey = "teleport";
     var abilityIcon = cooldownIcons && cooldownIcons[abilityKey] ? cooldownIcons[abilityKey].src : null;
-    appendEntry(engagementEntries, "MANEUVER", "DASH", dashIcon, state.dashes || 0);
-    appendEntry(engagementEntries, "MANEUVER", "SPECIAL", abilityIcon, state.specialUses || 0);
+    appendEntry(maneuverEntries, "MANEUVER", "DASH", dashIcon, state.dashes || 0);
+    appendEntry(maneuverEntries, "MANEUVER", "SPECIAL", abilityIcon, state.specialUses || 0);
 
-    renderEngagementRows(engagementEntries, 3);
+    var engagementSections = [
+      { title: "SHOTS", entries: shotEntries },
+      { title: "POWERUPS", entries: powerupEntries },
+      { title: "MANEUVERS", entries: maneuverEntries }
+    ];
+    var hasEntries = shotEntries.length + powerupEntries.length + maneuverEntries.length;
+
+    renderEngagementRowsBySection(engagementSections, 3);
     if(engagementIconRows){
-      engagementIconRows.style.display = engagementEntries.length ? "block" : "none";
+      engagementIconRows.style.display = hasEntries ? "block" : "none";
     }
   }
-
   if(accBar){
     accBar.style.width = String(Math.round(acc*100)) + "%";
   }
@@ -8706,6 +8762,7 @@ function steerLookUpShot(b){
 
 function tick(t){
   lastFrameAt = t;
+  runCanvasBootstrapRepair();
   var dt = Math.min(0.05, (t - lastT) / 1000);
   lastT = t;
   frameAcc += dt;
@@ -16004,6 +16061,7 @@ function setSandboxShip(type){
 // ======= Boot
 function boot(){
   resize();
+  applySplitGameplayClasses(false);
   applyStoredConfig();
   applyQueryParams();
   applySettings();
@@ -16036,6 +16094,8 @@ function boot(){
   setSandboxQuestionHidden(false);
   if(sandboxMode){
     initSandboxPanel();
+  }else{
+    applySplitGameplayClasses(false);
   }
   tutorialActive = params.get("tutorial") === "1" || params.get("tutorial") === "true";
   if(tutorialActive){
@@ -16349,9 +16409,9 @@ function boot(){
   if(autoStart){
     ensureLoop();
     requestFullscreen();
-    setTimeout(function(){
-      startIntroThenCountdown();
-    }, 250);
+    // Start intro/countdown immediately to avoid one-frame boot artifacts.
+    player.hidden = true;
+    startIntroThenCountdown();
     setTimeout(function(){
       if(!state.running && !introActive && !countdownActive){
         startIntroThenCountdown();
@@ -16359,6 +16419,11 @@ function boot(){
     }, 1200);
   }
   if(params.get("test") === "1") runSelfTests();
+
+  // Repair early-load canvas/view state while shell dimensions settle (pre/fullscreen transitions).
+  queueCanvasBootstrapRepair(18);
+  setTimeout(function(){ queueCanvasBootstrapRepair(8); }, 120);
+  setTimeout(function(){ queueCanvasBootstrapRepair(8); }, 360);
 
   requestAnimationFrame(tick);
 }

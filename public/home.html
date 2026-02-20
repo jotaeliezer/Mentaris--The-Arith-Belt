@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mentaris: The Arith Belt — Menu</title>
+  <link rel="icon" type="image/png" href="images/misc/favicon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&display=swap" rel="stylesheet">
@@ -881,39 +882,47 @@
     }
 
     .campaignSetItem{
-      flex-direction:column;
-      align-items:flex-start;
-      justify-content:flex-start;
-      min-height:104px;
-      padding:10px 12px;
+      width:clamp(260px, 24vw, 340px);
+      max-width:100%;
+      aspect-ratio: 16 / 10;
+      min-height:0;
+      padding:0;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .campaignSetItem .campaignSetThumb{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      opacity:1;
+      pointer-events:none;
+      z-index:0;
+      filter:none;
+    }
+
+    .campaignSetItem::after{
+      content:none;
+    }
+
+    .campaignSetItem > *{
+      position:relative;
+      z-index:2;
     }
 
     #campaignSetList{
-      display:grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap:10px;
-    }
-
-    .campaignSetItem .campaignSetRow{
-      width:100%;
       display:flex;
-      align-items:center;
-      justify-content:space-between;
+      flex-direction:row;
+      align-items:stretch;
+      justify-content:center;
       gap:12px;
-    }
-
-    .campaignSetItem .campaignSetName{
-      font-weight:700;
-      letter-spacing:.6px;
-      text-transform:uppercase;
-      font-size:11px;
-    }
-
-    .campaignSetItem .campaignSetDesc{
-      margin-top:4px;
-      font-size:11px;
-      color:var(--muted);
-      letter-spacing:.2px;
+      flex-wrap:wrap;
+      max-width:1044px;
+      margin:0 auto;
+      overflow:visible;
+      padding-bottom:2px;
     }
 
     .funnelOverlay .title,
@@ -1134,27 +1143,20 @@
       display:grid;
     }
 
-    @media (max-width: 1600px){
-      #campaignSetList{
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-      }
+    #campaignSelectView{
+      grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr);
+      align-items:start;
     }
 
-    @media (max-width: 1300px){
-      #campaignSetList{
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
-    }
-
-    @media (max-width: 1040px){
-      #campaignSetList{
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    @media (max-width: 860px){
-      #campaignSetList{
+    @media (max-width: 980px){
+      #campaignSelectView{
         grid-template-columns: 1fr;
+      }
+      #campaignSetList{
+        gap:8px;
+      }
+      .campaignSetItem{
+        width:clamp(220px, 44vw, 300px);
       }
     }
 
@@ -2875,10 +2877,19 @@
           <div class="campaignProfilesGrid" id="campaignProfilesGrid"></div>
         </div>
       </div>
-      <div class="cardBody campaignView" id="campaignSelectView" style="grid-template-columns: 1fr;">
+      <div class="cardBody campaignView" id="campaignSelectView">
         <div class="panel">
           <h3>Campaigns</h3>
           <ul class="list" id="campaignSetList"></ul>
+        </div>
+        <div class="panel">
+          <h3>Campaign Info</h3>
+          <div class="monoSmall" id="campaignSetDetailsTitle">Select a campaign.</div>
+          <div class="monoSmall" id="campaignSetDetailsDesc" style="margin-top:8px;">Campaign details will appear here.</div>
+          <p class="monoSmall" id="campaignSetDetailsStatus" style="margin-top:10px;"></p>
+          <div class="campaignActions">
+            <button id="btnCampaignOpenMissions" class="btn" style="border-color: rgba(0,229,255,.35); background: rgba(0,229,255,.12);">View Missions</button>
+          </div>
         </div>
       </div>
       <div class="cardBody campaignView" id="campaignMissionsView">
@@ -3360,6 +3371,7 @@
     }
 
     var activeCampaignId = null;
+    var campaignSetInspectId = null;
 
     function findCampaignSet(id){
       for(var i=0; i<campaignSets.length; i++){
@@ -5300,6 +5312,10 @@
     var campaignSelectView = document.getElementById("campaignSelectView");
     var campaignMissionsView = document.getElementById("campaignMissionsView");
     var campaignSetList = document.getElementById("campaignSetList");
+    var campaignSetDetailsTitle = document.getElementById("campaignSetDetailsTitle");
+    var campaignSetDetailsDesc = document.getElementById("campaignSetDetailsDesc");
+    var campaignSetDetailsStatus = document.getElementById("campaignSetDetailsStatus");
+    var btnCampaignOpenMissions = document.getElementById("btnCampaignOpenMissions");
     var campaignList = document.getElementById("campaignList");
     var campaignStatusText = document.getElementById("campaignStatusText");
     var campaignDetails = document.getElementById("campaignDetails");
@@ -6165,6 +6181,17 @@
         if(menuWrap) menuWrap.classList.remove("hidden");
       });
     }
+    if (btnCampaignOpenMissions) {
+      btnCampaignOpenMissions.addEventListener("click", function(){
+        playMenuBeep();
+        var selectedId = campaignSetInspectId || getActiveCampaignId();
+        if(!selectedId || !isCampaignUnlocked(selectedId)) return;
+        setActiveCampaignId(selectedId);
+        renderCampaignList();
+        updateCampaignStatus();
+        showCampaignMissionsView();
+      });
+    }
     if (btnCampaignConfirmStart && campaignConfirmOverlay) {
       btnCampaignConfirmStart.addEventListener("click", function(){
         playMenuBeep();
@@ -6512,6 +6539,7 @@
       if(campaignProfilesView) campaignProfilesView.classList.remove("active");
       if(campaignSelectView) campaignSelectView.classList.add("active");
       if(campaignMissionsView) campaignMissionsView.classList.remove("active");
+      renderCampaignSetList();
     }
 
     function showCampaignMissionsView(){
@@ -6520,37 +6548,47 @@
       if(campaignMissionsView) campaignMissionsView.classList.add("active");
     }
 
+    function renderCampaignSetDetails(campaignId){
+      var set = findCampaignSet(campaignId);
+      if(!set) return;
+      var unlocked = isCampaignUnlocked(campaignId);
+      if(campaignSetDetailsTitle) campaignSetDetailsTitle.textContent = set.name.toUpperCase();
+      if(campaignSetDetailsDesc) campaignSetDetailsDesc.textContent = set.desc + " Missions: " + ((set.missions && set.missions.length) || 0) + ".";
+      if(campaignSetDetailsStatus) campaignSetDetailsStatus.textContent = unlocked ? "STATUS: UNLOCKED" : "STATUS: LOCKED";
+      if(btnCampaignOpenMissions){
+        btnCampaignOpenMissions.disabled = !unlocked;
+      }
+    }
+
     function renderCampaignSetList(){
       if(!campaignSetList) return;
       ensureActiveCampaignUnlocked();
       var activeId = getActiveCampaignId();
+      var inspectId = campaignSetInspectId || activeId;
+      if(!findCampaignSet(inspectId)) inspectId = activeId;
+      campaignSetInspectId = inspectId;
       campaignSetList.innerHTML = "";
       campaignSets.forEach(function(set){
         var li = document.createElement("li");
-        var isActive = set.id === activeId;
+        var isActive = set.id === inspectId;
         var isUnlocked = isCampaignUnlocked(set.id);
         li.className = "campaignListItem campaignSetItem"
           + (isActive ? " selected" : "")
           + (isUnlocked ? "" : " locked");
         li.setAttribute("data-campaign", set.id);
+        var thumbSrc = "images/thumbnails/" + set.id + ".png";
         li.innerHTML = ""
-          + "<div class=\"campaignSetRow\">"
-          + "<span class=\"campaignSetName\">" + set.name + "</span>"
-          + "<span class=\"campaignStatus\">" + (isActive ? "ACTIVE" : (isUnlocked ? "UNLOCKED" : "LOCKED")) + "</span>"
-          + "</div>"
-          + "<div class=\"campaignSetDesc\">" + set.desc + "</div>";
+          + "<img class=\"campaignSetThumb\" src=\"" + thumbSrc + "\" alt=\"" + set.name + " thumbnail\" loading=\"lazy\" decoding=\"async\" />";
         li.addEventListener("click", function(){
           var id = this.getAttribute("data-campaign");
           if(!id) return;
-          if(!isCampaignUnlocked(id)) return;
-          setActiveCampaignId(id);
+          campaignSetInspectId = id;
+          if(isCampaignUnlocked(id)) setActiveCampaignId(id);
           renderCampaignSetList();
-          renderCampaignList();
-          updateCampaignStatus();
-          showCampaignMissionsView();
         });
         campaignSetList.appendChild(li);
       });
+      renderCampaignSetDetails(inspectId);
     }
 
     function renderCampaignDetails(index){

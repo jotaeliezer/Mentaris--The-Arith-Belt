@@ -1003,6 +1003,29 @@ body.launching #menuWrap{
   border:1px solid var(--line);
   background:rgba(0,0,0,.22);
   display:grid;
+  grid-template-columns:64px 1fr;
+  align-items:center;
+  gap:10px;
+}
+
+.endMineralsIconWrap{
+  width:64px;
+  height:64px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06);
+  display:grid;
+  place-items:center;
+}
+
+.endMineralsIcon{
+  width:54px;
+  height:54px;
+  object-fit:contain;
+}
+
+.endMineralsMeta{
+  display:grid;
   gap:6px;
 }
 
@@ -1915,6 +1938,20 @@ input[type="checkbox"]{ transform: translateY(1px); }
   display:grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap:10px;
+}
+
+#endStageEngagement #statsListSecondary .engagementSection{
+  display:grid;
+  gap:8px;
+}
+
+#endStageEngagement #statsListSecondary .engagementSectionTitle{
+  font-size:13px;
+  letter-spacing:1.4px;
+  text-transform:uppercase;
+  color:#b8deff;
+  font-weight:700;
+  padding:2px 2px 0;
 }
 
 #endStageEngagement #statsListSecondary .endStatsMiniTile{

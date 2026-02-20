@@ -142161,6 +142161,7 @@
   var wideGameplayKey = "mentaris.gameplay.wide";
   var mousepadAutoKey = "mentaris.mousepad.autostart";
   var touchControlsKey = "mentaris.touch.controls.enabled";
+  var canvasBootstrapRepairFrames = 0;
   var touchControlsDockHiddenKey = "mentaris.touch.controls.hidden";
   var sandboxSectionsKey = "mentaris.sandbox.sections";
   var mousepadAutoStart = false;
@@ -142422,16 +142423,33 @@
     } catch (e) {
     }
   }
-  function setSplitGameplay(isSplit) {
-    var on = false;
+  function applySplitGameplayClasses(isSplit) {
+    var on = !!isSplit;
     document.body.classList.toggle("splitGameplayMode", on);
     if (wrap)
       wrap.classList.toggle("splitGameplay", on);
     if (gameShell)
       gameShell.classList.toggle("splitGameplay", on);
+  }
+  function setSplitGameplay(isSplit) {
+    var on = !!isSplit;
+    applySplitGameplayClasses(on);
+    resize();
+    requestAnimationFrame(resize);
     if (!!isSplit && isSandboxMultiplayer()) {
       positionSandboxPilots();
     }
+  }
+  function queueCanvasBootstrapRepair(frames) {
+    var total = Math.max(1, frames || 1);
+    canvasBootstrapRepairFrames = Math.max(canvasBootstrapRepairFrames, total);
+  }
+  function runCanvasBootstrapRepair() {
+    if (canvasBootstrapRepairFrames <= 0)
+      return;
+    applySplitGameplayClasses(isSandboxSplitMode());
+    resize();
+    canvasBootstrapRepairFrames--;
   }
   function loadWideGameplay() {
     var stored = null;
@@ -150305,64 +150323,84 @@
         if (!src || !(count2 > 0))
           return;
         entries.push({
-          label: groupLabel + " \xB7 " + itemLabel,
+          label: groupLabel + " - " + itemLabel,
           src,
           count: count2
         });
-      }, renderEngagementRows = function(entries, maxPerRow) {
+      }, renderEngagementRowsBySection = function(sectionList, maxPerRow) {
         if (!statsListSecondary)
           return;
         statsListSecondary.innerHTML = "";
         var perRow = Math.max(1, Number(maxPerRow) || 3);
-        for (var i = 0; i < entries.length; i += perRow) {
-          var rowEntries = entries.slice(i, i + perRow);
-          var row = document.createElement("div");
-          row.className = "engagementRow";
-          for (var j2 = 0; j2 < rowEntries.length; j2++) {
-            var entry = rowEntries[j2];
-            var tile = document.createElement("div");
-            tile.className = "endStatsMiniTile";
-            var iconWrap = document.createElement("div");
-            iconWrap.className = "endStatsMiniIcon";
-            var img = document.createElement("img");
-            img.src = entry.src;
-            img.alt = entry.label;
-            iconWrap.appendChild(img);
-            var meta = document.createElement("div");
-            meta.className = "endStatsMiniMeta";
-            var labelEl = document.createElement("div");
-            labelEl.className = "endStatsMiniLabel";
-            labelEl.textContent = entry.label;
-            var countEl = document.createElement("div");
-            countEl.className = "endStatsMiniCount";
-            countEl.textContent = String(entry.count);
-            meta.appendChild(labelEl);
-            meta.appendChild(countEl);
-            tile.appendChild(iconWrap);
-            tile.appendChild(meta);
-            row.appendChild(tile);
+        for (var s = 0; s < sectionList.length; s++) {
+          var section = sectionList[s];
+          if (!section || !section.entries || !section.entries.length)
+            continue;
+          var sectionWrap = document.createElement("div");
+          sectionWrap.className = "engagementSection";
+          var title = document.createElement("div");
+          title.className = "engagementSectionTitle";
+          title.textContent = section.title;
+          sectionWrap.appendChild(title);
+          for (var i = 0; i < section.entries.length; i += perRow) {
+            var rowEntries = section.entries.slice(i, i + perRow);
+            var row = document.createElement("div");
+            row.className = "engagementRow";
+            for (var j2 = 0; j2 < rowEntries.length; j2++) {
+              var entry = rowEntries[j2];
+              var tile = document.createElement("div");
+              tile.className = "endStatsMiniTile";
+              var iconWrap = document.createElement("div");
+              iconWrap.className = "endStatsMiniIcon";
+              var img = document.createElement("img");
+              img.src = entry.src;
+              img.alt = entry.label;
+              iconWrap.appendChild(img);
+              var meta = document.createElement("div");
+              meta.className = "endStatsMiniMeta";
+              var labelEl = document.createElement("div");
+              labelEl.className = "endStatsMiniLabel";
+              labelEl.textContent = entry.label;
+              var countEl = document.createElement("div");
+              countEl.className = "endStatsMiniCount";
+              countEl.textContent = String(entry.count);
+              meta.appendChild(labelEl);
+              meta.appendChild(countEl);
+              tile.appendChild(iconWrap);
+              tile.appendChild(meta);
+              row.appendChild(tile);
+            }
+            sectionWrap.appendChild(row);
           }
-          statsListSecondary.appendChild(row);
+          statsListSecondary.appendChild(sectionWrap);
         }
       };
-      var engagementEntries = [];
+      var shotEntries = [];
+      var powerupEntries = [];
+      var maneuverEntries = [];
+      var shotTypes = { single: true, laser: true, fire: true, ice: true, electric: true, pierce: true, plasma: true, rail: true, missile: true };
       if (state.aliensShotByType) {
+        var totalAliensShot = 0;
         Object.keys(state.aliensShotByType).forEach(function(key2) {
           var count2 = state.aliensShotByType[key2] || 0;
-          var src = alienIconsByType && alienIconsByType[key2] ? alienIconsByType[key2] : key2;
-          appendEntry(engagementEntries, "ALIENS", formatStatTypeLabel(key2), src, count2);
+          totalAliensShot += count2;
+          var src = alienIconsByType && alienIconsByType[key2] ? alienIconsByType[key2] : null;
+          appendEntry(shotEntries, "ALIENS", formatStatTypeLabel(key2), src, count2);
         });
+        var fallbackAlienIcon = alienIconsByType && (alienIconsByType.brain || alienIconsByType.ET || alienIconsByType.eye || alienIconsByType.galaga || alienIconsByType.robot || alienIconsByType.golem || alienIconsByType.saucer || alienIconsByType.spider) || null;
+        appendEntry(shotEntries, "SHOTS", "TOTAL ALIENS", fallbackAlienIcon, totalAliensShot);
       }
       var collectedMap = state.powerupsCollectedByType || state.powerupsCollectedByTypeAlt || {};
-      var activatableTypes = { time: true, magnet: true, emp: true, lock: true, autofire: true, scope: true };
       Object.keys(collectedMap).forEach(function(type) {
-        if (activatableTypes[type])
-          return;
         var count2 = collectedMap[type] || 0;
         var icon = powerupIcons[type];
         if (!icon && shotIcons && shotIcons[type])
           icon = shotIcons[type];
-        appendEntry(engagementEntries, "COLLECTED", formatStatTypeLabel(type), icon ? icon.src : null, count2);
+        if (shotTypes[type]) {
+          appendEntry(shotEntries, "COLLECTED", formatStatTypeLabel(type), icon ? icon.src : null, count2);
+        } else {
+          appendEntry(powerupEntries, "COLLECTED", formatStatTypeLabel(type), icon ? icon.src : null, count2);
+        }
       });
       if (state.powerupsUsedByType) {
         Object.keys(state.powerupsUsedByType).forEach(function(type) {
@@ -150370,7 +150408,11 @@
           var icon = powerupIcons[type];
           if (!icon && shotIcons && shotIcons[type])
             icon = shotIcons[type];
-          appendEntry(engagementEntries, "USED", formatStatTypeLabel(type), icon ? icon.src : null, count2);
+          if (shotTypes[type]) {
+            appendEntry(shotEntries, "USED", formatStatTypeLabel(type), icon ? icon.src : null, count2);
+          } else {
+            appendEntry(powerupEntries, "USED", formatStatTypeLabel(type), icon ? icon.src : null, count2);
+          }
         });
       }
       if (state.powerupsMissedByType) {
@@ -150379,7 +150421,11 @@
           var icon = powerupIcons[type];
           if (!icon && shotIcons && shotIcons[type])
             icon = shotIcons[type];
-          appendEntry(engagementEntries, "MISSED", formatStatTypeLabel(type), icon ? icon.src : null, count2);
+          if (shotTypes[type]) {
+            appendEntry(shotEntries, "MISSED", formatStatTypeLabel(type), icon ? icon.src : null, count2);
+          } else {
+            appendEntry(powerupEntries, "MISSED", formatStatTypeLabel(type), icon ? icon.src : null, count2);
+          }
         });
       }
       var dashIcon = cooldownIcons && cooldownIcons.dash ? cooldownIcons.dash.src : null;
@@ -150390,11 +150436,17 @@
       else if (profile && profile.ability === "spin")
         abilityKey = "teleport";
       var abilityIcon = cooldownIcons && cooldownIcons[abilityKey] ? cooldownIcons[abilityKey].src : null;
-      appendEntry(engagementEntries, "MANEUVER", "DASH", dashIcon, state.dashes || 0);
-      appendEntry(engagementEntries, "MANEUVER", "SPECIAL", abilityIcon, state.specialUses || 0);
-      renderEngagementRows(engagementEntries, 3);
+      appendEntry(maneuverEntries, "MANEUVER", "DASH", dashIcon, state.dashes || 0);
+      appendEntry(maneuverEntries, "MANEUVER", "SPECIAL", abilityIcon, state.specialUses || 0);
+      var engagementSections = [
+        { title: "SHOTS", entries: shotEntries },
+        { title: "POWERUPS", entries: powerupEntries },
+        { title: "MANEUVERS", entries: maneuverEntries }
+      ];
+      var hasEntries = shotEntries.length + powerupEntries.length + maneuverEntries.length;
+      renderEngagementRowsBySection(engagementSections, 3);
       if (engagementIconRows) {
-        engagementIconRows.style.display = engagementEntries.length ? "block" : "none";
+        engagementIconRows.style.display = hasEntries ? "block" : "none";
       }
     }
     if (accBar) {
@@ -150630,6 +150682,7 @@
   }
   function tick(t) {
     lastFrameAt = t;
+    runCanvasBootstrapRepair();
     var dt = Math.min(0.05, (t - lastT) / 1e3);
     lastT = t;
     frameAcc += dt;
@@ -157813,6 +157866,7 @@
   }
   function boot() {
     resize();
+    applySplitGameplayClasses(false);
     applyStoredConfig();
     applyQueryParams();
     applySettings();
@@ -157841,6 +157895,8 @@
     setSandboxQuestionHidden(false);
     if (sandboxMode) {
       initSandboxPanel();
+    } else {
+      applySplitGameplayClasses(false);
     }
     tutorialActive = params.get("tutorial") === "1" || params.get("tutorial") === "true";
     if (tutorialActive) {
@@ -158166,9 +158222,8 @@
     if (autoStart) {
       ensureLoop();
       requestFullscreen();
-      setTimeout(function() {
-        startIntroThenCountdown();
-      }, 250);
+      player.hidden = true;
+      startIntroThenCountdown();
       setTimeout(function() {
         if (!state.running && !introActive && !countdownActive) {
           startIntroThenCountdown();
@@ -158177,6 +158232,13 @@
     }
     if (params.get("test") === "1")
       runSelfTests();
+    queueCanvasBootstrapRepair(18);
+    setTimeout(function() {
+      queueCanvasBootstrapRepair(8);
+    }, 120);
+    setTimeout(function() {
+      queueCanvasBootstrapRepair(8);
+    }, 360);
     requestAnimationFrame(tick);
   }
   boot();
