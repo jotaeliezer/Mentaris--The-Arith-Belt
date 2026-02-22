@@ -139963,28 +139963,28 @@
     var onChoice = typeof opts.onChoice === "function" ? opts.onChoice : null;
     var steps = [
       { id: "intro", title: "Welcome aboard, pilot", body: "Welcome to the Arith Belt. Let's start your training.", showProgress: false, startSfx: "sfx/commander_solver/training/t_start.mp3", muteTypeAudio: true, confirmLabel: "Sir, Yes Sir" },
-      { id: "platform_choice", title: "Step 1: Platform", body: "Are you flying on a tablet or a computer/laptop?", choices: [{ id: "tablet", label: "Tablet" }, { id: "desktop", label: "Computer / Laptop" }] },
-      { id: "move_arrows", title: "Step 2: Flight Controls (Arrows)", body: "Use the Up, Down, Left, and Right arrow keys to guide the ship through dots 1-4 in order.", event: "move_arrows", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Formation clean, cadet.", praiseBody: "Arrow control confirmed. Smooth tracking." },
-      { id: "move_wasd", title: "Step 3: Flight Controls (WASD)", body: "Now use W, A, S, and D to guide the ship through the same dots again.", event: "move_wasd", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "WASD verified.", praiseBody: "Sharp handling. You fly like you mean it." },
-      { id: "mousepad_hybrid", title: "Step 4: Mousepad", body: "Press B to enable mousepad. Fly to dots 1-4 in order.", event: "mousepad_hybrid", hideDuringAction: true, actionPauseMs: 700 },
-      { id: "movement_preference", title: "Step 5: Pick Movement", body: "Choose your preferred movement controls for this training run.", choices: [{ id: "arrows", label: "Arrow Keys" }, { id: "wasd", label: "WASD" }, { id: "mouse", label: "Mouse Pilot" }] },
-      { id: "tablet_move", title: "Step 2: Touch Movement", body: "Tablet mode engaged. Use the left movement stick to guide the ship through dots 1-4 in order.", event: "move_touch", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Touch control verified.", praiseBody: "Nice glide, cadet." },
-      { id: "fire_once", title: "Step 6: Fire Once", body: "Press Space (or click) to fire a single shot.", event: "fire", count: 1 },
-      { id: "fire_again", title: "Step 7: Fire Again", body: "Press Space again to fire another shot.", event: "fire", count: 1 },
-      { id: "dash_step", title: "Step 8: Dash Marker", body: "Use DASH (Shift or the dash button) and pass through the marker.", event: "dash_marker" },
-      { id: "correct", title: "Step 9: Correct Hit", body: "Hit the asteroid with the correct answer.", event: "correct" },
-      { id: "minerals", title: "Step 10: Minerals", body: "Collect all minerals. Your mineral count is at the top right.", event: "minerals", confirmLabel: "Understood" },
-      { id: "powerup", title: "Step 11: Powerup", body: "Collect the glowing powerup drop.", event: "powerup" },
-      { id: "secondary_slots", title: "Step 12: Aid Slots", body: "Collect EMP and Magnet so all 3 aid slots are loaded.", event: "secondary_slot", count: 1 },
-      { id: "secondary_time", title: "Step 13: Time Dilation", body: "Use Time Dilation first. Press E to slow everything down.", event: "secondary_time" },
-      { id: "secondary_emp", title: "Step 14: EMP Burst", body: "Now use EMP. Press E to clear out non-answer asteroids.", event: "secondary_emp" },
-      { id: "secondary_magnet", title: "Step 15: Magnet Sweep", body: "Next use Magnet. Press E to pull the answer asteroid closer.", event: "secondary_magnet" },
-      { id: "correct_after_magnet", title: "Step 16: Correct Hit", body: "Good. Now shoot the answer asteroid.", event: "correct" },
-      { id: "ability_intro", title: "Step 17: Ship Ability", body: "Each ship has a different special ability. We'll use your side flares to clear a blocked lane.", autoAdvanceMs: 2600 },
-      { id: "ability_clear", title: "Step 18: Clear the Lane", body: "A decoy is blocking your line. Press Q to blast asteroids out of the way with flares.", event: "ability" },
-      { id: "ability_shot", title: "Step 19: Finish the Shot", body: "Lane is open. Shoot the correct answer asteroid.", event: "correct" },
-      { id: "alien", title: "Step 20: Alien Contact", body: "Alien contacts incoming, cadet. They are out to cut you off and disrupt mineral recovery. Take it down.", event: "alien" },
-      { id: "portal", title: "Final Step: Portal", body: "Cadet, fly up into the portal. Mission starts on contact.", event: "portal" }
+      { id: "platform_choice", title: "Step 1: Platform", body: "Confirm your flight platform, cadet: Tablet or Computer/Laptop.", choices: [{ id: "tablet", label: "Tablet" }, { id: "desktop", label: "Computer / Laptop" }] },
+      { id: "move_arrows", title: "Step 2: Flight Controls (Arrows)", body: "Use the Arrow Keys (\u2191 \u2193 \u2190 \u2192). Fly through dots 1 to 4 in order.", event: "move_arrows", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Arrow controls confirmed.", praiseBody: "Input is stable. Maintain that precision." },
+      { id: "move_wasd", title: "Step 3: Flight Controls (WASD)", body: "Now use the W A S D Keys. Fly through the active dot sequence, 1 to 4.", event: "move_wasd", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "WASD controls confirmed.", praiseBody: "Good handling under movement transitions." },
+      { id: "mousepad_hybrid", title: "Step 4: Mousepad", body: "Press the B key to enable Mousepad mode. Guide the ship through dots 1 to 4 in order.", event: "mousepad_hybrid", hideDuringAction: true, actionPauseMs: 700 },
+      { id: "movement_preference", title: "Step 5: Pick Movement", body: "Choose your preferred movement controls. These will be your current training settings, but you can change them later.", choices: [{ id: "arrows", label: "Arrow Keys" }, { id: "wasd", label: "WASD" }, { id: "mouse", label: "Mouse Pilot" }] },
+      { id: "tablet_move", title: "Step 2: Touch Movement", body: "Tablet control confirmed. Use the left movement stick and clear dots 1 through 4 in sequence.", event: "move_touch", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Touch controls confirmed.", praiseBody: "Steady control. Good lane discipline." },
+      { id: "fire_once", title: "Step 6: Fire Once", body: "Weapons check. Press the Space bar or Left Click to fire one shot.", event: "fire", count: 1 },
+      { id: "fire_again", title: "Step 7: Fire Again", body: "Press the Space bar or Left Click again. Fire one controlled follow-up shot.", event: "fire", count: 1 },
+      { id: "dash_step", title: "Step 8: Dash Marker", body: "Use Dash now: press Shift or tap the Dash button. Pass through the marker.", event: "dash_marker" },
+      { id: "correct", title: "Step 9: Correct Hit", body: "Read the prompt, identify the correct value, and destroy that asteroid.", event: "correct" },
+      { id: "minerals", title: "Step 10: Minerals", body: "Collect all minerals in the field. Monitor your mineral count in the top-right HUD.", event: "minerals", confirmLabel: "Understood" },
+      { id: "powerup", title: "Step 11: Powerup", body: "Collect the Time Dilation powerup.", event: "powerup" },
+      { id: "secondary_slots", title: "Step 12: Aid Slots", body: "Fill all three aid slots. Collect EMP and Magnet to complete your loadout.", event: "secondary_slot", count: 1 },
+      { id: "secondary_time", title: "Step 13: Time Dilation", body: "Select Time Dilation, then press E to activate it.", event: "secondary_time" },
+      { id: "secondary_emp", title: "Step 14: EMP Burst", body: "Select EMP, then press E. Clear decoys while preserving the answer target.", event: "secondary_emp" },
+      { id: "secondary_magnet", title: "Step 15: Magnet Sweep", body: "Select Magnet, then press E. Pull the answer asteroid into a cleaner firing lane.", event: "secondary_magnet" },
+      { id: "correct_after_magnet", title: "Step 16: Correct Hit", body: "Target is lined up. Press the Space bar or Left Click and destroy the correct asteroid.", event: "correct" },
+      { id: "ability_intro", title: "Step 17: Ship Ability", body: "Each ship has a unique special. We\u2019ll use your flares to clear a blocked lane.", autoAdvanceMs: 2600 },
+      { id: "ability_clear", title: "Step 18: Clear the Lane", body: "A decoy is blocking your shot. Press Q to trigger flares and clear the lane.", event: "ability" },
+      { id: "ability_shot", title: "Step 19: Finish the Shot", body: "Lane is open. Press the Space bar or Left Click and destroy the correct asteroid.", event: "correct" },
+      { id: "alien", title: "Step 20: Alien Contact", body: "Alien contact confirmed. Eliminate the hostile before it disrupts recovery.", event: "alien" },
+      { id: "portal", title: "Final Step: Portal", body: "Cadet, fly into the portal. Mission deployment begins on contact.", event: "portal" }
     ];
     var progressTotal = 0;
     for (var s = 0; s < steps.length; s++) {
@@ -143000,12 +143000,12 @@
     void: 5
   };
   var backgroundSources = [
-    "images/backgrounds/background8.png",
-    "images/backgrounds/background1.png",
-    "images/backgrounds/background2.png",
-    "images/backgrounds/background3.png",
-    "images/backgrounds/background7.png",
-    "images/backgrounds/background9.png"
+    "images/backgrounds/sector_run_b.png",
+    "images/backgrounds/rift_assault_b.png",
+    "images/backgrounds/void_run_b.png",
+    "images/backgrounds/nebula_seige_b.png",
+    "images/backgrounds/apex_frontier_b.png",
+    "images/backgrounds/apex_frontier_b.png"
   ];
   for (bi = 0; bi < backgroundSources.length; bi++) {
     bgImg = new Image();
@@ -146460,12 +146460,23 @@
         continue;
       out.add(d);
     }
-    while (out.size < count) {
+    var fallbackGuard = 0;
+    while (out.size < count && fallbackGuard++ < 420) {
       var fallback = isAdd ? baseAddDecoy(correct) : baseMulDecoy(correct);
       if (mode !== "digit_shuffle")
         fallback = enforceUnitsDigit(fallback, correct);
       if (fallback !== correct && fallback >= 0)
         out.add(fallback);
+    }
+    var offset = 1;
+    while (out.size < count && offset < 2048) {
+      var signed = offset % 2 === 1 ? -Math.ceil(offset / 2) : Math.ceil(offset / 2);
+      var deterministic = Math.max(0, correct + signed);
+      if (mode !== "digit_shuffle")
+        deterministic = enforceUnitsDigit(deterministic, correct);
+      if (deterministic !== correct && deterministic >= 0)
+        out.add(deterministic);
+      offset++;
     }
     return Array.from(out);
   }
@@ -146489,10 +146500,19 @@
           continue;
         outAdd.add(dAdd);
       }
-      while (outAdd.size < count) {
+      var addFallbackGuard = 0;
+      while (outAdd.size < count && addFallbackGuard++ < 420) {
         var ddAdd = Math.max(0, correct + randi(-15, 15));
         if (ddAdd !== correct)
           outAdd.add(ddAdd);
+      }
+      var addOffset = 1;
+      while (outAdd.size < count && addOffset < 2048) {
+        var addSigned = addOffset % 2 === 1 ? -Math.ceil(addOffset / 2) : Math.ceil(addOffset / 2);
+        var deterministicAdd = Math.max(0, correct + addSigned);
+        if (deterministicAdd !== correct)
+          outAdd.add(deterministicAdd);
+        addOffset++;
       }
       return Array.from(outAdd);
     }
@@ -146509,10 +146529,19 @@
         continue;
       out.add(d);
     }
-    while (out.size < count) {
+    var mulFallbackGuard = 0;
+    while (out.size < count && mulFallbackGuard++ < 420) {
       var dd = Math.max(0, correct + randi(-12, 12));
       if (dd !== correct)
         out.add(dd);
+    }
+    var mulOffset = 1;
+    while (out.size < count && mulOffset < 2048) {
+      var mulSigned = mulOffset % 2 === 1 ? -Math.ceil(mulOffset / 2) : Math.ceil(mulOffset / 2);
+      var deterministicMul = Math.max(0, correct + mulSigned);
+      if (deterministicMul !== correct)
+        out.add(deterministicMul);
+      mulOffset++;
     }
     return Array.from(out);
   }
@@ -146522,6 +146551,7 @@
     return Number(state.answerDigits[state.digitsLeft - 1]);
   }
   function genDigitDecoys(correctDigit, count) {
+    count = Math.max(0, Math.min(9, count | 0));
     var out = /* @__PURE__ */ new Set();
     var tries = 0;
     while (out.size < count && tries++ < 120) {
@@ -146530,10 +146560,16 @@
         continue;
       out.add(d);
     }
-    while (out.size < count) {
+    var digitFallbackGuard = 0;
+    while (out.size < count && digitFallbackGuard++ < 120) {
       var dd = (correctDigit + randi(1, 9)) % 10;
       if (dd !== correctDigit)
         out.add(dd);
+    }
+    for (var step = 1; out.size < count && step <= 9; step++) {
+      var deterministicDigit = (correctDigit + step) % 10;
+      if (deterministicDigit !== correctDigit)
+        out.add(deterministicDigit);
     }
     return Array.from(out);
   }
@@ -147407,8 +147443,8 @@
     kickShake(20, 0.16);
     showToast(reason || "HULL CRITICAL");
     tourGuide.interject([
-      { id: "recovery_warn", title: "Hull Warning", body: "Beware the green HP bar at the top left. Avoid crashing into asteroids and alien attacks.", autoAdvanceMs: 2600, showProgress: false },
-      { id: "recovery_powerup", title: "Repair Protocol", body: "Shoot the answer for a chance at a powerup. Grab the wrench to repair hull.", autoAdvanceMs: 2600, showProgress: false }
+      { id: "recovery_warn", title: "Hull Warning", body: "Watch the green hull bar at top left. Asteroid and alien impacts will deplete it fast.", autoAdvanceMs: 2600, showProgress: false },
+      { id: "recovery_powerup", title: "Repair Protocol", body: "Correct hits can trigger support drops. Secure the wrench to restore hull integrity.", autoAdvanceMs: 2600, showProgress: false }
     ], function() {
       tutorialRecoveryActive = false;
       if (tourGuide && tutorialRecoveryResumeStepId) {
@@ -147924,6 +147960,11 @@
       countdownTimerId = 0;
       countdownEl.classList.remove("show");
       countdownActive = false;
+      missionBriefOnAccept = null;
+      if (missionBriefOverlay)
+        missionBriefOverlay.classList.remove("show");
+      if (missionBriefShowing)
+        setMissionBriefActive(false);
       if (skipReset) {
         resetSession();
         beginRun();
@@ -149392,7 +149433,7 @@
         {
           id: "tutorial_second_chance",
           title: "Second Chance",
-          body: "Sometimes there are second chances. Take a breath and line up the correct asteroid.",
+          body: "Second chance granted. Reacquire the answer target and fire cleanly.",
           autoAdvanceMs: 2200,
           showProgress: false
         }
@@ -157818,12 +157859,12 @@
     var beltContainer = sandboxPanel.querySelector("#sandboxBelts");
     var beltButtons = [];
     [
-      { id: "dusk", label: "Dusk" },
-      { id: "ember", label: "Ember" },
-      { id: "aurora", label: "Aurora" },
-      { id: "rift", label: "Rift" },
-      { id: "vega", label: "Vega" },
-      { id: "void", label: "Void" }
+      { id: "dusk", label: "Sector Run" },
+      { id: "ember", label: "Rift Assault" },
+      { id: "aurora", label: "Void Run" },
+      { id: "rift", label: "Nebula Seige" },
+      { id: "vega", label: "Apex Frontier" },
+      { id: "void", label: "Apex Frontier+" }
     ].forEach(function(info) {
       var btn = addButton(beltContainer, info.label, function() {
         setSandboxBelt(info.id);

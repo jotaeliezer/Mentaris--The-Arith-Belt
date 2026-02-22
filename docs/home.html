@@ -361,8 +361,27 @@
     }
 
     .briefingOverlay{
+      --briefing-border: rgba(0, 210, 255, .26);
+      --briefing-glow: rgba(0, 195, 255, .2);
+      --briefing-accent: rgba(0, 215, 255, .92);
+      --briefing-surface: rgba(8, 12, 24, .82);
       background: radial-gradient(1200px 620px at 50% 40%, rgba(0,229,255,.16), rgba(6,8,22,.98));
       backdrop-filter: none;
+    }
+    .briefingOverlay.briefing-easy{
+      --briefing-border: rgba(80, 225, 150, .35);
+      --briefing-glow: rgba(80, 225, 150, .2);
+      --briefing-accent: rgba(120, 255, 170, .92);
+    }
+    .briefingOverlay.briefing-normal{
+      --briefing-border: rgba(0, 210, 255, .3);
+      --briefing-glow: rgba(0, 195, 255, .22);
+      --briefing-accent: rgba(110, 228, 255, .94);
+    }
+    .briefingOverlay.briefing-hard{
+      --briefing-border: rgba(255, 155, 80, .34);
+      --briefing-glow: rgba(255, 145, 76, .2);
+      --briefing-accent: rgba(255, 196, 120, .94);
     }
 
     body.briefingOpen .menuWrap,
@@ -374,22 +393,102 @@
     }
 
     .briefingCard{
-      width:min(760px, 96%);
-      border:1px solid var(--line);
+      width:min(800px, 92%);
+      border:1px solid var(--briefing-border);
       border-radius:26px;
-      background: linear-gradient(160deg, rgba(12,16,32,.92), rgba(6,8,20,.86));
-      padding:24px;
-      box-shadow: 0 30px 80px rgba(0,0,0,.6);
+      background: linear-gradient(160deg, rgba(12,16,32,.95), rgba(6,8,20,.9));
+      padding:22px;
+      box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.03) inset;
+      position:relative;
+      overflow:hidden;
     }
-    .briefingShipRow{
+    .briefingCard::after{
+      content:"";
+      position:absolute;
+      inset:-30% -60%;
+      background: linear-gradient(105deg, transparent 32%, rgba(95,225,255,.055) 48%, transparent 64%);
+      transform: translateX(-36%);
+      pointer-events:none;
+      animation: briefingSweep 7.5s ease-in-out infinite;
+    }
+    .briefingOverlay.ready .briefingCard{
+      animation: briefingReadyPulse 2.2s ease-in-out infinite;
+    }
+    @keyframes briefingSweep{
+      0%, 70%{ transform: translateX(-42%); opacity:0; }
+      74%, 90%{ opacity:1; }
+      100%{ transform: translateX(42%); opacity:0; }
+    }
+    @keyframes briefingReadyPulse{
+      0%, 100%{ box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.03) inset; }
+      50%{ box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 26px var(--briefing-glow); }
+    }
+    .briefingStatusRow{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-top:8px;
+    }
+    .briefingStatusTags{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .briefingTag{
+      border:1px solid rgba(255,255,255,.16);
+      border-radius:999px;
+      padding:7px 11px;
+      font-size:10px;
+      letter-spacing:1.2px;
+      text-transform:uppercase;
+      color:rgba(232,236,255,.9);
+      background: rgba(0,0,0,.25);
+      white-space:nowrap;
+    }
+    .briefingTag.risk{
+      border-color: var(--briefing-border);
+      color: var(--briefing-accent);
+      box-shadow: 0 0 16px var(--briefing-glow) inset;
+    }
+    .briefingMainPanel{
+      margin-top:10px;
+      background: rgba(6,10,20,.58);
+      border-color: rgba(255,255,255,.09);
+    }
+    .briefingMainSplit{
+      display:grid;
+      grid-template-columns: minmax(0, 1fr) 260px;
+      gap:14px;
+      align-items:stretch;
+    }
+    .briefingPrimary{
       display:flex;
       align-items:center;
       gap:16px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:18px;
+      background: var(--briefing-surface);
+      padding:12px;
+      min-height:146px;
+    }
+    .briefingLoadout{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap:10px;
+    }
+    .briefingLoadoutCard{
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      background: var(--briefing-surface);
+      padding:10px;
     }
     .briefingBeltCard{
       width:120px;
       height:120px;
-      border-radius:16px;
+      border-radius:14px;
       border:1px solid rgba(255,255,255,.12);
       background: rgba(8,12,22,.6);
       object-fit: cover;
@@ -410,7 +509,7 @@
     .briefingShotCard{
       width:120px;
       height:120px;
-      border-radius:16px;
+      border-radius:14px;
       border:1px solid rgba(255,255,255,.12);
       background: rgba(8,12,22,.6);
       object-fit: contain;
@@ -434,7 +533,7 @@
     .briefingShipCard{
       width:120px;
       height:120px;
-      border-radius:16px;
+      border-radius:14px;
       border:1px solid rgba(255,255,255,.12);
       background: rgba(8,12,22,.6);
       object-fit: contain;
@@ -446,7 +545,6 @@
       display:flex;
       align-items:center;
       gap:10px;
-      margin-top:6px;
       font-size:11px;
       letter-spacing:1px;
       text-transform:uppercase;
@@ -454,11 +552,11 @@
     }
 
     .briefingSpinner{
-      width:42px;
-      height:42px;
+      width:36px;
+      height:36px;
       border-radius:50%;
-      border:3px solid rgba(255,255,255,.18);
-      border-top-color: rgba(0,229,255,.75);
+      border:2px solid rgba(255,255,255,.18);
+      border-top-color: var(--briefing-accent);
       animation: spin 0.8s linear infinite;
       position:relative;
       display:inline-block;
@@ -491,32 +589,34 @@
       display:grid;
       grid-template-columns: repeat(2, minmax(0,1fr));
       gap:14px;
-      margin-top:14px;
+      margin-top:12px;
     }
 
     .briefingStat{
-      border:1px solid var(--line);
+      border:1px solid rgba(255,255,255,.12);
       border-radius:14px;
-      background: rgba(0,0,0,.22);
-      padding:10px 12px;
+      background: rgba(8,12,22,.6);
+      padding:12px 14px;
       display:flex;
       align-items:center;
       justify-content:space-between;
       font-size:12px;
+      box-shadow: inset 0 0 18px rgba(0,0,0,.18);
     }
 
     .briefingHints{
-      margin-top:16px;
       border:1px solid rgba(255,255,255,.08);
       border-radius:14px;
-      padding:10px 12px;
-      background: rgba(8,12,22,.65);
+      padding:12px 14px;
+      background: rgba(8,12,22,.74);
+      flex:1 1 auto;
+      min-height:140px;
     }
     .briefingLaunch{
       display:flex;
-      align-items:flex-end;
+      align-items:center;
       justify-content:flex-end;
-      margin-left:auto;
+      min-width:200px;
     }
     .briefingHintActions{
       margin-top:12px;
@@ -527,7 +627,7 @@
       display:flex;
       gap:16px;
       align-items:flex-end;
-      margin-top:16px;
+      margin-top:12px;
     }
     .briefingCommander{
       display:flex;
@@ -576,7 +676,7 @@
     .briefingHintLabel{
       font-size:11px;
       letter-spacing:2px;
-      color:rgba(255,221,0,.8);
+      color:rgba(255,221,0,.88);
       text-transform:uppercase;
       margin-bottom:6px;
     }
@@ -587,8 +687,19 @@
       min-height:18px;
     }
 
+    @media (max-width: 900px){
+      .briefingMainSplit{ grid-template-columns: 1fr; }
+      .briefingLoadout{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .briefingFooter{ flex-wrap:wrap; }
+      .briefingLaunch{ margin-left:auto; }
+      .briefingStatusRow{ align-items:flex-start; flex-direction:column; }
+      .briefingStatusTags{ justify-content:flex-start; }
+    }
     @media (max-width: 640px){
       .briefingGrid{ grid-template-columns: 1fr; }
+      .briefingPrimary{ flex-direction:column; align-items:flex-start; }
+      .briefingShipCard{ width:100px; height:100px; }
+      .briefingBeltCard, .briefingShotCard{ width:96px; height:96px; }
     }
 
     .choiceGrid{
@@ -952,8 +1063,9 @@
       border-radius:18px;
       letter-spacing:1.2px;
       text-transform:uppercase;
-      border-color: rgba(80,220,120,.45);
-      background: rgba(80,220,120,.26);
+      border-color: rgba(80,220,120,.72);
+      background: linear-gradient(145deg, rgba(60,185,105,.42), rgba(35,120,74,.42));
+      box-shadow: 0 0 0 1px rgba(180,255,210,.18) inset, 0 12px 28px rgba(20,90,52,.45);
       opacity:0;
       transform: scale(0.6);
       pointer-events:none;
@@ -964,6 +1076,9 @@
       transform: scale(1);
       pointer-events:auto;
       animation: launchPop .7s ease;
+    }
+    #briefingOverlay #btnBriefingSkip:hover{
+      box-shadow: 0 16px 34px rgba(26,102,58,.5), 0 0 24px rgba(96,255,172,.25);
     }
     .funnelOverlay .btn:hover,
     #campaignOverlay .btn:hover,
@@ -2000,33 +2115,33 @@
               <h3>Cluster Selector</h3>
               <input type="hidden" id="belt" name="belt" value="dusk" />
               <div class="choiceGrid" id="beltChoices">
-                <div class="choiceCard beltChoice selected" data-belt="dusk" style="background-image:url('images/backgrounds/background8.png');">
-                  <h4>Dusk Cluster</h4>
-                  <p>Default training field with deep stars.</p>
+                <div class="choiceCard beltChoice selected" data-belt="dusk" style="background-image:url('images/backgrounds/sector_run_b.png');">
+                  <h4>Sector Run Cluster</h4>
+                  <p>Starter sector lanes with balanced visibility.</p>
                 </div>
-                <div class="choiceCard beltChoice" data-belt="ember" style="background-image:url('images/backgrounds/background1.png');">
-                  <h4>Ember Cluster</h4>
-                  <p>Warm glow with scattered dust lanes.</p>
+                <div class="choiceCard beltChoice" data-belt="ember" style="background-image:url('images/backgrounds/rift_assault_b.png');">
+                  <h4>Rift Assault Cluster</h4>
+                  <p>Higher contrast lanes tuned for high-speed runs.</p>
                 </div>
-                <div class="choiceCard beltChoice locked" data-belt="aurora" data-locked="true" style="background-image:url('images/backgrounds/background2.png');">
-                  <h4>Aurora Cluster</h4>
+                <div class="choiceCard beltChoice locked" data-belt="aurora" data-locked="true" style="background-image:url('images/backgrounds/void_run_b.png');">
+                  <h4>Void Run Cluster</h4>
                   <span class="beltLockTag costTag">250</span>
-                  <p>Cool nebula haze and icy highlights.</p>
+                  <p>Dark compression field with narrow visibility lanes.</p>
                 </div>
-                <div class="choiceCard beltChoice locked" data-belt="rift" data-locked="true" style="background-image:url('images/backgrounds/background3.png');">
-                  <h4>Rift Cluster</h4>
+                <div class="choiceCard beltChoice locked" data-belt="rift" data-locked="true" style="background-image:url('images/backgrounds/nebula_seige_b.png');">
+                  <h4>Nebula Seige Cluster</h4>
                   <span class="beltLockTag costTag">450</span>
-                  <p>Dense field with higher contrast drift.</p>
+                  <p>Heavy-flare battle zone with dense hazard drift.</p>
                 </div>
-                <div class="choiceCard beltChoice locked" data-belt="vega" data-locked="true" style="background-image:url('images/backgrounds/background7.png');">
-                  <h4>Vega Cluster</h4>
+                <div class="choiceCard beltChoice locked" data-belt="vega" data-locked="true" style="background-image:url('images/backgrounds/apex_frontier_b.png');">
+                  <h4>Apex Frontier Cluster</h4>
                   <span class="beltLockTag costTag">700</span>
-                  <p>Wide galaxy wash with soft flares.</p>
+                  <p>Expert frontier lanes built for max tempo pressure.</p>
                 </div>
-                <div class="choiceCard beltChoice locked" data-belt="void" data-locked="true" style="background-image:url('images/backgrounds/background9.png');">
-                  <h4>Void Cluster</h4>
+                <div class="choiceCard beltChoice locked" data-belt="void" data-locked="true" style="background-image:url('images/backgrounds/apex_frontier_b.png');">
+                  <h4>Apex Frontier Plus</h4>
                   <span class="beltLockTag costTag">1000</span>
-                  <p>Deep space with faint starlight.</p>
+                  <p>Apex variant with the same battlefield profile.</p>
                 </div>
               </div>
             </div>
@@ -2807,43 +2922,54 @@
     </div>
   </div>
 
-  <div id="briefingOverlay" class="overlay briefingOverlay">
-      <div class="briefingCard">
-        <div class="cardHead" style="border:none; padding:0 0 10px;">
-          <div>
-            <h2 class="title">Mission Briefing</h2>
-            <p class="subtitle">Review your loadout before launch.</p>
+  <div id="briefingOverlay" class="overlay briefingOverlay briefing-normal">
+    <div class="briefingCard">
+      <div class="cardHead" style="border:none; padding:0 0 10px;">
+        <div style="width:100%;">
+          <h2 class="title">Mission Briefing</h2>
+          <p class="subtitle">Review your loadout before launch.</p>
+          <div class="briefingStatusRow">
             <div class="briefingStatus" id="briefingStatus">
               <span class="briefingSpinner" aria-hidden="true"></span>
               <span id="briefingStatusText">Initializing launch sequence...</span>
             </div>
-          </div>        </div>
-      <div class="panel" style="margin-top:10px;">
-        <div class="briefingShipRow">
-          <img class="briefingShipCard" id="briefingShipCard" src="images/ships/Crimson%20MK-7.png" alt="" />
-          <div class="briefingShipMeta">
-            <h3 id="briefingShip">Ship: �?"</h3>
-            <p class="monoSmall" id="briefingMode" style="margin:0;">Mode: �?"</p>
-            <p class="monoSmall" id="briefingDifficulty" style="margin:0;">Difficulty: �?"</p>
-            <p class="monoSmall" id="briefingOperation" style="margin:0;">Operation: �?"</p>
-            <p class="monoSmall" id="briefingSubmode" style="margin:0;">Submode: �?"</p>
+            <div class="briefingStatusTags">
+              <span class="briefingTag objective" id="briefingObjectiveTag">Objective: --</span>
+              <span class="briefingTag risk" id="briefingRiskTag">Risk: Normal</span>
+            </div>
           </div>
-          <div class="briefingBeltWrap">
-            <div class="briefingBeltLabel" id="briefingBelt">â€”</div>
-            <img class="briefingBeltCard" id="briefingBeltCard" src="images/backgrounds/background8.png" alt="" />
+        </div>
+      </div>
+      <div class="panel briefingMainPanel">
+        <div class="briefingMainSplit">
+          <div class="briefingPrimary">
+            <img class="briefingShipCard" id="briefingShipCard" src="images/ships/Crimson%20MK-7.png" alt="" />
+            <div class="briefingShipMeta">
+              <h3 id="briefingShip">Ship: --</h3>
+              <p class="monoSmall" id="briefingMode" style="margin:0;">Mode: --</p>
+              <p class="monoSmall" id="briefingDifficulty" style="margin:0;">Difficulty: --</p>
+              <p class="monoSmall" id="briefingOperation" style="margin:0;">Operation: --</p>
+              <p class="monoSmall" id="briefingSubmode" style="margin:0;">Submode: --</p>
+            </div>
           </div>
-          <div class="briefingShotWrap">
-            <div class="briefingShotLabel" id="briefingShotLabel">â€”</div>
-            <img class="briefingShotCard" id="briefingShotCard" src="images/bullets/bullet_single.png" alt="" />
+          <div class="briefingLoadout">
+            <div class="briefingLoadoutCard briefingBeltWrap">
+              <div class="briefingBeltLabel" id="briefingBelt">--</div>
+              <img class="briefingBeltCard" id="briefingBeltCard" src="images/backgrounds/sector_run_b.png" alt="" />
+            </div>
+            <div class="briefingLoadoutCard briefingShotWrap">
+              <div class="briefingShotLabel" id="briefingShotLabel">--</div>
+              <img class="briefingShotCard" id="briefingShotCard" src="images/bullets/bullet_single.png" alt="" />
+            </div>
           </div>
         </div>
       </div>
       <div class="briefingGrid">
-        <div class="briefingStat"><span>Shot Type</span><b id="briefingShotType">â€”</b></div>
-        <div class="briefingStat"><span>Lives</span><b id="briefingLives">—</b></div>
-        <div class="briefingStat"><span>Strikes</span><b id="briefingStrikes">—</b></div>
-        <div class="briefingStat"><span>Targeted Asteroids</span><b id="briefingTargeted">—</b></div>
-        <div class="briefingStat"><span>Timer</span><b id="briefingTimer">—</b></div>
+        <div class="briefingStat"><span>Lives</span><b id="briefingLives">--</b></div>
+        <div class="briefingStat"><span>Strikes</span><b id="briefingStrikes">--</b></div>
+        <div class="briefingStat"><span>Objective</span><b id="briefingTargeted">--</b></div>
+        <div class="briefingStat"><span>Time Limit</span><b id="briefingTimer">--</b></div>
+        <div class="briefingStat"><span>Asteroid Speed</span><b id="briefingSpeed">--</b></div>
       </div>
       <div class="briefingFooter">
         <div class="briefingCommander">
@@ -2852,10 +2978,10 @@
         </div>
         <div class="briefingHints">
           <div class="briefingHintLabel">Command Directive</div>
-          <div class="briefingHintText" id="briefingHintText">—</div>
+          <div class="briefingHintText" id="briefingHintText">--</div>
         </div>
         <div class="briefingLaunch">
-          <button id="btnBriefingSkip" class="btn">Launch</button>
+          <button id="btnBriefingSkip" class="btn">Launch Mission</button>
         </div>
       </div>
     </div>
@@ -5691,7 +5817,6 @@
     var briefingDifficulty = document.getElementById("briefingDifficulty");
     var briefingOperation = document.getElementById("briefingOperation");
     var briefingSubmode = document.getElementById("briefingSubmode");
-    var briefingShotType = document.getElementById("briefingShotType");
     var briefingShotLabel = document.getElementById("briefingShotLabel");
     var briefingBelt = document.getElementById("briefingBelt");
     var briefingBeltCard = document.getElementById("briefingBeltCard");
@@ -5700,6 +5825,9 @@
     var briefingStrikes = document.getElementById("briefingStrikes");
     var briefingTargeted = document.getElementById("briefingTargeted");
     var briefingTimer = document.getElementById("briefingTimer");
+    var briefingSpeed = document.getElementById("briefingSpeed");
+    var briefingObjectiveTag = document.getElementById("briefingObjectiveTag");
+    var briefingRiskTag = document.getElementById("briefingRiskTag");
     var briefingHintText = document.getElementById("briefingHintText");
     var briefingReady = false;
     var briefingTimerId = null;
@@ -5714,26 +5842,6 @@
     ];
     var hintCycleMs = 5200;
     var hintTypeMs = 28;
-
-    function ensureBriefingStat(id, label){
-      var el = document.getElementById(id);
-      if(el) return el;
-      var grid = document.querySelector(".briefingGrid");
-      if(!grid) return null;
-      var stat = document.createElement("div");
-      stat.className = "briefingStat";
-      var span = document.createElement("span");
-      span.textContent = label;
-      var b = document.createElement("b");
-      b.id = id;
-      b.textContent = "\u2014";
-      stat.appendChild(span);
-      stat.appendChild(b);
-      grid.insertBefore(stat, grid.firstChild);
-      return b;
-    }
-    if(!briefingShotType) briefingShotType = ensureBriefingStat("briefingShotType", "Shot Type");
-    if(!briefingBelt) briefingBelt = ensureBriefingStat("briefingBelt", "Cluster");
 
     function shuffleArray(list){
       var arr = list.slice();
@@ -6315,6 +6423,7 @@
       var m = missions[idx];
       if(!m) return;
       var config = Object.assign({}, defaults, m.config);
+      config.belt = getCampaignMissionBeltKey(campaignId, idx, missions.length);
       if(config.ship){
         pendingCampaign = { index: idx, id: campaignId };
         pendingConfig = config;
@@ -6521,6 +6630,19 @@
       if(!mission) return "";
       if(!isCampaignMissionNonEndless(mission.config)) return mission.title;
       return mission.title + " — " + getCampaignMissionBossLabel(campaignId, mission, index);
+    }
+
+    function getCampaignMissionBeltKey(campaignId, missionIndex, missionCount){
+      var id = String(campaignId || campaignDefaultId);
+      var idx = Math.max(0, Number(missionIndex) || 0);
+      var total = Math.max(1, Number(missionCount) || 1);
+      var isLast = idx >= (total - 1);
+      if(id === "sector_run") return isLast ? "ember" : "dusk";
+      if(id === "rift_assault") return isLast ? "aurora" : "ember";
+      if(id === "void_run") return isLast ? "rift" : "aurora";
+      if(id === "nebula_siege") return isLast ? "vega" : "rift";
+      if(id === "apex_frontier") return "vega";
+      return "dusk";
     }
 
     function getActiveCampaignMissions(){
@@ -6802,6 +6924,7 @@
       if(!m) return;
       campaignShipSelect = false;
       var config = Object.assign({}, defaults, m.config);
+      config.belt = getCampaignMissionBeltKey(activeId, index, missions.length);
       if(config.ship){
         pendingCampaign = { index: index, id: activeId, profileId: getActiveProfileId() };
         pendingConfig = config;
@@ -6894,6 +7017,9 @@
         btnBriefingSkip.disabled = true;
       }
       if(briefingStatusText) briefingStatusText.textContent = "Initializing launch sequence...";
+      if(briefingOverlay){
+        briefingOverlay.classList.remove("briefing-easy", "briefing-normal", "briefing-hard");
+      }
 
       var shipKey = (config.ship || "mk7");
       var shipNameMap = {
@@ -6914,34 +7040,31 @@
         briefingShipCard.src = shipCardImageByShip[shipKey];
       }
       if(briefingShip) briefingShip.textContent = "Ship: " + (shipNameMap[shipKey] || shipKey.toUpperCase());
-      if(briefingShotType){
-        var shotKey = String(config.shotType || "single");
-        var shotLabel = shotTypeLabels[shotKey] || shotKey;
-        briefingShotType.textContent = "Shot Type: " + shotLabel.toUpperCase();
-        if(briefingShotLabel){
-          briefingShotLabel.textContent = shotLabel.toUpperCase();
-        }
-        if(briefingShotCard){
-          briefingShotCard.src = shotTypeImages[shotKey] || shotTypeImages.single;
-        }
+      var shotKey = String(config.shotType || "single");
+      var shotLabel = shotTypeLabels[shotKey] || shotKey;
+      if(briefingShotLabel){
+        briefingShotLabel.textContent = shotLabel.toUpperCase();
+      }
+      if(briefingShotCard){
+        briefingShotCard.src = shotTypeImages[shotKey] || shotTypeImages.single;
       }
       if(briefingBelt){
         var beltKey = String(config.belt || selectedBelt || "dusk");
         var beltLabels = {
-          dusk: "Dusk",
-          ember: "Ember",
-          aurora: "Aurora",
-          rift: "Rift",
-          vega: "Vega",
-          void: "Void"
+          dusk: "Sector Run",
+          ember: "Rift Assault",
+          aurora: "Void Run",
+          rift: "Nebula Seige",
+          vega: "Apex Frontier",
+          void: "Apex Frontier+"
         };
         var beltImages = {
-          dusk: "images/backgrounds/background8.png",
-          ember: "images/backgrounds/background1.png",
-          aurora: "images/backgrounds/background2.png",
-          rift: "images/backgrounds/background3.png",
-          vega: "images/backgrounds/background7.png",
-          void: "images/backgrounds/background9.png"
+          dusk: "images/backgrounds/sector_run_b.png",
+          ember: "images/backgrounds/rift_assault_b.png",
+          aurora: "images/backgrounds/void_run_b.png",
+          rift: "images/backgrounds/nebula_seige_b.png",
+          vega: "images/backgrounds/apex_frontier_b.png",
+          void: "images/backgrounds/apex_frontier_b.png"
         };
         briefingBelt.textContent = beltLabels[beltKey] || beltKey.toUpperCase();
         if(briefingBeltCard){
@@ -6982,6 +7105,14 @@
         var diffLabel = String(config.difficulty || "normal");
         var diffMap = { easy: "Easy", normal: "Normal", hard: "Hard", brutal: "Brutal" };
         briefingDifficulty.textContent = "Difficulty: " + (diffMap[diffLabel] || diffLabel.toUpperCase());
+        if(briefingRiskTag){
+          briefingRiskTag.textContent = "Risk: " + (diffMap[diffLabel] || diffLabel.toUpperCase());
+        }
+        if(briefingOverlay){
+          if(diffLabel === "easy") briefingOverlay.classList.add("briefing-easy");
+          else if(diffLabel === "hard" || diffLabel === "brutal") briefingOverlay.classList.add("briefing-hard");
+          else briefingOverlay.classList.add("briefing-normal");
+        }
       }
       if(briefingOperation || briefingSubmode){
         var isAdd = modeLabel.indexOf("add_") === 0;
@@ -7009,11 +7140,20 @@
       if(briefingStrikes) briefingStrikes.textContent = String(config.strikes);
       if(briefingTargeted){
         if(config.targetMode === "off"){
-          briefingTargeted.textContent = "Endless";
+          if(config.timerMode === "off"){
+            briefingTargeted.textContent = "Endless";
+            if(briefingObjectiveTag) briefingObjectiveTag.textContent = "Objective: Endless";
+          }else{
+            briefingTargeted.textContent = "Survive " + config.timerMode + "s";
+            if(briefingObjectiveTag) briefingObjectiveTag.textContent = "Objective: Survive";
+          }
         }else if(String(config.targetMode).charAt(0) === "q"){
-          briefingTargeted.textContent = String(config.targetMode).slice(1) + " targets";
+          var targetCount = String(config.targetMode).slice(1);
+          briefingTargeted.textContent = "Eliminate " + targetCount + " targets";
+          if(briefingObjectiveTag) briefingObjectiveTag.textContent = "Objective: Target " + targetCount;
         }else{
           briefingTargeted.textContent = String(config.targetMode);
+          if(briefingObjectiveTag) briefingObjectiveTag.textContent = "Objective: " + String(config.targetMode);
         }
       }
       if(briefingTimer){
@@ -7022,6 +7162,10 @@
         }else{
           briefingTimer.textContent = config.timerMode + "s";
         }
+      }
+      if(briefingSpeed){
+        var speed = parseFloat(config.speed);
+        briefingSpeed.textContent = Number.isFinite(speed) ? (speed.toFixed(2) + "x") : "--";
       }
 
       startHintCycle();

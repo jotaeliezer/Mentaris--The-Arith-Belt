@@ -1027,12 +1027,12 @@ var beltIndexMap = {
   void: 5
 };
 var backgroundSources = [
-  "images/backgrounds/background8.png",
-  "images/backgrounds/background1.png",
-  "images/backgrounds/background2.png",
-  "images/backgrounds/background3.png",
-  "images/backgrounds/background7.png",
-  "images/backgrounds/background9.png"
+  "images/backgrounds/sector_run_b.png",
+  "images/backgrounds/rift_assault_b.png",
+  "images/backgrounds/void_run_b.png",
+  "images/backgrounds/nebula_seige_b.png",
+  "images/backgrounds/apex_frontier_b.png",
+  "images/backgrounds/apex_frontier_b.png"
 ];
 for(var bi=0; bi<backgroundSources.length; bi++){
   var bgImg = new Image();
@@ -4591,10 +4591,20 @@ function genClassicDecoys(correct, count){
     out.add(d);
   }
 
-  while(out.size < count){
+  var fallbackGuard = 0;
+  while(out.size < count && fallbackGuard++ < 420){
     var fallback = isAdd ? baseAddDecoy(correct) : baseMulDecoy(correct);
     if(mode !== "digit_shuffle") fallback = enforceUnitsDigit(fallback, correct);
     if(fallback !== correct && fallback >= 0) out.add(fallback);
+  }
+  // Final deterministic fill to avoid any chance of infinite loops on narrow ranges.
+  var offset = 1;
+  while(out.size < count && offset < 2048){
+    var signed = (offset % 2 === 1) ? -Math.ceil(offset / 2) : Math.ceil(offset / 2);
+    var deterministic = Math.max(0, correct + signed);
+    if(mode !== "digit_shuffle") deterministic = enforceUnitsDigit(deterministic, correct);
+    if(deterministic !== correct && deterministic >= 0) out.add(deterministic);
+    offset++;
   }
   return Array.from(out);
 }
@@ -4616,9 +4626,17 @@ function genDecoys(correct, count){
       if(Math.abs(dAdd - correct) > 60) continue;
       outAdd.add(dAdd);
     }
-    while(outAdd.size < count){
+    var addFallbackGuard = 0;
+    while(outAdd.size < count && addFallbackGuard++ < 420){
       var ddAdd = Math.max(0, correct + randi(-15, 15));
       if(ddAdd !== correct) outAdd.add(ddAdd);
+    }
+    var addOffset = 1;
+    while(outAdd.size < count && addOffset < 2048){
+      var addSigned = (addOffset % 2 === 1) ? -Math.ceil(addOffset / 2) : Math.ceil(addOffset / 2);
+      var deterministicAdd = Math.max(0, correct + addSigned);
+      if(deterministicAdd !== correct) outAdd.add(deterministicAdd);
+      addOffset++;
     }
     return Array.from(outAdd);
   }
@@ -4633,9 +4651,17 @@ function genDecoys(correct, count){
     out.add(d);
   }
 
-  while(out.size < count){
+  var mulFallbackGuard = 0;
+  while(out.size < count && mulFallbackGuard++ < 420){
     var dd = Math.max(0, correct + randi(-12, 12));
     if(dd !== correct) out.add(dd);
+  }
+  var mulOffset = 1;
+  while(out.size < count && mulOffset < 2048){
+    var mulSigned = (mulOffset % 2 === 1) ? -Math.ceil(mulOffset / 2) : Math.ceil(mulOffset / 2);
+    var deterministicMul = Math.max(0, correct + mulSigned);
+    if(deterministicMul !== correct) out.add(deterministicMul);
+    mulOffset++;
   }
   return Array.from(out);
 }
@@ -4646,6 +4672,7 @@ function pickCorrectDigit(){
 }
 
 function genDigitDecoys(correctDigit, count){
+  count = Math.max(0, Math.min(9, count | 0));
   var out = new Set();
   var tries = 0;
   while(out.size < count && tries++ < 120){
@@ -4653,9 +4680,14 @@ function genDigitDecoys(correctDigit, count){
     if(d === correctDigit) continue;
     out.add(d);
   }
-  while(out.size < count){
+  var digitFallbackGuard = 0;
+  while(out.size < count && digitFallbackGuard++ < 120){
     var dd = (correctDigit + randi(1,9)) % 10;
     if(dd !== correctDigit) out.add(dd);
+  }
+  for(var step=1; out.size < count && step <= 9; step++){
+    var deterministicDigit = (correctDigit + step) % 10;
+    if(deterministicDigit !== correctDigit) out.add(deterministicDigit);
   }
   return Array.from(out);
 }
@@ -5493,8 +5525,8 @@ function triggerTutorialRecovery(reason){
   kickShake(20, 0.16);
   showToast(reason || "HULL CRITICAL");
   tourGuide.interject([
-    { id: "recovery_warn", title: "Hull Warning", body: "Beware the green HP bar at the top left. Avoid crashing into asteroids and alien attacks.", autoAdvanceMs: 2600, showProgress: false },
-    { id: "recovery_powerup", title: "Repair Protocol", body: "Shoot the answer for a chance at a powerup. Grab the wrench to repair hull.", autoAdvanceMs: 2600, showProgress: false }
+    { id: "recovery_warn", title: "Hull Warning", body: "Watch the green hull bar at top left. Asteroid and alien impacts will deplete it fast.", autoAdvanceMs: 2600, showProgress: false },
+    { id: "recovery_powerup", title: "Repair Protocol", body: "Correct hits can trigger support drops. Secure the wrench to restore hull integrity.", autoAdvanceMs: 2600, showProgress: false }
   ], function(){
     tutorialRecoveryActive = false;
     if(tourGuide && tutorialRecoveryResumeStepId){
@@ -6014,6 +6046,10 @@ function startCountdown(skipReset){
     countdownTimerId = 0;
     countdownEl.classList.remove("show");
     countdownActive = false;
+    // Defensive cleanup: stale mission-brief state can block gameplay update/spawns.
+    missionBriefOnAccept = null;
+    if(missionBriefOverlay) missionBriefOverlay.classList.remove("show");
+    if(missionBriefShowing) setMissionBriefActive(false);
     if(skipReset){
       resetSession();
       beginRun();
@@ -7423,7 +7459,7 @@ function queueTutorialSecondChance(){
       {
         id: "tutorial_second_chance",
         title: "Second Chance",
-        body: "Sometimes there are second chances. Take a breath and line up the correct asteroid.",
+        body: "Second chance granted. Reacquire the answer target and fire cleanly.",
         autoAdvanceMs: 2200,
         showProgress: false
       }
@@ -16010,12 +16046,12 @@ function setSandboxShip(type){
   var beltContainer = sandboxPanel.querySelector("#sandboxBelts");
   var beltButtons = [];
   [
-    { id: "dusk", label: "Dusk" },
-    { id: "ember", label: "Ember" },
-    { id: "aurora", label: "Aurora" },
-    { id: "rift", label: "Rift" },
-    { id: "vega", label: "Vega" },
-    { id: "void", label: "Void" }
+    { id: "dusk", label: "Sector Run" },
+    { id: "ember", label: "Rift Assault" },
+    { id: "aurora", label: "Void Run" },
+    { id: "rift", label: "Nebula Seige" },
+    { id: "vega", label: "Apex Frontier" },
+    { id: "void", label: "Apex Frontier+" }
   ].forEach(function(info){
     var btn = addButton(beltContainer, info.label, function(){
       setSandboxBelt(info.id);
