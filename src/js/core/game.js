@@ -878,6 +878,7 @@ var tutorialPowerupBatchSpawned = false;
 var tutorialExtraPowerupsSpawned = false;
 var tutorialFreezeMousepadRestore = false;
 var tutorialMovementPreference = null;
+var tutorialMovementChoiceResolved = false;
 var tutorialPlatformChoiceResolved = false;
 var tutorialPortalActive = false;
 var tutorialPortalX = 0;
@@ -2510,7 +2511,7 @@ function updateCursorVisibility(){
     document.body.style.cursor = "";
     return;
   }
-  if(tutorialActive && tutorialStepId === "movement_preference"){
+  if(tutorialActive && tutorialStepId === "movement_preference" && !tutorialMovementChoiceResolved){
     document.body.style.cursor = "";
     return;
   }
@@ -3105,8 +3106,8 @@ function startTutorialDashMarker(){
   var topLimit = hudRect.height + 18;
   var bottomLimit = rect.height - 20;
   tutorialDashMarkerR = 34;
-  tutorialDashMarkerX = clamp(player.x, player.w / 2 + 30, rect.width - player.w / 2 - 30);
-  tutorialDashMarkerY = clamp(player.y - 150, topLimit + tutorialDashMarkerR + 14, bottomLimit - tutorialDashMarkerR - 30);
+  tutorialDashMarkerX = rect.width / 2;
+  tutorialDashMarkerY = (topLimit + bottomLimit) / 2;
   tutorialDashMarkerActive = true;
   tutorialDashMarkerArmed = false;
   tutorialDashMarkerT = 0;
@@ -5773,6 +5774,7 @@ function resetSession(){
   state.missileBuffer = "";
   state.missileBufferTimer = 0;
   state.shotCounts = {};
+  state.pullDownRemaining = 0;
   state.slowMoWaveActive = false;
   state.slowMoWaveY = 0;
   state.slowMoWaveSpeed = 420;
@@ -7600,6 +7602,7 @@ function handleDivisorCorrectHit(hitAst){
 }
 
 function onCorrectHit(hitAst){
+  state.pullDownRemaining = 1.5;
   if(warningClip){
     try{
       warningClip.pause();
@@ -8238,6 +8241,7 @@ function endGame(reason){
   state.over = true;
   state.running = false;
   state.paused = false;
+  state.pullDownRemaining = 0;
   introActive = false;
   countdownActive = false;
   missionBriefShowing = false;
@@ -8838,6 +8842,9 @@ function update(dt){
   if(state.cameraFlash > 0){
     state.cameraFlash = Math.max(0, state.cameraFlash - dtReal);
   }
+  if(state.pullDownRemaining > 0){
+    state.pullDownRemaining = Math.max(0, state.pullDownRemaining - dtReal);
+  }
   if(usePhaserRenderer && !tutorialActive && backgroundSprites[backgroundIndex] && backgroundReady[backgroundIndex]){
     var bgImg = backgroundSprites[backgroundIndex];
     var baseScale = Math.max(view.w / bgImg.width, view.h / bgImg.height);
@@ -9120,7 +9127,7 @@ function update(dt){
   var accel = 1 - Math.exp(-accelRate * dtReal);
   player.moveSpeed += (targetSpeed - player.moveSpeed) * accel;
   var desiredVX = dirX * player.moveSpeed;
-  var desiredVY = dirY * player.moveSpeed;
+  var desiredVY = state.pullDownRemaining > 0 ? Math.max(0, dirY * player.moveSpeed) : dirY * player.moveSpeed;
 
   var response = profile.response || 14;
   var alpha = 1 - Math.exp(-response * dtReal);
@@ -9834,7 +9841,26 @@ function update(dt){
       if(a.vx > STAMPEDE_HOMING_MAX_VX) a.vx = STAMPEDE_HOMING_MAX_VX;
       else if(a.vx < -STAMPEDE_HOMING_MAX_VX) a.vx = -STAMPEDE_HOMING_MAX_VX;
     }
-    a.y += a.vy * dtAst * empScale;
+    var pullDownSpeedMul = 1;
+    if(state.pullDownRemaining > 0){
+      var pullDownDuration = 1.5;
+      var elapsed = pullDownDuration - state.pullDownRemaining;
+      if(elapsed < 0) elapsed = 0;
+      if(elapsed > pullDownDuration) elapsed = pullDownDuration;
+      var rampUp = 0.35;
+      var rampDown = 0.35;
+      var maxMul = 1.6;
+      if(elapsed < rampUp){
+        var tUp = elapsed / rampUp;
+        pullDownSpeedMul = 1 + (maxMul - 1) * tUp;
+      }else if(elapsed > pullDownDuration - rampDown){
+        var tDown = (elapsed - (pullDownDuration - rampDown)) / rampDown;
+        pullDownSpeedMul = maxMul + (1 - maxMul) * tDown;
+      }else{
+        pullDownSpeedMul = maxMul;
+      }
+    }
+    a.y += a.vy * dtAst * empScale * pullDownSpeedMul;
     a.x += a.vx * dtAst;
     if(a.baseVy != null){
       a.vy += (a.baseVy - a.vy) * Math.min(1, dtAst * 0.55);
@@ -12983,6 +13009,9 @@ function drawAsteroid(a){
   var drawX = a.x;
   var drawY = a.y;
   var fadeAlpha = 1;
+  if(state.pullDownRemaining > 0 && a.waveId === -1){
+    fadeAlpha *= state.pullDownRemaining / 1.5;
+  }
   if(a.effect === "fade" && a.effectDuration){
     fadeAlpha = clamp(a.effectTimer / a.effectDuration, 0, 1);
   }
@@ -13197,7 +13226,8 @@ function drawShip(){
   var sx = shake ? Math.sin(performance.now() * 0.05) * shake : 0;
   var sy = shake ? Math.cos(performance.now() * 0.045) * shake : 0;
   var overScale = player.overflightTimer > 0 ? 1.18 : 1;
-  renderShip(player.x + sx, player.y + sy, fadeAlpha, false, undefined, undefined, null, overScale);
+  var shipOpts = state.pullDownRemaining > 0 ? { thrustFocus: true } : null;
+  renderShip(player.x + sx, player.y + sy, fadeAlpha, false, undefined, undefined, shipOpts, overScale);
   if(player.compassTimer > 0){
     drawCompassArrow();
   }
@@ -13714,6 +13744,7 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
   var useVY = (typeof overrideVY === "number") ? overrideVY : player.vy;
   var vxN = clamp(useVX / player.speed, -1, 1);
   var vyN = clamp(useVY / player.speed, -1, 1);
+  var forceFullThrust = !!(ghostStyle && ghostStyle.thrustFocus);
 
   var bank = (typeof player.bankHold === "number") ? player.bankHold : vxN;
   var turn = bank * 0.03;
@@ -14580,7 +14611,7 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
     var leftPlumeMul = clamp(1 + bankForFlame * 0.35, 0.68, 1.38);
     var rightPlumeMul = clamp(1 - bankForFlame * 0.35, 0.68, 1.38);
     var centerPlumeMul = 1 + Math.abs(bankForFlame) * 0.12;
-    var forwardBoost = Math.max(0, -vyN);
+    var forwardBoost = forceFullThrust ? 1 : Math.max(0, -vyN);
     var flame = 12 + speedMag * 18 + (Math.sin(t*0.03) * 2.6) + forwardBoost * 16;
     flame *= ghostFlameBoost;
     flame *= hoverBoost;
@@ -14686,7 +14717,7 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
     var leftPlumeMul = clamp(1 + bankForFlame * 0.35, 0.68, 1.38);
     var rightPlumeMul = clamp(1 - bankForFlame * 0.35, 0.68, 1.38);
     var centerPlumeMul = 1 + Math.abs(bankForFlame) * 0.12;
-    var forwardBoost = Math.max(0, -vyN);
+    var forwardBoost = forceFullThrust ? 1 : Math.max(0, -vyN);
     var flame = 12 + speedMag * 18 + (Math.sin(t*0.03) * 2.6) + forwardBoost * 16;
     flame *= ghostFlameBoost;
     flame *= hoverBoost;
@@ -16159,6 +16190,7 @@ function boot(){
       tutorialExtraPowerupsSpawned = false;
       tutorialFreezeMousepadRestore = false;
       tutorialMovementPreference = null;
+      tutorialMovementChoiceResolved = false;
       tutorialPlatformChoiceResolved = false;
       tutorialPlatform = "desktop";
       tutorialPortalActive = false;
@@ -16187,6 +16219,7 @@ function boot(){
           if(stepId === "platform_choice"){
             tutorialPlatform = "desktop";
             tutorialMovementPreference = null;
+            tutorialMovementChoiceResolved = false;
             tutorialPlatformChoiceResolved = false;
             setTouchDockHidden(false);
             updateCursorVisibility();
@@ -16217,11 +16250,17 @@ function boot(){
             setTouchDockHidden(false);
             if(mousepadActive) setMousepadActive(false);
             startTutorialDots("touch", "move_touch");
-          }else if(stepId === "movement_preference" && tutorialPlatform === "tablet"){
-            tourGuide.jumpTo("fire_once");
-            return false;
+          }else if(stepId === "movement_preference"){
+            tutorialMovementChoiceResolved = false;
+            if(tutorialPlatform === "tablet"){
+              tourGuide.jumpTo("fire_once");
+              return false;
+            }
           }else if(tutorialDotsActive){
             stopTutorialDots();
+          }
+          if(stepId === "dash_step"){
+            startTutorialDashMarker();
           }
           if(stepId === "recovery_powerup"){
             tutorialRespawnActive = true;
@@ -16366,6 +16405,7 @@ function boot(){
             return;
           }
           if(stepId !== "movement_preference") return;
+          tutorialMovementChoiceResolved = true;
           tutorialMovementPreference = choice && choice.id ? String(choice.id) : "";
           if(tutorialMovementPreference === "mouse"){
             if(!mousepadActive) setMousepadActive(true);
@@ -16376,6 +16416,7 @@ function boot(){
         },
         onComplete: function(){
           try{ localStorage.setItem("mentaris.tutorial.complete", "1"); }catch(e){}
+          tutorialMovementChoiceResolved = false;
           tutorialPortalActive = false;
           tutorialPortalLock = false;
           tutorialPortalNotifyPending = false;
@@ -16426,6 +16467,7 @@ function boot(){
       tutorialFreezeDimTarget = 0;
       tutorialFreezeDimAlpha = 0;
       tutorialPowerupBatchSpawned = false;
+      tutorialMovementChoiceResolved = false;
       tutorialPendingCorrectNotify = false;
       tutorialPendingAidNotify = "";
       alienConfig.enabled = true;

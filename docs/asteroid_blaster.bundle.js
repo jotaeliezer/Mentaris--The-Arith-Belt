@@ -139338,6 +139338,7 @@
       correctDelayRemaining: 0,
       nextCorrectSpawnX: null,
       // arcade feel FX
+      pullDownRemaining: 0,
       slowMoRemaining: 0,
       slowMoScale: 0.42,
       slowMoWaveActive: false,
@@ -139971,7 +139972,7 @@
       { id: "tablet_move", title: "Step 2: Touch Movement", body: "Tablet control confirmed. Use the left movement stick and clear dots 1 through 4 in sequence.", event: "move_touch", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Touch controls confirmed.", praiseBody: "Steady control. Good lane discipline." },
       { id: "fire_once", title: "Step 6: Fire Once", body: "Weapons check. Press the Space bar or Left Click to fire one shot.", event: "fire", count: 1 },
       { id: "fire_again", title: "Step 7: Fire Again", body: "Press the Space bar or Left Click again. Fire one controlled follow-up shot.", event: "fire", count: 1 },
-      { id: "dash_step", title: "Step 8: Dash Marker", body: "Use Dash now: press Shift or tap the Dash button. Pass through the marker.", event: "dash_marker" },
+      { id: "dash_step", title: "Step 8: Dash Marker", body: "Use Dash now: press Left Shift or tap the Dash button. Pass through the marker in the center of the arena.", event: "dash_marker" },
       { id: "correct", title: "Step 9: Correct Hit", body: "Read the prompt, identify the correct value, and destroy that asteroid.", event: "correct" },
       { id: "minerals", title: "Step 10: Minerals", body: "Collect all minerals in the field. Monitor your mineral count in the top-right HUD.", event: "minerals", confirmLabel: "Understood" },
       { id: "powerup", title: "Step 11: Powerup", body: "Collect the Time Dilation powerup.", event: "powerup" },
@@ -142855,6 +142856,7 @@
   var tutorialExtraPowerupsSpawned = false;
   var tutorialFreezeMousepadRestore = false;
   var tutorialMovementPreference = null;
+  var tutorialMovementChoiceResolved = false;
   var tutorialPlatformChoiceResolved = false;
   var tutorialPortalActive = false;
   var tutorialPortalX = 0;
@@ -144472,7 +144474,7 @@
       document.body.style.cursor = "";
       return;
     }
-    if (tutorialActive && tutorialStepId === "movement_preference") {
+    if (tutorialActive && tutorialStepId === "movement_preference" && !tutorialMovementChoiceResolved) {
       document.body.style.cursor = "";
       return;
     }
@@ -145046,6 +145048,18 @@
   }
   function clearTutorialDashMarker() {
     tutorialDashMarkerActive = false;
+    tutorialDashMarkerArmed = false;
+    tutorialDashMarkerT = 0;
+  }
+  function startTutorialDashMarker() {
+    var rect = canvas.getBoundingClientRect();
+    var hudRect = document.getElementById("hud").getBoundingClientRect();
+    var topLimit = hudRect.height + 18;
+    var bottomLimit = rect.height - 20;
+    tutorialDashMarkerR = 34;
+    tutorialDashMarkerX = rect.width / 2;
+    tutorialDashMarkerY = (topLimit + bottomLimit) / 2;
+    tutorialDashMarkerActive = true;
     tutorialDashMarkerArmed = false;
     tutorialDashMarkerT = 0;
   }
@@ -147692,6 +147706,7 @@
     state.missileBuffer = "";
     state.missileBufferTimer = 0;
     state.shotCounts = {};
+    state.pullDownRemaining = 0;
     state.slowMoWaveActive = false;
     state.slowMoWaveY = 0;
     state.slowMoWaveSpeed = 420;
@@ -149563,6 +149578,7 @@
     }
   }
   function onCorrectHit(hitAst) {
+    state.pullDownRemaining = 1.5;
     if (warningClip) {
       try {
         warningClip.pause();
@@ -150184,6 +150200,7 @@
     state.over = true;
     state.running = false;
     state.paused = false;
+    state.pullDownRemaining = 0;
     introActive = false;
     countdownActive = false;
     missionBriefShowing = false;
@@ -150760,6 +150777,9 @@
     if (state.cameraFlash > 0) {
       state.cameraFlash = Math.max(0, state.cameraFlash - dtReal2);
     }
+    if (state.pullDownRemaining > 0) {
+      state.pullDownRemaining = Math.max(0, state.pullDownRemaining - dtReal2);
+    }
     if (usePhaserRenderer && !tutorialActive && backgroundSprites[backgroundIndex] && backgroundReady[backgroundIndex]) {
       var bgImg = backgroundSprites[backgroundIndex];
       var baseScale = Math.max(view.w / bgImg.width, view.h / bgImg.height);
@@ -151039,7 +151059,7 @@
     var accel = 1 - Math.exp(-accelRate * dtReal2);
     player.moveSpeed += (targetSpeed - player.moveSpeed) * accel;
     var desiredVX = dirX * player.moveSpeed;
-    var desiredVY = dirY * player.moveSpeed;
+    var desiredVY = state.pullDownRemaining > 0 ? Math.max(0, dirY * player.moveSpeed) : dirY * player.moveSpeed;
     var response = profile.response || 14;
     var alpha = 1 - Math.exp(-response * dtReal2);
     player.vx += (desiredVX - player.vx) * alpha;
@@ -151770,7 +151790,28 @@
         else if (a.vx < -STAMPEDE_HOMING_MAX_VX)
           a.vx = -STAMPEDE_HOMING_MAX_VX;
       }
-      a.y += a.vy * dtAst * empScale;
+      var pullDownSpeedMul = 1;
+      if (state.pullDownRemaining > 0) {
+        var pullDownDuration = 1.5;
+        var elapsed = pullDownDuration - state.pullDownRemaining;
+        if (elapsed < 0)
+          elapsed = 0;
+        if (elapsed > pullDownDuration)
+          elapsed = pullDownDuration;
+        var rampUp = 0.35;
+        var rampDown = 0.35;
+        var maxMul = 1.6;
+        if (elapsed < rampUp) {
+          var tUp = elapsed / rampUp;
+          pullDownSpeedMul = 1 + (maxMul - 1) * tUp;
+        } else if (elapsed > pullDownDuration - rampDown) {
+          var tDown = (elapsed - (pullDownDuration - rampDown)) / rampDown;
+          pullDownSpeedMul = maxMul + (1 - maxMul) * tDown;
+        } else {
+          pullDownSpeedMul = maxMul;
+        }
+      }
+      a.y += a.vy * dtAst * empScale * pullDownSpeedMul;
       a.x += a.vx * dtAst;
       if (a.baseVy != null) {
         a.vy += (a.baseVy - a.vy) * Math.min(1, dtAst * 0.55);
@@ -154874,6 +154915,9 @@
     var drawX = a.x;
     var drawY = a.y;
     var fadeAlpha = 1;
+    if (state.pullDownRemaining > 0 && a.waveId === -1) {
+      fadeAlpha *= state.pullDownRemaining / 1.5;
+    }
     if (a.effect === "fade" && a.effectDuration) {
       fadeAlpha = clamp(a.effectTimer / a.effectDuration, 0, 1);
     }
@@ -155078,7 +155122,8 @@
     var sx = shake ? Math.sin(performance.now() * 0.05) * shake : 0;
     var sy = shake ? Math.cos(performance.now() * 0.045) * shake : 0;
     var overScale = player.overflightTimer > 0 ? 1.18 : 1;
-    renderShip(player.x + sx, player.y + sy, fadeAlpha, false, void 0, void 0, null, overScale);
+    var shipOpts = state.pullDownRemaining > 0 ? { thrustFocus: true } : null;
+    renderShip(player.x + sx, player.y + sy, fadeAlpha, false, void 0, void 0, shipOpts, overScale);
     if (player.compassTimer > 0) {
       drawCompassArrow();
     }
@@ -155552,6 +155597,7 @@
     var useVY = typeof overrideVY === "number" ? overrideVY : player.vy;
     var vxN = clamp(useVX / player.speed, -1, 1);
     var vyN = clamp(useVY / player.speed, -1, 1);
+    var forceFullThrust = !!(ghostStyle && ghostStyle.thrustFocus);
     var bank = typeof player.bankHold === "number" ? player.bankHold : vxN;
     var turn = bank * 0.03;
     var tilt = 0;
@@ -156372,7 +156418,7 @@
       var leftPlumeMul = clamp(1 + bankForFlame * 0.35, 0.68, 1.38);
       var rightPlumeMul = clamp(1 - bankForFlame * 0.35, 0.68, 1.38);
       var centerPlumeMul = 1 + Math.abs(bankForFlame) * 0.12;
-      var forwardBoost = Math.max(0, -vyN);
+      var forwardBoost = forceFullThrust ? 1 : Math.max(0, -vyN);
       var flame = 12 + speedMag * 18 + Math.sin(t * 0.03) * 2.6 + forwardBoost * 16;
       flame *= ghostFlameBoost;
       flame *= hoverBoost;
@@ -156475,7 +156521,7 @@
       var leftPlumeMul = clamp(1 + bankForFlame * 0.35, 0.68, 1.38);
       var rightPlumeMul = clamp(1 - bankForFlame * 0.35, 0.68, 1.38);
       var centerPlumeMul = 1 + Math.abs(bankForFlame) * 0.12;
-      var forwardBoost = Math.max(0, -vyN);
+      var forwardBoost = forceFullThrust ? 1 : Math.max(0, -vyN);
       var flame = 12 + speedMag * 18 + Math.sin(t * 0.03) * 2.6 + forwardBoost * 16;
       flame *= ghostFlameBoost;
       flame *= hoverBoost;
@@ -157965,6 +158011,7 @@
         tutorialExtraPowerupsSpawned = false;
         tutorialFreezeMousepadRestore = false;
         tutorialMovementPreference = null;
+        tutorialMovementChoiceResolved = false;
         tutorialPlatformChoiceResolved = false;
         tutorialPlatform = "desktop";
         tutorialPortalActive = false;
@@ -157995,6 +158042,7 @@
             if (stepId === "platform_choice") {
               tutorialPlatform = "desktop";
               tutorialMovementPreference = null;
+              tutorialMovementChoiceResolved = false;
               tutorialPlatformChoiceResolved = false;
               setTouchDockHidden(false);
               updateCursorVisibility();
@@ -158026,11 +158074,17 @@
               if (mousepadActive)
                 setMousepadActive(false);
               startTutorialDots("touch", "move_touch");
-            } else if (stepId === "movement_preference" && tutorialPlatform === "tablet") {
-              tourGuide.jumpTo("fire_once");
-              return false;
+            } else if (stepId === "movement_preference") {
+              tutorialMovementChoiceResolved = false;
+              if (tutorialPlatform === "tablet") {
+                tourGuide.jumpTo("fire_once");
+                return false;
+              }
             } else if (tutorialDotsActive) {
               stopTutorialDots();
+            }
+            if (stepId === "dash_step") {
+              startTutorialDashMarker();
             }
             if (stepId === "recovery_powerup") {
               tutorialRespawnActive = true;
@@ -158178,6 +158232,7 @@
             }
             if (stepId !== "movement_preference")
               return;
+            tutorialMovementChoiceResolved = true;
             tutorialMovementPreference = choice && choice.id ? String(choice.id) : "";
             if (tutorialMovementPreference === "mouse") {
               if (!mousepadActive)
@@ -158193,6 +158248,7 @@
               localStorage.setItem("mentaris.tutorial.complete", "1");
             } catch (e) {
             }
+            tutorialMovementChoiceResolved = false;
             tutorialPortalActive = false;
             tutorialPortalLock = false;
             tutorialPortalNotifyPending = false;
@@ -158244,6 +158300,7 @@
         tutorialFreezeDimTarget = 0;
         tutorialFreezeDimAlpha = 0;
         tutorialPowerupBatchSpawned = false;
+        tutorialMovementChoiceResolved = false;
         tutorialPendingCorrectNotify = false;
         tutorialPendingAidNotify = "";
         alienConfig.enabled = true;

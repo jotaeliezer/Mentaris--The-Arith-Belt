@@ -80,6 +80,7 @@ export function createState(){
     nextCorrectSpawnX:null,
 
     // arcade feel FX
+    pullDownRemaining:0,
     slowMoRemaining:0,
     slowMoScale:0.42,
     slowMoWaveActive:false,

@@ -18,7 +18,7 @@ export function createTourGuide(options){
     { id: "tablet_move", title: "Step 2: Touch Movement", body: "Tablet control confirmed. Use the left movement stick and clear dots 1 through 4 in sequence.", event: "move_touch", hideDuringAction: true, actionPauseMs: 700, praiseTitle: "Touch controls confirmed.", praiseBody: "Steady control. Good lane discipline." },
     { id: "fire_once", title: "Step 6: Fire Once", body: "Weapons check. Press the Space bar or Left Click to fire one shot.", event: "fire", count: 1 },
     { id: "fire_again", title: "Step 7: Fire Again", body: "Press the Space bar or Left Click again. Fire one controlled follow-up shot.", event: "fire", count: 1 },
-    { id: "dash_step", title: "Step 8: Dash Marker", body: "Use Dash now: press Shift or tap the Dash button. Pass through the marker.", event: "dash_marker" },
+    { id: "dash_step", title: "Step 8: Dash Marker", body: "Use Dash now: press Left Shift or tap the Dash button. Pass through the marker in the center of the arena.", event: "dash_marker" },
     { id: "correct", title: "Step 9: Correct Hit", body: "Read the prompt, identify the correct value, and destroy that asteroid.", event: "correct" },
     { id: "minerals", title: "Step 10: Minerals", body: "Collect all minerals in the field. Monitor your mineral count in the top-right HUD.", event: "minerals", confirmLabel: "Understood" },
     { id: "powerup", title: "Step 11: Powerup", body: "Collect the Time Dilation powerup.", event: "powerup" },
