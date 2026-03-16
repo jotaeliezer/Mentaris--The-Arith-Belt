@@ -1026,6 +1026,9 @@ var backgroundIndex = 0;
 var backgroundScroll = 0;
 var backgroundScrollSplit = 0;
 var backgroundScale = 2.10;
+var PHASER_BACKGROUND_SCROLL_SPEED = 4.4;
+var BACKGROUND_SCROLL_SPEED = 6.6;
+var BACKGROUND_PULLDOWN_SPEED_BONUS = 1.85;
 var beltKey = "dusk";
 var beltIndexMap = {
   dusk: 0,
@@ -7526,6 +7529,14 @@ function getPullDownSpeedMultiplier(){
   return PULLDOWN_MAX_SPEED_MUL;
 }
 
+function getBackgroundScrollStep(baseSpeed, dt){
+  var speed = Math.max(0, Number(baseSpeed) || 0);
+  if(state.pullDownRemaining > 0){
+    speed *= 1 + ((getPullDownSpeedMultiplier() - 1) * BACKGROUND_PULLDOWN_SPEED_BONUS);
+  }
+  return speed * (Number(dt) || 0);
+}
+
 function clearCurrentWaveCorrectAsteroids(){
   for(var i=asteroids.length-1; i>=0; i--){
     var a = asteroids[i];
@@ -7922,18 +7933,39 @@ function showEndPlacementLeaderboard(revealPlacementLine){
     if(endScoresTableWrap){
       endScoresTableWrap.scrollTop = 0;
     }
-    requestAnimationFrame(function(){
-      animateEndScoresScrollToRow(reveal.currentRow, endScoresTableWrap, 850, function(){
-        reveal.currentRow.classList.add("endScoreRowPop");
-        var clearPopTimer = setTimeout(function(){
-          reveal.currentRow.classList.remove("endScoreRowPop");
-        }, 700);
-        endSequenceTimers.push(clearPopTimer);
-      });
-    });
+    queuePlacementLeaderboardReveal(reveal);
   }else if(endScoresTableWrap){
     endScoresTableWrap.scrollTop = 0;
   }
+}
+
+function queuePlacementLeaderboardReveal(reveal, attemptsLeft){
+  var info = reveal || {};
+  var tries = (typeof attemptsLeft === "number") ? attemptsLeft : 12;
+  if(!info.found || !info.currentRow){
+    return;
+  }
+  var wrap = endScoresTableWrap;
+  var row = info.currentRow;
+  var placementVisible = !!(endStagePlacement && endStagePlacement.classList.contains("isActive"));
+  var ready = !!(wrap && row && placementVisible && wrap.clientHeight > 0 && row.offsetHeight > 0);
+  if(!ready){
+    if(tries <= 0){
+      return;
+    }
+    var retryTimer = setTimeout(function(){
+      queuePlacementLeaderboardReveal(info, tries - 1);
+    }, 40);
+    endSequenceTimers.push(retryTimer);
+    return;
+  }
+  animateEndScoresScrollToRow(row, wrap, 850, function(){
+    row.classList.add("endScoreRowPop");
+    var clearPopTimer = setTimeout(function(){
+      row.classList.remove("endScoreRowPop");
+    }, 700);
+    endSequenceTimers.push(clearPopTimer);
+  });
 }
 
 function jumpEndStage(stageId){
@@ -8903,7 +8935,7 @@ function update(dt){
     var drawH = Math.ceil(bgImg.height * scale) + 4;
     var maxScroll = Math.max(1, drawH - view.h);
     if(!state.paused && !screenshotMode){
-      backgroundScroll = (backgroundScroll + 3.0 * dtReal) % maxScroll;
+      backgroundScroll = (backgroundScroll + getBackgroundScrollStep(PHASER_BACKGROUND_SCROLL_SPEED, dtReal)) % maxScroll;
     }
   }
   if(state.over){
@@ -10955,7 +10987,7 @@ function draw(){
           maxScroll2 = Math.max(1, drawH2 - h);
         }
         var maxScroll = Math.max(maxScroll1, maxScroll2, 1);
-        backgroundScroll = (backgroundScroll + 4.8 * (bg.dt || (1/60))) % maxScroll;
+        backgroundScroll = (backgroundScroll + getBackgroundScrollStep(BACKGROUND_SCROLL_SPEED, (bg.dt || (1/60)))) % maxScroll;
         backgroundScrollSplit = backgroundScroll;
       }
       function drawLaneBackground(lane, bgIdx, scrollOffset){
@@ -10994,7 +11026,7 @@ function draw(){
       var drawH = Math.ceil(bgImg.height * scale) + 4;
       var maxScroll = Math.max(1, drawH - h);
       if(!state.paused && !screenshotMode){
-        backgroundScroll = (backgroundScroll + 4.8 * (bg.dt || (1/60))) % maxScroll;
+        backgroundScroll = (backgroundScroll + getBackgroundScrollStep(BACKGROUND_SCROLL_SPEED, (bg.dt || (1/60)))) % maxScroll;
       }
       var offX = Math.floor((w - drawW) / 2);
       var offY = Math.floor((h - drawH) + backgroundScroll + 160);

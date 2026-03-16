@@ -142140,6 +142140,7 @@
   var missionBriefTypeTimers = [];
   var missionBriefTypeAudio = null;
   var warningClip = null;
+  var alienWaveToastTimer = 0;
   var missileInputActive = false;
   var missileInputAnswer = "";
   var missileInputDeadline = 0;
@@ -142873,6 +142874,7 @@
   var PULLDOWN_MAX_SPEED_MUL = 1.6;
   var PULLDOWN_RETIRED_FADE_DURATION = 2.35;
   var PULLDOWN_SHIP_NUDGE_SPEED = 20;
+  var PULLDOWN_ACTIVE_WAVE_SPEED_BONUS = 1.22;
   var sandboxAlienWaveDuration = 20;
   var sandboxAlienWaveRequired = 2;
   var sandboxAlienWaveButton = null;
@@ -142998,6 +143000,9 @@
   var backgroundScroll = 0;
   var backgroundScrollSplit = 0;
   var backgroundScale = 2.1;
+  var PHASER_BACKGROUND_SCROLL_SPEED = 4.4;
+  var BACKGROUND_SCROLL_SPEED = 6.6;
+  var BACKGROUND_PULLDOWN_SPEED_BONUS = 1.85;
   var beltKey = "dusk";
   var beltIndexMap = {
     dusk: 0,
@@ -145158,6 +145163,19 @@
       }
     }, typeMs);
   }
+  function showAlienWaveWarningToast(message) {
+    if (alienWaveToastTimer) {
+      clearTimeout(alienWaveToastTimer);
+      alienWaveToastTimer = 0;
+    }
+    showToast("\u26A0\uFE0F", "alert");
+    if (message) {
+      alienWaveToastTimer = setTimeout(function() {
+        alienWaveToastTimer = 0;
+        showToast(message, "bad");
+      }, 720);
+    }
+  }
   function getActiveProfileId() {
     if (campaignProfileId)
       return campaignProfileId;
@@ -145976,7 +145994,7 @@
     alienConfig.enabled = true;
     alienConfig.maxOnScreen = 0;
     alienConfig.spawnCooldown = 9999;
-    showToast("ALIEN WAVE INBOUND");
+    showAlienWaveWarningToast("ALIEN WAVE INBOUND");
   }
   function startTargetAlienFinale() {
     if (!isTargetFinaleSession())
@@ -146020,7 +146038,7 @@
       spriteKey: bossSpriteKey
     });
     state.alienBossUid = boss ? boss.uid : 0;
-    showToast("WAVE CLEARED - BOSS APPROACHING");
+    showAlienWaveWarningToast("WAVE CLEARED - BOSS APPROACHING");
   }
   function isBossAlive() {
     if (!state.alienBossUid)
@@ -146052,7 +146070,7 @@
         if (!state.alienWaveWarningPending) {
           state.alienWaveWarningPending = true;
           state.alienWaveWarningTimer = 0.95;
-          showToast("\u26A0\uFE0F", "alert");
+          showAlienWaveWarningToast(null);
         } else {
           state.alienWaveWarningTimer = Math.max(0, (state.alienWaveWarningTimer || 0) - dt);
           if (state.alienWaveWarningTimer <= 0) {
@@ -146109,7 +146127,7 @@
     alienConfig.enabled = true;
     alienConfig.maxOnScreen = 0;
     alienConfig.spawnCooldown = 9999;
-    showToast("ALIEN WAVE INBOUND");
+    showAlienWaveWarningToast("ALIEN WAVE INBOUND");
   }
   function updateEndlessMiniWave(dt) {
     if (!isEndlessSession() || tutorialActive || sandboxMode)
@@ -147635,6 +147653,10 @@
     if (launchHoldTimer) {
       clearTimeout(launchHoldTimer);
       launchHoldTimer = 0;
+    }
+    if (alienWaveToastTimer) {
+      clearTimeout(alienWaveToastTimer);
+      alienWaveToastTimer = 0;
     }
     if (state.sandboxAlienWaveActive) {
       stopSandboxAlienWave();
@@ -149493,6 +149515,13 @@
     }
     return PULLDOWN_MAX_SPEED_MUL;
   }
+  function getBackgroundScrollStep(baseSpeed, dt) {
+    var speed = Math.max(0, Number(baseSpeed) || 0);
+    if (state.pullDownRemaining > 0) {
+      speed *= 1 + (getPullDownSpeedMultiplier() - 1) * BACKGROUND_PULLDOWN_SPEED_BONUS;
+    }
+    return speed * (Number(dt) || 0);
+  }
   function clearCurrentWaveCorrectAsteroids() {
     for (var i = asteroids.length - 1; i >= 0; i--) {
       var a = asteroids[i];
@@ -149870,18 +149899,38 @@
       if (endScoresTableWrap) {
         endScoresTableWrap.scrollTop = 0;
       }
-      requestAnimationFrame(function() {
-        animateEndScoresScrollToRow(reveal.currentRow, endScoresTableWrap, 850, function() {
-          reveal.currentRow.classList.add("endScoreRowPop");
-          var clearPopTimer = setTimeout(function() {
-            reveal.currentRow.classList.remove("endScoreRowPop");
-          }, 700);
-          endSequenceTimers.push(clearPopTimer);
-        });
-      });
+      queuePlacementLeaderboardReveal(reveal);
     } else if (endScoresTableWrap) {
       endScoresTableWrap.scrollTop = 0;
     }
+  }
+  function queuePlacementLeaderboardReveal(reveal, attemptsLeft) {
+    var info = reveal || {};
+    var tries = typeof attemptsLeft === "number" ? attemptsLeft : 12;
+    if (!info.found || !info.currentRow) {
+      return;
+    }
+    var wrap2 = endScoresTableWrap;
+    var row = info.currentRow;
+    var placementVisible = !!(endStagePlacement && endStagePlacement.classList.contains("isActive"));
+    var ready = !!(wrap2 && row && placementVisible && wrap2.clientHeight > 0 && row.offsetHeight > 0);
+    if (!ready) {
+      if (tries <= 0) {
+        return;
+      }
+      var retryTimer = setTimeout(function() {
+        queuePlacementLeaderboardReveal(info, tries - 1);
+      }, 40);
+      endSequenceTimers.push(retryTimer);
+      return;
+    }
+    animateEndScoresScrollToRow(row, wrap2, 850, function() {
+      row.classList.add("endScoreRowPop");
+      var clearPopTimer = setTimeout(function() {
+        row.classList.remove("endScoreRowPop");
+      }, 700);
+      endSequenceTimers.push(clearPopTimer);
+    });
   }
   function jumpEndStage(stageId) {
     if (!overlayEnd || !overlayEnd.classList.contains("show"))
@@ -150820,7 +150869,7 @@
       var drawH = Math.ceil(bgImg.height * scale) + 4;
       var maxScroll = Math.max(1, drawH - view.h);
       if (!state.paused && !screenshotMode) {
-        backgroundScroll = (backgroundScroll + 3 * dtReal2) % maxScroll;
+        backgroundScroll = (backgroundScroll + getBackgroundScrollStep(PHASER_BACKGROUND_SCROLL_SPEED, dtReal2)) % maxScroll;
       }
     }
     if (state.over) {
@@ -151095,7 +151144,7 @@
     var accel = 1 - Math.exp(-accelRate * dtReal2);
     player.moveSpeed += (targetSpeed - player.moveSpeed) * accel;
     var desiredVX = dirX * player.moveSpeed;
-    var desiredVY = state.pullDownRemaining > 0 ? Math.max(0, dirY * player.moveSpeed) : dirY * player.moveSpeed;
+    var desiredVY = state.pullDownRemaining > 0 ? Math.min(0, dirY * player.moveSpeed) : dirY * player.moveSpeed;
     var response = profile.response || 14;
     var alpha = 1 - Math.exp(-response * dtReal2);
     player.vx += (desiredVX - player.vx) * alpha;
@@ -151111,7 +151160,7 @@
       player.x += player.vx * dtReal2;
       player.y += player.vy * dtReal2;
       if (state.pullDownRemaining > 0) {
-        player.y += PULLDOWN_SHIP_NUDGE_SPEED * dtReal2 * getPullDownSpeedMultiplier();
+        player.y -= PULLDOWN_SHIP_NUDGE_SPEED * dtReal2 * getPullDownSpeedMultiplier();
       }
     }
     player.x = clamp(player.x, player.w / 2 + 10, r.width - player.w / 2 - 10);
@@ -151837,6 +151886,9 @@
           a.vx = -STAMPEDE_HOMING_MAX_VX;
       }
       var pullDownSpeedMul = getPullDownSpeedMultiplier();
+      if (state.pullDownRemaining > 0 && a.waveId === state.waveId) {
+        pullDownSpeedMul *= PULLDOWN_ACTIVE_WAVE_SPEED_BONUS;
+      }
       a.y += a.vy * dtAst * empScale * pullDownSpeedMul;
       a.x += a.vx * dtAst;
       if (a.baseVy != null) {
@@ -152910,7 +152962,7 @@
             maxScroll2 = Math.max(1, drawH2 - h);
           }
           var maxScroll = Math.max(maxScroll1, maxScroll2, 1);
-          backgroundScroll = (backgroundScroll + 4.8 * (bg.dt || 1 / 60)) % maxScroll;
+          backgroundScroll = (backgroundScroll + getBackgroundScrollStep(BACKGROUND_SCROLL_SPEED, bg.dt || 1 / 60)) % maxScroll;
           backgroundScrollSplit = backgroundScroll;
         }
         drawLaneBackground(lane1, bgIdx1, backgroundScroll);
@@ -152923,7 +152975,7 @@
         var drawH = Math.ceil(bgImg.height * scale) + 4;
         var maxScroll = Math.max(1, drawH - h);
         if (!state.paused && !screenshotMode) {
-          backgroundScroll = (backgroundScroll + 4.8 * (bg.dt || 1 / 60)) % maxScroll;
+          backgroundScroll = (backgroundScroll + getBackgroundScrollStep(BACKGROUND_SCROLL_SPEED, bg.dt || 1 / 60)) % maxScroll;
         }
         var offX = Math.floor((w - drawW) / 2);
         var offY = Math.floor(h - drawH + backgroundScroll + 160);
