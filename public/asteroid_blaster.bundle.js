@@ -142867,6 +142867,12 @@
   var tutorialPortalNotifyPending = false;
   var tutorialHideQuestion = false;
   var sandboxHideQuestion = false;
+  var PULLDOWN_DURATION = 1.5;
+  var PULLDOWN_RAMP_UP = 0.35;
+  var PULLDOWN_RAMP_DOWN = 0.35;
+  var PULLDOWN_MAX_SPEED_MUL = 1.6;
+  var PULLDOWN_RETIRED_FADE_DURATION = 2.35;
+  var PULLDOWN_SHIP_NUDGE_SPEED = 20;
   var sandboxAlienWaveDuration = 20;
   var sandboxAlienWaveRequired = 2;
   var sandboxAlienWaveButton = null;
@@ -147400,6 +147406,16 @@
     a.frozen = effect === "freeze";
     a.ghost = true;
   }
+  function markRetiredWaveAsteroid(a) {
+    if (!a)
+      return;
+    a.waveId = -1;
+    a.isCorrect = false;
+    a.noDamage = true;
+    a.ghost = true;
+    a.retiredFadeT = 0;
+    a.retiredFadeDur = PULLDOWN_RETIRED_FADE_DURATION;
+  }
   function fadeTutorialAsteroids() {
     tutorialSpawnUnlocked = false;
     for (var i = 0; i < asteroids.length; i++) {
@@ -147528,8 +147544,7 @@
     for (var i = 0; i < asteroids.length; i++) {
       var a = asteroids[i];
       if (a.waveId === wid) {
-        a.waveId = -1;
-        a.isCorrect = false;
+        markRetiredWaveAsteroid(a);
       }
     }
   }
@@ -149460,6 +149475,24 @@
   function isCurrentWaveCorrectAsteroid(ast) {
     return !!(ast && ast.isCorrect && ast.waveId === state.waveId);
   }
+  function getPullDownSpeedMultiplier() {
+    if (state.pullDownRemaining <= 0)
+      return 1;
+    var elapsed = PULLDOWN_DURATION - state.pullDownRemaining;
+    if (elapsed < 0)
+      elapsed = 0;
+    if (elapsed > PULLDOWN_DURATION)
+      elapsed = PULLDOWN_DURATION;
+    if (elapsed < PULLDOWN_RAMP_UP) {
+      var tUp = elapsed / PULLDOWN_RAMP_UP;
+      return 1 + (PULLDOWN_MAX_SPEED_MUL - 1) * tUp;
+    }
+    if (elapsed > PULLDOWN_DURATION - PULLDOWN_RAMP_DOWN) {
+      var tDown = (elapsed - (PULLDOWN_DURATION - PULLDOWN_RAMP_DOWN)) / PULLDOWN_RAMP_DOWN;
+      return PULLDOWN_MAX_SPEED_MUL + (1 - PULLDOWN_MAX_SPEED_MUL) * tDown;
+    }
+    return PULLDOWN_MAX_SPEED_MUL;
+  }
   function clearCurrentWaveCorrectAsteroids() {
     for (var i = asteroids.length - 1; i >= 0; i--) {
       var a = asteroids[i];
@@ -149578,7 +149611,7 @@
     }
   }
   function onCorrectHit(hitAst) {
-    state.pullDownRemaining = 1.5;
+    state.pullDownRemaining = PULLDOWN_DURATION;
     if (warningClip) {
       try {
         warningClip.pause();
@@ -151017,6 +151050,9 @@
     if (mousepadActive && inputY < -0.2) {
       advanceIntent = true;
     }
+    if (state.pullDownRemaining > 0) {
+      advanceIntent = true;
+    }
     if (tutorialActive && tutorialPortalLock) {
       advanceIntent = false;
       setShipAdvance(state, false);
@@ -151074,6 +151110,9 @@
     } else {
       player.x += player.vx * dtReal2;
       player.y += player.vy * dtReal2;
+      if (state.pullDownRemaining > 0) {
+        player.y += PULLDOWN_SHIP_NUDGE_SPEED * dtReal2 * getPullDownSpeedMultiplier();
+      }
     }
     player.x = clamp(player.x, player.w / 2 + 10, r.width - player.w / 2 - 10);
     player.y = clamp(player.y, topLimit + player.h / 2 + 6, bottomLimit - player.h / 2);
@@ -151726,6 +151765,13 @@
     var stampedeHomingActive = isStampedeMode();
     for (var ai = asteroids.length - 1; ai >= 0; ai--) {
       var a = asteroids[ai];
+      if (a.retiredFadeT != null) {
+        a.retiredFadeT += dtReal2;
+        if (a.retiredFadeT >= Math.max(0.01, a.retiredFadeDur || PULLDOWN_RETIRED_FADE_DURATION)) {
+          asteroids.splice(ai, 1);
+          continue;
+        }
+      }
       if (a.spawnFade != null && a.spawnFade < 1) {
         var fadeDur = a.spawnFadeDur || 0.35;
         a.spawnFade = Math.min(1, a.spawnFade + dtReal2 / Math.max(0.12, fadeDur));
@@ -151790,27 +151836,7 @@
         else if (a.vx < -STAMPEDE_HOMING_MAX_VX)
           a.vx = -STAMPEDE_HOMING_MAX_VX;
       }
-      var pullDownSpeedMul = 1;
-      if (state.pullDownRemaining > 0) {
-        var pullDownDuration = 1.5;
-        var elapsed = pullDownDuration - state.pullDownRemaining;
-        if (elapsed < 0)
-          elapsed = 0;
-        if (elapsed > pullDownDuration)
-          elapsed = pullDownDuration;
-        var rampUp = 0.35;
-        var rampDown = 0.35;
-        var maxMul = 1.6;
-        if (elapsed < rampUp) {
-          var tUp = elapsed / rampUp;
-          pullDownSpeedMul = 1 + (maxMul - 1) * tUp;
-        } else if (elapsed > pullDownDuration - rampDown) {
-          var tDown = (elapsed - (pullDownDuration - rampDown)) / rampDown;
-          pullDownSpeedMul = maxMul + (1 - maxMul) * tDown;
-        } else {
-          pullDownSpeedMul = maxMul;
-        }
-      }
+      var pullDownSpeedMul = getPullDownSpeedMultiplier();
       a.y += a.vy * dtAst * empScale * pullDownSpeedMul;
       a.x += a.vx * dtAst;
       if (a.baseVy != null) {
@@ -154915,8 +154941,10 @@
     var drawX = a.x;
     var drawY = a.y;
     var fadeAlpha = 1;
-    if (state.pullDownRemaining > 0 && a.waveId === -1) {
-      fadeAlpha *= state.pullDownRemaining / 1.5;
+    if (a.retiredFadeT != null) {
+      var retiredFadeDur = Math.max(0.01, a.retiredFadeDur || PULLDOWN_RETIRED_FADE_DURATION);
+      var retiredFadeP = clamp(a.retiredFadeT / retiredFadeDur, 0, 1);
+      fadeAlpha *= 1 - Math.pow(retiredFadeP, 1.85);
     }
     if (a.effect === "fade" && a.effectDuration) {
       fadeAlpha = clamp(a.effectTimer / a.effectDuration, 0, 1);
