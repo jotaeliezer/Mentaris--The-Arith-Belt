@@ -133,6 +133,7 @@ var missionBriefAnimating = false;
 var missionBriefTypeTimers = [];
 var missionBriefTypeAudio = null;
 var warningClip = null;
+var alienWaveToastTimer = 0;
 var missileInputActive = false;
 var missileInputAnswer = "";
 var missileInputDeadline = 0;
@@ -895,6 +896,7 @@ var PULLDOWN_RAMP_DOWN = 0.35;
 var PULLDOWN_MAX_SPEED_MUL = 1.6;
 var PULLDOWN_RETIRED_FADE_DURATION = 2.35;
 var PULLDOWN_SHIP_NUDGE_SPEED = 20;
+var PULLDOWN_ACTIVE_WAVE_SPEED_BONUS = 1.22;
 var sandboxAlienWaveDuration = 20;
 var sandboxAlienWaveRequired = 2;
 var sandboxAlienWavePrevHideAsteroids = null;
@@ -3204,6 +3206,20 @@ function showToast(msg, tone){
   }, typeMs);
 }
 
+function showAlienWaveWarningToast(message){
+  if(alienWaveToastTimer){
+    clearTimeout(alienWaveToastTimer);
+    alienWaveToastTimer = 0;
+  }
+  showToast("⚠️", "alert");
+  if(message){
+    alienWaveToastTimer = setTimeout(function(){
+      alienWaveToastTimer = 0;
+      showToast(message, "bad");
+    }, 720);
+  }
+}
+
 function getActiveProfileId(){
   if(campaignProfileId) return campaignProfileId;
   var stored = null;
@@ -4090,7 +4106,7 @@ function startTargetAlienWave(){
   alienConfig.enabled = true;
   alienConfig.maxOnScreen = 0;
   alienConfig.spawnCooldown = 9999;
-  showToast("ALIEN WAVE INBOUND");
+  showAlienWaveWarningToast("ALIEN WAVE INBOUND");
 }
 
 function startTargetAlienFinale(){
@@ -4133,7 +4149,7 @@ function startAlienBoss(){
     spriteKey: bossSpriteKey
   });
   state.alienBossUid = boss ? boss.uid : 0;
-  showToast("WAVE CLEARED - BOSS APPROACHING");
+  showAlienWaveWarningToast("WAVE CLEARED - BOSS APPROACHING");
 }
 
 function isBossAlive(){
@@ -4165,7 +4181,7 @@ function updateTargetAlienWave(dt){
       if(!state.alienWaveWarningPending){
         state.alienWaveWarningPending = true;
         state.alienWaveWarningTimer = 0.95;
-        showToast("⚠️", "alert");
+        showAlienWaveWarningToast(null);
       }else{
         state.alienWaveWarningTimer = Math.max(0, (state.alienWaveWarningTimer || 0) - dt);
         if(state.alienWaveWarningTimer <= 0){
@@ -4223,7 +4239,7 @@ function startEndlessMiniWave(){
   alienConfig.enabled = true;
   alienConfig.maxOnScreen = 0;
   alienConfig.spawnCooldown = 9999;
-  showToast("ALIEN WAVE INBOUND");
+  showAlienWaveWarningToast("ALIEN WAVE INBOUND");
 }
 
 function updateEndlessMiniWave(dt){
@@ -5703,6 +5719,10 @@ function resetSession(){
   if(launchHoldTimer){
     clearTimeout(launchHoldTimer);
     launchHoldTimer = 0;
+  }
+  if(alienWaveToastTimer){
+    clearTimeout(alienWaveToastTimer);
+    alienWaveToastTimer = 0;
   }
   if(state.sandboxAlienWaveActive){
     stopSandboxAlienWave();
@@ -9161,7 +9181,7 @@ function update(dt){
   var accel = 1 - Math.exp(-accelRate * dtReal);
   player.moveSpeed += (targetSpeed - player.moveSpeed) * accel;
   var desiredVX = dirX * player.moveSpeed;
-  var desiredVY = state.pullDownRemaining > 0 ? Math.max(0, dirY * player.moveSpeed) : dirY * player.moveSpeed;
+  var desiredVY = state.pullDownRemaining > 0 ? Math.min(0, dirY * player.moveSpeed) : dirY * player.moveSpeed;
 
   var response = profile.response || 14;
   var alpha = 1 - Math.exp(-response * dtReal);
@@ -9180,7 +9200,7 @@ function update(dt){
     player.x += player.vx * dtReal;
     player.y += player.vy * dtReal;
     if(state.pullDownRemaining > 0){
-      player.y += PULLDOWN_SHIP_NUDGE_SPEED * dtReal * getPullDownSpeedMultiplier();
+      player.y -= PULLDOWN_SHIP_NUDGE_SPEED * dtReal * getPullDownSpeedMultiplier();
     }
   }
 
@@ -9886,6 +9906,9 @@ function update(dt){
       else if(a.vx < -STAMPEDE_HOMING_MAX_VX) a.vx = -STAMPEDE_HOMING_MAX_VX;
     }
     var pullDownSpeedMul = getPullDownSpeedMultiplier();
+    if(state.pullDownRemaining > 0 && a.waveId === state.waveId){
+      pullDownSpeedMul *= PULLDOWN_ACTIVE_WAVE_SPEED_BONUS;
+    }
     a.y += a.vy * dtAst * empScale * pullDownSpeedMul;
     a.x += a.vx * dtAst;
     if(a.baseVy != null){
