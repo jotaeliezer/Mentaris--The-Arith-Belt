@@ -11,12 +11,16 @@ var soundtrackIndex = 0;
 var soundtrackClip = null;
 var soundtrackActive = false;
 var soundtrackState = null;
+var soundtrackFadeTimer = 0;
+var soundtrackOverrideClip = null;
+var soundtrackOverrideSrc = "";
 
 function initSfx(){
   if(sfxBank) return;
   sfxBank = {
     alien_kill: new Audio("sfx/alien/alien_kill.mp3"),
     alien_shooting: new Audio("sfx/alien/alien_shooting.mp3"),
+    alien_12oclock_warning: new Audio("sfx/alien/alien_12oclock_warning.mp3"),
     electric_shot: new Audio("sfx/shots/electric_shot.mp3"),
     flame_shot: new Audio("sfx/shots/flame_shot.mp3"),
     machine_gun_load: new Audio("sfx/shots/machine_gun_load.mp3"),
@@ -62,6 +66,7 @@ function initSfx(){
   };
   sfxBank.alien_kill.volume = 0.5;
   sfxBank.alien_shooting.volume = 0.45;
+  sfxBank.alien_12oclock_warning.volume = 0.58;
   sfxBank.electric_shot.volume = 0.4;
   sfxBank.flame_shot.volume = 0.4;
   sfxBank.machine_gun_load.volume = 0.55;
@@ -153,10 +158,34 @@ function playSoundtrackAt(idx){
   try{
     clip.currentTime = 0;
     clip.onended = function(){
-      if(!soundtrackActive) return;
+      if(!soundtrackActive || soundtrackOverrideClip) return;
       playSoundtrackAt(soundtrackIndex + 1);
     };
     clip.play().catch(function(){});
+  }catch(e){
+    // ignore audio failures
+  }
+}
+
+function getMusicMasterVolume(state){
+  var activeState = state || soundtrackState || {};
+  var master = (activeState && typeof activeState.volume === "number") ? activeState.volume : 1;
+  var musicMaster = (activeState && typeof activeState.musicVolume === "number") ? activeState.musicVolume : 1;
+  return Math.max(0, Math.min(1, master * musicMaster));
+}
+
+function stopSoundtrackFade(){
+  if(soundtrackFadeTimer){
+    clearInterval(soundtrackFadeTimer);
+    soundtrackFadeTimer = 0;
+  }
+}
+
+function stopAudioClip(clip){
+  if(!clip) return;
+  try{
+    clip.pause();
+    clip.currentTime = 0;
   }catch(e){
     // ignore audio failures
   }
@@ -306,21 +335,28 @@ export function setSoundtrack(state, on){
   soundtrackState = state;
   var shouldPlay = !!on && !!state.sound;
   soundtrackActive = shouldPlay;
+  stopSoundtrackFade();
   if(!shouldPlay){
-    if(soundtrackClip){
-      try{ soundtrackClip.pause(); }catch(e){}
+    stopAudioClip(soundtrackClip);
+    stopAudioClip(soundtrackOverrideClip);
+    soundtrackOverrideClip = null;
+    soundtrackOverrideSrc = "";
+    return;
+  }
+  if(soundtrackOverrideClip){
+    soundtrackOverrideClip.volume = Math.max(0, Math.min(1, 0.26 * getMusicMasterVolume(state)));
+    if(soundtrackOverrideClip.paused){
+      try{ soundtrackOverrideClip.play().catch(function(){}); }catch(e){}
     }
     return;
   }
   initSoundtracks();
   if(soundtrackClip){
-    var master = (soundtrackState && typeof soundtrackState.volume === "number") ? soundtrackState.volume : 1;
-    var musicMaster = (soundtrackState && typeof soundtrackState.musicVolume === "number") ? soundtrackState.musicVolume : 1;
-    soundtrackClip.volume = Math.max(0, Math.min(1, 0.22 * master * musicMaster));
+    soundtrackClip.volume = Math.max(0, Math.min(1, 0.22 * getMusicMasterVolume(state)));
     if(!soundtrackClip.paused) return;
     try{
       soundtrackClip.onended = function(){
-        if(!soundtrackActive) return;
+        if(!soundtrackActive || soundtrackOverrideClip) return;
         playSoundtrackAt(soundtrackIndex + 1);
       };
       soundtrackClip.play().catch(function(){});
@@ -330,4 +366,77 @@ export function setSoundtrack(state, on){
     }
   }
   playSoundtrackAt(soundtrackIndex || 0);
+}
+
+export function fadeOutSoundtrack(state, durationMs){
+  soundtrackState = state || soundtrackState;
+  stopSoundtrackFade();
+  var clip = soundtrackOverrideClip || soundtrackClip;
+  if(!clip) return;
+  var startVolume = Number(clip.volume) || 0;
+  if(startVolume <= 0.0001){
+    stopAudioClip(clip);
+    return;
+  }
+  var duration = Math.max(80, Number(durationMs) || 400);
+  var startedAt = Date.now();
+  soundtrackFadeTimer = setInterval(function(){
+    var p = Math.min(1, (Date.now() - startedAt) / duration);
+    clip.volume = startVolume * (1 - p);
+    if(p >= 1){
+      stopSoundtrackFade();
+      stopAudioClip(clip);
+      if(clip === soundtrackOverrideClip){
+        soundtrackOverrideClip = null;
+        soundtrackOverrideSrc = "";
+      }
+    }
+  }, 32);
+}
+
+export function playMusicOverride(state, src, loop){
+  soundtrackState = state || soundtrackState;
+  if(!state || !state.sound || !src) return null;
+  stopSoundtrackFade();
+  if(soundtrackOverrideClip && soundtrackOverrideSrc === src){
+    soundtrackOverrideClip.loop = loop !== false;
+    soundtrackOverrideClip.volume = Math.max(0, Math.min(1, 0.26 * getMusicMasterVolume(state)));
+    if(soundtrackOverrideClip.paused){
+      try{
+        soundtrackOverrideClip.currentTime = 0;
+        soundtrackOverrideClip.play().catch(function(){});
+      }catch(e){}
+    }
+    return soundtrackOverrideClip;
+  }
+  stopAudioClip(soundtrackOverrideClip);
+  soundtrackOverrideClip = null;
+  soundtrackOverrideSrc = "";
+  if(soundtrackClip){
+    try{ soundtrackClip.pause(); }catch(e){}
+  }
+  try{
+    var clip = new Audio(src);
+    clip.loop = loop !== false;
+    clip.volume = Math.max(0, Math.min(1, 0.26 * getMusicMasterVolume(state)));
+    soundtrackOverrideClip = clip;
+    soundtrackOverrideSrc = src;
+    clip.play().catch(function(){});
+    return clip;
+  }catch(e){
+    soundtrackOverrideClip = null;
+    soundtrackOverrideSrc = "";
+  }
+  return null;
+}
+
+export function stopMusicOverride(state, resumeSoundtrack){
+  soundtrackState = state || soundtrackState;
+  stopSoundtrackFade();
+  stopAudioClip(soundtrackOverrideClip);
+  soundtrackOverrideClip = null;
+  soundtrackOverrideSrc = "";
+  if(resumeSoundtrack && soundtrackActive){
+    setSoundtrack(soundtrackState || state || { sound: true }, true);
+  }
 }

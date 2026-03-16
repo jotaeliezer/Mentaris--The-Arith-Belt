@@ -2,7 +2,7 @@
 
 import { clamp, rand, randi, factKey } from "./utils.js";
 import { createState, createPlayer, normalizeRanges, applySettingsFromInputs } from "./game_settings.js";
-import { playSfx, setDrone, setShipAdvance, setShipIdle, setSoundtrack, setSoundtrackStartIndex, unlockSfx } from "./audio.js";
+import { playSfx, setDrone, setShipAdvance, setShipIdle, setSoundtrack, setSoundtrackStartIndex, unlockSfx, fadeOutSoundtrack, playMusicOverride, stopMusicOverride } from "./audio.js";
 import { createTourGuide } from "./tourguide.js";
 import { createFx } from "../render/animations.js";
 import { createBackground } from "../render/background.js";
@@ -134,6 +134,7 @@ var missionBriefTypeTimers = [];
 var missionBriefTypeAudio = null;
 var warningClip = null;
 var alienWaveToastTimer = 0;
+var ALIEN_ATTACK_TRACK_SRC = "sfx/alien/alien_attack.mp3";
 var missileInputActive = false;
 var missileInputAnswer = "";
 var missileInputDeadline = 0;
@@ -3214,6 +3215,7 @@ function showAlienWaveWarningToast(message){
     clearTimeout(alienWaveToastTimer);
     alienWaveToastTimer = 0;
   }
+  playSfx(state, "alien_12oclock_warning");
   showToast("⚠️", "alert");
   if(message){
     alienWaveToastTimer = setTimeout(function(){
@@ -4082,6 +4084,9 @@ function stopAlienWaveVisualMode(){
   if(!sandboxMode || !state.sandboxAlienWaveActive){
     setSandboxQuestionHidden(false);
   }
+  if(isEndlessSession() && !tutorialActive && !sandboxMode){
+    stopMusicOverride(state, state.sound && !state.over && (state.running || countdownActive || introActive || missionBriefShowing));
+  }
 }
 
 function startTargetAlienWave(){
@@ -4109,7 +4114,8 @@ function startTargetAlienWave(){
   alienConfig.enabled = true;
   alienConfig.maxOnScreen = 0;
   alienConfig.spawnCooldown = 9999;
-  showAlienWaveWarningToast("ALIEN WAVE INBOUND");
+  playMusicOverride(state, ALIEN_ATTACK_TRACK_SRC, true);
+  showToast("ALIEN WAVE INBOUND", "bad");
 }
 
 function startTargetAlienFinale(){
@@ -4184,6 +4190,7 @@ function updateTargetAlienWave(dt){
       if(!state.alienWaveWarningPending){
         state.alienWaveWarningPending = true;
         state.alienWaveWarningTimer = 0.95;
+        fadeOutSoundtrack(state, 520);
         showAlienWaveWarningToast(null);
       }else{
         state.alienWaveWarningTimer = Math.max(0, (state.alienWaveWarningTimer || 0) - dt);
@@ -4242,6 +4249,8 @@ function startEndlessMiniWave(){
   alienConfig.enabled = true;
   alienConfig.maxOnScreen = 0;
   alienConfig.spawnCooldown = 9999;
+  fadeOutSoundtrack(state, 420);
+  playMusicOverride(state, ALIEN_ATTACK_TRACK_SRC, true);
   showAlienWaveWarningToast("ALIEN WAVE INBOUND");
 }
 
@@ -5166,44 +5175,6 @@ function spawnOneFromWave(){
   }else{
     spawnDecoyOnly();
   }
-
-  if(state.level >= 4){
-    var diff = String(state.difficulty || "normal").toLowerCase();
-    var extraChance = 0.28;
-    if(diff === "easy") extraChance = 0.12;
-    else if(diff === "normal") extraChance = 0.18;
-    if(Math.random() < extraChance){
-      var r = canvas.getBoundingClientRect();
-      var w = r.width;
-      var baseVy = (92 + state.level * 10) * getDifficultySpeedFactor() * asteroidFallSpeedScale;
-      var speedScale = state.baseSpeed * (1 + state.ddSpeedBonus);
-      var ambLane = isSandboxSplitMode() ? (Math.random() < 0.5 ? 1 : 2) : 0;
-    var ambBounds = getLaneBounds(ambLane);
-      asteroids.push({
-      id: ++state.asteroidId,
-      x: rand(ambBounds.minX, ambBounds.maxX),
-      y: -rand(220, 520),
-      vx: rand(-25, 25),
-      vy: baseVy*speedScale*rand(0.75,1.0),
-      baseVy: baseVy * speedScale,
-      r: rand(14, 22),
-      label: null,
-      isCorrect:false,
-      waveId: -1,
-      laneId: ambLane,
-      spin: rand(-3.2, 3.2),
-      rot: rand(0, Math.PI*2),
-      seed: Math.random()*1000,
-      hit:false,
-      ghost:true,
-      ambient:true,
-      driftAmp: rand(6, 14),
-      driftRate: rand(0.6, 1.5),
-      driftPhase: rand(0, Math.PI * 2),
-      spriteIndex: randi(0, asteroidSprites.length - 1)
-      });
-    }
-  }
 }
 
 function spawnPowerup(type, group, x, y, opts){
@@ -5452,36 +5423,6 @@ function applyPowerupForPilot(pilot, pilotId, powerup){
       else if(p.type === "lock") showToast("SECONDARY -> TARGET LOCK (E)");
       else if(p.type === "autofire") showToast("SECONDARY -> AUTO-FIRE (E)");
     }
-  }
-}
-
-function spawnSplitAsteroids(a){
-  var baseVy = a.baseVy != null ? a.baseVy : a.vy;
-  for(var i=0;i<2;i++){
-    var side = i === 0 ? -1 : 1;
-    asteroids.push({
-      id: ++state.asteroidId,
-      x: a.x + side * a.r * 0.35,
-      y: a.y + rand(-4, 4),
-      vx: (a.vx || 0) + side * rand(24, 46),
-      vy: (a.vy || 0) * rand(0.85, 1.05),
-      baseVy: baseVy,
-      r: Math.max(12, a.r * 0.55),
-      label: null,
-      isCorrect: false,
-      waveId: -1,
-      spin: rand(-3.4, 3.4),
-      rot: rand(0, Math.PI * 2),
-      seed: Math.random() * 1e3,
-      hit: false,
-      warned: false,
-      ghost: true,
-      ghostFade: false,
-      driftAmp: rand(6, 12),
-      driftRate: rand(0.6, 1.3),
-      driftPhase: rand(0, Math.PI * 2),
-      spriteIndex: randi(0, asteroidSprites.length - 1)
-    });
   }
 }
 
@@ -10158,9 +10099,6 @@ function update(dt){
       impactWrong(ast.x, ast.y);
     }else{
       impactDebris(ast.x, ast.y);
-    }
-    if(meta.split){
-      spawnSplitAsteroids(ast);
     }
     if(meta.chain){
       chainDestroy(ast, meta.chain.radius, meta.chain.maxTargets);

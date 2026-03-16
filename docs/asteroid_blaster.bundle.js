@@ -139631,12 +139631,16 @@
   var soundtrackClip = null;
   var soundtrackActive = false;
   var soundtrackState = null;
+  var soundtrackFadeTimer = 0;
+  var soundtrackOverrideClip = null;
+  var soundtrackOverrideSrc = "";
   function initSfx() {
     if (sfxBank)
       return;
     sfxBank = {
       alien_kill: new Audio("sfx/alien/alien_kill.mp3"),
       alien_shooting: new Audio("sfx/alien/alien_shooting.mp3"),
+      alien_12oclock_warning: new Audio("sfx/alien/alien_12oclock_warning.mp3"),
       electric_shot: new Audio("sfx/shots/electric_shot.mp3"),
       flame_shot: new Audio("sfx/shots/flame_shot.mp3"),
       machine_gun_load: new Audio("sfx/shots/machine_gun_load.mp3"),
@@ -139682,6 +139686,7 @@
     };
     sfxBank.alien_kill.volume = 0.5;
     sfxBank.alien_shooting.volume = 0.45;
+    sfxBank.alien_12oclock_warning.volume = 0.58;
     sfxBank.electric_shot.volume = 0.4;
     sfxBank.flame_shot.volume = 0.4;
     sfxBank.machine_gun_load.volume = 0.55;
@@ -139777,12 +139782,33 @@
     try {
       clip.currentTime = 0;
       clip.onended = function() {
-        if (!soundtrackActive)
+        if (!soundtrackActive || soundtrackOverrideClip)
           return;
         playSoundtrackAt(soundtrackIndex + 1);
       };
       clip.play().catch(function() {
       });
+    } catch (e) {
+    }
+  }
+  function getMusicMasterVolume(state2) {
+    var activeState = state2 || soundtrackState || {};
+    var master = activeState && typeof activeState.volume === "number" ? activeState.volume : 1;
+    var musicMaster = activeState && typeof activeState.musicVolume === "number" ? activeState.musicVolume : 1;
+    return Math.max(0, Math.min(1, master * musicMaster));
+  }
+  function stopSoundtrackFade() {
+    if (soundtrackFadeTimer) {
+      clearInterval(soundtrackFadeTimer);
+      soundtrackFadeTimer = 0;
+    }
+  }
+  function stopAudioClip(clip) {
+    if (!clip)
+      return;
+    try {
+      clip.pause();
+      clip.currentTime = 0;
     } catch (e) {
     }
   }
@@ -139921,10 +139947,20 @@
     soundtrackState = state2;
     var shouldPlay = !!on && !!state2.sound;
     soundtrackActive = shouldPlay;
+    stopSoundtrackFade();
     if (!shouldPlay) {
-      if (soundtrackClip) {
+      stopAudioClip(soundtrackClip);
+      stopAudioClip(soundtrackOverrideClip);
+      soundtrackOverrideClip = null;
+      soundtrackOverrideSrc = "";
+      return;
+    }
+    if (soundtrackOverrideClip) {
+      soundtrackOverrideClip.volume = Math.max(0, Math.min(1, 0.26 * getMusicMasterVolume(state2)));
+      if (soundtrackOverrideClip.paused) {
         try {
-          soundtrackClip.pause();
+          soundtrackOverrideClip.play().catch(function() {
+          });
         } catch (e) {
         }
       }
@@ -139932,14 +139968,12 @@
     }
     initSoundtracks();
     if (soundtrackClip) {
-      var master = soundtrackState && typeof soundtrackState.volume === "number" ? soundtrackState.volume : 1;
-      var musicMaster = soundtrackState && typeof soundtrackState.musicVolume === "number" ? soundtrackState.musicVolume : 1;
-      soundtrackClip.volume = Math.max(0, Math.min(1, 0.22 * master * musicMaster));
+      soundtrackClip.volume = Math.max(0, Math.min(1, 0.22 * getMusicMasterVolume(state2)));
       if (!soundtrackClip.paused)
         return;
       try {
         soundtrackClip.onended = function() {
-          if (!soundtrackActive)
+          if (!soundtrackActive || soundtrackOverrideClip)
             return;
           playSoundtrackAt(soundtrackIndex + 1);
         };
@@ -139950,6 +139984,84 @@
       }
     }
     playSoundtrackAt(soundtrackIndex || 0);
+  }
+  function fadeOutSoundtrack(state2, durationMs) {
+    soundtrackState = state2 || soundtrackState;
+    stopSoundtrackFade();
+    var clip = soundtrackOverrideClip || soundtrackClip;
+    if (!clip)
+      return;
+    var startVolume = Number(clip.volume) || 0;
+    if (startVolume <= 1e-4) {
+      stopAudioClip(clip);
+      return;
+    }
+    var duration = Math.max(80, Number(durationMs) || 400);
+    var startedAt = Date.now();
+    soundtrackFadeTimer = setInterval(function() {
+      var p = Math.min(1, (Date.now() - startedAt) / duration);
+      clip.volume = startVolume * (1 - p);
+      if (p >= 1) {
+        stopSoundtrackFade();
+        stopAudioClip(clip);
+        if (clip === soundtrackOverrideClip) {
+          soundtrackOverrideClip = null;
+          soundtrackOverrideSrc = "";
+        }
+      }
+    }, 32);
+  }
+  function playMusicOverride(state2, src, loop) {
+    soundtrackState = state2 || soundtrackState;
+    if (!state2 || !state2.sound || !src)
+      return null;
+    stopSoundtrackFade();
+    if (soundtrackOverrideClip && soundtrackOverrideSrc === src) {
+      soundtrackOverrideClip.loop = loop !== false;
+      soundtrackOverrideClip.volume = Math.max(0, Math.min(1, 0.26 * getMusicMasterVolume(state2)));
+      if (soundtrackOverrideClip.paused) {
+        try {
+          soundtrackOverrideClip.currentTime = 0;
+          soundtrackOverrideClip.play().catch(function() {
+          });
+        } catch (e) {
+        }
+      }
+      return soundtrackOverrideClip;
+    }
+    stopAudioClip(soundtrackOverrideClip);
+    soundtrackOverrideClip = null;
+    soundtrackOverrideSrc = "";
+    if (soundtrackClip) {
+      try {
+        soundtrackClip.pause();
+      } catch (e) {
+      }
+    }
+    try {
+      var clip = new Audio(src);
+      clip.loop = loop !== false;
+      clip.volume = Math.max(0, Math.min(1, 0.26 * getMusicMasterVolume(state2)));
+      soundtrackOverrideClip = clip;
+      soundtrackOverrideSrc = src;
+      clip.play().catch(function() {
+      });
+      return clip;
+    } catch (e) {
+      soundtrackOverrideClip = null;
+      soundtrackOverrideSrc = "";
+    }
+    return null;
+  }
+  function stopMusicOverride(state2, resumeSoundtrack) {
+    soundtrackState = state2 || soundtrackState;
+    stopSoundtrackFade();
+    stopAudioClip(soundtrackOverrideClip);
+    soundtrackOverrideClip = null;
+    soundtrackOverrideSrc = "";
+    if (resumeSoundtrack && soundtrackActive) {
+      setSoundtrack(soundtrackState || state2 || { sound: true }, true);
+    }
   }
 
   // src/js/core/tourguide.js
@@ -142141,6 +142253,7 @@
   var missionBriefTypeAudio = null;
   var warningClip = null;
   var alienWaveToastTimer = 0;
+  var ALIEN_ATTACK_TRACK_SRC = "sfx/alien/alien_attack.mp3";
   var missileInputActive = false;
   var missileInputAnswer = "";
   var missileInputDeadline = 0;
@@ -145168,6 +145281,7 @@
       clearTimeout(alienWaveToastTimer);
       alienWaveToastTimer = 0;
     }
+    playSfx(state, "alien_12oclock_warning");
     showToast("\u26A0\uFE0F", "alert");
     if (message) {
       alienWaveToastTimer = setTimeout(function() {
@@ -145968,6 +146082,9 @@
     if (!sandboxMode || !state.sandboxAlienWaveActive) {
       setSandboxQuestionHidden(false);
     }
+    if (isEndlessSession() && !tutorialActive && !sandboxMode) {
+      stopMusicOverride(state, state.sound && !state.over && (state.running || countdownActive || introActive || missionBriefShowing));
+    }
   }
   function startTargetAlienWave() {
     state.alienMode = "wave";
@@ -145994,7 +146111,8 @@
     alienConfig.enabled = true;
     alienConfig.maxOnScreen = 0;
     alienConfig.spawnCooldown = 9999;
-    showAlienWaveWarningToast("ALIEN WAVE INBOUND");
+    playMusicOverride(state, ALIEN_ATTACK_TRACK_SRC, true);
+    showToast("ALIEN WAVE INBOUND", "bad");
   }
   function startTargetAlienFinale() {
     if (!isTargetFinaleSession())
@@ -146070,6 +146188,7 @@
         if (!state.alienWaveWarningPending) {
           state.alienWaveWarningPending = true;
           state.alienWaveWarningTimer = 0.95;
+          fadeOutSoundtrack(state, 520);
           showAlienWaveWarningToast(null);
         } else {
           state.alienWaveWarningTimer = Math.max(0, (state.alienWaveWarningTimer || 0) - dt);
@@ -146127,6 +146246,8 @@
     alienConfig.enabled = true;
     alienConfig.maxOnScreen = 0;
     alienConfig.spawnCooldown = 9999;
+    fadeOutSoundtrack(state, 420);
+    playMusicOverride(state, ALIEN_ATTACK_TRACK_SRC, true);
     showAlienWaveWarningToast("ALIEN WAVE INBOUND");
   }
   function updateEndlessMiniWave(dt) {
@@ -147076,45 +147197,6 @@
     } else {
       spawnDecoyOnly();
     }
-    if (state.level >= 4) {
-      var diff = String(state.difficulty || "normal").toLowerCase();
-      var extraChance = 0.28;
-      if (diff === "easy")
-        extraChance = 0.12;
-      else if (diff === "normal")
-        extraChance = 0.18;
-      if (Math.random() < extraChance) {
-        var r = canvas.getBoundingClientRect();
-        var w = r.width;
-        var baseVy = (92 + state.level * 10) * getDifficultySpeedFactor() * asteroidFallSpeedScale;
-        var speedScale = state.baseSpeed * (1 + state.ddSpeedBonus);
-        var ambLane = isSandboxSplitMode() ? Math.random() < 0.5 ? 1 : 2 : 0;
-        var ambBounds = getLaneBounds(ambLane);
-        asteroids.push({
-          id: ++state.asteroidId,
-          x: rand(ambBounds.minX, ambBounds.maxX),
-          y: -rand(220, 520),
-          vx: rand(-25, 25),
-          vy: baseVy * speedScale * rand(0.75, 1),
-          baseVy: baseVy * speedScale,
-          r: rand(14, 22),
-          label: null,
-          isCorrect: false,
-          waveId: -1,
-          laneId: ambLane,
-          spin: rand(-3.2, 3.2),
-          rot: rand(0, Math.PI * 2),
-          seed: Math.random() * 1e3,
-          hit: false,
-          ghost: true,
-          ambient: true,
-          driftAmp: rand(6, 14),
-          driftRate: rand(0.6, 1.5),
-          driftPhase: rand(0, Math.PI * 2),
-          spriteIndex: randi(0, asteroidSprites.length - 1)
-        });
-      }
-    }
   }
   function spawnPowerup(type, group, x, y, opts) {
     var r = canvas.getBoundingClientRect();
@@ -147383,35 +147465,6 @@
         else if (p.type === "autofire")
           showToast("SECONDARY -> AUTO-FIRE (E)");
       }
-    }
-  }
-  function spawnSplitAsteroids(a) {
-    var baseVy = a.baseVy != null ? a.baseVy : a.vy;
-    for (var i = 0; i < 2; i++) {
-      var side = i === 0 ? -1 : 1;
-      asteroids.push({
-        id: ++state.asteroidId,
-        x: a.x + side * a.r * 0.35,
-        y: a.y + rand(-4, 4),
-        vx: (a.vx || 0) + side * rand(24, 46),
-        vy: (a.vy || 0) * rand(0.85, 1.05),
-        baseVy,
-        r: Math.max(12, a.r * 0.55),
-        label: null,
-        isCorrect: false,
-        waveId: -1,
-        spin: rand(-3.4, 3.4),
-        rot: rand(0, Math.PI * 2),
-        seed: Math.random() * 1e3,
-        hit: false,
-        warned: false,
-        ghost: true,
-        ghostFade: false,
-        driftAmp: rand(6, 12),
-        driftRate: rand(0.6, 1.3),
-        driftPhase: rand(0, Math.PI * 2),
-        spriteIndex: randi(0, asteroidSprites.length - 1)
-      });
     }
   }
   function markAsteroidEffect(a, effect, duration) {
@@ -152106,9 +152159,6 @@
         impactWrong(ast.x, ast.y);
       } else {
         impactDebris(ast.x, ast.y);
-      }
-      if (meta.split) {
-        spawnSplitAsteroids(ast);
       }
       if (meta.chain) {
         chainDestroy(ast, meta.chain.radius, meta.chain.maxTargets);
