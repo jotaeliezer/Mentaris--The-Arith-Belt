@@ -140146,6 +140146,9 @@
     var titleTypeMs = 20;
     var bodyTypeMs = 30;
     var praiseDelayMs = 2e3;
+    function useOneShotTalking() {
+      return !!(currentStep && currentStep.startSfx && currentStep.muteTypeAudio);
+    }
     function ensureStyles() {
       if (document.getElementById("tourGuideStyles"))
         return;
@@ -140279,7 +140282,17 @@
         }
         oneShotAudio = cached;
         oneShotAudio.volume = 0.48;
+        try {
+          oneShotAudio.onended = null;
+        } catch (e) {
+        }
         oneShotAudio.currentTime = 0;
+        if (useOneShotTalking()) {
+          setCommanderTalking(true);
+          oneShotAudio.onended = function() {
+            setCommanderTalking(false);
+          };
+        }
         oneShotAudio.play().catch(function() {
         });
       } catch (e) {
@@ -140307,12 +140320,13 @@
       i = 1;
       el.textContent = text.slice(0, i);
       var firstChar = text.charAt(0);
-      if (firstChar && firstChar.trim().length > 0) {
+      if (!useOneShotTalking() && firstChar && firstChar.trim().length > 0) {
         setCommanderTalking(true);
       }
       if (i >= text.length) {
         stopTypeAudio();
-        setCommanderTalking(false);
+        if (!useOneShotTalking())
+          setCommanderTalking(false);
         if (done)
           done();
         return;
@@ -140320,17 +140334,20 @@
       var timer = setInterval(function() {
         i += 1;
         el.textContent = text.slice(0, i);
-        var lastChar = text.charAt(i - 1);
-        if (lastChar && lastChar.trim().length > 0) {
-          var phase = i % 8;
-          setCommanderTalking(phase < 4);
-        } else {
-          setCommanderTalking(false);
+        if (!useOneShotTalking()) {
+          var lastChar = text.charAt(i - 1);
+          if (lastChar && lastChar.trim().length > 0) {
+            var phase = i % 8;
+            setCommanderTalking(phase < 4);
+          } else {
+            setCommanderTalking(false);
+          }
         }
         if (i >= text.length) {
           clearInterval(timer);
           stopTypeAudio();
-          setCommanderTalking(false);
+          if (!useOneShotTalking())
+            setCommanderTalking(false);
           if (done)
             done();
         }
@@ -141685,7 +141702,7 @@
     var options = opts || {};
     var pad = 80;
     var x = randi(pad, Math.max(pad + 20, view2.w - pad));
-    var y = -40;
+    var y = -60;
     if (typeof options.x === "number" && Number.isFinite(options.x))
       x = options.x;
     if (typeof options.y === "number" && Number.isFinite(options.y))
@@ -141697,7 +141714,11 @@
     var answerHits = typeof answer === "number" && Number.isFinite(answer) ? Math.max(1, Math.round(answer)) : t.hp || 1;
     if (options.isBoss) {
       answerHits = hp;
+    } else {
+      hp = answerHits;
     }
+    var ingressDur = typeof options.ingressDur === "number" && Number.isFinite(options.ingressDur) ? Math.max(0.12, options.ingressDur) : 0.34;
+    var ingressTargetY = typeof options.ingressTargetY === "number" && Number.isFinite(options.ingressTargetY) ? options.ingressTargetY : view2.hudH + Math.min(Math.max(70, view2.h * 0.14), 115);
     var a = {
       uid: alienId++,
       id: options.id || t.id,
@@ -141717,6 +141738,7 @@
       question,
       answer,
       hitsTaken: 0,
+      hitsRequired: answerHits,
       fireCooldown: 1.4 + Math.random() * 1.2,
       strafeTimer: 0.3 + Math.random() * 0.6,
       strafeTarget: x,
@@ -141724,7 +141746,11 @@
       isBoss: !!options.isBoss,
       fireMode: options.fireMode || "normal",
       burstShots: 0,
-      spriteIndex: -1
+      spriteIndex: -1,
+      ingressTimer: options.isBoss ? 0 : ingressDur,
+      ingressDur,
+      ingressStartY: y,
+      ingressTargetY
     };
     var spriteKey = normalizeAlienSpriteKey(options.spriteKey || forcedAlienSpriteKey);
     var spriteIndex = getAlienSpriteIndexByKey(spriteKey);
@@ -141825,6 +141851,21 @@
       }
       if (a.flipTimer > 0) {
         a.flipTimer = Math.max(0, a.flipTimer - dt);
+      }
+      if (a.ingressTimer > 0) {
+        a.ingressTimer = Math.max(0, a.ingressTimer - dt);
+        var ingressDur = Math.max(1e-3, a.ingressDur || 0.34);
+        var ingressP = 1 - a.ingressTimer / ingressDur;
+        ingressP = Math.max(0, Math.min(1, ingressP));
+        var easedIngress = 1 - Math.pow(1 - ingressP, 3);
+        a.vx = 0;
+        a.vy = (a.ingressTargetY - a.ingressStartY) / ingressDur;
+        a.y = a.ingressStartY + (a.ingressTargetY - a.ingressStartY) * easedIngress;
+        a.fireCooldown = Math.max(a.fireCooldown, 0.55);
+        if (a.ingressTimer <= 0) {
+          a.y = a.ingressTargetY;
+        }
+        continue;
       }
       var diff = String(state2 && state2.difficulty || "normal").toLowerCase();
       var brutal = diff === "brutal";
@@ -143113,9 +143154,9 @@
   var backgroundScroll = 0;
   var backgroundScrollSplit = 0;
   var backgroundScale = 2.1;
-  var PHASER_BACKGROUND_SCROLL_SPEED = 4.4;
-  var BACKGROUND_SCROLL_SPEED = 6.6;
-  var BACKGROUND_PULLDOWN_SPEED_BONUS = 1.85;
+  var PHASER_BACKGROUND_SCROLL_SPEED = 5.8;
+  var BACKGROUND_SCROLL_SPEED = 8.8;
+  var BACKGROUND_PULLDOWN_SPEED_BONUS = 2.2;
   var beltKey = "dusk";
   var beltIndexMap = {
     dusk: 0,
@@ -145546,20 +145587,20 @@
     var regenRate = 0.12;
     pilot.hull = clamp(pilot.hull + regenRate * dtReal2, 0, 1);
   }
-  function getHighestDigit(value) {
+  function getLowestDigit(value) {
     if (value == null)
       return 0;
     var str = String(value);
-    var maxDigit = 0;
+    var minDigit = 10;
     for (var i = 0; i < str.length; i++) {
       var code = str.charCodeAt(i);
       if (code >= 48 && code <= 57) {
         var digit = code - 48;
-        if (digit > maxDigit)
-          maxDigit = digit;
+        if (digit < minDigit)
+          minDigit = digit;
       }
     }
-    return maxDigit;
+    return minDigit === 10 ? 0 : minDigit;
   }
   function spawnMineralBurst(x, y, count) {
     var total = Math.max(0, Math.round(count || 0));
@@ -149470,7 +149511,7 @@
   function beginTutorialMineralsFreeze(hitAst) {
     if (!tutorialActive || tutorialStepId !== "correct" || !hitAst || hitAst.label == null)
       return;
-    var mineralTarget = getHighestDigit(hitAst.label);
+    var mineralTarget = getLowestDigit(hitAst.label);
     tutorialMineralsFreeze = true;
     tutorialFreezeDimTarget = 1;
     tutorialFreezeMousepadRestore = !!mousepadActive;
@@ -149625,7 +149666,7 @@
     notifyTutorialCorrectStep();
     beginTutorialMineralsFreeze(hitAst);
     if (hitAst && hitAst.label != null) {
-      spawnMineralBurst(hitAst.x, hitAst.y, getHighestDigit(hitAst.label));
+      spawnMineralBurst(hitAst.x, hitAst.y, getLowestDigit(hitAst.label));
     }
     var baseGain = 50 + Math.min(250, state.streak * 10);
     var factor = Math.max(state.a, state.b);
@@ -149714,7 +149755,7 @@
     notifyTutorialCorrectStep();
     beginTutorialMineralsFreeze(hitAst);
     if (hitAst && hitAst.label != null) {
-      spawnMineralBurst(hitAst.x, hitAst.y, getHighestDigit(hitAst.label));
+      spawnMineralBurst(hitAst.x, hitAst.y, getLowestDigit(hitAst.label));
     }
     var baseGain = 50 + Math.min(250, state.streak * 10);
     var factor = Math.max(state.a, state.b);
@@ -152440,7 +152481,8 @@
           al.hitShake = 0.75;
           al.stunTimer = Math.max(al.stunTimer || 0, 0.4);
           al.hitsTaken += 1;
-          if (al.hitsTaken >= al.answer) {
+          var alienHitsRequired = Math.max(1, Math.round(al && al.hitsRequired != null ? al.hitsRequired : al && al.answer != null ? al.answer : 1));
+          if (al.hitsTaken >= alienHitsRequired) {
             if (al.isBoss && state.alienBossRetreatMode) {
               state.aliensShot += 1;
               if (!state.aliensShotByType)

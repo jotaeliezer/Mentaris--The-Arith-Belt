@@ -122,7 +122,7 @@ export function spawnAlien(typeId, question, answer, view, opts){
   var options = opts || {};
   var pad = 80;
   var x = randi(pad, Math.max(pad + 20, view.w - pad));
-  var y = -40;
+  var y = -60;
   if(typeof options.x === "number" && Number.isFinite(options.x)) x = options.x;
   if(typeof options.y === "number" && Number.isFinite(options.y)) y = options.y;
   var hp = (typeof options.hp === "number" && Number.isFinite(options.hp)) ? Math.max(1, Math.round(options.hp)) : t.hp;
@@ -132,7 +132,13 @@ export function spawnAlien(typeId, question, answer, view, opts){
   var answerHits = (typeof answer === "number" && Number.isFinite(answer)) ? Math.max(1, Math.round(answer)) : (t.hp || 1);
   if(options.isBoss){
     answerHits = hp;
+  }else{
+    hp = answerHits;
   }
+  var ingressDur = (typeof options.ingressDur === "number" && Number.isFinite(options.ingressDur)) ? Math.max(0.12, options.ingressDur) : 0.34;
+  var ingressTargetY = (typeof options.ingressTargetY === "number" && Number.isFinite(options.ingressTargetY))
+    ? options.ingressTargetY
+    : (view.hudH + Math.min(Math.max(70, view.h * 0.14), 115));
   var a = {
     uid: alienId++,
     id: options.id || t.id,
@@ -152,6 +158,7 @@ export function spawnAlien(typeId, question, answer, view, opts){
     question: question,
     answer: answer,
     hitsTaken: 0,
+    hitsRequired: answerHits,
     fireCooldown: 1.4 + Math.random() * 1.2,
     strafeTimer: 0.3 + Math.random() * 0.6,
     strafeTarget: x,
@@ -159,7 +166,11 @@ export function spawnAlien(typeId, question, answer, view, opts){
     isBoss: !!options.isBoss,
     fireMode: options.fireMode || "normal",
     burstShots: 0,
-    spriteIndex: -1
+    spriteIndex: -1,
+    ingressTimer: options.isBoss ? 0 : ingressDur,
+    ingressDur: ingressDur,
+    ingressStartY: y,
+    ingressTargetY: ingressTargetY
   };
   var spriteKey = normalizeAlienSpriteKey(options.spriteKey || forcedAlienSpriteKey);
   var spriteIndex = getAlienSpriteIndexByKey(spriteKey);
@@ -261,6 +272,21 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
     }
     if(a.flipTimer > 0){
       a.flipTimer = Math.max(0, a.flipTimer - dt);
+    }
+    if(a.ingressTimer > 0){
+      a.ingressTimer = Math.max(0, a.ingressTimer - dt);
+      var ingressDur = Math.max(0.001, a.ingressDur || 0.34);
+      var ingressP = 1 - (a.ingressTimer / ingressDur);
+      ingressP = Math.max(0, Math.min(1, ingressP));
+      var easedIngress = 1 - Math.pow(1 - ingressP, 3);
+      a.vx = 0;
+      a.vy = (a.ingressTargetY - a.ingressStartY) / ingressDur;
+      a.y = a.ingressStartY + (a.ingressTargetY - a.ingressStartY) * easedIngress;
+      a.fireCooldown = Math.max(a.fireCooldown, 0.55);
+      if(a.ingressTimer <= 0){
+        a.y = a.ingressTargetY;
+      }
+      continue;
     }
     var diff = String((state && state.difficulty) || "normal").toLowerCase();
     var brutal = diff === "brutal";

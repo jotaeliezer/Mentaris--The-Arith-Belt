@@ -79,6 +79,10 @@ export function createTourGuide(options){
   var bodyTypeMs = 30;
   var praiseDelayMs = 2000;
 
+  function useOneShotTalking(){
+    return !!(currentStep && currentStep.startSfx && currentStep.muteTypeAudio);
+  }
+
   function ensureStyles(){
     if(document.getElementById("tourGuideStyles")) return;
     var style = document.createElement("style");
@@ -199,7 +203,14 @@ export function createTourGuide(options){
       }
       oneShotAudio = cached;
       oneShotAudio.volume = 0.48;
+      try{ oneShotAudio.onended = null; }catch(e){}
       oneShotAudio.currentTime = 0;
+      if(useOneShotTalking()){
+        setCommanderTalking(true);
+        oneShotAudio.onended = function(){
+          setCommanderTalking(false);
+        };
+      }
       oneShotAudio.play().catch(function(){});
     }catch(e){}
   }
@@ -224,29 +235,31 @@ export function createTourGuide(options){
     i = 1;
     el.textContent = text.slice(0, i);
     var firstChar = text.charAt(0);
-    if(firstChar && firstChar.trim().length > 0){
+    if(!useOneShotTalking() && firstChar && firstChar.trim().length > 0){
       setCommanderTalking(true);
     }
     if(i >= text.length){
       stopTypeAudio();
-      setCommanderTalking(false);
+      if(!useOneShotTalking()) setCommanderTalking(false);
       if(done) done();
       return;
     }
     var timer = setInterval(function(){
       i += 1;
       el.textContent = text.slice(0, i);
-      var lastChar = text.charAt(i - 1);
-      if(lastChar && lastChar.trim().length > 0){
-        var phase = i % 8;
-        setCommanderTalking(phase < 4);
-      }else{
-        setCommanderTalking(false);
+      if(!useOneShotTalking()){
+        var lastChar = text.charAt(i - 1);
+        if(lastChar && lastChar.trim().length > 0){
+          var phase = i % 8;
+          setCommanderTalking(phase < 4);
+        }else{
+          setCommanderTalking(false);
+        }
       }
       if(i >= text.length){
         clearInterval(timer);
         stopTypeAudio();
-        setCommanderTalking(false);
+        if(!useOneShotTalking()) setCommanderTalking(false);
         if(done) done();
       }
     }, safeSpeed);

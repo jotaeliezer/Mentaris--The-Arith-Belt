@@ -1027,9 +1027,9 @@ var backgroundIndex = 0;
 var backgroundScroll = 0;
 var backgroundScrollSplit = 0;
 var backgroundScale = 2.10;
-var PHASER_BACKGROUND_SCROLL_SPEED = 4.4;
-var BACKGROUND_SCROLL_SPEED = 6.6;
-var BACKGROUND_PULLDOWN_SPEED_BONUS = 1.85;
+var PHASER_BACKGROUND_SCROLL_SPEED = 5.8;
+var BACKGROUND_SCROLL_SPEED = 8.8;
+var BACKGROUND_PULLDOWN_SPEED_BONUS = 2.2;
 var beltKey = "dusk";
 var beltIndexMap = {
   dusk: 0,
@@ -3511,6 +3511,20 @@ function getHighestDigit(value){
     }
   }
   return maxDigit;
+}
+
+function getLowestDigit(value){
+  if(value == null) return 0;
+  var str = String(value);
+  var minDigit = 10;
+  for(var i=0; i<str.length; i++){
+    var code = str.charCodeAt(i);
+    if(code >= 48 && code <= 57){
+      var digit = code - 48;
+      if(digit < minDigit) minDigit = digit;
+    }
+  }
+  return minDigit === 10 ? 0 : minDigit;
 }
 
 function spawnMineralBurst(x, y, count){
@@ -7374,7 +7388,7 @@ function setupTutorialPowerupField(config){
 
 function beginTutorialMineralsFreeze(hitAst){
   if(!tutorialActive || tutorialStepId !== "correct" || !hitAst || hitAst.label == null) return;
-  var mineralTarget = getHighestDigit(hitAst.label);
+  var mineralTarget = getLowestDigit(hitAst.label);
   tutorialMineralsFreeze = true;
   tutorialFreezeDimTarget = 1;
   tutorialFreezeMousepadRestore = !!mousepadActive;
@@ -7530,7 +7544,7 @@ function handleDivisorCorrectHit(hitAst){
   notifyTutorialCorrectStep();
   beginTutorialMineralsFreeze(hitAst);
   if(hitAst && hitAst.label != null){
-    spawnMineralBurst(hitAst.x, hitAst.y, getHighestDigit(hitAst.label));
+    spawnMineralBurst(hitAst.x, hitAst.y, getLowestDigit(hitAst.label));
   }
 
   var baseGain = 50 + Math.min(250, state.streak*10);
@@ -7627,7 +7641,7 @@ function onCorrectHit(hitAst){
   notifyTutorialCorrectStep();
   beginTutorialMineralsFreeze(hitAst);
   if(hitAst && hitAst.label != null){
-    spawnMineralBurst(hitAst.x, hitAst.y, getHighestDigit(hitAst.label));
+    spawnMineralBurst(hitAst.x, hitAst.y, getLowestDigit(hitAst.label));
   }
 
   var baseGain = 50 + Math.min(250, state.streak*10);
@@ -10384,7 +10398,8 @@ function update(dt){
       al.hitShake = 0.75;
       al.stunTimer = Math.max(al.stunTimer || 0, 0.4);
       al.hitsTaken += 1;
-        if(al.hitsTaken >= al.answer){
+        var alienHitsRequired = Math.max(1, Math.round((al && al.hitsRequired != null) ? al.hitsRequired : ((al && al.answer != null) ? al.answer : 1)));
+        if(al.hitsTaken >= alienHitsRequired){
           if(al.isBoss && state.alienBossRetreatMode){
             state.aliensShot += 1;
             if(!state.aliensShotByType) state.aliensShotByType = {};
