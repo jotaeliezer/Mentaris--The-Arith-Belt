@@ -4310,7 +4310,7 @@
             var audioRef = homePreviewPlayers[itemRef.id];
             function syncDuration(){
               if(isFinite(audioRef.duration) && audioRef.duration > 0){
-                durationEl.textContent = formatDuration(audioRef.duration);
+                durationEl.textContent = formatDurationHome(audioRef.duration);
               }
             }
             audioRef.addEventListener("loadedmetadata", syncDuration);
@@ -4321,7 +4321,7 @@
           }
           var preload = ensurePlayer();
           if(preload && isFinite(preload.duration) && preload.duration > 0){
-            durationEl.textContent = formatDuration(preload.duration);
+            durationEl.textContent = formatDurationHome(preload.duration);
           }
           playBtn.addEventListener("click", function(e){
             e.preventDefault();

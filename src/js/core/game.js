@@ -5014,7 +5014,7 @@ function spawnAsteroid(label, isCorrect, laneId){
     if(Number.isNaN(denHits) || denHits <= 1) denHits = 1;
     a.hitsRemaining = denHits;
     a.hitsTotal = denHits;
-  }else if(isCorrect && (state.questionMode === "classic" || state.questionMode === "classic2" || state.questionMode === "classic3" || state.questionMode === "add_classic2" || state.questionMode === "add_classic3" || state.questionMode === "add_series3" || state.questionMode === "add_series4" || state.questionMode === "square_shoot" || state.questionMode === "square_root" || state.questionMode === "add_factor2" || state.questionMode === "add_factor3")){
+  }else if(isCorrect && (state.questionMode === "classic" || state.questionMode === "classic2" || state.questionMode === "classic3" || state.questionMode === "add_classic2" || state.questionMode === "add_classic3" || state.questionMode === "add_series3" || state.questionMode === "add_series4" || state.questionMode === "square_shoot" || state.questionMode === "square_root" || state.questionMode === "factor2" || state.questionMode === "factor3" || state.questionMode === "add_factor2" || state.questionMode === "add_factor3")){
     var ansStr = String(Math.abs(state.answer || 0));
     var maxDigit = 0;
     for(var di=0; di<ansStr.length; di++){
@@ -12253,9 +12253,9 @@ function getMissionBriefObjectiveText(){
   }else if(modeName.indexOf("Series") !== -1){
     detail = "Solve the full series sum and shoot the correct answer. Avoid decoys.";
     hitsRule = "Correct answer asteroids take hits equal to the largest digit in the answer.";
-  }else if(modeName.indexOf("Factor Hunt") !== -1){
-    detail = "Find the missing factor that completes the product. Avoid decoys.";
-    hitsRule = "Correct factor asteroids take 1 hit.";
+    }else if(modeName.indexOf("Factor Hunt") !== -1){
+      detail = "Find the missing factor that completes the product. Avoid decoys.";
+      hitsRule = "Correct factor asteroids take hits equal to the largest digit in the answer.";
   }else if(op == "Rationals"){
     detail = "Match the fraction/decimal shown. Avoid incorrect values.";
     if(String(state.questionMode) == "rational_frac"){

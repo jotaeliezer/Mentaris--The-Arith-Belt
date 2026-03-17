@@ -140138,6 +140138,7 @@
     var typeTimers = [];
     var typeAudio = null;
     var oneShotAudio = null;
+    var oneShotTalkingActive = false;
     var stepSfxCache = {};
     var stepStartSfxPlayed = false;
     var currentStep = null;
@@ -140148,6 +140149,9 @@
     var praiseDelayMs = 2e3;
     function useOneShotTalking() {
       return !!(currentStep && currentStep.startSfx && currentStep.muteTypeAudio);
+    }
+    function shouldAnimateTalking() {
+      return !useOneShotTalking() || oneShotTalkingActive;
     }
     function ensureStyles() {
       if (document.getElementById("tourGuideStyles"))
@@ -140206,6 +140210,7 @@
       }
       typeTimers.length = 0;
       stopTypeAudio();
+      oneShotTalkingActive = false;
       setCommanderTalking(false);
     }
     function setCommanderTalking(isTalking) {
@@ -140288,10 +140293,13 @@
         }
         oneShotAudio.currentTime = 0;
         if (useOneShotTalking()) {
-          setCommanderTalking(true);
+          oneShotTalkingActive = true;
           oneShotAudio.onended = function() {
+            oneShotTalkingActive = false;
             setCommanderTalking(false);
           };
+        } else {
+          oneShotTalkingActive = false;
         }
         oneShotAudio.play().catch(function() {
         });
@@ -140320,12 +140328,12 @@
       i = 1;
       el.textContent = text.slice(0, i);
       var firstChar = text.charAt(0);
-      if (!useOneShotTalking() && firstChar && firstChar.trim().length > 0) {
+      if (shouldAnimateTalking() && firstChar && firstChar.trim().length > 0) {
         setCommanderTalking(true);
       }
       if (i >= text.length) {
         stopTypeAudio();
-        if (!useOneShotTalking())
+        if (!oneShotTalkingActive)
           setCommanderTalking(false);
         if (done)
           done();
@@ -140334,7 +140342,7 @@
       var timer = setInterval(function() {
         i += 1;
         el.textContent = text.slice(0, i);
-        if (!useOneShotTalking()) {
+        if (shouldAnimateTalking()) {
           var lastChar = text.charAt(i - 1);
           if (lastChar && lastChar.trim().length > 0) {
             var phase = i % 8;
@@ -140342,11 +140350,13 @@
           } else {
             setCommanderTalking(false);
           }
+        } else {
+          setCommanderTalking(false);
         }
         if (i >= text.length) {
           clearInterval(timer);
           stopTypeAudio();
-          if (!useOneShotTalking())
+          if (!oneShotTalkingActive)
             setCommanderTalking(false);
           if (done)
             done();
@@ -140588,6 +140598,7 @@
         } catch (e) {
         }
       }
+      oneShotTalkingActive = false;
       if (advanceTimer)
         clearTimeout(advanceTimer);
       if (transitionTimer)
@@ -147060,7 +147071,7 @@
         denHits = 1;
       a.hitsRemaining = denHits;
       a.hitsTotal = denHits;
-    } else if (isCorrect && (state.questionMode === "classic" || state.questionMode === "classic2" || state.questionMode === "classic3" || state.questionMode === "add_classic2" || state.questionMode === "add_classic3" || state.questionMode === "add_series3" || state.questionMode === "add_series4" || state.questionMode === "square_shoot" || state.questionMode === "square_root" || state.questionMode === "add_factor2" || state.questionMode === "add_factor3")) {
+    } else if (isCorrect && (state.questionMode === "classic" || state.questionMode === "classic2" || state.questionMode === "classic3" || state.questionMode === "add_classic2" || state.questionMode === "add_classic3" || state.questionMode === "add_series3" || state.questionMode === "add_series4" || state.questionMode === "square_shoot" || state.questionMode === "square_root" || state.questionMode === "factor2" || state.questionMode === "factor3" || state.questionMode === "add_factor2" || state.questionMode === "add_factor3")) {
       var ansStr = String(Math.abs(state.answer || 0));
       var maxDigit = 0;
       for (var di = 0; di < ansStr.length; di++) {
@@ -154302,7 +154313,7 @@
       hitsRule = "Correct answer asteroids take hits equal to the largest digit in the answer.";
     } else if (modeName.indexOf("Factor Hunt") !== -1) {
       detail = "Find the missing factor that completes the product. Avoid decoys.";
-      hitsRule = "Correct factor asteroids take 1 hit.";
+      hitsRule = "Correct factor asteroids take hits equal to the largest digit in the answer.";
     } else if (op == "Rationals") {
       detail = "Match the fraction/decimal shown. Avoid incorrect values.";
       if (String(state.questionMode) == "rational_frac") {

@@ -70,6 +70,7 @@ export function createTourGuide(options){
   var typeTimers = [];
   var typeAudio = null;
   var oneShotAudio = null;
+  var oneShotTalkingActive = false;
   var stepSfxCache = {};
   var stepStartSfxPlayed = false;
   var currentStep = null;
@@ -81,6 +82,10 @@ export function createTourGuide(options){
 
   function useOneShotTalking(){
     return !!(currentStep && currentStep.startSfx && currentStep.muteTypeAudio);
+  }
+
+  function shouldAnimateTalking(){
+    return !useOneShotTalking() || oneShotTalkingActive;
   }
 
   function ensureStyles(){
@@ -138,6 +143,7 @@ export function createTourGuide(options){
     }
     typeTimers.length = 0;
     stopTypeAudio();
+    oneShotTalkingActive = false;
     setCommanderTalking(false);
   }
 
@@ -206,10 +212,13 @@ export function createTourGuide(options){
       try{ oneShotAudio.onended = null; }catch(e){}
       oneShotAudio.currentTime = 0;
       if(useOneShotTalking()){
-        setCommanderTalking(true);
+        oneShotTalkingActive = true;
         oneShotAudio.onended = function(){
+          oneShotTalkingActive = false;
           setCommanderTalking(false);
         };
+      }else{
+        oneShotTalkingActive = false;
       }
       oneShotAudio.play().catch(function(){});
     }catch(e){}
@@ -235,19 +244,19 @@ export function createTourGuide(options){
     i = 1;
     el.textContent = text.slice(0, i);
     var firstChar = text.charAt(0);
-    if(!useOneShotTalking() && firstChar && firstChar.trim().length > 0){
+    if(shouldAnimateTalking() && firstChar && firstChar.trim().length > 0){
       setCommanderTalking(true);
     }
     if(i >= text.length){
       stopTypeAudio();
-      if(!useOneShotTalking()) setCommanderTalking(false);
+      if(!oneShotTalkingActive) setCommanderTalking(false);
       if(done) done();
       return;
     }
     var timer = setInterval(function(){
       i += 1;
       el.textContent = text.slice(0, i);
-      if(!useOneShotTalking()){
+      if(shouldAnimateTalking()){
         var lastChar = text.charAt(i - 1);
         if(lastChar && lastChar.trim().length > 0){
           var phase = i % 8;
@@ -255,11 +264,13 @@ export function createTourGuide(options){
         }else{
           setCommanderTalking(false);
         }
+      }else{
+        setCommanderTalking(false);
       }
       if(i >= text.length){
         clearInterval(timer);
         stopTypeAudio();
-        if(!useOneShotTalking()) setCommanderTalking(false);
+        if(!oneShotTalkingActive) setCommanderTalking(false);
         if(done) done();
       }
     }, safeSpeed);
@@ -487,6 +498,7 @@ export function createTourGuide(options){
         oneShotAudio.currentTime = 0;
       }catch(e){}
     }
+    oneShotTalkingActive = false;
     if(advanceTimer) clearTimeout(advanceTimer);
     if(transitionTimer) clearTimeout(transitionTimer);
     if(overlay){
