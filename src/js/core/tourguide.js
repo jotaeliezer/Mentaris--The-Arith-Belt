@@ -6,6 +6,7 @@ export function createTourGuide(options){
   var onComplete = typeof opts.onComplete === "function" ? opts.onComplete : function(){};
   var onSkip = typeof opts.onSkip === "function" ? opts.onSkip : onComplete;
   var onStep = typeof opts.onStep === "function" ? opts.onStep : null;
+  var onStepReady = typeof opts.onStepReady === "function" ? opts.onStepReady : null;
   var onConfirm = typeof opts.onConfirm === "function" ? opts.onConfirm : null;
   var onChoice = typeof opts.onChoice === "function" ? opts.onChoice : null;
   var steps = [
@@ -228,6 +229,16 @@ export function createTourGuide(options){
           }
           if((oneShotAudio.currentTime || 0) >= oneShotTalkingCueSec){
             oneShotTalkingActive = true;
+            var talkingPulseTimer = setInterval(function(){
+              if(!oneShotAudio || oneShotAudio.paused || !oneShotTalkingActive){
+                if(!oneShotTalkingActive) setCommanderTalking(false);
+                clearInterval(talkingPulseTimer);
+                return;
+              }
+              var talkPhase = Math.floor((oneShotAudio.currentTime - oneShotTalkingCueSec) / 0.14) % 2;
+              setCommanderTalking(talkPhase === 0);
+            }, 60);
+            typeTimers.push(talkingPulseTimer);
             clearInterval(talkingCueWatcher);
           }
         }, 40);
@@ -418,6 +429,7 @@ export function createTourGuide(options){
       }
       typeText(titleEl, step.title, titleTypeMs, function(){
         typeText(bodyEl, step.body, bodyTypeMs, function(){
+          if(onStepReady) onStepReady(step.id, step);
           stepAccepting = !step.autoAdvanceMs && !step.confirmLabel && !(Array.isArray(step.choices) && step.choices.length);
           if(step.autoAdvanceMs){
             scheduleNext(step.autoAdvanceMs);

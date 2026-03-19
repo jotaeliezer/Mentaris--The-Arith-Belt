@@ -140074,6 +140074,7 @@
     };
     var onSkip = typeof opts.onSkip === "function" ? opts.onSkip : onComplete;
     var onStep = typeof opts.onStep === "function" ? opts.onStep : null;
+    var onStepReady = typeof opts.onStepReady === "function" ? opts.onStepReady : null;
     var onConfirm = typeof opts.onConfirm === "function" ? opts.onConfirm : null;
     var onChoice = typeof opts.onChoice === "function" ? opts.onChoice : null;
     var steps = [
@@ -140311,6 +140312,17 @@
             }
             if ((oneShotAudio.currentTime || 0) >= oneShotTalkingCueSec) {
               oneShotTalkingActive = true;
+              var talkingPulseTimer = setInterval(function() {
+                if (!oneShotAudio || oneShotAudio.paused || !oneShotTalkingActive) {
+                  if (!oneShotTalkingActive)
+                    setCommanderTalking(false);
+                  clearInterval(talkingPulseTimer);
+                  return;
+                }
+                var talkPhase = Math.floor((oneShotAudio.currentTime - oneShotTalkingCueSec) / 0.14) % 2;
+                setCommanderTalking(talkPhase === 0);
+              }, 60);
+              typeTimers.push(talkingPulseTimer);
               clearInterval(talkingCueWatcher);
             }
           }, 40);
@@ -140511,6 +140523,8 @@
         }
         typeText(titleEl, step.title, titleTypeMs, function() {
           typeText(bodyEl, step.body, bodyTypeMs, function() {
+            if (onStepReady)
+              onStepReady(step.id, step);
             stepAccepting = !step.autoAdvanceMs && !step.confirmLabel && !(Array.isArray(step.choices) && step.choices.length);
             if (step.autoAdvanceMs) {
               scheduleNext(step.autoAdvanceMs);
@@ -143041,6 +143055,7 @@
   var tutorialMovementPreference = null;
   var tutorialMovementChoiceResolved = false;
   var tutorialPlatformChoiceResolved = false;
+  var tutorialChoiceCursorReady = false;
   var tutorialPortalActive = false;
   var tutorialPortalX = 0;
   var tutorialPortalY = 0;
@@ -143050,11 +143065,11 @@
   var tutorialPortalNotifyPending = false;
   var tutorialHideQuestion = false;
   var sandboxHideQuestion = false;
-  var PULLDOWN_DURATION = 1.5;
+  var PULLDOWN_DURATION = 2;
   var PULLDOWN_RAMP_UP = 0.35;
   var PULLDOWN_RAMP_DOWN = 0.35;
   var PULLDOWN_MAX_SPEED_MUL = 1.6;
-  var PULLDOWN_RETIRED_FADE_DURATION = 2.35;
+  var PULLDOWN_RETIRED_FADE_DURATION = 3.1;
   var PULLDOWN_SHIP_NUDGE_SPEED = 20;
   var PULLDOWN_ACTIVE_WAVE_SPEED_BONUS = 1.22;
   var sandboxAlienWaveDuration = 20;
@@ -144664,11 +144679,11 @@
       document.body.style.cursor = "";
       return;
     }
-    if (tutorialActive && tutorialStepId === "platform_choice" && !tutorialPlatformChoiceResolved) {
+    if (tutorialActive && tutorialStepId === "platform_choice" && !tutorialPlatformChoiceResolved && tutorialChoiceCursorReady) {
       document.body.style.cursor = "";
       return;
     }
-    if (tutorialActive && tutorialStepId === "movement_preference" && !tutorialMovementChoiceResolved) {
+    if (tutorialActive && tutorialStepId === "movement_preference" && !tutorialMovementChoiceResolved && tutorialChoiceCursorReady) {
       document.body.style.cursor = "";
       return;
     }
@@ -144977,7 +144992,10 @@
       virtualKnob.style.transform = "translate(calc(-50% + " + cx + "px), calc(-50% + " + cy + "px))";
     }
   }
-  canvas.addEventListener("pointerdown", function(e) {
+  function handleCanvasPrimaryPress(e, isMouseFallback) {
+    if (isMouseFallback && pointerDown) {
+      return;
+    }
     if (isSandboxMultiplayer()) {
       var p2 = ensurePilot2();
       updatePilot2Mouse(e);
@@ -145010,7 +145028,17 @@
     lastPointerX = e.clientX;
     lastPointerY = e.clientY;
     fire();
-    canvas.setPointerCapture(e.pointerId);
+    if (!isMouseFallback && e.pointerId != null && canvas.setPointerCapture) {
+      canvas.setPointerCapture(e.pointerId);
+    }
+  }
+  canvas.addEventListener("pointerdown", function(e) {
+    handleCanvasPrimaryPress(e, false);
+  });
+  canvas.addEventListener("mousedown", function(e) {
+    if (e.button !== 0)
+      return;
+    handleCanvasPrimaryPress(e, true);
   });
   canvas.addEventListener("pointermove", function(e) {
     if (isSandboxMultiplayer()) {
@@ -158246,6 +158274,7 @@
               tutorialMovementPreference = null;
               tutorialMovementChoiceResolved = false;
               tutorialPlatformChoiceResolved = false;
+              tutorialChoiceCursorReady = false;
               setTouchDockHidden(false);
               updateCursorVisibility();
             } else if (stepId === "move_arrows") {
@@ -158278,6 +158307,7 @@
               startTutorialDots("touch", "move_touch");
             } else if (stepId === "movement_preference") {
               tutorialMovementChoiceResolved = false;
+              tutorialChoiceCursorReady = false;
               if (tutorialPlatform === "tablet") {
                 tourGuide.jumpTo("fire_once");
                 return false;
@@ -158326,9 +158356,7 @@
               state.correctInPlay = false;
               state.correctAsteroidId = 0;
               state.spawnTimer = 2;
-              if (!(state.powerupsCollected > 0)) {
-                spawnPowerup("time", "secondary", player.x, -40, { pop: true, popScale: 0.9 });
-              }
+              spawnPowerup("time", "secondary", player.x, -40, { pop: true, popScale: 0.9 });
             }
             if (stepId === "secondary_slots") {
               tutorialSpawnUnlocked = false;
@@ -158397,6 +158425,12 @@
               alienConfig.maxOnScreen = Math.max(alienConfig.maxOnScreen || 0, 1);
             }
           },
+          onStepReady: function(stepId) {
+            if (stepId === "platform_choice" || stepId === "movement_preference") {
+              tutorialChoiceCursorReady = true;
+              updateCursorVisibility();
+            }
+          },
           onConfirm: function(stepId) {
             if (stepId === "minerals") {
               tutorialMineralsFreeze = false;
@@ -158429,12 +158463,14 @@
                 if (mousepadActive)
                   setMousepadActive(false);
               }
+              tutorialChoiceCursorReady = false;
               updateCursorVisibility();
               return;
             }
             if (stepId !== "movement_preference")
               return;
             tutorialMovementChoiceResolved = true;
+            tutorialChoiceCursorReady = false;
             tutorialMovementPreference = choice && choice.id ? String(choice.id) : "";
             if (tutorialMovementPreference === "mouse") {
               if (!mousepadActive)
@@ -158451,6 +158487,7 @@
             } catch (e) {
             }
             tutorialMovementChoiceResolved = false;
+            tutorialChoiceCursorReady = false;
             tutorialPortalActive = false;
             tutorialPortalLock = false;
             tutorialPortalNotifyPending = false;
@@ -158503,6 +158540,7 @@
         tutorialFreezeDimAlpha = 0;
         tutorialPowerupBatchSpawned = false;
         tutorialMovementChoiceResolved = false;
+        tutorialChoiceCursorReady = false;
         tutorialPendingCorrectNotify = false;
         tutorialPendingAidNotify = "";
         alienConfig.enabled = true;
