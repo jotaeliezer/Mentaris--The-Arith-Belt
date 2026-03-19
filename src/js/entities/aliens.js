@@ -135,6 +135,7 @@ export function spawnAlien(typeId, question, answer, view, opts){
   }else{
     hp = answerHits;
   }
+  var ingressEnabled = (options.forceIngress === true) || !options.isBoss;
   var ingressDur = (typeof options.ingressDur === "number" && Number.isFinite(options.ingressDur)) ? Math.max(0.12, options.ingressDur) : 0.34;
   var ingressTargetY = (typeof options.ingressTargetY === "number" && Number.isFinite(options.ingressTargetY))
     ? options.ingressTargetY
@@ -167,7 +168,7 @@ export function spawnAlien(typeId, question, answer, view, opts){
     fireMode: options.fireMode || "normal",
     burstShots: 0,
     spriteIndex: -1,
-    ingressTimer: options.isBoss ? 0 : ingressDur,
+    ingressTimer: ingressEnabled ? ingressDur : 0,
     ingressDur: ingressDur,
     ingressStartY: y,
     ingressTargetY: ingressTargetY
@@ -370,6 +371,9 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
         continue;
       }
       if(a.isBoss){
+        if(state && state.alienBossSpawnLock){
+          state.alienBossSpawnLock = false;
+        }
         playSfx(state, "alien_shooting", 0.8);
         if(a.burstShots > 0){
           fireBossBurst(a, player);

@@ -7,7 +7,7 @@ import { createTourGuide } from "./tourguide.js";
 import { createFx } from "../render/animations.js";
 import { createBackground } from "../render/background.js";
 import { createPhaserRenderer } from "../render/phaser_renderer.js";
-import { aliens, alienBullets, alienConfig, resetAliens, setAlienUnlocked, setAlienSessionSpriteKey, spawnAlien, updateAliens, updateAlienBullets, drawAliens, drawAlienBullets, getAlienSpriteSrcFor } from "../entities/aliens.js";
+import { aliens, alienBullets, alienConfig, alienTypes, resetAliens, setAlienUnlocked, setAlienSessionSpriteKey, spawnAlien, updateAliens, updateAlienBullets, drawAliens, drawAlienBullets, getAlienSpriteSrcFor } from "../entities/aliens.js";
 import { computeSpawnInterval } from "./levels.js";
 import { PowerupManager } from "../entities/powerups.js";
 
@@ -943,6 +943,9 @@ var TARGET_ALIEN_WAVE_KILLS = 6;
 var TARGET_ALIEN_BOSS_HP = 24;
 var TARGET_ALIEN_BOSS_BONUS_SCORE = 600;
 var TARGET_ALIEN_BOSS_MINERAL_BONUS = 15;
+var ENDLESS_ALIEN_WAVE_SPEED_STEP = 0.06;
+var ENDLESS_ALIEN_WAVE_MAX_ONSCREEN_STEP = 2;
+var ENDLESS_ALIEN_WAVE_MAX_ONSCREEN_CAP = 5;
 
 // ======= Systems
 var fx = createFx(ctx, state, player, null);
@@ -1030,7 +1033,7 @@ var backgroundScrollSplit = 0;
 var backgroundScale = 2.10;
 var PHASER_BACKGROUND_SCROLL_SPEED = 5.8;
 var BACKGROUND_SCROLL_SPEED = 8.8;
-var BACKGROUND_PULLDOWN_SPEED_BONUS = 2.2;
+var BACKGROUND_PULLDOWN_SPEED_BONUS = 3.1;
 var beltKey = "dusk";
 var beltIndexMap = {
   dusk: 0,
@@ -2837,6 +2840,10 @@ function handleCanvasPrimaryPress(e, isMouseFallback){
   if(isMouseFallback && pointerDown){
     return;
   }
+  if(isPlayerControlLockActive()){
+    pointerDown = false;
+    return;
+  }
   if(isSandboxMultiplayer()){
     var p2 = ensurePilot2();
     updatePilot2Mouse(e);
@@ -2888,6 +2895,7 @@ canvas.addEventListener("pointermove", function(e){
     updatePilot2Mouse(e);
     return;
   }
+  if(isPlayerControlLockActive()) return;
   if(!pointerDown || !pointerDragEnabled) return;
   if(mousepadActive) return;
   if(tutorialActive && tutorialMineralsFreeze) return;
@@ -4134,6 +4142,7 @@ function startTargetAlienWave(){
   state.alienWaveMaxOnScreen = 2;
   state.alienBossActive = false;
   state.alienBossUid = 0;
+  state.alienBossSpawnLock = false;
   state.alienBossBonusAwarded = false;
   state.hideAsteroids = true;
   state.correctInPlay = false;
@@ -4168,6 +4177,7 @@ function startAlienBoss(){
   state.alienMode = "boss";
   state.alienFinaleStage = "boss";
   state.alienBossActive = true;
+  state.alienBossSpawnLock = true;
   state.alienBossBonusAwarded = false;
   state.alienWaveSpawnRemaining = 0;
   state.alienWaveSpawnTimer = 0;
@@ -4179,6 +4189,9 @@ function startAlienBoss(){
   var bossSpriteKey = getActiveAlienIdentityKey();
   var boss = spawnAlien("scout", bossLabel, TARGET_ALIEN_BOSS_HP, view, {
     isBoss: true,
+    forceIngress: true,
+    ingressDur: 1.8,
+    ingressTargetY: view.hudH + Math.min(Math.max(92, view.h * 0.18), 142),
     name: "Overmind",
     hp: TARGET_ALIEN_BOSS_HP,
     score: 3000,
@@ -4199,6 +4212,10 @@ function isBossAlive(){
     }
   }
   return false;
+}
+
+function isPlayerControlLockActive(){
+  return !!state.alienBossSpawnLock;
 }
 
 function finishTargetAlienFinaleSuccess(){
@@ -4251,24 +4268,30 @@ function updateTargetAlienWave(dt){
     return;
   }
   if(state.alienFinaleStage === "boss"){
-    if(!isBossAlive()){
-      if(!state.alienBossBonusAwarded){
-        state.alienBossBonusAwarded = true;
-        state.score += TARGET_ALIEN_BOSS_BONUS_SCORE;
-        awardMinerals(TARGET_ALIEN_BOSS_MINERAL_BONUS);
+      if(!isBossAlive()){
+        if(!state.alienBossBonusAwarded){
+          state.alienBossBonusAwarded = true;
+          state.score += TARGET_ALIEN_BOSS_BONUS_SCORE;
+          awardMinerals(TARGET_ALIEN_BOSS_MINERAL_BONUS);
+        }
+        state.alienBossSpawnLock = false;
+        showToast("ALIEN BOSS ELIMINATED");
+        finishTargetAlienFinaleSuccess();
       }
-      showToast("ALIEN BOSS ELIMINATED");
-      finishTargetAlienFinaleSuccess();
-    }
   }
 }
 
 function startEndlessMiniWave(){
+  var waveCount = Math.max(0, state.endlessAlienWaveCount || 0);
   state.endlessAlienWaveActive = true;
   state.endlessAlienWavePending = false;
   state.alienMode = "wave";
   state.endlessAlienWaveSpawnRemaining = Math.max(1, state.endlessAlienWaveSize || 4);
   state.alienWaveSpawnTimer = 0;
+  state.alienWaveMaxOnScreen = Math.min(
+    ENDLESS_ALIEN_WAVE_MAX_ONSCREEN_CAP,
+    2 + Math.floor(waveCount / ENDLESS_ALIEN_WAVE_MAX_ONSCREEN_STEP)
+  );
   state.hideAsteroids = true;
   asteroids.length = 0;
   state.correctInPlay = false;
@@ -4282,6 +4305,7 @@ function startEndlessMiniWave(){
   fadeOutSoundtrack(state, 420);
   playMusicOverride(state, ALIEN_ATTACK_TRACK_SRC, true);
   showAlienWaveWarningToast("ALIEN WAVE INBOUND");
+  state.endlessAlienWaveCount = waveCount + 1;
 }
 
 function updateEndlessMiniWave(dt){
@@ -4300,9 +4324,11 @@ function updateEndlessMiniWave(dt){
   if(state.endlessAlienWaveSpawnRemaining > 0){
     if(state.alienWaveSpawnTimer <= 0 && aliens.length < (state.alienWaveMaxOnScreen || 2)){
       var endlessQuestion = getAlienQuestion();
+      var speedMul = 1 + Math.max(0, (state.endlessAlienWaveCount || 1) - 1) * ENDLESS_ALIEN_WAVE_SPEED_STEP;
       spawnAlien("scout", endlessQuestion.question, endlessQuestion.answer, view, {
         x: randi(70, Math.max(90, view.w - 70)),
-        y: view.hudH + 18
+        y: view.hudH + 18,
+        speed: alienTypes.scout.speed * speedMul
       });
       state.endlessAlienWaveSpawnRemaining--;
       state.alienWaveSpawnTimer = state.alienWaveSpawnInterval || 0.9;
@@ -5834,6 +5860,7 @@ function resetSession(){
   state.endlessAlienWaveTriggerEveryCorrect = 4;
   state.endlessAlienWaveSize = 4;
   state.endlessAlienWaveProgressBase = 0;
+  state.endlessAlienWaveCount = 0;
   state.campaignAlienKey = campaignAlienKey;
   state.campaignBossLabel = campaignBossLabel;
   state.campaignAlienIdentityActive = !!(campaignActive && campaignAlienKey && isSessionConfigNonEndless(state.targetMode, state.timerMode));
@@ -6322,6 +6349,7 @@ function cleanupAutoFireSlots(){
 
 function fireForPilot(pilot, pilotId, cooldownOverride){
   if(!state.running || state.paused || state.over) return;
+  if(pilotId === 1 && isPlayerControlLockActive()) return false;
   if(tutorialActive && tutorialMineralsFreeze) return false;
   if(pilotId === 1 && tutorialActive && tutorialShootLocked) return false;
   if(pilot.cooldown > 0) return;
@@ -6377,6 +6405,7 @@ function fire(cooldownOverride){
 
 function secondaryFireForPilot(pilot, pilotId){
   if(!state.running || state.paused || state.over) return;
+  if(pilotId === 1 && isPlayerControlLockActive()) return;
   if(pilot.secondaryCooldown > 0) return;
 
   var slots = getSecondarySlotsForPilot(pilot);
@@ -6602,6 +6631,7 @@ function applyFlaresToAsteroid(a, dtReal){
 
 function dash(){
   if(!state.running || state.paused || state.over) return;
+  if(isPlayerControlLockActive()) return;
   var profile = getShipProfile(player.shipType);
   if(player.dashCooldown > 0) return;
   state.dashes += 1;
@@ -6692,6 +6722,7 @@ function dash(){
 
 function shockwave(){
   if(!state.running || state.paused || state.over) return;
+  if(isPlayerControlLockActive()) return;
   var profile = getShipProfile(player.shipType);
   if(player.shockwaveCooldown > 0) return;
   player.shockwaveCooldown = profile.shockwaveCooldown || 3.5;
@@ -9129,6 +9160,12 @@ function update(dt){
     padCursor.y *= decay;
     updateVirtualFromCursor();
   }
+  if(isPlayerControlLockActive()){
+    inputX = 0;
+    inputY = 0;
+    pointerDown = false;
+    touchActionHeld.fire = false;
+  }
   if(tutorialActive && tutorialPortalLock){
     inputX = 0;
     inputY = 0;
@@ -9142,6 +9179,9 @@ function update(dt){
   }
   if(state.pullDownRemaining > 0){
     advanceIntent = true;
+  }
+  if(isPlayerControlLockActive()){
+    advanceIntent = false;
   }
   if(tutorialActive && tutorialPortalLock){
     advanceIntent = false;
@@ -10481,7 +10521,9 @@ function update(dt){
               alienConfig.maxOnScreen = 0;
             }
             showToast("ALIEN CLEARED");
-            maybeSpawnEventPowerup(0.40, al.x, al.y);
+            if(!al.isBoss){
+              maybeSpawnEventPowerup(0.40, al.x, al.y);
+            }
             break;
           }
         }
