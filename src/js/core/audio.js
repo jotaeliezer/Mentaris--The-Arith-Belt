@@ -18,6 +18,7 @@ var soundtrackOverrideSrc = "";
 function initSfx(){
   if(sfxBank) return;
   sfxBank = {
+    alien_hit: new Audio("sfx/alien/alien_hit.mp3"),
     alien_kill: new Audio("sfx/alien/alien_kill.mp3"),
     alien_shooting: new Audio("sfx/alien/alien_shooting.mp3"),
     alien_12oclock_warning: new Audio("sfx/alien/alien_12oclock_warning.mp3"),
@@ -64,6 +65,7 @@ function initSfx(){
     warning: new Audio("sfx/alerts/warning.mp3"),
     wrong_asteroid: new Audio("sfx/gameplay/wrong_asteroid.mp3")
   };
+  sfxBank.alien_hit.volume = 0.42;
   sfxBank.alien_kill.volume = 0.5;
   sfxBank.alien_shooting.volume = 0.45;
   sfxBank.alien_12oclock_warning.volume = 0.58;

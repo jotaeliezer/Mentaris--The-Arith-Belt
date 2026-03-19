@@ -79,6 +79,7 @@ export function createTourGuide(options){
   var titleTypeMs = 20;
   var bodyTypeMs = 30;
   var praiseDelayMs = 2000;
+  var oneShotTalkingCueSec = 0.685;
 
   function useOneShotTalking(){
     return !!(currentStep && currentStep.startSfx && currentStep.muteTypeAudio);
@@ -212,11 +213,25 @@ export function createTourGuide(options){
       try{ oneShotAudio.onended = null; }catch(e){}
       oneShotAudio.currentTime = 0;
       if(useOneShotTalking()){
-        oneShotTalkingActive = true;
+        oneShotTalkingActive = false;
         oneShotAudio.onended = function(){
           oneShotTalkingActive = false;
           setCommanderTalking(false);
         };
+        var talkingCueWatcher = setInterval(function(){
+          if(!oneShotAudio){
+            clearInterval(talkingCueWatcher);
+            return;
+          }
+          if(oneShotAudio.paused && (oneShotAudio.currentTime || 0) <= 0){
+            return;
+          }
+          if((oneShotAudio.currentTime || 0) >= oneShotTalkingCueSec){
+            oneShotTalkingActive = true;
+            clearInterval(talkingCueWatcher);
+          }
+        }, 40);
+        typeTimers.push(talkingCueWatcher);
       }else{
         oneShotTalkingActive = false;
       }

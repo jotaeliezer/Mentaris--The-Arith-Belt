@@ -139638,6 +139638,7 @@
     if (sfxBank)
       return;
     sfxBank = {
+      alien_hit: new Audio("sfx/alien/alien_hit.mp3"),
       alien_kill: new Audio("sfx/alien/alien_kill.mp3"),
       alien_shooting: new Audio("sfx/alien/alien_shooting.mp3"),
       alien_12oclock_warning: new Audio("sfx/alien/alien_12oclock_warning.mp3"),
@@ -139684,6 +139685,7 @@
       warning: new Audio("sfx/alerts/warning.mp3"),
       wrong_asteroid: new Audio("sfx/gameplay/wrong_asteroid.mp3")
     };
+    sfxBank.alien_hit.volume = 0.42;
     sfxBank.alien_kill.volume = 0.5;
     sfxBank.alien_shooting.volume = 0.45;
     sfxBank.alien_12oclock_warning.volume = 0.58;
@@ -140147,6 +140149,7 @@
     var titleTypeMs = 20;
     var bodyTypeMs = 30;
     var praiseDelayMs = 2e3;
+    var oneShotTalkingCueSec = 0.685;
     function useOneShotTalking() {
       return !!(currentStep && currentStep.startSfx && currentStep.muteTypeAudio);
     }
@@ -140293,11 +140296,25 @@
         }
         oneShotAudio.currentTime = 0;
         if (useOneShotTalking()) {
-          oneShotTalkingActive = true;
+          oneShotTalkingActive = false;
           oneShotAudio.onended = function() {
             oneShotTalkingActive = false;
             setCommanderTalking(false);
           };
+          var talkingCueWatcher = setInterval(function() {
+            if (!oneShotAudio) {
+              clearInterval(talkingCueWatcher);
+              return;
+            }
+            if (oneShotAudio.paused && (oneShotAudio.currentTime || 0) <= 0) {
+              return;
+            }
+            if ((oneShotAudio.currentTime || 0) >= oneShotTalkingCueSec) {
+              oneShotTalkingActive = true;
+              clearInterval(talkingCueWatcher);
+            }
+          }, 40);
+          typeTimers.push(talkingCueWatcher);
         } else {
           oneShotTalkingActive = false;
         }
@@ -141880,8 +141897,8 @@
       }
       var diff = String(state2 && state2.difficulty || "normal").toLowerCase();
       var brutal = diff === "brutal";
-      var erraticFactor = brutal ? 1 : 0.3;
-      var motionScale = brutal ? 1 : 0.62;
+      var erraticFactor = brutal ? 1 : 0.22;
+      var motionScale = brutal ? 1 : 0.56;
       a.strafeTimer -= dt;
       if (a.strafeTimer <= 0) {
         a.strafeTimer = (brutal ? 0.4 : 0.7) + Math.random() * (brutal ? 0.9 : 1.4);
@@ -143079,7 +143096,7 @@
   var STAMPEDE_HOMING_ACCEL = 170;
   var STAMPEDE_HOMING_VERTICAL_ACCEL = 62;
   var STAMPEDE_HOMING_MAX_VX = 135;
-  var TARGET_ALIEN_WAVE_KILLS = 8;
+  var TARGET_ALIEN_WAVE_KILLS = 6;
   var TARGET_ALIEN_BOSS_HP = 24;
   var TARGET_ALIEN_BOSS_BONUS_SCORE = 600;
   var TARGET_ALIEN_BOSS_MINERAL_BONUS = 15;
@@ -143431,6 +143448,7 @@
     { id: "wrong_asteroid", label: "Wrong Asteroid", desc: "Wrong hit cue.", when: "Wrong answer asteroid hit.", badge: "SFX", src: "sfx/gameplay/wrong_asteroid.mp3", category: "gameplay" },
     { id: "missed_answer", label: "Missed Answer", desc: "Missed answer cue.", when: "Correct asteroid escapes.", badge: "SFX", src: "sfx/gameplay/missed_answer.mp3", category: "gameplay" },
     { id: "level_up2", label: "Level Up", desc: "Level up cue.", when: "Level increases.", badge: "SFX", src: "sfx/progress/level_up2.mp3", category: "progress" },
+    { id: "alien_hit", label: "Alien Hit", desc: "Alien takes damage.", when: "Bullet hits an alien.", badge: "SFX", src: "sfx/alien/alien_hit.mp3", category: "alien" },
     { id: "alien_kill", label: "Alien Kill", desc: "Alien destroyed.", when: "Alien shot down.", badge: "SFX", src: "sfx/alien/alien_kill.mp3", category: "alien" },
     { id: "alien_shooting", label: "Alien Shooting", desc: "Alien firing.", when: "Alien fires.", badge: "SFX", src: "sfx/alien/alien_shooting.mp3", category: "alien" },
     { id: "ship_damaged", label: "Ship Damaged", desc: "Damage alert.", when: "Player takes damage.", badge: "SFX", src: "sfx/ship/ship_damaged.mp3", category: "ship" },
@@ -152489,6 +152507,7 @@
             al.hitFlashTimer = 0.3;
             al.hitFlashDur = 0.3;
           }
+          playSfx(state, "alien_hit");
           al.hitShake = 0.75;
           al.stunTimer = Math.max(al.stunTimer || 0, 0.4);
           al.hitsTaken += 1;

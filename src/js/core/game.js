@@ -938,7 +938,7 @@ var FRONTCLEAR_RANGE = 500;
 var STAMPEDE_HOMING_ACCEL = 170;
 var STAMPEDE_HOMING_VERTICAL_ACCEL = 62;
 var STAMPEDE_HOMING_MAX_VX = 135;
-var TARGET_ALIEN_WAVE_KILLS = 8;
+var TARGET_ALIEN_WAVE_KILLS = 6;
 var TARGET_ALIEN_BOSS_HP = 24;
 var TARGET_ALIEN_BOSS_BONUS_SCORE = 600;
 var TARGET_ALIEN_BOSS_MINERAL_BONUS = 15;
@@ -1275,6 +1275,7 @@ var sfxCatalog = [
   { id: "wrong_asteroid", label: "Wrong Asteroid", desc: "Wrong hit cue.", when: "Wrong answer asteroid hit.", badge: "SFX", src: "sfx/gameplay/wrong_asteroid.mp3", category: "gameplay" },
   { id: "missed_answer", label: "Missed Answer", desc: "Missed answer cue.", when: "Correct asteroid escapes.", badge: "SFX", src: "sfx/gameplay/missed_answer.mp3", category: "gameplay" },
   { id: "level_up2", label: "Level Up", desc: "Level up cue.", when: "Level increases.", badge: "SFX", src: "sfx/progress/level_up2.mp3", category: "progress" },
+  { id: "alien_hit", label: "Alien Hit", desc: "Alien takes damage.", when: "Bullet hits an alien.", badge: "SFX", src: "sfx/alien/alien_hit.mp3", category: "alien" },
   { id: "alien_kill", label: "Alien Kill", desc: "Alien destroyed.", when: "Alien shot down.", badge: "SFX", src: "sfx/alien/alien_kill.mp3", category: "alien" },
   { id: "alien_shooting", label: "Alien Shooting", desc: "Alien firing.", when: "Alien fires.", badge: "SFX", src: "sfx/alien/alien_shooting.mp3", category: "alien" },
   { id: "ship_damaged", label: "Ship Damaged", desc: "Damage alert.", when: "Player takes damage.", badge: "SFX", src: "sfx/ship/ship_damaged.mp3", category: "ship" },
@@ -10395,6 +10396,7 @@ function update(dt){
         al.hitFlashTimer = 0.3;
         al.hitFlashDur = 0.3;
       }
+      playSfx(state, "alien_hit");
       al.hitShake = 0.75;
       al.stunTimer = Math.max(al.stunTimer || 0, 0.4);
       al.hitsTaken += 1;

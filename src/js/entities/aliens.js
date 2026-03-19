@@ -291,8 +291,8 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
     var diff = String((state && state.difficulty) || "normal").toLowerCase();
     var brutal = diff === "brutal";
     // Keep brutal highly erratic, but calm down the default movement.
-    var erraticFactor = brutal ? 1 : 0.3;
-    var motionScale = brutal ? 1 : 0.62;
+    var erraticFactor = brutal ? 1 : 0.22;
+    var motionScale = brutal ? 1 : 0.56;
 
     a.strafeTimer -= dt;
     if(a.strafeTimer <= 0){
