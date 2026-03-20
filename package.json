@@ -14,8 +14,7 @@
   },
   "devDependencies": {
     "electron": "^31.0.0",
-    "electron-builder": "^24.13.3",
-    "esbuild": "^0.20.2"
+    "electron-builder": "^24.13.3"
   },
   "build": {
     "appId": "com.atmc.asteroidblaster",
@@ -34,6 +33,7 @@
     }
   },
   "dependencies": {
+    "esbuild": "^0.20.2",
     "phaser": "^3.90.0"
   }
 }
