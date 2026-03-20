@@ -1014,6 +1014,28 @@
       filter:none;
     }
 
+    .campaignSetItem .campaignSetBanner{
+      position:absolute;
+      left:-18%;
+      top:50%;
+      width:136%;
+      transform:translateY(-50%) rotate(-8deg);
+      padding:10px 0;
+      text-align:center;
+      font-size:24px;
+      font-weight:800;
+      letter-spacing:3px;
+      text-transform:uppercase;
+      color:#eafff2;
+      background:linear-gradient(90deg, rgba(26,120,58,.08), rgba(66,220,118,.88), rgba(26,120,58,.08));
+      border-top:1px solid rgba(210,255,226,.72);
+      border-bottom:1px solid rgba(210,255,226,.72);
+      box-shadow:0 0 26px rgba(70,220,120,.35);
+      text-shadow:0 2px 10px rgba(0,0,0,.4);
+      pointer-events:none;
+      z-index:3;
+    }
+
     .campaignSetItem::after{
       content:none;
     }
@@ -6695,13 +6717,15 @@
         var li = document.createElement("li");
         var isActive = set.id === inspectId;
         var isUnlocked = isCampaignUnlocked(set.id);
+        var isCleared = isCampaignComplete(set);
         li.className = "campaignListItem campaignSetItem"
           + (isActive ? " selected" : "")
           + (isUnlocked ? "" : " locked");
         li.setAttribute("data-campaign", set.id);
         var thumbSrc = "images/thumbnails/" + set.id + ".png";
         li.innerHTML = ""
-          + "<img class=\"campaignSetThumb\" src=\"" + thumbSrc + "\" alt=\"" + set.name + " thumbnail\" loading=\"lazy\" decoding=\"async\" />";
+          + "<img class=\"campaignSetThumb\" src=\"" + thumbSrc + "\" alt=\"" + set.name + " thumbnail\" loading=\"lazy\" decoding=\"async\" />"
+          + (isCleared ? "<div class=\"campaignSetBanner\">CLEARED</div>" : "");
         li.addEventListener("click", function(){
           var id = this.getAttribute("data-campaign");
           if(!id) return;
