@@ -6730,7 +6730,12 @@
           var id = this.getAttribute("data-campaign");
           if(!id) return;
           campaignSetInspectId = id;
-          if(isCampaignUnlocked(id)) setActiveCampaignId(id);
+          if(isCampaignUnlocked(id)){
+            setActiveCampaignId(id);
+            showCampaignMissionsView();
+            renderCampaignList();
+            return;
+          }
           renderCampaignSetList();
         });
         campaignSetList.appendChild(li);

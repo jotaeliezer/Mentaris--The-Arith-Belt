@@ -146618,7 +146618,7 @@
       var correctDigit = state.correctDigit != null ? Number(state.correctDigit) : Math.abs(state.answer || 0) % 10;
       return {
         question: a + " " + op + " " + b,
-        answer: 1,
+        answer,
         digit,
         correctDigit,
         poolId: state.alienSwarmPoolId || 1
