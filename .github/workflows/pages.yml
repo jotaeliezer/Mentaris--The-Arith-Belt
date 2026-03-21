@@ -3,6 +3,7 @@ name: Deploy GitHub Pages
 on:
   push:
     branches:
+      - math-game1
       - main
       - master
   workflow_dispatch:
