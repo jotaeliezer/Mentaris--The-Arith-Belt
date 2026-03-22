@@ -74,6 +74,8 @@ if(typeof CanvasRenderingContext2D !== "undefined"){
 var promptText = document.getElementById("promptText");
 var promptChip = document.getElementById("promptChip");
 var scoreText  = document.getElementById("scoreText");
+var _lastScore = null;
+var _lastAnswerKey = null;
 var streakText = document.getElementById("streakText");
 var levelText  = document.getElementById("levelText");
 var livesText  = document.getElementById("livesText");
@@ -1998,7 +2000,7 @@ window.addEventListener("keydown", function(e){
   var k = (e.key || "").toLowerCase();
   var code = e.code || "";
   var keyNorm = normalizeKeyEvent(e);
-  var prevent = ["arrowleft","arrowright","arrowup","arrowdown","a","d","w","s","p","r","m","b","1","2","3","0"];
+  var prevent = ["arrowleft","arrowright","arrowup","arrowdown","a","d","w","s","p","m","b","1","2","3","0"];
   if(keyBindings.shoot){
     prevent.push(keyBindings.shoot);
     if(keyBindings.shoot === "space") prevent.push(" ", "spacebar");
@@ -2021,7 +2023,6 @@ window.addEventListener("keydown", function(e){
   }
   if(k === "p") togglePause();
   if(k === "0") toggleScreenshot();
-  if(k === "r") hardRestart();
   if(k === "m") openSettings();
   if(keyNorm === keyBindings.shoot && !e.repeat){
     if(tutorialActive && (tutorialShootLocked || tutorialMineralsFreeze)){
@@ -3107,12 +3108,30 @@ function getQuestionText(){
 }
 
 function syncHud(){
+  var _ansKey = String(state.answer) + "|" + String(state.a) + "|" + String(state.b);
+  if(_ansKey !== _lastAnswerKey){
+    _lastAnswerKey = _ansKey;
+    if(promptChip){
+      promptChip.classList.remove("prompt-pulse");
+      void promptChip.offsetWidth;
+      promptChip.classList.add("prompt-pulse");
+    }
+  }
   if(state.questionMode === "rational_frac" || state.questionMode === "rational_dec"){
     promptText.innerHTML = formatRepeatingMarkup(getQuestionRawText());
   }else{
     promptText.textContent = getQuestionText();
   }
-  scoreText.textContent = String(state.score);
+  var _newScore = String(state.score);
+  if(_newScore !== _lastScore){
+    _lastScore = _newScore;
+    scoreText.textContent = _newScore;
+    scoreText.classList.remove("score-pop");
+    void scoreText.offsetWidth;
+    scoreText.classList.add("score-pop");
+  } else {
+    scoreText.textContent = _newScore;
+  }
   streakText.textContent = String(state.streak);
   levelText.textContent = String(state.level);
   if(livesText) livesText.textContent = String(state.lives);
@@ -8640,6 +8659,9 @@ function endGame(reason){
     endGrade.textContent = grade;
     endGrade.classList.remove("gradeS", "gradeA", "gradeB", "gradeC", "gradeD", "gradeE");
     endGrade.classList.add("grade" + grade);
+    endGrade.classList.remove("grade-reveal");
+    void endGrade.offsetWidth;
+    endGrade.classList.add("grade-reveal");
   }
   if(breakdownCorrectValue) breakdownCorrectValue.textContent = String(correctCount);
   if(breakdownWrongValue) breakdownWrongValue.textContent = String(wrongCount);
@@ -15070,7 +15092,7 @@ btnClose.addEventListener("click", function(){
   closeSettings();
 });
 setPauseAllowed(false);
-btnPause.addEventListener("click", function(){ togglePause(); });
+if(btnPause){ btnPause.addEventListener("click", function(){ togglePause(); }); }
 btnSettings.addEventListener("click", function(){
   playSfx(state, "menu_beep");
   openSettings();
@@ -15125,7 +15147,7 @@ if(btnHome){
     window.location.href = "home.html";
   });
 }
-btnRestart.addEventListener("click", function(){ hardRestart(); });
+if(btnRestart){ btnRestart.addEventListener("click", function(){ hardRestart(); }); }
 btnEndRestart.addEventListener("click", function(){ hardRestart(); });
 
 btnEndSettings.addEventListener("click", function(){

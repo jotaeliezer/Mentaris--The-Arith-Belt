@@ -844,6 +844,15 @@
       background: rgba(80,220,120,.68);
       border-color: rgba(120,245,155,.9);
     }
+    .buyButton.disabled,
+    .buyButton:disabled{
+      opacity:.6;
+      cursor:not-allowed;
+      border-color: rgba(140,155,150,.35);
+      background: rgba(80,100,92,.28);
+      color: rgba(220,228,223,.78);
+      box-shadow:none;
+    }
     .buyButton.hidden{ display:none; }
 
     .purchaseCard{
@@ -3152,6 +3161,7 @@
     var campaignActiveKeyBase = "mathsteroid.campaign.active.";
     var campaignStateKeyBase = "mathsteroid.campaign.state.";
     var campaignDataKeyBase = "mathsteroid.campaign.data.";
+    var sandboxCampaignUnlockKey = "mentaris.sandbox.unlocked";
     var campaignDataVersion = 7;
     var campaignMaxFailuresDefault = 5;
     var campaignDefaultId = "sector_run";
@@ -3579,6 +3589,26 @@
       return idx <= getCampaignUnlockIndex();
     }
 
+    function isSandboxUnlockedByCampaigns(){
+      if(!campaignSets.length) return false;
+      for(var i=0; i<campaignSets.length; i++){
+        if(!isCampaignComplete(campaignSets[i])) return false;
+      }
+      return true;
+    }
+
+    function syncSandboxCampaignUnlock(){
+      var unlocked = isSandboxUnlockedByCampaigns();
+      try{ localStorage.setItem(sandboxCampaignUnlockKey, unlocked ? "1" : "0"); }catch(e){}
+      if(btnSandbox){
+        btnSandbox.setAttribute("data-campaign-unlocked", unlocked ? "true" : "false");
+        btnSandbox.title = unlocked
+          ? "Sandbox unlocked by clearing all campaigns."
+          : "Sandbox campaign-unlock hook is active.";
+      }
+      return unlocked;
+    }
+
     function ensureActiveCampaignUnlocked(){
       var activeId = getActiveCampaignId();
       if(isCampaignUnlocked(activeId)) return;
@@ -3646,6 +3676,7 @@
     function saveCampaignState(state, campaignId, profileId){
       var key = getCampaignStateKey(campaignId || getActiveCampaignId(), profileId);
       try{ localStorage.setItem(key, JSON.stringify(state)); }catch(e){}
+      syncSandboxCampaignUnlock();
     }
 
     function ensureCampaignData(){
@@ -3666,6 +3697,7 @@
           }
         }catch(e){}
       });
+      syncSandboxCampaignUnlock();
     }
 
     function resetCampaignState(campaignId, profileId){
@@ -4864,9 +4896,11 @@
         if(option.getAttribute("data-locked") !== "true") return;
         var id = option.getAttribute("data-ship");
         var cost = parseCost(option);
-        if(cost > 0 && minerals >= cost){
+        if(cost > 0){
           var btn = ensureBuyButton(option, "ship", id);
           btn.classList.remove("hidden");
+          btn.disabled = minerals < cost;
+          btn.classList.toggle("disabled", minerals < cost);
         }else{
           var existing = option.querySelector(".buyButton");
           if(existing) existing.classList.add("hidden");
@@ -4876,9 +4910,11 @@
         if(option.getAttribute("data-locked") !== "true") return;
         var id = option.getAttribute("data-shot");
         var cost = parseCost(option);
-        if(cost > 0 && minerals >= cost){
+        if(cost > 0){
           var btn = ensureBuyButton(option, "shot", id);
           btn.classList.remove("hidden");
+          btn.disabled = minerals < cost;
+          btn.classList.toggle("disabled", minerals < cost);
         }else{
           var existing = option.querySelector(".buyButton");
           if(existing) existing.classList.add("hidden");
@@ -4889,9 +4925,11 @@
           if(option.getAttribute("data-locked") !== "true") return;
           var id = option.getAttribute("data-belt");
           var cost = parseCost(option);
-          if(cost > 0 && minerals >= cost){
+          if(cost > 0){
             var btn = ensureBuyButton(option, "belt", id);
             btn.classList.remove("hidden");
+            btn.disabled = minerals < cost;
+            btn.classList.toggle("disabled", minerals < cost);
           }else{
             var existing = option.querySelector(".buyButton");
             if(existing) existing.classList.add("hidden");
@@ -5439,6 +5477,7 @@
     var btnSandbox = document.getElementById("btnSandbox");
     var funnelOverlay = document.getElementById("funnelOverlay");
     var menuWrap = document.getElementById("menuWrap");
+    syncSandboxCampaignUnlock();
     var controlsOverlay = document.getElementById("controlsOverlay");
     var leaderboardsOverlay = document.getElementById("leaderboardsOverlay");
     var settingsOverlay = document.getElementById("settingsOverlay");

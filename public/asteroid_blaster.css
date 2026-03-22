@@ -417,6 +417,41 @@ body.touchControlsOn #controlDock{
   100%{ transform: translateY(0); opacity:1; filter: blur(0); }
 }
 
+/* Score pop */
+@keyframes scorePop{
+  0%  { transform:scale(1);    color:inherit; filter:none; }
+  30% { transform:scale(1.35); color:#ffdd00; filter:drop-shadow(0 0 6px rgba(255,221,0,.55)); }
+  70% { transform:scale(1.18); color:#ffdd00; filter:drop-shadow(0 0 4px rgba(255,221,0,.35)); }
+  100%{ transform:scale(1);    color:inherit; filter:none; }
+}
+.score-pop{
+  display:inline-block;
+  animation:scorePop 0.38s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+/* Prompt chip pulse */
+@keyframes promptPulse{
+  0%  { box-shadow:0 0 0 0   rgba(0,229,255,0); }
+  20% { box-shadow:0 0 0 4px rgba(0,229,255,.55),0 0 18px 2px rgba(0,229,255,.25); }
+  60% { box-shadow:0 0 0 7px rgba(0,229,255,.18),0 0 28px 4px rgba(0,229,255,.10); }
+  100%{ box-shadow:0 0 0 10px rgba(0,229,255,0); }
+}
+.prompt-pulse{
+  animation:promptPulse 0.5s ease-out both;
+}
+
+/* End grade reveal */
+@keyframes gradeReveal{
+  0%  { transform:scale(0.1) rotate(-18deg); opacity:0; filter:blur(8px); }
+  55% { transform:scale(1.22) rotate(4deg);  opacity:1; filter:blur(0); }
+  75% { transform:scale(0.94) rotate(-2deg); }
+  90% { transform:scale(1.06) rotate(1deg); }
+  100%{ transform:scale(1) rotate(0deg);    opacity:1; filter:blur(0); }
+}
+.grade-reveal{
+  animation:gradeReveal 0.55s cubic-bezier(.34,1.56,.64,1) 0.4s both;
+}
+
 .chip{
   display:inline-flex;
   align-items:center;
