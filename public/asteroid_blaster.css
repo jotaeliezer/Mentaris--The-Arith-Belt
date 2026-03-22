@@ -2162,6 +2162,51 @@ input[type="checkbox"]{ transform: translateY(1px); }
 }
 .countdown.show{ display:flex; }
 
+/* Level-up banner */
+#levelUpBanner{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
+  z-index:8;
+  opacity:0;
+}
+#levelUpBanner.show{
+  animation: levelUpBannerAnim 1.2s ease forwards;
+}
+.levelUpText{
+  font-size: clamp(36px, 8vw, 88px);
+  font-weight:900;
+  letter-spacing:8px;
+  text-transform:uppercase;
+  color:#fff;
+  text-align:center;
+  text-shadow:
+    0 0 18px rgba(0,229,255,.9),
+    0 0 40px rgba(0,229,255,.5),
+    0 0 80px rgba(0,229,255,.2),
+    0 16px 50px rgba(0,0,0,.7);
+}
+@keyframes levelUpBannerAnim{
+  0%  { opacity:0; transform: scale(0.72); }
+  16% { opacity:1; transform: scale(1.1); }
+  32% { opacity:1; transform: scale(1); }
+  68% { opacity:1; transform: scale(1); }
+  100%{ opacity:0; transform: scale(1.04) translateY(-10px); }
+}
+
+/* HUD low-life danger pulse */
+@keyframes hudDanger{
+  0%,100%{ box-shadow: none; border-color: transparent; }
+  50%    { box-shadow: 0 0 0 2px rgba(255,50,70,.5), 0 0 24px 6px rgba(255,50,70,.18); }
+}
+#hud.hud-danger{
+  border-radius:12px;
+  animation: hudDanger 1s ease-in-out infinite;
+}
+
 .noselect{ -webkit-user-select:none; user-select:none; }
 
 /* Settings overlay tabs */

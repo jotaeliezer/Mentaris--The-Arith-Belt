@@ -142331,6 +142331,9 @@
   var endStageJumpRow = document.getElementById("endStageJumpRow");
   var endStageJumpButtons = endStageJumpRow ? endStageJumpRow.querySelectorAll(".endStageJumpBtn") : [];
   var toast = document.getElementById("toast");
+  var levelUpBanner = document.getElementById("levelUpBanner");
+  var levelUpBannerText = levelUpBanner ? levelUpBanner.querySelector(".levelUpText") : null;
+  var levelUpBannerTimer = null;
   var countdownEl = document.getElementById("countdown");
   var missionBriefOverlay = null;
   var missionBriefTitle = null;
@@ -145289,6 +145292,14 @@
     levelText.textContent = String(state.level);
     if (livesText)
       livesText.textContent = String(state.lives);
+    var hudEl = document.getElementById("hud");
+    if (hudEl) {
+      if (state.lives <= 2 && state.lives > 0) {
+        hudEl.classList.add("hud-danger");
+      } else {
+        hudEl.classList.remove("hud-danger");
+      }
+    }
     if (hullText) {
       hullText.textContent = Math.round(clamp(player.hull, 0, 1) * 100) + "%";
     }
@@ -145406,6 +145417,18 @@
         }, 2e3);
       }
     }, typeMs);
+  }
+  function showLevelUpBanner(level) {
+    if (!levelUpBanner || !levelUpBannerText)
+      return;
+    levelUpBannerText.textContent = "LEVEL  " + String(level);
+    levelUpBanner.classList.remove("show");
+    void levelUpBanner.offsetWidth;
+    levelUpBanner.classList.add("show");
+    clearTimeout(levelUpBannerTimer);
+    levelUpBannerTimer = setTimeout(function() {
+      levelUpBanner.classList.remove("show");
+    }, 1200);
   }
   function showAlienWaveWarningToast(message) {
     if (alienWaveToastTimer) {
@@ -149799,8 +149822,10 @@
     state.score += gain;
     state.ddSpeedBonus = clamp(state.ddSpeedBonus + 0.015, 0, 0.35);
     var praise = ["GOOD JOB", "NICE HIT", "CLEAN SHOT", "PERFECT", "ON TARGET"];
-    var streakPraise = ["STREAK x5!", "HOT STREAK!", "ON FIRE!", "LASER FOCUS!"];
-    if (state.streak > 0 && state.streak % 5 === 0) {
+    if (state.streak > 0 && state.streak % 10 === 0) {
+      showToast(state.streak + " STREAK!", "alert");
+    } else if (state.streak > 0 && state.streak % 5 === 0) {
+      var streakPraise = ["HOT STREAK!", "ON FIRE!", "LASER FOCUS!"];
       showToast(streakPraise[Math.floor(Math.random() * streakPraise.length)]);
     } else {
       showToast(praise[Math.floor(Math.random() * praise.length)]);
@@ -149810,7 +149835,7 @@
       state.slowMoRemaining = Math.max(state.slowMoRemaining, 2);
       state.slowMoScale = 0.55;
       playSfx(state, "level_up2");
-      showToast("LEVEL UP!");
+      showLevelUpBanner(state.level);
     }
     syncHud();
     if (!tutorialActive) {
@@ -149888,8 +149913,10 @@
     state.score += gain;
     state.ddSpeedBonus = clamp(state.ddSpeedBonus + 0.015, 0, 0.35);
     var praise = ["GOOD JOB", "NICE HIT", "CLEAN SHOT", "PERFECT", "ON TARGET"];
-    var streakPraise = ["STREAK x5!", "HOT STREAK!", "ON FIRE!", "LASER FOCUS!"];
-    if (state.streak > 0 && state.streak % 5 === 0) {
+    if (state.streak > 0 && state.streak % 10 === 0) {
+      showToast(state.streak + " STREAK!", "alert");
+    } else if (state.streak > 0 && state.streak % 5 === 0) {
+      var streakPraise = ["HOT STREAK!", "ON FIRE!", "LASER FOCUS!"];
       showToast(streakPraise[Math.floor(Math.random() * streakPraise.length)]);
     } else {
       showToast(praise[Math.floor(Math.random() * praise.length)]);
@@ -149899,8 +149926,7 @@
       state.slowMoRemaining = Math.max(state.slowMoRemaining, 2);
       state.slowMoScale = 0.55;
       playSfx(state, "level_up2");
-      showToast("LEVEL UP!");
-    } else {
+      showLevelUpBanner(state.level);
     }
     syncHud();
     var completedQuestion = false;
@@ -150225,6 +150251,31 @@
       overlayEnd.classList.remove("reveal-reason");
     }
     resetEndScoresRevealState();
+  }
+  var endScoreAnimId = 0;
+  var endScoreAnimStart = 0;
+  function animateEndScore(target, durationMs) {
+    if (!endScoreValue)
+      return;
+    if (endScoreAnimId) {
+      cancelAnimationFrame(endScoreAnimId);
+      endScoreAnimId = 0;
+    }
+    var safeTarget = Math.max(0, Math.round(Number(target) || 0));
+    var duration = Math.max(1, Number(durationMs) || 1400);
+    endScoreAnimStart = performance.now();
+    function tick2(now) {
+      var t = Math.min(1, (now - endScoreAnimStart) / duration);
+      var eased = 1 - Math.pow(1 - t, 3);
+      endScoreValue.textContent = String(Math.round(safeTarget * eased));
+      if (t < 1) {
+        endScoreAnimId = requestAnimationFrame(tick2);
+        return;
+      }
+      endScoreAnimId = 0;
+      endScoreValue.textContent = String(safeTarget);
+    }
+    endScoreAnimId = requestAnimationFrame(tick2);
   }
   function animateMineralsCount(target, durationMs, onDone) {
     if (!endMineralsCollected) {
@@ -150875,7 +150926,8 @@
       endNameInput.value = storedName;
     }
     if (endScoreValue) {
-      endScoreValue.textContent = String(state.score);
+      endScoreValue.textContent = "0";
+      animateEndScore(state.score);
     }
     resetEndSequence();
     if (reason === "destroyed") {
