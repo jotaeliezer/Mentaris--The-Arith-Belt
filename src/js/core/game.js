@@ -8593,6 +8593,7 @@ function endGame(reason){
       if(!statsListSecondary) return;
       statsListSecondary.innerHTML = "";
       var perRow = Math.max(1, Number(maxPerRow) || 3);
+      var tileIndex = 0;
       for(var s=0; s<sectionList.length; s++){
         var section = sectionList[s];
         if(!section || !section.entries || !section.entries.length) continue;
@@ -8610,6 +8611,13 @@ function endGame(reason){
             var entry = rowEntries[j];
             var tile = document.createElement("div");
             tile.className = "endStatsMiniTile";
+            var prefix = entry.label.split(" - ")[0].toLowerCase().trim();
+            if(prefix === "collected")                         tile.classList.add("tile-collected");
+            else if(prefix === "used")                         tile.classList.add("tile-used");
+            else if(prefix === "missed" || prefix === "lost")  tile.classList.add("tile-missed");
+            else if(prefix === "maneuver")                     tile.classList.add("tile-maneuver");
+            tile.style.animationDelay = (tileIndex * 0.055) + "s";
+            tileIndex++;
             var iconWrap = document.createElement("div");
             iconWrap.className = "endStatsMiniIcon";
             var img = document.createElement("img");
@@ -8618,13 +8626,18 @@ function endGame(reason){
             iconWrap.appendChild(img);
             var meta = document.createElement("div");
             meta.className = "endStatsMiniMeta";
-            var labelEl = document.createElement("div");
-            labelEl.className = "endStatsMiniLabel";
-            labelEl.textContent = entry.label;
+            var parts = entry.label.split(" - ");
+            var badge = document.createElement("div");
+            badge.className = "endStatsMiniActionBadge";
+            badge.textContent = parts[0] || entry.label;
+            var nameEl = document.createElement("div");
+            nameEl.className = "endStatsMiniLabel";
+            nameEl.textContent = parts[1] || "";
             var countEl = document.createElement("div");
             countEl.className = "endStatsMiniCount";
             countEl.textContent = String(entry.count);
-            meta.appendChild(labelEl);
+            meta.appendChild(badge);
+            meta.appendChild(nameEl);
             meta.appendChild(countEl);
             tile.appendChild(iconWrap);
             tile.appendChild(meta);
