@@ -139960,7 +139960,7 @@
       return;
     }
     if (soundtrackOverrideClip) {
-      soundtrackOverrideClip.volume = Math.max(0, Math.min(1, 0.26 * getMusicMasterVolume(state2)));
+      soundtrackOverrideClip.volume = Math.max(0, Math.min(1, 0.45 * getMusicMasterVolume(state2)));
       if (soundtrackOverrideClip.paused) {
         try {
           soundtrackOverrideClip.play().catch(function() {
@@ -140022,7 +140022,7 @@
     stopSoundtrackFade();
     if (soundtrackOverrideClip && soundtrackOverrideSrc === src) {
       soundtrackOverrideClip.loop = loop !== false;
-      soundtrackOverrideClip.volume = Math.max(0, Math.min(1, 0.26 * getMusicMasterVolume(state2)));
+      soundtrackOverrideClip.volume = Math.max(0, Math.min(1, 0.45 * getMusicMasterVolume(state2)));
       if (soundtrackOverrideClip.paused) {
         try {
           soundtrackOverrideClip.currentTime = 0;
@@ -140045,7 +140045,7 @@
     try {
       var clip = new Audio(src);
       clip.loop = loop !== false;
-      clip.volume = Math.max(0, Math.min(1, 0.26 * getMusicMasterVolume(state2)));
+      clip.volume = Math.max(0, Math.min(1, 0.45 * getMusicMasterVolume(state2)));
       soundtrackOverrideClip = clip;
       soundtrackOverrideSrc = src;
       clip.play().catch(function() {
@@ -142308,6 +142308,7 @@
   var livesText = document.getElementById("livesText");
   var hullText = document.getElementById("hullText");
   var timerText = document.getElementById("timerText");
+  var accText = document.getElementById("accText");
   var overlayMenu = document.getElementById("overlayMenu");
   var overlayEnd = document.getElementById("overlayEnd");
   var overlayGameplay = document.getElementById("overlayGameplay");
@@ -145280,6 +145281,10 @@
   }
   function syncHud() {
     var _ansKey = String(state.answer) + "|" + String(state.a) + "|" + String(state.b);
+    if (promptChip) {
+      promptChip.classList.remove("op-mul", "op-add", "op-square", "op-rational");
+      promptChip.classList.add("op-" + (state.operation || "mul"));
+    }
     if (_ansKey !== _lastAnswerKey) {
       _lastAnswerKey = _ansKey;
       if (promptChip) {
@@ -145321,6 +145326,10 @@
     updateTimerHud();
     if (btnPause) {
       btnPause.textContent = pauseAllowed ? state.paused ? "RESUME (P)" : "PAUSE (P)" : "PAUSE DISABLED";
+    }
+    if (accText) {
+      var _attempts = (state.correct || 0) + (state.wrong || 0);
+      accText.textContent = _attempts > 0 ? Math.round((state.correct || 0) / _attempts * 100) + "%" : "--";
     }
   }
   function setTutorialQuestionHidden(hidden) {
@@ -150984,6 +150993,14 @@
     }
     if (endScoreValue) {
       endScoreValue.textContent = "0";
+    }
+    try {
+      var pbKey = "mathsteroid.best." + (state.questionMode || "classic");
+      var prevBest = parseInt(localStorage.getItem(pbKey) || "0", 10);
+      if (state.score > 0 && state.score > prevBest) {
+        localStorage.setItem(pbKey, String(state.score));
+      }
+    } catch (e) {
     }
     resetEndSequence();
     if (reason === "destroyed") {

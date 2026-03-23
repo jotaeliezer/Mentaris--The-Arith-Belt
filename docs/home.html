@@ -1901,6 +1901,7 @@
           <h2 class="title">Launch Setup <span id="launchSetupSpinner" class="launchSpinnerTitle"></span></h2>
           <p class="subtitle">Choose operation, mode, and settings before launch.</p>
           <div id="stepperText" class="stepper">Step 1 of 6 • Operation</div>
+          <div id="personalBestChip" class="stepper" style="margin-top:4px; display:none;">BEST &nbsp;<b id="personalBestValue" style="color:#bff2ff; letter-spacing:1px;">--</b></div>
         </div>
         <button id="btnCloseFunnel" class="btn">Close</button>
       </div>
@@ -5769,6 +5770,20 @@
       setSubmodeFromDifficulty(selectedDifficulty);
       var qm = computeQuestionMode();
       if(questionModeInput) questionModeInput.value = qm;
+      (function(){
+        var pbChip = document.getElementById("personalBestChip");
+        var pbVal  = document.getElementById("personalBestValue");
+        if(!pbChip || !pbVal) return;
+        try{
+          var best = parseInt(localStorage.getItem("mathsteroid.best." + qm) || "0", 10);
+          if(best > 0){
+            pbVal.textContent = best.toLocaleString();
+            pbChip.style.display = "";
+          }else{
+            pbChip.style.display = "none";
+          }
+        }catch(e){ pbChip.style.display = "none"; }
+      })();
       selectChoice(modeChoices, selectedMode, "data-mode");
       selectChoice(operationChoices, selectedOperation, "data-op");
       selectChoice(submodeChoices, selectedSubmode, "data-sub");

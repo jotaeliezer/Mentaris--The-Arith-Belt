@@ -346,7 +346,7 @@ export function setSoundtrack(state, on){
     return;
   }
   if(soundtrackOverrideClip){
-    soundtrackOverrideClip.volume = Math.max(0, Math.min(1, 0.26 * getMusicMasterVolume(state)));
+    soundtrackOverrideClip.volume = Math.max(0, Math.min(1, 0.45 * getMusicMasterVolume(state)));
     if(soundtrackOverrideClip.paused){
       try{ soundtrackOverrideClip.play().catch(function(){}); }catch(e){}
     }
@@ -402,7 +402,7 @@ export function playMusicOverride(state, src, loop){
   stopSoundtrackFade();
   if(soundtrackOverrideClip && soundtrackOverrideSrc === src){
     soundtrackOverrideClip.loop = loop !== false;
-    soundtrackOverrideClip.volume = Math.max(0, Math.min(1, 0.26 * getMusicMasterVolume(state)));
+    soundtrackOverrideClip.volume = Math.max(0, Math.min(1, 0.45 * getMusicMasterVolume(state)));
     if(soundtrackOverrideClip.paused){
       try{
         soundtrackOverrideClip.currentTime = 0;
@@ -420,7 +420,7 @@ export function playMusicOverride(state, src, loop){
   try{
     var clip = new Audio(src);
     clip.loop = loop !== false;
-    clip.volume = Math.max(0, Math.min(1, 0.26 * getMusicMasterVolume(state)));
+    clip.volume = Math.max(0, Math.min(1, 0.45 * getMusicMasterVolume(state)));
     soundtrackOverrideClip = clip;
     soundtrackOverrideSrc = src;
     clip.play().catch(function(){});
