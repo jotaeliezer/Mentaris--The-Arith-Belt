@@ -1038,7 +1038,7 @@ var backgroundScrollSplit = 0;
 var backgroundScale = 2.10;
 var PHASER_BACKGROUND_SCROLL_SPEED = 5.8;
 var BACKGROUND_SCROLL_SPEED = 8.8;
-var BACKGROUND_PULLDOWN_SPEED_BONUS = 3.1;
+var BACKGROUND_PULLDOWN_SPEED_BONUS = 7.0;
 var beltKey = "dusk";
 var beltIndexMap = {
   dusk: 0,
