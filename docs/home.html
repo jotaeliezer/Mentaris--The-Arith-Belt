@@ -604,19 +604,24 @@
       box-shadow: inset 0 0 18px rgba(0,0,0,.18);
     }
 
+    .briefingHintBlock{
+      flex:1 1 auto;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
     .briefingHints{
       border:1px solid rgba(255,255,255,.08);
       border-radius:14px;
       padding:12px 14px;
       background: rgba(8,12,22,.74);
-      flex:1 1 auto;
-      min-height:140px;
+      height:72px;
+      overflow:hidden;
     }
     .briefingLaunch{
       display:flex;
       align-items:center;
       justify-content:flex-end;
-      min-width:200px;
     }
     .briefingHintActions{
       margin-top:12px;
@@ -691,7 +696,7 @@
       .briefingMainSplit{ grid-template-columns: 1fr; }
       .briefingLoadout{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .briefingFooter{ flex-wrap:wrap; }
-      .briefingLaunch{ margin-left:auto; }
+      .briefingHintBlock{ width:100%; }
       .briefingStatusRow{ align-items:flex-start; flex-direction:column; }
       .briefingStatusTags{ justify-content:flex-start; }
     }
@@ -1094,6 +1099,7 @@
       border-radius:18px;
       letter-spacing:1.2px;
       text-transform:uppercase;
+      white-space:nowrap;
       border-color: rgba(80,220,120,.72);
       background: linear-gradient(145deg, rgba(60,185,105,.42), rgba(35,120,74,.42));
       box-shadow: 0 0 0 1px rgba(180,255,210,.18) inset, 0 12px 28px rgba(20,90,52,.45);
@@ -3008,12 +3014,14 @@
           <img class="briefingCommanderAvatar" src="images/characters/commander1.png" alt="Commander Solver" />
           <div class="briefingCommanderName">COMMANDER SOLVER</div>
         </div>
-        <div class="briefingHints">
-          <div class="briefingHintLabel">Command Directive</div>
-          <div class="briefingHintText" id="briefingHintText">--</div>
-        </div>
-        <div class="briefingLaunch">
-          <button id="btnBriefingSkip" class="btn">Launch Mission</button>
+        <div class="briefingHintBlock">
+          <div class="briefingHints">
+            <div class="briefingHintLabel">Command Directive</div>
+            <div class="briefingHintText" id="briefingHintText">--</div>
+          </div>
+          <div class="briefingLaunch">
+            <button id="btnBriefingSkip" class="btn">Launch Mission</button>
+          </div>
         </div>
       </div>
     </div>
@@ -5911,11 +5919,11 @@
     var briefingHintTimer = null;
     var briefingHintTypeTimer = null;
     var briefingHints = [
-      "PRIORITY: LOCK ONTO THE CORRECT VALUE. DECOYS WILL BAIT YOU OFF TARGET.",
-      "KEEP FORMATION. STRAY HITS WASTE TIME AND DRAIN SCORE.",
-      "DASH TO EVADE INCOMING FIRE. SAVE THE BURST FOR TIGHT FORMATIONS.",
-      "SECONDARY SYSTEMS ARE LIMITED. DEPLOY ONLY WHEN THE WINDOW IS CLEAR.",
-      "MAINTAIN HULL INTEGRITY. AVOID UNNECESSARY COLLISIONS."
+      "LOCK ONTO THE CORRECT VALUE. DECOYS WILL BAIT YOU OFF TARGET.",
+      "STRAY HITS WASTE TIME AND DRAIN SCORE.",
+      "DASH TO EVADE FIRE. SAVE YOUR BURST FOR TIGHT FORMATIONS.",
+      "USE SECONDARIES SPARINGLY. DEPLOY WHEN THE WINDOW IS CLEAR.",
+      "MAINTAIN HULL INTEGRITY. AVOID COLLISIONS."
     ];
     var hintCycleMs = 5200;
     var hintTypeMs = 28;
@@ -7184,6 +7192,7 @@
           rational_dec: "Target Decimal"
         };
         briefingMode.textContent = "Mode: " + (modeMap[modeLabel] || modeLabel.toUpperCase());
+        if(briefingObjectiveTag) briefingObjectiveTag.textContent = modeMap[modeLabel] || modeLabel.toUpperCase();
       }
       if(briefingDifficulty){
         var diffLabel = String(config.difficulty || "normal");
@@ -7226,18 +7235,14 @@
         if(config.targetMode === "off"){
           if(config.timerMode === "off"){
             briefingTargeted.textContent = "Endless";
-            if(briefingObjectiveTag) briefingObjectiveTag.textContent = "Objective: Endless";
           }else{
             briefingTargeted.textContent = "Survive " + config.timerMode + "s";
-            if(briefingObjectiveTag) briefingObjectiveTag.textContent = "Objective: Survive";
           }
         }else if(String(config.targetMode).charAt(0) === "q"){
           var targetCount = String(config.targetMode).slice(1);
           briefingTargeted.textContent = "Eliminate " + targetCount + " targets";
-          if(briefingObjectiveTag) briefingObjectiveTag.textContent = "Objective: Target " + targetCount;
         }else{
           briefingTargeted.textContent = String(config.targetMode);
-          if(briefingObjectiveTag) briefingObjectiveTag.textContent = "Objective: " + String(config.targetMode);
         }
       }
       if(briefingTimer){
