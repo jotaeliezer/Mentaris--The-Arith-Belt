@@ -4331,6 +4331,7 @@ function updateTargetAlienWave(dt){
         }
         state.alienBossSpawnLock = false;
         showToast("BOSS ELIMINATED");
+        (function(){ var _d = choosePowerupDrop(); if(_d) spawnPowerup(_d.type, _d.group); })();
         finishTargetAlienFinaleSuccess();
       }
       return;
@@ -5382,7 +5383,7 @@ function choosePowerupDrop(){
     var oType = offense[Math.floor(Math.random() * offense.length)];
     return { type: oType, group: "offense" };
   }
-  if(roll < 0.7){
+  if(roll < 0.6){
     var dRoll = Math.random();
     var dType = dRoll < 0.55 ? "shield" : "armor";
     return { type: dType, group: "defense" };
@@ -10619,7 +10620,7 @@ function update(dt){
             playSfx(state, "alien_kill", 0.65);
             if(tourGuide) tourGuide.notify("alien");
             showToast("ALIEN POOL CLEARED");
-            maybeSpawnEventPowerup(0.40, al.x, al.y);
+            (function(){ var _d = choosePowerupDrop(); if(_d) spawnPowerup(_d.type, _d.group, al.x, al.y); })();
             resetAlienSwarmPool();
             break;
           }else{
@@ -10648,7 +10649,7 @@ function update(dt){
                 alienConfig.maxOnScreen = 0;
               }
               showToast("ALIEN CLEARED");
-              maybeSpawnEventPowerup(0.40, al.x, al.y);
+              (function(){ var _d = choosePowerupDrop(); if(_d) spawnPowerup(_d.type, _d.group, al.x, al.y); })();
             }
             break;
           }
