@@ -431,13 +431,13 @@ body.touchControlsOn #controlDock{
 
 /* Prompt chip pulse */
 @keyframes promptPulse{
-  0%  { box-shadow:0 0 0 0   rgba(0,229,255,0); }
-  20% { box-shadow:0 0 0 4px rgba(0,229,255,.55),0 0 18px 2px rgba(0,229,255,.25); }
-  60% { box-shadow:0 0 0 7px rgba(0,229,255,.18),0 0 28px 4px rgba(0,229,255,.10); }
-  100%{ box-shadow:0 0 0 10px rgba(0,229,255,0); }
+  0%  { transform:scale(1);    background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.18); box-shadow:none; }
+  18% { transform:scale(1.12); background:rgba(0,229,255,.22);  border-color:rgba(0,229,255,.9);   box-shadow:0 0 0 5px rgba(0,229,255,.35), 0 0 28px 6px rgba(0,229,255,.25); }
+  45% { transform:scale(1.05); background:rgba(0,229,255,.12);  border-color:rgba(0,229,255,.6);   box-shadow:0 0 0 8px rgba(0,229,255,.15), 0 0 40px 8px rgba(0,229,255,.12); }
+  100%{ transform:scale(1);    background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.18); box-shadow:0 0 0 14px rgba(0,229,255,0); }
 }
 .prompt-pulse{
-  animation:promptPulse 0.5s ease-out both;
+  animation:promptPulse 0.55s cubic-bezier(.36,.07,.19,.97) both;
 }
 
 /* End grade reveal */
