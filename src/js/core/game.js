@@ -5823,6 +5823,8 @@ function resetSession(){
   state.streak = 0;
   state.level = 1;
   state.lives = state.livesStart;
+  var _hudEl = document.getElementById("hud");
+  if(_hudEl) _hudEl.classList.remove("hud-danger");
 
   state.correct = 0;
   state.wrong = 0;
@@ -12425,44 +12427,28 @@ function getMissionBriefObjectiveText(){
   var op = info.operation || "Multiplication";
   var sub = info.submode ? (" (" + info.submode + ")") : "";
   var summary = op + " — " + modeName + sub + ".";
-  var detail = "Shoot the correct answer asteroids before they escape. Avoid decoys and stay sharp.";
-  var hitsRule = "";
+  var detail = "Shoot the correct asteroid. Avoid decoys.";
+  var hitsRule = "Hits = largest digit in the answer.";
   if(modeName.indexOf("Digit Hunt") !== -1){
-    detail = "Shoot the digits in the correct order to complete the answer. Avoid decoys.";
-    hitsRule = "Each digit asteroid takes hits equal to its digit, in order.";
+    detail = "Shoot the answer digits in order.";
+    hitsRule = "Hits per digit = its value.";
   }else if(modeName.indexOf("Partial Sums") !== -1){
-    detail = "Find the missing addend that completes the sum. Avoid decoys.";
-    hitsRule = "Correct addend asteroids take hits equal to the largest digit in the answer.";
+    detail = "Find the missing addend.";
   }else if(modeName.indexOf("Series") !== -1){
-    detail = "Solve the full series sum and shoot the correct answer. Avoid decoys.";
-    hitsRule = "Correct answer asteroids take hits equal to the largest digit in the answer.";
-    }else if(modeName.indexOf("Factor Hunt") !== -1){
-      detail = "Find the missing factor that completes the product. Avoid decoys.";
-      hitsRule = "Correct factor asteroids take hits equal to the largest digit in the answer.";
+    detail = "Solve the series sum.";
+  }else if(modeName.indexOf("Factor Hunt") !== -1){
+    detail = "Find the missing factor.";
   }else if(op == "Rationals"){
-    detail = "Match the fraction/decimal shown. Avoid incorrect values.";
-    if(String(state.questionMode) == "rational_frac"){
-      hitsRule = "Correct fraction asteroids take hits equal to the denominator.";
-    }else{
-      hitsRule = "Correct decimal asteroids take 1 hit.";
-    }
+    detail = "Match the fraction or decimal shown.";
+    hitsRule = String(state.questionMode) == "rational_frac" ? "Hits = denominator." : "1 hit.";
   }else if(op == "Squares"){
-    detail = "Solve the square or root and shoot the correct asteroid.";
-    hitsRule = "Correct square/root asteroids take hits equal to the largest digit in the answer.";
-  }else if(String(state.questionMode).indexOf("classic") != -1 || String(state.questionMode).indexOf("series") != -1){
-    hitsRule = "Correct answer asteroids take hits equal to the largest digit in the answer.";
+    detail = "Solve the square or root.";
   }
-  var lines = [];
-  lines.push("OBJECTIVE: " + summary);
-  lines.push("• " + detail);
-  if(hitsRule){
-    lines.push("• " + hitsRule);
-  }
-  return lines.join("\n");
+  return "OBJECTIVE: " + summary + "\n• " + detail + "\n• " + hitsRule;
 }
 
 function getMissionBriefReadyText(){
-  return "READY:\n• Confirm and launch.\n• Stay sharp, cadet.";
+  return "READY — Launch when set.";
 }
 
 function getMissionBriefText(){
