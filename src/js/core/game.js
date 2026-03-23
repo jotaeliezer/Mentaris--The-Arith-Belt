@@ -4230,7 +4230,7 @@ function startAlienBoss(){
   var boss = spawnAlien("scout", bossLabel, TARGET_ALIEN_BOSS_HP, view, {
     isBoss: true,
     forceIngress: true,
-    ingressDur: 1.8,
+    ingressDur: 3.2,
     ingressTargetY: view.hudH + Math.min(Math.max(92, view.h * 0.18), 142),
     name: "Overmind",
     hp: TARGET_ALIEN_BOSS_HP,
@@ -4308,16 +4308,34 @@ function updateTargetAlienWave(dt){
     return;
   }
   if(state.alienFinaleStage === "boss"){
-      if(!isBossAlive()){
+    if(state.alienBossDeathPending){
+      var dyingStillInArray = false;
+      for(var dbi=0; dbi<aliens.length; dbi++){
+        if(aliens[dbi] && aliens[dbi].uid === state.alienBossUid){ dyingStillInArray = true; break; }
+      }
+      if(!dyingStillInArray){
+        state.alienBossDeathPending = false;
         if(!state.alienBossBonusAwarded){
           state.alienBossBonusAwarded = true;
           state.score += TARGET_ALIEN_BOSS_BONUS_SCORE;
           awardMinerals(TARGET_ALIEN_BOSS_MINERAL_BONUS);
         }
         state.alienBossSpawnLock = false;
-        showToast("ALIEN BOSS ELIMINATED");
+        showToast("BOSS ELIMINATED");
         finishTargetAlienFinaleSuccess();
       }
+      return;
+    }
+    if(!isBossAlive()){
+      if(!state.alienBossBonusAwarded){
+        state.alienBossBonusAwarded = true;
+        state.score += TARGET_ALIEN_BOSS_BONUS_SCORE;
+        awardMinerals(TARGET_ALIEN_BOSS_MINERAL_BONUS);
+      }
+      state.alienBossSpawnLock = false;
+      showToast("ALIEN BOSS ELIMINATED");
+      finishTargetAlienFinaleSuccess();
+    }
   }
 }
 
@@ -8266,6 +8284,10 @@ function scheduleEndPhaseAdvance(delayMs){
 function showEndSummaryPhase(){
   endPhase = "summary";
   transitionEndStage("endStageSummary", function(){
+    if(endScoreValue){
+      endScoreValue.textContent = "0";
+      animateEndScore(state.score);
+    }
     scheduleEndPhaseAdvance(END_PHASE_SUMMARY_MS);
   });
 }
@@ -8767,7 +8789,6 @@ function endGame(reason){
   }
   if(endScoreValue){
     endScoreValue.textContent = "0";
-    animateEndScore(state.score);
   }
   resetEndSequence();
 
@@ -10581,13 +10602,21 @@ function update(dt){
             impactDebris(al.x, al.y);
             playSfx(state, "alien_kill", 0.65);
             if(tourGuide) tourGuide.notify("alien");
-            aliens.splice(ai3, 1);
-            if(tutorialActive){
-              alienConfig.enabled = false;
-              alienConfig.maxOnScreen = 0;
-            }
-            showToast("ALIEN CLEARED");
-            if(!al.isBoss){
+            if(al.isBoss){
+              al.dying = true;
+              al.dyingT = 0;
+              al.dyingDur = 2.8;
+              al.noHit = true;
+              al.noDamage = true;
+              al.fireCooldown = 9999;
+              state.alienBossDeathPending = true;
+            }else{
+              aliens.splice(ai3, 1);
+              if(tutorialActive){
+                alienConfig.enabled = false;
+                alienConfig.maxOnScreen = 0;
+              }
+              showToast("ALIEN CLEARED");
               maybeSpawnEventPowerup(0.40, al.x, al.y);
             }
             break;
