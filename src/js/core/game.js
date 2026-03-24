@@ -5327,19 +5327,19 @@ function choosePowerupDrop(){
   var roll = Math.random();
   var lowHull = player.hull < 0.3;
   var stampedeActive = isStampedeMode();
-  var allowOffense = !!sandboxMode;
+  var allowOffense = true;
   if(state.alienSwarm){
     if(lowHull && roll < 0.5){
-      var sType = Math.random() < 0.7 ? "repair" : pickSecondaryType();
+      var sType = Math.random() < 0.6 ? "repair" : pickSecondaryType();
       return { type: sType, group: "secondary" };
     }
-    if(roll < 0.75 && allowOffense){
+    if(roll < 0.3 && allowOffense){
       var offense = ["laser", "fire", "ice", "electric", "pierce", "plasma", "rail"];
       if(isMissileAllowed()) offense.unshift("missile");
       var oType = offense[Math.floor(Math.random() * offense.length)];
       return { type: oType, group: "offense" };
     }
-    if(roll < 0.9){
+    if(roll < 0.6){
       var dRoll = Math.random();
       var dType = dRoll < 0.55 ? "shield" : "armor";
       return { type: dType, group: "defense" };
@@ -5374,16 +5374,16 @@ function choosePowerupDrop(){
     return { type: dType, group: "defense" };
   }
   if(lowHull && roll < 0.75){
-    var sType = Math.random() < 0.7 ? "repair" : pickSecondaryType();
+    var sType = Math.random() < 0.6 ? "repair" : pickSecondaryType();
     return { type: sType, group: "secondary" };
   }
-  if(roll < 0.45 && allowOffense){
+  if(roll < 0.3 && allowOffense){
     var offense = ["laser", "fire", "ice", "electric", "pierce", "plasma", "rail"];
     if(isMissileAllowed()) offense.unshift("missile");
     var oType = offense[Math.floor(Math.random() * offense.length)];
     return { type: oType, group: "offense" };
   }
-  if(roll < 0.6){
+  if(roll < 0.4){
     var dRoll = Math.random();
     var dType = dRoll < 0.55 ? "shield" : "armor";
     return { type: dType, group: "defense" };
@@ -5414,7 +5414,7 @@ function resetSurvivorTimer(){
 
 function maybeDropPowerup(){
   if(hiddenPowerupActive) return;
-  if(Math.random() > 0.7) return;
+  if(Math.random() > 0.4) return;
   var drop = choosePowerupDrop();
   if(!drop) return;
   spawnPowerup(drop.type, drop.group);
@@ -5978,6 +5978,7 @@ function resetSession(){
 
   player.hull = 1;
   player.lowHullAlarmed = false;
+  player.lowHullPulse = 0;
   player.lastDamageAt = 0;
   player.invuln = 0;
   player.hitFlash = 0;
@@ -8678,40 +8679,32 @@ function endGame(reason){
     }
 
     var collectedMap = state.powerupsCollectedByType || state.powerupsCollectedByTypeAlt || {};
+    // Build per-type merged shot entries (collected only, for weapons)
     Object.keys(collectedMap).forEach(function(type){
       var count = collectedMap[type] || 0;
       var icon = powerupIcons[type];
       if(!icon && shotIcons && shotIcons[type]) icon = shotIcons[type];
       if(shotTypes[type]){
         appendEntry(shotEntries, "COLLECTED", formatStatTypeLabel(type), icon ? icon.src : null, count);
-      }else{
-        appendEntry(powerupEntries, "COLLECTED", formatStatTypeLabel(type), icon ? icon.src : null, count);
       }
     });
 
-    if(state.powerupsUsedByType){
-      Object.keys(state.powerupsUsedByType).forEach(function(type){
-        var count = state.powerupsUsedByType[type] || 0;
+    // Build merged powerup map: one entry per type with collected + missed
+    var puMerged = {};
+    function ensurePuEntry(type){
+      if(!puMerged[type]){
         var icon = powerupIcons[type];
         if(!icon && shotIcons && shotIcons[type]) icon = shotIcons[type];
-        if(shotTypes[type]){
-          appendEntry(shotEntries, "USED", formatStatTypeLabel(type), icon ? icon.src : null, count);
-        }else{
-          appendEntry(powerupEntries, "USED", formatStatTypeLabel(type), icon ? icon.src : null, count);
-        }
-      });
+        puMerged[type] = { type: type, src: icon ? icon.src : null, name: formatStatTypeLabel(type), collected: 0, missed: 0 };
+      }
+      return puMerged[type];
     }
-
+    Object.keys(collectedMap).forEach(function(type){
+      if(!shotTypes[type]) ensurePuEntry(type).collected = collectedMap[type] || 0;
+    });
     if(state.powerupsMissedByType){
       Object.keys(state.powerupsMissedByType).forEach(function(type){
-        var count = state.powerupsMissedByType[type] || 0;
-        var icon = powerupIcons[type];
-        if(!icon && shotIcons && shotIcons[type]) icon = shotIcons[type];
-        if(shotTypes[type]){
-          appendEntry(shotEntries, "MISSED", formatStatTypeLabel(type), icon ? icon.src : null, count);
-        }else{
-          appendEntry(powerupEntries, "MISSED", formatStatTypeLabel(type), icon ? icon.src : null, count);
-        }
+        if(!shotTypes[type]) ensurePuEntry(type).missed = state.powerupsMissedByType[type] || 0;
       });
     }
 
@@ -8726,12 +8719,55 @@ function endGame(reason){
 
     var engagementSections = [
       { title: "SHOTS", entries: shotEntries },
-      { title: "POWERUPS", entries: powerupEntries },
       { title: "MANEUVERS", entries: maneuverEntries }
     ];
-    var hasEntries = shotEntries.length + powerupEntries.length + maneuverEntries.length;
+    var puKeys = Object.keys(puMerged);
+    var hasEntries = shotEntries.length + puKeys.length + maneuverEntries.length;
 
     renderEngagementRowsBySection(engagementSections, 3);
+
+    // Compact powerup table: one row per type, PICKED / MISSED columns
+    if(statsListSecondary && puKeys.length > 0){
+      var puSection = document.createElement("div");
+      puSection.className = "engagementSection";
+      var puTitle = document.createElement("div");
+      puTitle.className = "engagementSectionTitle";
+      puTitle.textContent = "POWERUPS";
+      puSection.appendChild(puTitle);
+      var puTable = document.createElement("div");
+      puTable.className = "puStatsTable";
+      // Header row
+      var puHead = document.createElement("div");
+      puHead.className = "puStatsRow puStatsHeader";
+      puHead.innerHTML = "<div></div><div></div><div class=\"puStatsColHead\">PICKED</div><div class=\"puStatsColHead\">MISSED</div>";
+      puTable.appendChild(puHead);
+      puKeys.forEach(function(type, idx){
+        var entry = puMerged[type];
+        var row = document.createElement("div");
+        row.className = "puStatsRow";
+        row.style.animationDelay = (idx * 0.04) + "s";
+        var iconCell = document.createElement("div");
+        iconCell.className = "puStatsIconCell";
+        if(entry.src){ var img = document.createElement("img"); img.src = entry.src; img.alt = entry.name; iconCell.appendChild(img); }
+        var nameCell = document.createElement("div");
+        nameCell.className = "puStatsName";
+        nameCell.textContent = entry.name;
+        var pickedCell = document.createElement("div");
+        pickedCell.className = "puStatsNum puStatsPicked";
+        pickedCell.textContent = String(entry.collected);
+        var missedCell = document.createElement("div");
+        missedCell.className = "puStatsNum puStatsMissed";
+        missedCell.textContent = String(entry.missed);
+        row.appendChild(iconCell);
+        row.appendChild(nameCell);
+        row.appendChild(pickedCell);
+        row.appendChild(missedCell);
+        puTable.appendChild(row);
+      });
+      puSection.appendChild(puTable);
+      statsListSecondary.appendChild(puSection);
+    }
+
     if(engagementIconRows){
       engagementIconRows.style.display = hasEntries ? "block" : "none";
     }

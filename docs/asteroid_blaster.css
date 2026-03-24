@@ -429,12 +429,12 @@ body.touchControlsOn #controlDock{
   animation:scorePop 0.38s cubic-bezier(.36,.07,.19,.97) both;
 }
 
-/* Prompt chip pulse */
+/* Prompt chip pulse — gold flash on new question */
 @keyframes promptPulse{
   0%  { transform:scale(1);    background:rgba(255,255,255,.06); box-shadow:none; }
-  18% { transform:scale(1.12); background:rgba(0,229,255,.22);  border-color:rgba(0,229,255,.9);   box-shadow:0 0 0 5px rgba(0,229,255,.35), 0 0 28px 6px rgba(0,229,255,.25); }
-  45% { transform:scale(1.05); background:rgba(0,229,255,.12);  border-color:rgba(0,229,255,.6);   box-shadow:0 0 0 8px rgba(0,229,255,.15), 0 0 40px 8px rgba(0,229,255,.12); }
-  100%{ transform:scale(1);    background:rgba(255,255,255,.06); box-shadow:0 0 0 14px rgba(0,229,255,0); }
+  15% { transform:scale(1.14); background:rgba(255,210,40,.28);  border-color:rgba(255,220,60,1);   box-shadow:0 0 0 5px rgba(255,210,40,.45), 0 0 32px 8px rgba(255,200,30,.35); }
+  40% { transform:scale(1.06); background:rgba(255,200,40,.14);  border-color:rgba(255,220,60,.7);   box-shadow:0 0 0 9px rgba(255,210,40,.18), 0 0 44px 10px rgba(255,200,30,.15); }
+  100%{ transform:scale(1);    background:rgba(255,255,255,.06); box-shadow:0 0 0 16px rgba(255,210,40,0); }
 }
 .prompt-pulse{
   animation:promptPulse 0.55s cubic-bezier(.36,.07,.19,.97) both;
@@ -2131,6 +2131,54 @@ input[type="checkbox"]{ transform: translateY(1px); }
   padding-left: 7px;
   margin-bottom: 4px;
 }
+
+/* ── Compact powerup stats table ── */
+.puStatsTable{
+  width:100%;
+  border-radius:10px;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.07);
+}
+.puStatsRow{
+  display:grid;
+  grid-template-columns: 36px 1fr 72px 72px;
+  align-items:center;
+  padding:7px 10px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+  animation: engageTileIn 0.22s ease both;
+}
+.puStatsRow:last-child{ border-bottom:none; }
+.puStatsRow:nth-child(odd):not(.puStatsHeader){ background:rgba(255,255,255,.02); }
+.puStatsHeader{
+  background:rgba(0,0,0,.3);
+  animation:none;
+}
+.puStatsColHead{
+  font-size:10px;
+  letter-spacing:1.6px;
+  text-transform:uppercase;
+  color:rgba(232,236,255,.4);
+  text-align:center;
+}
+.puStatsIconCell img{
+  width:28px;
+  height:28px;
+  object-fit:contain;
+  display:block;
+}
+.puStatsName{
+  font-size:11px;
+  letter-spacing:1.3px;
+  text-transform:uppercase;
+  color:rgba(232,236,255,.85);
+}
+.puStatsNum{
+  text-align:center;
+  font-size:15px;
+  font-weight:700;
+}
+.puStatsPicked{ color:rgba(0,229,255,.9); }
+.puStatsMissed{ color:rgba(255,80,90,.75); }
 
 @media (max-width: 980px){
   #overlayEnd .card{

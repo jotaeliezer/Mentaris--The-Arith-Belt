@@ -606,27 +606,32 @@
 
     .briefingHintBlock{
       flex:1 1 auto;
-      display:flex;
-      flex-direction:column;
-      gap:12px;
+      min-width:0;
     }
     .briefingHints{
       border:1px solid rgba(255,255,255,.08);
       border-radius:14px;
       padding:12px 14px;
       background: rgba(8,12,22,.74);
-      height:72px;
+      height:80px;
       overflow:hidden;
-    }
-    .briefingLaunch{
-      display:flex;
-      align-items:center;
-      justify-content:flex-end;
     }
     .briefingHintActions{
       margin-top:12px;
       display:flex;
       justify-content:flex-end;
+    }
+    .briefingLaunchBlock{
+      flex-shrink:0;
+      display:flex;
+      align-items:flex-end;
+    }
+    .briefingLaunchBtn{
+      white-space:nowrap;
+      min-width:160px;
+      padding:14px 22px;
+      font-size:13px;
+      letter-spacing:1.6px;
     }
     .briefingFooter{
       display:flex;
@@ -3019,9 +3024,9 @@
             <div class="briefingHintLabel">Command Directive</div>
             <div class="briefingHintText" id="briefingHintText">--</div>
           </div>
-          <div class="briefingLaunch">
-            <button id="btnBriefingSkip" class="btn">Launch Mission</button>
-          </div>
+        </div>
+        <div class="briefingLaunchBlock">
+          <button id="btnBriefingSkip" class="btn briefingLaunchBtn">Launch Mission</button>
         </div>
       </div>
     </div>
