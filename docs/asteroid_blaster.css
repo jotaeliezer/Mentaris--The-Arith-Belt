@@ -1973,18 +1973,18 @@ input[type="checkbox"]{ transform: translateY(1px); }
   align-content:start;
   display:flex;
   flex-direction:column;
-  gap:10px;
+  gap:5px;
 }
 
 #endStageEngagement #statsListSecondary .engagementRow{
   display:grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap:10px;
+  gap:8px;
 }
 
 #endStageEngagement #statsListSecondary .engagementSection{
   display:grid;
-  gap:8px;
+  gap:3px;
 }
 
 #endStageEngagement #statsListSecondary .engagementSectionTitle{
@@ -2001,7 +2001,7 @@ input[type="checkbox"]{ transform: translateY(1px); }
   border:1px solid var(--line);
   border-radius:12px;
   background:rgba(255,255,255,.05);
-  padding:8px 10px;
+  padding:5px 10px;
   display:grid;
   grid-template-columns: 68px 1fr;
   align-items:center;
@@ -2042,7 +2042,7 @@ input[type="checkbox"]{ transform: translateY(1px); }
 }
 
 #endStageEngagement #statsListSecondary .endStatsMiniCount{
-  font-size:22px;
+  font-size:18px;
   line-height:1;
   font-weight:700;
   color:#e8ecff;
@@ -2129,7 +2129,7 @@ input[type="checkbox"]{ transform: translateY(1px); }
 #endStageEngagement .engagementSectionTitle{
   border-left: 2px solid rgba(184,222,255,.45);
   padding-left: 7px;
-  margin-bottom: 4px;
+  margin-bottom: 1px;
 }
 
 /* ── Compact powerup stats table ── */
@@ -2428,10 +2428,10 @@ input[type="checkbox"]{ transform: translateY(1px); }
 }
 
 .wideGameplay #hud{
-  width:min(1120px, 100%);
-  left:50%;
-  right:auto;
-  transform: translateX(-50%);
+  width:100%;
+  left:0;
+  right:0;
+  transform:none;
 }
 
 /* Settings title + actions */

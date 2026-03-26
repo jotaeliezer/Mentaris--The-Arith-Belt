@@ -143226,7 +143226,7 @@
   var backgroundIndex = 0;
   var backgroundScroll = 0;
   var backgroundScrollSplit = 0;
-  var backgroundScale = 2.1;
+  var backgroundScale = 1;
   var PHASER_BACKGROUND_SCROLL_SPEED = 5.8;
   var BACKGROUND_SCROLL_SPEED = 8.8;
   var BACKGROUND_PULLDOWN_SPEED_BONUS = 7;
@@ -151246,7 +151246,7 @@
     }
     if (usePhaserRenderer && !tutorialActive && backgroundSprites[backgroundIndex] && backgroundReady[backgroundIndex]) {
       var bgImg = backgroundSprites[backgroundIndex];
-      var baseScale = Math.max(view.w / bgImg.width, view.h / bgImg.height);
+      var baseScale = view.w / bgImg.width;
       var scale = baseScale * backgroundScale;
       var drawH = Math.ceil(bgImg.height * scale) + 4;
       var maxScroll = Math.max(1, drawH - view.h);
@@ -153326,7 +153326,7 @@
           if (backgroundSprites[bgIdx] && backgroundReady[bgIdx]) {
             var bgImg3 = backgroundSprites[bgIdx];
             var laneW = lane.maxX - lane.minX;
-            var baseScale3 = Math.max(laneW / bgImg3.width, h / bgImg3.height);
+            var baseScale3 = laneW / bgImg3.width;
             var scale2 = baseScale3 * backgroundScale;
             var drawW2 = Math.ceil(bgImg3.width * scale2) + 4;
             var drawH3 = Math.ceil(bgImg3.height * scale2) + 4;
@@ -153377,7 +153377,7 @@
         drawLaneBackground(lane2, bgIdx2, backgroundScrollSplit);
       } else if (backgroundSprites[backgroundIndex] && backgroundReady[backgroundIndex]) {
         var bgImg = backgroundSprites[backgroundIndex];
-        var baseScale = Math.max(w / bgImg.width, h / bgImg.height);
+        var baseScale = w / bgImg.width;
         var scale = baseScale * backgroundScale;
         var drawW = Math.ceil(bgImg.width * scale) + 4;
         var drawH = Math.ceil(bgImg.height * scale) + 4;
