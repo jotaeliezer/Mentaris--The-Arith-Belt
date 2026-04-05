@@ -1049,6 +1049,26 @@ var beltIndexMap = {
   vega: 4,
   void: 5
 };
+// Ruby Strike / Azure Lancer overflight: visual scale (smooth ramp, not instant).
+var OVERFLIGHT_DURATION_SEC = 6;
+var OVERFLIGHT_RAMP_UP_SEC = 0.42;
+var OVERFLIGHT_RAMP_DOWN_SEC = 0.55;
+var OVERFLIGHT_PEAK_SCALE = 1.68;
+function getOverflightVisualScale(timer){
+  if(!(timer > 0)) return 1;
+  var elapsed = OVERFLIGHT_DURATION_SEC - timer;
+  function smooth01(t){
+    t = clamp(t, 0, 1);
+    return t * t * (3 - 2 * t);
+  }
+  if(elapsed < OVERFLIGHT_RAMP_UP_SEC){
+    return 1 + (OVERFLIGHT_PEAK_SCALE - 1) * smooth01(elapsed / Math.max(0.001, OVERFLIGHT_RAMP_UP_SEC));
+  }
+  if(timer > OVERFLIGHT_RAMP_DOWN_SEC){
+    return OVERFLIGHT_PEAK_SCALE;
+  }
+  return OVERFLIGHT_PEAK_SCALE + (1 - OVERFLIGHT_PEAK_SCALE) * smooth01(1 - timer / Math.max(0.001, OVERFLIGHT_RAMP_DOWN_SEC));
+}
 var backgroundSources = [
   "images/backgrounds/sector_run_d.png",
   "images/backgrounds/rift_assault_c.png",
@@ -6872,7 +6892,7 @@ function shockwave(){
   }
 
   if(profile.ability === "overflight"){
-    player.overflightTimer = Math.max(player.overflightTimer || 0, 6);
+    player.overflightTimer = Math.max(player.overflightTimer || 0, OVERFLIGHT_DURATION_SEC);
     player.invuln = Math.max(player.invuln || 0, 0.25);
     playSfx(state, "dash");
     showToast("OVERFLIGHT");
@@ -13472,7 +13492,7 @@ function drawShip(){
   var shake = baseShake + collisionShake;
   var sx = shake ? Math.sin(performance.now() * 0.05) * shake : 0;
   var sy = shake ? Math.cos(performance.now() * 0.045) * shake : 0;
-  var overScale = player.overflightTimer > 0 ? 1.18 : 1;
+  var overScale = getOverflightVisualScale(player.overflightTimer || 0);
   var shipOpts = state.pullDownRemaining > 0 ? { thrustFocus: true } : null;
   renderShip(player.x + sx, player.y + sy, fadeAlpha, false, undefined, undefined, shipOpts, overScale);
   if(player.compassTimer > 0){
