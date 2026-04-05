@@ -2158,30 +2158,30 @@
               <h3>Cluster Selector</h3>
               <input type="hidden" id="belt" name="belt" value="dusk" />
               <div class="choiceGrid" id="beltChoices">
-                <div class="choiceCard beltChoice selected" data-belt="dusk" style="background-image:url('images/backgrounds/sector_run_b.png');">
+                <div class="choiceCard beltChoice selected" data-belt="dusk" style="background-image:url('images/backgrounds/sector_run_d.png');">
                   <h4>Sector Run Cluster</h4>
                   <p>Starter sector lanes with balanced visibility.</p>
                 </div>
-                <div class="choiceCard beltChoice" data-belt="ember" style="background-image:url('images/backgrounds/rift_assault_b.png');">
+                <div class="choiceCard beltChoice" data-belt="ember" style="background-image:url('images/backgrounds/rift_assault_c.png');">
                   <h4>Rift Assault Cluster</h4>
                   <p>Higher contrast lanes tuned for high-speed runs.</p>
                 </div>
-                <div class="choiceCard beltChoice locked" data-belt="aurora" data-locked="true" style="background-image:url('images/backgrounds/void_run_b.png');">
+                <div class="choiceCard beltChoice locked" data-belt="aurora" data-locked="true" style="background-image:url('images/backgrounds/void_run_d.png');">
                   <h4>Void Run Cluster</h4>
                   <span class="beltLockTag costTag">250</span>
                   <p>Dark compression field with narrow visibility lanes.</p>
                 </div>
-                <div class="choiceCard beltChoice locked" data-belt="rift" data-locked="true" style="background-image:url('images/backgrounds/nebula_seige_b.png');">
+                <div class="choiceCard beltChoice locked" data-belt="rift" data-locked="true" style="background-image:url('images/backgrounds/nebula_seige_c.png');">
                   <h4>Nebula Seige Cluster</h4>
                   <span class="beltLockTag costTag">450</span>
                   <p>Heavy-flare battle zone with dense hazard drift.</p>
                 </div>
-                <div class="choiceCard beltChoice locked" data-belt="vega" data-locked="true" style="background-image:url('images/backgrounds/apex_frontier_b.png');">
+                <div class="choiceCard beltChoice locked" data-belt="vega" data-locked="true" style="background-image:url('images/backgrounds/apex_frontier_c.png');">
                   <h4>Apex Frontier Cluster</h4>
                   <span class="beltLockTag costTag">700</span>
                   <p>Expert frontier lanes built for max tempo pressure.</p>
                 </div>
-                <div class="choiceCard beltChoice locked" data-belt="void" data-locked="true" style="background-image:url('images/backgrounds/apex_frontier_b.png');">
+                <div class="choiceCard beltChoice locked" data-belt="void" data-locked="true" style="background-image:url('images/backgrounds/et%27s_land.png');">
                   <h4>Apex Frontier Plus</h4>
                   <span class="beltLockTag costTag">1000</span>
                   <p>Apex variant with the same battlefield profile.</p>
@@ -2521,6 +2521,29 @@
                       <polygon class="shipFlame" points="126,184 134,198 118,198" />
                     </svg>
                     <div class="shipLabel">WHITE FLAME 8</div>
+                  </div>
+                </label>
+                <label class="shipOption locked" data-ship="datsawze" data-locked="true" style="--ship-body: rgba(200,120,60,.92); --ship-wing: rgba(140,80,40,.9); --ship-canopy: rgba(255,200,120,.88); --ship-accent: rgba(255,230,90,.95); --ship-highlight: rgba(255,120,60,.9); --ship-thruster: rgba(22,20,28,.85); --ship-flame: rgba(255,170,80,.88); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="datsawze" disabled />
+                  <div class="shipCard">
+                    <div class="shipLockTag costTag">3000</div>
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="100,94 46,122 18,162 50,172 118,150 92,118" />
+                      <polygon class="shipWing" points="120,94 174,122 202,162 170,172 100,150 128,118" />
+                      <polygon class="shipBody" points="110,10 140,54 170,90 164,128 140,150 132,172 88,172 80,150 56,128 50,90 80,54" />
+                      <polygon class="shipBody" points="110,20 124,64 120,150 110,170 100,150 96,64" />
+                      <rect class="shipStripe" x="62" y="98" width="96" height="6" rx="3" />
+                      <rect class="shipStripe" x="76" y="76" width="68" height="5" rx="3" />
+                      <polygon class="shipAccent" points="110,8 124,30 96,30" />
+                      <path class="shipCanopy" d="M96,54 Q110,38 124,54 L130,102 Q110,120 90,102 Z" />
+                      <rect class="shipIcon" x="105" y="122" width="10" height="16" rx="2" />
+                      <rect class="shipThruster" x="86" y="168" width="48" height="10" rx="4" />
+                      <circle class="shipThruster" cx="94" cy="174" r="9" />
+                      <circle class="shipThruster" cx="126" cy="174" r="9" />
+                      <polygon class="shipFlame" points="94,184 102,198 86,198" />
+                      <polygon class="shipFlame" points="126,184 134,198 118,198" />
+                    </svg>
+                    <div class="shipLabel">D.A.T. SAWZE</div>
                   </div>
                 </label>
               </div>
@@ -2998,7 +3021,7 @@
           <div class="briefingLoadout">
             <div class="briefingLoadoutCard briefingBeltWrap">
               <div class="briefingBeltLabel" id="briefingBelt">--</div>
-              <img class="briefingBeltCard" id="briefingBeltCard" src="images/backgrounds/sector_run_b.png" alt="" />
+              <img class="briefingBeltCard" id="briefingBeltCard" src="images/backgrounds/sector_run_d.png" alt="" />
             </div>
             <div class="briefingLoadoutCard briefingShotWrap">
               <div class="briefingShotLabel" id="briefingShotLabel">--</div>
@@ -3984,7 +4007,8 @@
       { id: "cyan", label: "Cyan Vector 7", icon: "images/ships/Cyan%20Vector%207.png", desc: "High-precision vector craft with balanced handling.", unlockType: "ship" },
       { id: "veloz", label: "Veloz Mas", icon: "images/ships/Veloz%20Mas.png", desc: "Aggressive chase frame tuned for offensive runs.", unlockType: "ship" },
       { id: "verde9", label: "VER-DE-9", icon: "images/ships/VER-DE-9.png", desc: "Emerald vanguard frame with reinforced lanes and steady recoil control.", unlockType: "ship" },
-      { id: "whiteflame8", label: "White Flame 8", icon: "images/ships/White%20Flame%208.png", desc: "Lumen spear chassis with a bright exhaust signature and clean lines.", unlockType: "ship" }
+      { id: "whiteflame8", label: "White Flame 8", icon: "images/ships/White%20Flame%208.png", desc: "Lumen spear chassis with a bright exhaust signature and clean lines.", unlockType: "ship" },
+      { id: "datsawze", label: "D.A.T. Sawze", icon: "images/ships/D.A.T.%20Sawze.png", desc: "Heavy-duty industrial frame with a wide saw-tooth silhouette.", unlockType: "ship" }
     ];
 
     var homeSfxCatalog = [
@@ -4477,7 +4501,8 @@
       cyan: "images/ships/Cyan%20Vector%207.png",
       veloz: "images/ships/Veloz%20Mas.png",
       verde9: "images/ships/VER-DE-9.png",
-      whiteflame8: "images/ships/White%20Flame%208.png"
+      whiteflame8: "images/ships/White%20Flame%208.png",
+      datsawze: "images/ships/D.A.T.%20Sawze.png"
     };
     shipOptions.forEach(function(option){
       var key = option.getAttribute("data-ship") || "";
@@ -4675,6 +4700,15 @@
         flight: "Smooth",
         wings: "Swept",
         special: "Shockwave",
+        thrusters: "Dual"
+      },
+      datsawze: {
+        name: "D.A.T. Sawze",
+        style: "Industrial Cleaver",
+        body: "Wide industrial hull built for stable strafing and heavy forward mass.",
+        flight: "Steady",
+        wings: "Broad",
+        special: "Downshock",
         thrusters: "Dual"
       }
     };
@@ -6858,7 +6892,8 @@
         cyan: "Cyan Vector 7",
         veloz: "Veloz Mas",
         verde9: "VER-DE-9",
-        whiteflame8: "White Flame 8"
+        whiteflame8: "White Flame 8",
+        datsawze: "D.A.T. Sawze"
       };
       var modeLabel = String(cfg.questionMode || "classic");
       var isAdd = modeLabel.indexOf("add_") === 0;
@@ -7131,7 +7166,8 @@
         cyan: "Cyan Vector 7",
         veloz: "Veloz Mas",
         verde9: "VER-DE-9",
-        whiteflame8: "White Flame 8"
+        whiteflame8: "White Flame 8",
+        datsawze: "D.A.T. Sawze"
       };
       if(briefingShipCard && shipCardImageByShip && shipCardImageByShip[shipKey]){
         briefingShipCard.src = shipCardImageByShip[shipKey];
@@ -7156,12 +7192,12 @@
           void: "Apex Frontier+"
         };
         var beltImages = {
-          dusk: "images/backgrounds/sector_run_b.png",
-          ember: "images/backgrounds/rift_assault_b.png",
-          aurora: "images/backgrounds/void_run_b.png",
-          rift: "images/backgrounds/nebula_seige_b.png",
-          vega: "images/backgrounds/apex_frontier_b.png",
-          void: "images/backgrounds/apex_frontier_b.png"
+          dusk: "images/backgrounds/sector_run_d.png",
+          ember: "images/backgrounds/rift_assault_c.png",
+          aurora: "images/backgrounds/void_run_d.png",
+          rift: "images/backgrounds/nebula_seige_c.png",
+          vega: "images/backgrounds/apex_frontier_c.png",
+          void: "images/backgrounds/et's_land.png"
         };
         briefingBelt.textContent = beltLabels[beltKey] || beltKey.toUpperCase();
         if(briefingBeltCard){
