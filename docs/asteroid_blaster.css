@@ -1005,12 +1005,17 @@ body.launching #menuWrap{
 
 #endStageEngagement .endStatsWrap .panel{
   max-height:none;
-  min-height:420px;
+  min-height:320px;
   overflow:hidden;
+  text-align:center;
 }
 
 #endStageEngagement .panel{
   overflow:hidden;
+}
+
+#endStageEngagement .panel > h3{
+  text-align:center;
 }
 
 .engagementTopRow{
@@ -1019,9 +1024,20 @@ body.launching #menuWrap{
   margin-top:10px;
 }
 
+#endStageEngagement .engagementTopRow{
+  justify-items:center;
+}
+
 .engagementIconRows{
   margin-top:10px;
   overflow:hidden;
+}
+
+#endStageEngagement .engagementIconRows{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  width:100%;
 }
 
 .endPlacementPanel{
@@ -1048,6 +1064,30 @@ body.launching #menuWrap{
   align-items:center;
   gap:10px;
   box-shadow: 0 0 18px rgba(0,229,255,.08);
+}
+
+#endStageEngagement .endMineralsSummary{
+  margin-left:auto;
+  margin-right:auto;
+  max-width:320px;
+  padding:8px 10px;
+  grid-template-columns:52px 1fr;
+  gap:8px;
+  text-align:left;
+}
+
+#endStageEngagement .endMineralsIconWrap{
+  width:52px;
+  height:52px;
+}
+
+#endStageEngagement .endMineralsIcon{
+  width:44px;
+  height:44px;
+}
+
+#endStageEngagement .endMineralsValue{
+  font-size:26px;
 }
 
 .endMineralsIconWrap{
@@ -1973,45 +2013,56 @@ input[type="checkbox"]{ transform: translateY(1px); }
   align-content:start;
   display:flex;
   flex-direction:column;
-  gap:5px;
+  gap:4px;
+  width:100%;
+  max-width:420px;
+  margin:0 auto;
+  align-items:stretch;
 }
 
 #endStageEngagement #statsListSecondary .engagementRow{
   display:grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap:8px;
+  gap:6px;
+  width:100%;
+  justify-items:stretch;
 }
 
 #endStageEngagement #statsListSecondary .engagementSection{
   display:grid;
-  gap:3px;
+  gap:2px;
+  width:100%;
 }
 
 #endStageEngagement #statsListSecondary .engagementSectionTitle{
-  font-size:13px;
-  letter-spacing:1.4px;
+  font-size:11px;
+  letter-spacing:1.2px;
   text-transform:uppercase;
   color:#b8deff;
   font-weight:700;
-  padding:2px 2px 0;
+  padding:0 0 4px;
+  margin:0 0 2px;
+  text-align:center;
+  border-left:none;
+  border-bottom:1px solid rgba(184,222,255,.22);
 }
 
 #endStageEngagement #statsListSecondary .endStatsMiniTile{
   min-width:0;
   border:1px solid var(--line);
-  border-radius:12px;
+  border-radius:10px;
   background:rgba(255,255,255,.05);
-  padding:5px 10px;
+  padding:4px 6px;
   display:grid;
-  grid-template-columns: 68px 1fr;
+  grid-template-columns: 44px minmax(0, 1fr);
   align-items:center;
-  gap:10px;
+  gap:6px;
 }
 
 #endStageEngagement #statsListSecondary .endStatsMiniIcon{
-  width:68px;
-  height:68px;
-  border-radius:12px;
+  width:44px;
+  height:44px;
+  border-radius:10px;
   background:rgba(255,255,255,.06);
   border:1px solid rgba(255,255,255,.12);
   display:grid;
@@ -2020,20 +2071,22 @@ input[type="checkbox"]{ transform: translateY(1px); }
 }
 
 #endStageEngagement #statsListSecondary .endStatsMiniIcon img{
-  width:60px;
-  height:60px;
+  width:36px;
+  height:36px;
   object-fit:contain;
 }
 
 #endStageEngagement #statsListSecondary .endStatsMiniMeta{
   min-width:0;
   display:grid;
-  gap:2px;
+  gap:1px;
+  text-align:center;
+  align-content:center;
 }
 
 #endStageEngagement #statsListSecondary .endStatsMiniLabel{
-  font-size:11px;
-  letter-spacing:1px;
+  font-size:9px;
+  letter-spacing:0.5px;
   text-transform:uppercase;
   color:var(--muted);
   white-space:nowrap;
@@ -2042,10 +2095,15 @@ input[type="checkbox"]{ transform: translateY(1px); }
 }
 
 #endStageEngagement #statsListSecondary .endStatsMiniCount{
-  font-size:18px;
+  font-size:14px;
   line-height:1;
   font-weight:700;
   color:#e8ecff;
+}
+
+#endStageEngagement #statsListSecondary .endStatsMiniActionBadge{
+  font-size:7px;
+  letter-spacing:0.8px;
 }
 
 #statsListSecondary .endStatsSection{
@@ -2125,11 +2183,9 @@ input[type="checkbox"]{ transform: translateY(1px); }
   margin-bottom:1px;
 }
 
-/* ── Section title left accent bar ── */
+/* ── Section title (engagement uses centered rule above) ── */
 #endStageEngagement .engagementSectionTitle{
-  border-left: 2px solid rgba(184,222,255,.45);
-  padding-left: 7px;
-  margin-bottom: 1px;
+  border-left: none;
 }
 
 /* ── Compact powerup stats table ── */
@@ -2139,6 +2195,12 @@ input[type="checkbox"]{ transform: translateY(1px); }
   overflow:hidden;
   border:1px solid rgba(255,255,255,.07);
 }
+
+#endStageEngagement .puStatsTable{
+  max-width:380px;
+  margin:0 auto;
+}
+
 .puStatsRow{
   display:grid;
   grid-template-columns: 36px 1fr 72px 72px;
@@ -2146,6 +2208,12 @@ input[type="checkbox"]{ transform: translateY(1px); }
   padding:7px 10px;
   border-bottom:1px solid rgba(255,255,255,.05);
   animation: engageTileIn 0.22s ease both;
+}
+
+#endStageEngagement .puStatsRow{
+  grid-template-columns: 28px minmax(0, 1fr) 44px 44px;
+  padding:3px 6px;
+  gap:4px;
 }
 .puStatsRow:last-child{ border-bottom:none; }
 .puStatsRow:nth-child(odd):not(.puStatsHeader){ background:rgba(255,255,255,.02); }
@@ -2160,22 +2228,45 @@ input[type="checkbox"]{ transform: translateY(1px); }
   color:rgba(232,236,255,.4);
   text-align:center;
 }
+
+#endStageEngagement .puStatsColHead{
+  font-size:8px;
+  letter-spacing:1px;
+}
+
 .puStatsIconCell img{
   width:28px;
   height:28px;
   object-fit:contain;
   display:block;
 }
+
+#endStageEngagement .puStatsIconCell img{
+  width:22px;
+  height:22px;
+}
+
 .puStatsName{
   font-size:11px;
   letter-spacing:1.3px;
   text-transform:uppercase;
   color:rgba(232,236,255,.85);
 }
+
+#endStageEngagement .puStatsName{
+  font-size:9px;
+  letter-spacing:0.6px;
+  text-align:left;
+}
+
 .puStatsNum{
   text-align:center;
   font-size:15px;
   font-weight:700;
+}
+
+#endStageEngagement .puStatsNum{
+  font-size:12px;
 }
 .puStatsPicked{ color:rgba(0,229,255,.9); }
 .puStatsMissed{ color:rgba(255,80,90,.75); }

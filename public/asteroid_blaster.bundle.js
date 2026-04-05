@@ -141340,11 +141340,17 @@
       }
       var scale = data.backgroundScale || 1;
       var tex = backgroundSprite.texture.getSourceImage();
+      var scroll = data.backgroundScroll || 0;
       if (tex && tex.width) {
-        var baseScale = Math.max(w / tex.width, h / tex.height);
-        backgroundSprite.setScale(baseScale * scale);
+        var baseScale = w / tex.width;
+        var dispW = tex.width * baseScale * scale;
+        var dispH = tex.height * baseScale * scale;
+        backgroundSprite.setDisplaySize(dispW, dispH);
+        backgroundSprite.setOrigin(0.5, 1);
+        backgroundSprite.setPosition(w / 2, h + scroll);
+      } else {
+        backgroundSprite.setPosition(w / 2, h / 2 + scroll * 0.4);
       }
-      backgroundSprite.setPosition(w / 2, h / 2 + (data.backgroundScroll || 0) * 0.4);
     }
     function syncAsteroids(data) {
       if (data.hideAsteroids) {
@@ -150791,7 +150797,7 @@
         statsListSecondary.innerHTML = "";
         statsListSecondary.style.display = "flex";
         statsListSecondary.style.flexDirection = "column";
-        statsListSecondary.style.gap = "10px";
+        statsListSecondary.style.gap = "6px";
         statsListSecondary.style.justifyContent = "stretch";
         statsListSecondary.style.gridTemplateColumns = "";
       }
@@ -153355,7 +153361,7 @@
             var drawW2 = Math.ceil(bgImg3.width * scale2) + 4;
             var drawH3 = Math.ceil(bgImg3.height * scale2) + 4;
             var offX2 = Math.floor((lane.minX + lane.maxX - drawW2) / 2);
-            var offY2 = Math.floor(h - drawH3 + scrollOffset + 160);
+            var offY2 = Math.floor(h - drawH3 + scrollOffset);
             ctx.save();
             ctx.beginPath();
             ctx.rect(lane.minX, 0, laneW, h);
@@ -153410,7 +153416,7 @@
           backgroundScroll = (backgroundScroll + getBackgroundScrollStep(BACKGROUND_SCROLL_SPEED, bg.dt || 1 / 60)) % maxScroll;
         }
         var offX = Math.floor((w - drawW) / 2);
-        var offY = Math.floor(h - drawH + backgroundScroll + 160);
+        var offY = Math.floor(h - drawH + backgroundScroll);
         ctx.save();
         ctx.globalAlpha = 0.55;
         ctx.drawImage(bgImg, offX, offY, drawW, drawH);

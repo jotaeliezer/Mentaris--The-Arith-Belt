@@ -8603,7 +8603,7 @@ function endGame(reason){
       statsListSecondary.innerHTML = "";
       statsListSecondary.style.display = "flex";
       statsListSecondary.style.flexDirection = "column";
-      statsListSecondary.style.gap = "10px";
+      statsListSecondary.style.gap = "6px";
       statsListSecondary.style.justifyContent = "stretch";
       statsListSecondary.style.gridTemplateColumns = "";
     }
@@ -11198,7 +11198,7 @@ function draw(){
           var drawW = Math.ceil(bgImg.width * scale) + 4;
           var drawH = Math.ceil(bgImg.height * scale) + 4;
           var offX = Math.floor((lane.minX + lane.maxX - drawW) / 2);
-          var offY = Math.floor((h - drawH) + scrollOffset + 160);
+          var offY = Math.floor((h - drawH) + scrollOffset);
           ctx.save();
           ctx.beginPath();
           ctx.rect(lane.minX, 0, laneW, h);
@@ -11228,7 +11228,7 @@ function draw(){
         backgroundScroll = (backgroundScroll + getBackgroundScrollStep(BACKGROUND_SCROLL_SPEED, (bg.dt || (1/60)))) % maxScroll;
       }
       var offX = Math.floor((w - drawW) / 2);
-      var offY = Math.floor((h - drawH) + backgroundScroll + 160);
+      var offY = Math.floor((h - drawH) + backgroundScroll);
       ctx.save();
       ctx.globalAlpha = 0.55;
       ctx.drawImage(bgImg, offX, offY, drawW, drawH);

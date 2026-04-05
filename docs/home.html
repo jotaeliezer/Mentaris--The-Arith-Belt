@@ -395,9 +395,9 @@
     .briefingCard{
       width:min(800px, 92%);
       border:1px solid var(--briefing-border);
-      border-radius:26px;
+      border-radius:22px;
       background: linear-gradient(160deg, rgba(12,16,32,.95), rgba(6,8,20,.9));
-      padding:22px;
+      padding:14px 16px 12px;
       box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.03) inset;
       position:relative;
       overflow:hidden;
@@ -427,21 +427,21 @@
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:12px;
-      margin-top:8px;
+      gap:8px;
+      margin-top:4px;
     }
     .briefingStatusTags{
       display:flex;
       align-items:center;
-      gap:8px;
+      gap:6px;
       flex-wrap:wrap;
       justify-content:flex-end;
     }
     .briefingTag{
       border:1px solid rgba(255,255,255,.16);
       border-radius:999px;
-      padding:7px 11px;
-      font-size:10px;
+      padding:4px 9px;
+      font-size:9px;
       letter-spacing:1.2px;
       text-transform:uppercase;
       color:rgba(232,236,255,.9);
@@ -454,41 +454,42 @@
       box-shadow: 0 0 16px var(--briefing-glow) inset;
     }
     .briefingMainPanel{
-      margin-top:10px;
+      margin-top:6px;
       background: rgba(6,10,20,.58);
       border-color: rgba(255,255,255,.09);
+      padding:8px 10px !important;
     }
     .briefingMainSplit{
       display:grid;
-      grid-template-columns: minmax(0, 1fr) 260px;
-      gap:14px;
+      grid-template-columns: minmax(0, 1fr) 220px;
+      gap:8px;
       align-items:stretch;
     }
     .briefingPrimary{
       display:flex;
       align-items:center;
-      gap:16px;
+      gap:10px;
       border:1px solid rgba(255,255,255,.08);
-      border-radius:18px;
+      border-radius:14px;
       background: var(--briefing-surface);
-      padding:12px;
-      min-height:146px;
+      padding:8px 10px;
+      min-height:0;
     }
     .briefingLoadout{
       display:grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap:10px;
+      gap:6px;
     }
     .briefingLoadoutCard{
       border:1px solid rgba(255,255,255,.08);
-      border-radius:14px;
+      border-radius:12px;
       background: var(--briefing-surface);
-      padding:10px;
+      padding:6px;
     }
     .briefingBeltCard{
-      width:120px;
-      height:120px;
-      border-radius:14px;
+      width:96px;
+      height:96px;
+      border-radius:12px;
       border:1px solid rgba(255,255,255,.12);
       background: rgba(8,12,22,.6);
       object-fit: cover;
@@ -498,18 +499,18 @@
       display:flex;
       flex-direction:column;
       align-items:center;
-      gap:8px;
+      gap:4px;
     }
     .briefingBeltLabel{
-      font-size:10px;
-      letter-spacing:1.6px;
+      font-size:9px;
+      letter-spacing:1.2px;
       text-transform:uppercase;
       color:rgba(232,236,255,.7);
     }
     .briefingShotCard{
-      width:120px;
-      height:120px;
-      border-radius:14px;
+      width:96px;
+      height:96px;
+      border-radius:12px;
       border:1px solid rgba(255,255,255,.12);
       background: rgba(8,12,22,.6);
       object-fit: contain;
@@ -519,41 +520,53 @@
       display:flex;
       flex-direction:column;
       align-items:center;
-      gap:8px;
-      min-width:120px;
+      gap:4px;
+      min-width:96px;
     }
     .briefingShotLabel{
-      font-size:10px;
-      letter-spacing:1.6px;
+      font-size:9px;
+      letter-spacing:1.2px;
       text-transform:uppercase;
       color:rgba(232,236,255,.7);
       text-align:center;
-      min-height:12px;
+      min-height:10px;
     }
     .briefingShipCard{
-      width:120px;
-      height:120px;
-      border-radius:14px;
+      width:96px;
+      height:96px;
+      border-radius:12px;
       border:1px solid rgba(255,255,255,.12);
       background: rgba(8,12,22,.6);
       object-fit: contain;
-      padding:10px;
+      padding:6px;
       box-shadow: inset 0 0 24px rgba(0,0,0,.35);
+      flex-shrink:0;
+    }
+    .briefingShipMeta h3{
+      margin:0 0 4px;
+      font-size:14px;
+      letter-spacing:0.06em;
+      line-height:1.2;
+    }
+    #briefingOverlay .briefingShipMeta .monoSmall{
+      font-size:11px;
+      line-height:1.35;
+      margin:0 0 2px !important;
     }
 
     .briefingStatus{
       display:flex;
       align-items:center;
-      gap:10px;
-      font-size:11px;
+      gap:8px;
+      font-size:10px;
       letter-spacing:1px;
       text-transform:uppercase;
       color:var(--muted);
     }
 
     .briefingSpinner{
-      width:36px;
-      height:36px;
+      width:28px;
+      height:28px;
       border-radius:50%;
       border:2px solid rgba(255,255,255,.18);
       border-top-color: var(--briefing-accent);
@@ -573,10 +586,10 @@
       position:absolute;
       left:50%;
       top:50%;
-      width:14px;
-      height:24px;
-      border-right:4px solid rgba(28,220,120,.95);
-      border-bottom:4px solid rgba(28,220,120,.95);
+      width:11px;
+      height:18px;
+      border-right:3px solid rgba(28,220,120,.95);
+      border-bottom:3px solid rgba(28,220,120,.95);
       transform: translate(-50%,-55%) rotate(45deg);
     }
 
@@ -588,20 +601,23 @@
     .briefingGrid{
       display:grid;
       grid-template-columns: repeat(2, minmax(0,1fr));
-      gap:14px;
-      margin-top:12px;
+      gap:8px;
+      margin-top:6px;
     }
 
     .briefingStat{
       border:1px solid rgba(255,255,255,.12);
-      border-radius:14px;
+      border-radius:10px;
       background: rgba(8,12,22,.6);
-      padding:12px 14px;
+      padding:6px 10px;
       display:flex;
       align-items:center;
       justify-content:space-between;
+      font-size:11px;
+      box-shadow: inset 0 0 14px rgba(0,0,0,.18);
+    }
+    .briefingStat b{
       font-size:12px;
-      box-shadow: inset 0 0 18px rgba(0,0,0,.18);
     }
 
     .briefingHintBlock{
@@ -610,10 +626,12 @@
     }
     .briefingHints{
       border:1px solid rgba(255,255,255,.08);
-      border-radius:14px;
-      padding:12px 14px;
+      border-radius:12px;
+      padding:8px 10px;
       background: rgba(8,12,22,.74);
-      height:80px;
+      min-height:52px;
+      height:auto;
+      max-height:64px;
       overflow:hidden;
     }
     .briefingHintActions{
@@ -628,33 +646,33 @@
     }
     .briefingLaunchBtn{
       white-space:nowrap;
-      min-width:160px;
-      padding:14px 22px;
-      font-size:13px;
-      letter-spacing:1.6px;
+      min-width:140px;
+      padding:10px 16px;
+      font-size:12px;
+      letter-spacing:1.2px;
     }
     .briefingFooter{
       display:flex;
-      gap:16px;
+      gap:10px;
       align-items:flex-end;
-      margin-top:12px;
+      margin-top:6px;
     }
     .briefingCommander{
       display:flex;
       flex-direction:column;
       align-items:center;
-      gap:6px;
-      min-width:140px;
+      gap:4px;
+      min-width:108px;
     }
     .briefingCommanderAvatar{
-      width:170px;
-      height:170px;
+      width:118px;
+      height:118px;
       object-fit:contain;
       filter:drop-shadow(0 12px 24px rgba(0,0,0,.45));
     }
     .briefingCommanderName{
-      font-size:11px;
-      letter-spacing:1.6px;
+      font-size:9px;
+      letter-spacing:1.2px;
       text-transform:uppercase;
       color:rgba(232,236,255,.85);
     }
@@ -684,17 +702,18 @@
       letter-spacing:1px;
     }
     .briefingHintLabel{
-      font-size:11px;
-      letter-spacing:2px;
+      font-size:9px;
+      letter-spacing:1.4px;
       color:rgba(255,221,0,.88);
       text-transform:uppercase;
-      margin-bottom:6px;
+      margin-bottom:3px;
     }
     .briefingHintText{
-      font-size:12px;
+      font-size:11px;
+      line-height:1.35;
       color:rgba(232,236,255,.88);
-      letter-spacing:0.06em;
-      min-height:18px;
+      letter-spacing:0.05em;
+      min-height:14px;
     }
 
     @media (max-width: 900px){
@@ -708,8 +727,9 @@
     @media (max-width: 640px){
       .briefingGrid{ grid-template-columns: 1fr; }
       .briefingPrimary{ flex-direction:column; align-items:flex-start; }
-      .briefingShipCard{ width:100px; height:100px; }
-      .briefingBeltCard, .briefingShotCard{ width:96px; height:96px; }
+      .briefingShipCard{ width:88px; height:88px; }
+      .briefingBeltCard, .briefingShotCard{ width:84px; height:84px; }
+      .briefingCommanderAvatar{ width:96px; height:96px; }
     }
 
     .choiceGrid{
@@ -748,7 +768,8 @@
     #beltChoices .beltChoice{
       min-height:210px;
       padding:10px 10px 12px;
-      background-size: 145% 145%;
+      /* cover preserves aspect ratio (no stretch); was 145% 145% which maps to element width+height separately and squishes art */
+      background-size: cover;
       background-position: center center;
     }
     #beltChoices .beltChoice h4{
@@ -1079,15 +1100,23 @@
 
     .funnelOverlay .title,
     #campaignOverlay .title,
-    #campaignConfirmOverlay .title,
-    #briefingOverlay .title{
+    #campaignConfirmOverlay .title{
       font-size:20px;
+    }
+    #briefingOverlay .title{
+      font-size:17px;
+      margin:0 0 2px;
+      line-height:1.2;
     }
     .funnelOverlay .subtitle,
     #campaignOverlay .subtitle,
-    #campaignConfirmOverlay .subtitle,
-    #briefingOverlay .subtitle{
+    #campaignConfirmOverlay .subtitle{
       font-size:14px;
+    }
+    #briefingOverlay .subtitle{
+      font-size:12px;
+      line-height:1.35;
+      margin:0;
     }
     .funnelOverlay .btn,
     #campaignOverlay .btn,
@@ -1099,10 +1128,10 @@
       transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
     }
     #briefingOverlay #btnBriefingSkip{
-      font-size:18px;
-      padding:16px 26px;
-      border-radius:18px;
-      letter-spacing:1.2px;
+      font-size:14px;
+      padding:11px 20px;
+      border-radius:14px;
+      letter-spacing:1px;
       text-transform:uppercase;
       white-space:nowrap;
       border-color: rgba(80,220,120,.72);
@@ -2990,7 +3019,7 @@
 
   <div id="briefingOverlay" class="overlay briefingOverlay briefing-normal">
     <div class="briefingCard">
-      <div class="cardHead" style="border:none; padding:0 0 10px;">
+      <div class="cardHead" style="border:none; padding:0 0 4px;">
         <div style="width:100%;">
           <h2 class="title">Mission Briefing</h2>
           <p class="subtitle">Review your loadout before launch.</p>
@@ -5181,8 +5210,34 @@
           }
           state.suppressUntil = Date.now() + suppressMs;
         }else{
-          var snapIndex = getSelectedIndex();
-          setTrackOffset(track, getCarouselOffsetForIndex(container, metrics.cardW, metrics.gap, snapIndex));
+          var tappedOption = null;
+          if(e && typeof e.clientX === "number" && typeof e.clientY === "number"){
+            var probe = document.elementFromPoint(e.clientX, e.clientY);
+            if(probe){
+              for(var ti = 0; ti < options.length; ti++){
+                if(options[ti].contains(probe)){
+                  tappedOption = options[ti];
+                  break;
+                }
+              }
+            }
+          }
+          if(tappedOption){
+            var tapVal = getValue(tappedOption);
+            if(isLocked(tappedOption, tapVal)){
+              onTapLocked(tapVal, tappedOption);
+            }else if(setSelected){
+              setSelected(tapVal, tappedOption);
+            }
+            var tapIndex = options.indexOf(tappedOption);
+            if(tapIndex >= 0){
+              setTrackOffset(track, getCarouselOffsetForIndex(container, metrics.cardW, metrics.gap, tapIndex));
+            }
+            state.suppressUntil = Date.now() + suppressMs;
+          }else{
+            var snapIndex = getSelectedIndex();
+            setTrackOffset(track, getCarouselOffsetForIndex(container, metrics.cardW, metrics.gap, snapIndex));
+          }
         }
       }
 
@@ -5437,6 +5492,13 @@
       getSelected: function(){
         var selected = document.querySelector('input[name="ship"]:checked');
         return selected ? selected.value : "mk7";
+      },
+      isLocked: function(option){
+        return option && option.getAttribute("data-locked") === "true";
+      },
+      onTapLocked: function(value, option){
+        playMenuBeep();
+        if(option) openPurchaseOverlay(option, "ship", value);
       },
       setSelected: function(value){
         syncShipSelection(value);
