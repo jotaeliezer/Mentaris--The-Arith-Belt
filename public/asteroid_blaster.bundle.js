@@ -156521,13 +156521,26 @@
     if (waitingForShipSprite) {
       return;
     }
+    function getShipSpriteRefAspect() {
+      var ref = shipSprites.veloz;
+      if (ref && ref.ready && ref.img) {
+        var rw = ref.img.naturalWidth || ref.img.width || 1;
+        var rh = ref.img.naturalHeight || ref.img.height || 1;
+        if (rw > 0 && rh > 0)
+          return rw / rh;
+      }
+      return 1024 / 876;
+    }
     var drawShipSpriteSilhouette = function(scaleBoost) {
       if (!useShipSprite)
         return;
       var iw = shipSprite.img.naturalWidth || shipSprite.img.width || 1;
       var ih = shipSprite.img.naturalHeight || shipSprite.img.height || 1;
-      var targetH = 120 * (typeof scaleBoost === "number" ? scaleBoost : 1);
-      var targetW = targetH * (iw / ih);
+      var aspect = iw / Math.max(1, ih);
+      var refAspect = getShipSpriteRefAspect();
+      var normMul = refAspect / aspect;
+      var targetH = 120 * normMul * (typeof scaleBoost === "number" ? scaleBoost : 1);
+      var targetW = targetH * aspect;
       var halfW = targetW / 2;
       var halfIW = iw / 2;
       var topY = -targetH / 2;
