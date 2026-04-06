@@ -1047,7 +1047,8 @@ var beltIndexMap = {
   aurora: 2,
   rift: 3,
   vega: 4,
-  void: 5
+  void: 5,
+  surface: 6
 };
 // Ruby Strike / Azure Lancer overflight: visual scale (smooth ramp, not instant).
 var OVERFLIGHT_DURATION_SEC = 6;
@@ -1075,7 +1076,8 @@ var backgroundSources = [
   "images/backgrounds/void_run_d.png",
   "images/backgrounds/nebula_seige_c.png",
   "images/backgrounds/apex_frontier_c.png",
-  "images/backgrounds/et's_land.png"
+  "images/backgrounds/et's_land.png",
+  "images/backgrounds/et's_surface.jpg"
 ];
 for(var bi=0; bi<backgroundSources.length; bi++){
   var bgImg = new Image();
@@ -1217,7 +1219,8 @@ var shipSprites = {
   veloz: { img: new Image(), ready: false, src: "images/ships/Veloz%20Mas.png" },
   verde9: { img: new Image(), ready: false, src: "images/ships/VER-DE-9.png" },
   whiteflame8: { img: new Image(), ready: false, src: "images/ships/White%20Flame%208.png" },
-  datsawze: { img: new Image(), ready: false, src: "images/ships/D.A.T.%20Sawze.png" }
+  datsawze: { img: new Image(), ready: false, src: "images/ships/D.A.T.%20Sawze.png" },
+  apextiburoniv: { img: new Image(), ready: false, src: "images/ships/Apex%20Tiburon%20IV.png" }
 };
 Object.keys(shipSprites).forEach(function(key){
   var sprite = shipSprites[key];
@@ -1278,7 +1281,8 @@ var shipCatalog = [
   { id: "veloz", label: "Veloz Mas", icon: "images/ships/Veloz%20Mas.png", desc: "Aggressive chase frame tuned for offensive runs.", unlockType: "ship" },
   { id: "verde9", label: "VER-DE-9", icon: "images/ships/VER-DE-9.png", desc: "Emerald vanguard frame with reinforced lanes and steady recoil control.", unlockType: "ship" },
   { id: "whiteflame8", label: "White Flame 8", icon: "images/ships/White%20Flame%208.png", desc: "Lumen spear chassis with a bright exhaust signature and clean lines.", unlockType: "ship" },
-  { id: "datsawze", label: "D.A.T. Sawze", icon: "images/ships/D.A.T.%20Sawze.png", desc: "Heavy-duty industrial frame with a wide saw-tooth silhouette.", unlockType: "ship" }
+  { id: "datsawze", label: "D.A.T. Sawze", icon: "images/ships/D.A.T.%20Sawze.png", desc: "Heavy-duty industrial frame with a wide saw-tooth silhouette.", unlockType: "ship" },
+  { id: "apextiburoniv", label: "Apex Tiburon IV", icon: "images/ships/Apex%20Tiburon%20IV.png", desc: "Sleek apex predator hull tuned for aggressive pursuit arcs.", unlockType: "ship" }
 ];
 
 var sfxCatalog = [
@@ -1865,7 +1869,8 @@ var shipProfiles = {
   cyan: { ability: "compass" },
   veloz: { ability: "compass" },
   whiteflame8: { ability: "frontclear" },
-  datsawze: { ability: "downshock" }
+  datsawze: { ability: "downshock" },
+  apextiburoniv: { ability: "compass" }
 };
 
 var shipTypeAliases = {
@@ -1888,7 +1893,8 @@ var shipDisplayNames = {
   veloz: "Veloz Mas",
   verde9: "VER-DE-9",
   whiteflame8: "White Flame 8",
-  datsawze: "D.A.T. Sawze"
+  datsawze: "D.A.T. Sawze",
+  apextiburoniv: "Apex Tiburon IV"
 };
 
 function normalizeShipTypeId(type){
@@ -2485,7 +2491,7 @@ function setPilot2MouseControl(enabled, silent){
 }
 
 function pickAlternateShipType(primary){
-  var order = ["classic","spire","am2","mk7","fizard","ember","azure","bu2x","mantas","cyan","veloz","verde9","whiteflame8","datsawze"];
+  var order = ["classic","spire","am2","mk7","fizard","ember","azure","bu2x","mantas","cyan","veloz","verde9","whiteflame8","datsawze","apextiburoniv"];
   var idx = order.indexOf(primary);
   if(idx < 0) idx = 0;
   for(var i=1; i<=order.length; i++){
@@ -14041,7 +14047,8 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
     veloz: 0.98,
     verde9: 0.98,
     whiteflame8: 0.98,
-    datsawze: 0.98
+    datsawze: 0.98,
+    apextiburoniv: 0.98
   };
   var scale = scaleMap[shipType] || 0.90;
   if(typeof scaleMul === "number") scale *= scaleMul;
@@ -15118,6 +15125,15 @@ function renderShip(x, y, alpha, ghost, overrideVX, overrideVY, ghostStyle, scal
         nozzleWidth: 6.3,
         plumeLengthMul: 0.98,
         nozzleLengthScale: [0.9, 0.9]
+      },
+      apextiburoniv: {
+        flameColor: "rgba(255,130,52,.92)",
+        flameCore: "rgba(255,220,165,.92)",
+        baseYOffset: -1,
+        nozzleOffsets: [-9, 9],
+        nozzleWidth: 6.6,
+        plumeLengthMul: 1.02,
+        nozzleLengthScale: [0.98, 0.98]
       }
     };
     var fp = flameProfiles[shipType] || {
@@ -16341,7 +16357,8 @@ function setSandboxShip(type){
     { id: "veloz", label: "Veloz" },
     { id: "verde9", label: "VER-DE-9" },
     { id: "whiteflame8", label: "White Flame 8" },
-    { id: "datsawze", label: "D.A.T. Sawze" }
+    { id: "datsawze", label: "D.A.T. Sawze" },
+    { id: "apextiburoniv", label: "Apex Tiburon IV" }
   ].forEach(function(info){
     var btn = addButton(shipContainer, info.label, function(){
       setSandboxShip(info.id);
@@ -16360,7 +16377,8 @@ function setSandboxShip(type){
     { id: "aurora", label: "Void Run" },
     { id: "rift", label: "Nebula Seige" },
     { id: "vega", label: "Apex Frontier" },
-    { id: "void", label: "Apex Frontier+" }
+    { id: "void", label: "Apex Frontier+" },
+    { id: "surface", label: "ET Surface" }
   ].forEach(function(info){
     var btn = addButton(beltContainer, info.label, function(){
       setSandboxBelt(info.id);

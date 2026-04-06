@@ -24,7 +24,7 @@ var BULLET_KEYS = {
   rail: "bullet_rail",
   missile: "bullet_missile"
 };
-var BACKGROUND_KEYS = ["background8","background1","background2","background3","background7","background9"];
+var BACKGROUND_KEYS = ["background8","background1","background2","background3","background7","background9","ets_surface"];
 
 export function createPhaserRenderer(opts){
   var options = opts || {};
@@ -78,6 +78,7 @@ export function createPhaserRenderer(opts){
     function resolveImagePath(srcKey){
       if(ASTEROID_KEYS.indexOf(srcKey) !== -1) return "images/asteroids/" + srcKey + ".png";
       if(ALIEN_KEYS.indexOf(srcKey) !== -1) return "images/aliens/" + srcKey + ".png";
+      if(srcKey === "ets_surface") return "images/backgrounds/et's_surface.jpg";
       if(BACKGROUND_KEYS.indexOf(srcKey) !== -1) return "images/backgrounds/" + srcKey + ".png";
       if(srcKey.indexOf("powerup_") === 0) return "images/powerups/" + srcKey + ".png";
       if(srcKey.indexOf("shot_") === 0) return "images/shots/" + srcKey + ".png";

@@ -761,7 +761,7 @@
       overflow: hidden;
     }
     #beltChoices{
-      grid-template-columns: repeat(6, minmax(138px, 1fr));
+      grid-template-columns: repeat(7, minmax(138px, 1fr));
       gap:10px;
       align-items:stretch;
     }
@@ -2215,6 +2215,11 @@
                   <span class="beltLockTag costTag">1000</span>
                   <p>Apex variant with the same battlefield profile.</p>
                 </div>
+                <div class="choiceCard beltChoice locked" data-belt="surface" data-locked="true" style="background-image:url('images/backgrounds/et%27s_surface.jpg');">
+                  <h4>ET Surface Cluster</h4>
+                  <span class="beltLockTag costTag">1200</span>
+                  <p>Low-orbit surface sweep with harsh contrast and long sight lines.</p>
+                </div>
               </div>
             </div>
           </div>
@@ -2573,6 +2578,29 @@
                       <polygon class="shipFlame" points="126,184 134,198 118,198" />
                     </svg>
                     <div class="shipLabel">D.A.T. SAWZE</div>
+                  </div>
+                </label>
+                <label class="shipOption locked" data-ship="apextiburoniv" data-locked="true" style="--ship-body: rgba(90,140,220,.92); --ship-wing: rgba(40,80,180,.9); --ship-canopy: rgba(120,255,240,.85); --ship-accent: rgba(255,200,80,.95); --ship-highlight: rgba(255,120,90,.9); --ship-thruster: rgba(22,20,28,.85); --ship-flame: rgba(255,150,70,.88); --ship-icon: rgba(255,255,255,.9);">
+                  <input type="radio" name="ship" value="apextiburoniv" disabled />
+                  <div class="shipCard">
+                    <div class="shipLockTag costTag">3400</div>
+                    <svg class="shipSvg" viewBox="0 0 220 200" aria-hidden="true">
+                      <polygon class="shipWing" points="100,94 46,122 18,162 50,172 118,150 92,118" />
+                      <polygon class="shipWing" points="120,94 174,122 202,162 170,172 100,150 128,118" />
+                      <polygon class="shipBody" points="110,10 140,54 170,90 164,128 140,150 132,172 88,172 80,150 56,128 50,90 80,54" />
+                      <polygon class="shipBody" points="110,20 124,64 120,150 110,170 100,150 96,64" />
+                      <rect class="shipStripe" x="62" y="98" width="96" height="6" rx="3" />
+                      <rect class="shipStripe" x="76" y="76" width="68" height="5" rx="3" />
+                      <polygon class="shipAccent" points="110,8 124,30 96,30" />
+                      <path class="shipCanopy" d="M96,54 Q110,38 124,54 L130,102 Q110,120 90,102 Z" />
+                      <rect class="shipIcon" x="105" y="122" width="10" height="16" rx="2" />
+                      <rect class="shipThruster" x="86" y="168" width="48" height="10" rx="4" />
+                      <circle class="shipThruster" cx="94" cy="174" r="9" />
+                      <circle class="shipThruster" cx="126" cy="174" r="9" />
+                      <polygon class="shipFlame" points="94,184 102,198 86,198" />
+                      <polygon class="shipFlame" points="126,184 134,198 118,198" />
+                    </svg>
+                    <div class="shipLabel">APEX TIBURON IV</div>
                   </div>
                 </label>
               </div>
@@ -4037,7 +4065,8 @@
       { id: "veloz", label: "Veloz Mas", icon: "images/ships/Veloz%20Mas.png", desc: "Aggressive chase frame tuned for offensive runs.", unlockType: "ship" },
       { id: "verde9", label: "VER-DE-9", icon: "images/ships/VER-DE-9.png", desc: "Emerald vanguard frame with reinforced lanes and steady recoil control.", unlockType: "ship" },
       { id: "whiteflame8", label: "White Flame 8", icon: "images/ships/White%20Flame%208.png", desc: "Lumen spear chassis with a bright exhaust signature and clean lines.", unlockType: "ship" },
-      { id: "datsawze", label: "D.A.T. Sawze", icon: "images/ships/D.A.T.%20Sawze.png", desc: "Heavy-duty industrial frame with a wide saw-tooth silhouette.", unlockType: "ship" }
+      { id: "datsawze", label: "D.A.T. Sawze", icon: "images/ships/D.A.T.%20Sawze.png", desc: "Heavy-duty industrial frame with a wide saw-tooth silhouette.", unlockType: "ship" },
+      { id: "apextiburoniv", label: "Apex Tiburon IV", icon: "images/ships/Apex%20Tiburon%20IV.png", desc: "Sleek apex predator hull tuned for aggressive pursuit arcs.", unlockType: "ship" }
     ];
 
     var homeSfxCatalog = [
@@ -4531,7 +4560,8 @@
       veloz: "images/ships/Veloz%20Mas.png",
       verde9: "images/ships/VER-DE-9.png",
       whiteflame8: "images/ships/White%20Flame%208.png",
-      datsawze: "images/ships/D.A.T.%20Sawze.png"
+      datsawze: "images/ships/D.A.T.%20Sawze.png",
+      apextiburoniv: "images/ships/Apex%20Tiburon%20IV.png"
     };
     shipOptions.forEach(function(option){
       var key = option.getAttribute("data-ship") || "";
@@ -4738,6 +4768,15 @@
         flight: "Steady",
         wings: "Broad",
         special: "Downshock",
+        thrusters: "Dual"
+      },
+      apextiburoniv: {
+        name: "Apex Tiburon IV",
+        style: "Predator Spear",
+        body: "Streamlined apex hull with a long nose and tight control surfaces.",
+        flight: "Crisp",
+        wings: "Swept",
+        special: "Compass",
         thrusters: "Dual"
       }
     };
@@ -6955,7 +6994,8 @@
         veloz: "Veloz Mas",
         verde9: "VER-DE-9",
         whiteflame8: "White Flame 8",
-        datsawze: "D.A.T. Sawze"
+        datsawze: "D.A.T. Sawze",
+        apextiburoniv: "Apex Tiburon IV"
       };
       var modeLabel = String(cfg.questionMode || "classic");
       var isAdd = modeLabel.indexOf("add_") === 0;
@@ -7229,7 +7269,8 @@
         veloz: "Veloz Mas",
         verde9: "VER-DE-9",
         whiteflame8: "White Flame 8",
-        datsawze: "D.A.T. Sawze"
+        datsawze: "D.A.T. Sawze",
+        apextiburoniv: "Apex Tiburon IV"
       };
       if(briefingShipCard && shipCardImageByShip && shipCardImageByShip[shipKey]){
         briefingShipCard.src = shipCardImageByShip[shipKey];
@@ -7251,7 +7292,8 @@
           aurora: "Void Run",
           rift: "Nebula Seige",
           vega: "Apex Frontier",
-          void: "Apex Frontier+"
+          void: "Apex Frontier+",
+          surface: "ET Surface"
         };
         var beltImages = {
           dusk: "images/backgrounds/sector_run_d.png",
@@ -7259,7 +7301,8 @@
           aurora: "images/backgrounds/void_run_d.png",
           rift: "images/backgrounds/nebula_seige_c.png",
           vega: "images/backgrounds/apex_frontier_c.png",
-          void: "images/backgrounds/et's_land.png"
+          void: "images/backgrounds/et's_land.png",
+          surface: "images/backgrounds/et's_surface.jpg"
         };
         briefingBelt.textContent = beltLabels[beltKey] || beltKey.toUpperCase();
         if(briefingBeltCard){

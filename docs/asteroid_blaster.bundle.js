@@ -141150,7 +141150,7 @@
     rail: "bullet_rail",
     missile: "bullet_missile"
   };
-  var BACKGROUND_KEYS = ["background8", "background1", "background2", "background3", "background7", "background9"];
+  var BACKGROUND_KEYS = ["background8", "background1", "background2", "background3", "background7", "background9", "ets_surface"];
   function createPhaserRenderer(opts) {
     var options = opts || {};
     var parent = options.parent;
@@ -141200,6 +141200,8 @@
           return "images/asteroids/" + srcKey + ".png";
         if (ALIEN_KEYS.indexOf(srcKey) !== -1)
           return "images/aliens/" + srcKey + ".png";
+        if (srcKey === "ets_surface")
+          return "images/backgrounds/et's_surface.jpg";
         if (BACKGROUND_KEYS.indexOf(srcKey) !== -1)
           return "images/backgrounds/" + srcKey + ".png";
         if (srcKey.indexOf("powerup_") === 0)
@@ -143243,7 +143245,8 @@
     aurora: 2,
     rift: 3,
     vega: 4,
-    void: 5
+    void: 5,
+    surface: 6
   };
   var OVERFLIGHT_DURATION_SEC = 6;
   var OVERFLIGHT_RAMP_UP_SEC = 0.42;
@@ -143271,7 +143274,8 @@
     "images/backgrounds/void_run_d.png",
     "images/backgrounds/nebula_seige_c.png",
     "images/backgrounds/apex_frontier_c.png",
-    "images/backgrounds/et's_land.png"
+    "images/backgrounds/et's_land.png",
+    "images/backgrounds/et's_surface.jpg"
   ];
   for (bi = 0; bi < backgroundSources.length; bi++) {
     bgImg = new Image();
@@ -143431,7 +143435,8 @@
     veloz: { img: new Image(), ready: false, src: "images/ships/Veloz%20Mas.png" },
     verde9: { img: new Image(), ready: false, src: "images/ships/VER-DE-9.png" },
     whiteflame8: { img: new Image(), ready: false, src: "images/ships/White%20Flame%208.png" },
-    datsawze: { img: new Image(), ready: false, src: "images/ships/D.A.T.%20Sawze.png" }
+    datsawze: { img: new Image(), ready: false, src: "images/ships/D.A.T.%20Sawze.png" },
+    apextiburoniv: { img: new Image(), ready: false, src: "images/ships/Apex%20Tiburon%20IV.png" }
   };
   Object.keys(shipSprites).forEach(function(key) {
     var sprite = shipSprites[key];
@@ -143493,7 +143498,8 @@
     { id: "veloz", label: "Veloz Mas", icon: "images/ships/Veloz%20Mas.png", desc: "Aggressive chase frame tuned for offensive runs.", unlockType: "ship" },
     { id: "verde9", label: "VER-DE-9", icon: "images/ships/VER-DE-9.png", desc: "Emerald vanguard frame with reinforced lanes and steady recoil control.", unlockType: "ship" },
     { id: "whiteflame8", label: "White Flame 8", icon: "images/ships/White%20Flame%208.png", desc: "Lumen spear chassis with a bright exhaust signature and clean lines.", unlockType: "ship" },
-    { id: "datsawze", label: "D.A.T. Sawze", icon: "images/ships/D.A.T.%20Sawze.png", desc: "Heavy-duty industrial frame with a wide saw-tooth silhouette.", unlockType: "ship" }
+    { id: "datsawze", label: "D.A.T. Sawze", icon: "images/ships/D.A.T.%20Sawze.png", desc: "Heavy-duty industrial frame with a wide saw-tooth silhouette.", unlockType: "ship" },
+    { id: "apextiburoniv", label: "Apex Tiburon IV", icon: "images/ships/Apex%20Tiburon%20IV.png", desc: "Sleek apex predator hull tuned for aggressive pursuit arcs.", unlockType: "ship" }
   ];
   var sfxCatalog = [
     { id: "menu_beep", label: "Menu Beep", desc: "UI blip.", when: "Menu and overlay buttons.", badge: "SFX", src: "sfx/ui/menu_beep.mp3", category: "menu" },
@@ -144049,7 +144055,8 @@
     cyan: { ability: "compass" },
     veloz: { ability: "compass" },
     whiteflame8: { ability: "frontclear" },
-    datsawze: { ability: "downshock" }
+    datsawze: { ability: "downshock" },
+    apextiburoniv: { ability: "compass" }
   };
   var shipTypeAliases = {
     am3: "am2",
@@ -144070,7 +144077,8 @@
     veloz: "Veloz Mas",
     verde9: "VER-DE-9",
     whiteflame8: "White Flame 8",
-    datsawze: "D.A.T. Sawze"
+    datsawze: "D.A.T. Sawze",
+    apextiburoniv: "Apex Tiburon IV"
   };
   function normalizeShipTypeId(type) {
     var key = String(type || "mk7").toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -144670,7 +144678,7 @@
     }
   }
   function pickAlternateShipType(primary) {
-    var order = ["classic", "spire", "am2", "mk7", "fizard", "ember", "azure", "bu2x", "mantas", "cyan", "veloz", "verde9", "whiteflame8", "datsawze"];
+    var order = ["classic", "spire", "am2", "mk7", "fizard", "ember", "azure", "bu2x", "mantas", "cyan", "veloz", "verde9", "whiteflame8", "datsawze", "apextiburoniv"];
     var idx = order.indexOf(primary);
     if (idx < 0)
       idx = 0;
@@ -156126,7 +156134,8 @@
       veloz: 0.98,
       verde9: 0.98,
       whiteflame8: 0.98,
-      datsawze: 0.98
+      datsawze: 0.98,
+      apextiburoniv: 0.98
     };
     var scale = scaleMap[shipType] || 0.9;
     if (typeof scaleMul === "number")
@@ -157157,6 +157166,15 @@
           nozzleWidth: 6.3,
           plumeLengthMul: 0.98,
           nozzleLengthScale: [0.9, 0.9]
+        },
+        apextiburoniv: {
+          flameColor: "rgba(255,130,52,.92)",
+          flameCore: "rgba(255,220,165,.92)",
+          baseYOffset: -1,
+          nozzleOffsets: [-9, 9],
+          nozzleWidth: 6.6,
+          plumeLengthMul: 1.02,
+          nozzleLengthScale: [0.98, 0.98]
         }
       };
       var fp = flameProfiles[shipType] || {
@@ -158409,7 +158427,8 @@
       { id: "veloz", label: "Veloz" },
       { id: "verde9", label: "VER-DE-9" },
       { id: "whiteflame8", label: "White Flame 8" },
-      { id: "datsawze", label: "D.A.T. Sawze" }
+      { id: "datsawze", label: "D.A.T. Sawze" },
+      { id: "apextiburoniv", label: "Apex Tiburon IV" }
     ].forEach(function(info) {
       var btn = addButton(shipContainer, info.label, function() {
         setSandboxShip(info.id);
@@ -158427,7 +158446,8 @@
       { id: "aurora", label: "Void Run" },
       { id: "rift", label: "Nebula Seige" },
       { id: "vega", label: "Apex Frontier" },
-      { id: "void", label: "Apex Frontier+" }
+      { id: "void", label: "Apex Frontier+" },
+      { id: "surface", label: "ET Surface" }
     ].forEach(function(info) {
       var btn = addButton(beltContainer, info.label, function() {
         setSandboxBelt(info.id);
