@@ -148612,7 +148612,7 @@
     var changed = false;
     for (var i = 0; i < slots.length; i++) {
       var slot = slots[i];
-      if (slot && slot.type === "autofire" && !(slot.count > 0) && !player.autoFireActive) {
+      if (slot && slot.type === "autofire" && !(slot.count > 0) && !player.autoFireActive && !((player.autoFireAmmo || 0) > 0)) {
         slots[i] = null;
         changed = true;
       }
@@ -148703,25 +148703,22 @@
     var slots = getSecondarySlotsForPilot(pilot);
     var idx = clamp(pilot.secondarySlotIndex | 0, 0, slots.length - 1);
     var slot = slots[idx];
-    var canUseEmptyAutofireSlot = !!(slot && slot.type === "autofire" && pilot.autoFireActive);
-    if (!slot || !slot.type || !(slot.count > 0) && !canUseEmptyAutofireSlot) {
+    var canUseAutofireSlot = !!(slot && slot.type === "autofire" && (pilot.autoFireActive || (pilot.autoFireAmmo || 0) > 0));
+    if (!slot || !slot.type || !(slot.count > 0) && !canUseAutofireSlot) {
       syncSelectedSecondaryForPilot(pilot);
       slot = slots[pilot.secondarySlotIndex];
-      canUseEmptyAutofireSlot = !!(slot && slot.type === "autofire" && pilot.autoFireActive);
-      if (!slot || !slot.type || !(slot.count > 0) && !canUseEmptyAutofireSlot)
+      canUseAutofireSlot = !!(slot && slot.type === "autofire" && (pilot.autoFireActive || (pilot.autoFireAmmo || 0) > 0));
+      if (!slot || !slot.type || !(slot.count > 0) && !canUseAutofireSlot)
         return;
     }
     var activeType = slot.type;
-    if (activeType === "autofire" && !(slot.count > 0)) {
+    if (activeType === "autofire" && !(slot.count > 0) && !((pilot.autoFireAmmo || 0) > 0)) {
       syncSelectedSecondaryForPilot(pilot);
       return;
     }
     if (activeType === "autofire") {
       if (pilot.autoFireActive) {
         pilot.autoFireActive = false;
-        pilot.autoFireAmmo = 0;
-        pilot.autoFireAmmoMax = 0;
-        pilot.autoFireMode = "single";
         pilot.autoFireSpinning = false;
         pilot.autoFireSpinTimer = 0;
         pilot.autoFireSpinSfxPlayed = false;
@@ -148732,6 +148729,12 @@
       if (isMissileModeActiveForPilot(pilot)) {
         pilot.secondaryCooldown = 0.35;
         showToast("AUTO-FIRE UNAVAILABLE DURING MISSILE");
+        return;
+      }
+      if ((pilot.autoFireAmmo || 0) > 0) {
+        pilot.autoFireActive = true;
+        pilot.secondaryCooldown = 0.35;
+        showToast("SECONDARY -> AUTO-FIRE ON");
         return;
       }
     }
@@ -156178,8 +156181,8 @@
       veloz: 0.98,
       verde9: 0.98,
       whiteflame8: 0.98,
-      datsawze: 0.98,
-      apextiburoniv: 0.98
+      datsawze: 0.94,
+      apextiburoniv: 0.78
     };
     var scale = scaleMap[shipType] || 0.9;
     if (typeof scaleMul === "number")
