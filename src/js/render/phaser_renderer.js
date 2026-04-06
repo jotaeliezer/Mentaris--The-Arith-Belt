@@ -11,7 +11,9 @@ var POWERUP_KEYS = {
   shield: "powerup_shield",
   armor: "powerup_armor",
   emp: "powerup_EMP",
-  lock: "powerup_targetlock"
+  lock: "powerup_targetlock",
+  scope: "powerup_scope",
+  autofire: "powerup_machinegun"
 };
 var BULLET_KEYS = {
   single: "bullet_single",
@@ -24,6 +26,17 @@ var BULLET_KEYS = {
   rail: "bullet_rail",
   missile: "bullet_missile"
 };
+
+function resolvePowerupTextureKey(p){
+  if(!p || !p.type) return null;
+  var pu = POWERUP_KEYS[p.type];
+  if(pu) return pu;
+  if(p.group === "offense"){
+    return BULLET_KEYS[p.type] || null;
+  }
+  return null;
+}
+
 var BACKGROUND_KEYS = ["background8","background1","background2","background3","background7","background9","ets_surface"];
 
 export function createPhaserRenderer(opts){
@@ -325,6 +338,12 @@ export function createPhaserRenderer(opts){
       }else{
         sprite.setDisplaySize(size, size);
       }
+      var fa = b.fireVisualAlpha;
+      var bulletAlpha = 1;
+      if(b.kind === "fire" && typeof fa === "number" && isFinite(fa)){
+        bulletAlpha = Math.max(0, Math.min(1, fa)) * 0.98;
+      }
+      sprite.setAlpha(bulletAlpha);
       seen.add(id);
 
       if(b.kind === "missile"){
@@ -366,15 +385,11 @@ export function createPhaserRenderer(opts){
   }
 
   function syncPowerups(data){
-    if(data.hideAsteroids){
-      spritePool.powerups.forEach(function(sprite){ if(sprite) sprite.setVisible(false); });
-      return;
-    }
     var powerups = data.powerups || [];
     var seen = new Set();
     for(var i=0; i<powerups.length; i++){
       var p = powerups[i];
-      var key = POWERUP_KEYS[p.type];
+      var key = resolvePowerupTextureKey(p);
       if(!key) continue;
       var id = p.uid || ("p" + i + "_" + Math.round(p.x) + "_" + Math.round(p.y));
       if(!sceneRef.textures.exists(key)) continue;

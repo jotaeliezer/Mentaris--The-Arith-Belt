@@ -946,7 +946,7 @@ var STAMPEDE_HOMING_ACCEL = 170;
 var STAMPEDE_HOMING_VERTICAL_ACCEL = 62;
 var STAMPEDE_HOMING_MAX_VX = 135;
 var TARGET_ALIEN_WAVE_KILLS = 6;
-var TARGET_ALIEN_BOSS_HP = 24;
+var TARGET_ALIEN_BOSS_HP = 120;
 var TARGET_ALIEN_BOSS_BONUS_SCORE = 600;
 var TARGET_ALIEN_BOSS_MINERAL_BONUS = 15;
 var ENDLESS_ALIEN_WAVE_SPEED_STEP = 0.06;
@@ -6389,6 +6389,10 @@ function toggleScreenshot(){
   showToast(screenshotMode ? "SCREENSHOT MODE" : "SCREENSHOT MODE OFF");
 }
 
+// Fireball: short range, fade out over the last segment; Euclidean distance from spawn (works with lock steer).
+var FIRE_SHOT_MAX_TRAVEL = 200;
+var FIRE_SHOT_FADE_DISTANCE = 88;
+
 var autoFireCooldowns = {
   single: 0.18,
   laser: 0.12,
@@ -6470,7 +6474,17 @@ function fireForPilot(pilot, pilotId, cooldownOverride){
   if(mode === "laser"){
     bullets.push(Object.assign({ vy: -980, r: 5.2, kind: "laser", len: 22, w: 3.6 }, bulletBase));
   }else if(mode === "fire"){
-    bullets.push(Object.assign({ vy: -720, r: 6.2, kind: "fire" }, bulletBase));
+    var fireY = pilot.y - 24;
+    bullets.push(Object.assign({
+      vy: -720,
+      r: 6.2,
+      kind: "fire",
+      fireOriginX: pilot.x,
+      fireOriginY: fireY,
+      fireMaxTravel: FIRE_SHOT_MAX_TRAVEL,
+      fireFadeDist: FIRE_SHOT_FADE_DISTANCE,
+      fireVisualAlpha: 1
+    }, bulletBase, { y: fireY }));
   }else if(mode === "ice"){
     bullets.push(Object.assign({ vy: -880, r: 6.5, kind: "ice", y: pilot.y - 26 }, bulletBase));
   }else if(mode === "electric"){
@@ -9884,6 +9898,26 @@ function update(dt){
       if(b.y < -40 || b.y > view.h + 40 || b.x < -40 || b.x > view.w + 40){
         bullets.splice(bi,1);
       }
+    }else if(b.kind === "fire"){
+      var ox = b.fireOriginX;
+      var oy = b.fireOriginY;
+      if(ox == null || oy == null){
+        b.fireOriginX = b.x;
+        b.fireOriginY = b.y;
+        ox = b.x;
+        oy = b.y;
+      }
+      var maxTr = typeof b.fireMaxTravel === "number" ? b.fireMaxTravel : FIRE_SHOT_MAX_TRAVEL;
+      var fadeLen = typeof b.fireFadeDist === "number" ? b.fireFadeDist : FIRE_SHOT_FADE_DISTANCE;
+      var dist = Math.hypot(b.x - ox, b.y - oy);
+      var fadeStart = Math.max(0, maxTr - fadeLen);
+      if(dist >= maxTr || b.y < -24 || (b.fireVisualAlpha != null && b.fireVisualAlpha <= 0.02)){
+        bullets.splice(bi,1);
+      }else if(dist <= fadeStart){
+        b.fireVisualAlpha = 1;
+      }else{
+        b.fireVisualAlpha = clamp(1 - (dist - fadeStart) / Math.max(0.001, fadeLen), 0, 1);
+      }
     }else if(b.y < -20){
       bullets.splice(bi,1);
     }
@@ -10287,7 +10321,7 @@ function update(dt){
       single:  { push: 0.7, spin: 0.04, slow: 0.9, shake: 2.6 },
       laser:   { push: 1.25, spin: 0.12, slow: 0.72, shake: 4.2 },
       rail:    { push: 1.35, spin: 0.13, slow: 0.68, shake: 4.4 },
-      fire:    { push: 1.05, spin: 0.08, slow: 0.8, shake: 3.6 },
+      fire:    { push: 2.35, spin: 0.14, slow: 0.72, shake: 5.4 },
       ice:     { push: 0.95, spin: 0.06, slow: 0.62, shake: 3.4 },
       electric:{ push: 0.9, spin: 0.1, slow: 0.82, shake: 3.8 },
       plasma:  { push: 1.15, spin: 0.11, slow: 0.75, shake: 4.0 },
@@ -10302,8 +10336,9 @@ function update(dt){
     var ny = speed ? (bvy / speed) : -1;
     var basePush = Math.min(200, 40 + (bullet.r || 4) * 14);
     var push = basePush * profile.push;
-    ast.vx = (ast.vx || 0) + nx * push * 0.16;
-    ast.vy = (ast.vy || 0) + ny * push * 0.16;
+    var impulseMul = kind === "fire" ? 0.26 : 0.16;
+    ast.vx = (ast.vx || 0) + nx * push * impulseMul;
+    ast.vy = (ast.vy || 0) + ny * push * impulseMul;
     ast.vx *= profile.slow;
     ast.vy *= profile.slow;
     ast.spin = (ast.spin || 0) + (nx * -profile.spin) + ((Math.random() - 0.5) * 0.03);
@@ -11272,9 +11307,8 @@ function draw(){
       drawAliens(ctx);
       drawAlienBullets(ctx);
     }
-    if(!state.hideAsteroids && !isAlienCombatOnlyPhase()){
-      drawPowerups();
-    }
+    // Draw pickups even when asteroids are hidden (alien waves / finale) or during alien-only phases.
+    drawPowerups();
     drawBullets();
     drawScopeLaser();
     drawClaw();
@@ -13132,7 +13166,7 @@ function drawBullets(){
       var endX = b.x + dirX * t;
       return { x: endX, y: endY };
     }
-    function drawBulletImage(asset, sizeMul, offsetY, rotation, flip){
+    function drawBulletImage(asset, sizeMul, offsetY, rotation, flip, alphaMul){
       if(!asset || !asset.ready) return;
       var size = b.r * sizeMul;
       var iw = asset.img.naturalWidth || asset.img.width || size;
@@ -13141,7 +13175,8 @@ function drawBullets(){
       var drawW = iw * scale;
       var drawH = ih * scale;
       ctx.save();
-      ctx.globalAlpha = 0.95;
+      var am = (typeof alphaMul === "number" && isFinite(alphaMul)) ? alphaMul : 1;
+      ctx.globalAlpha = 0.95 * clamp(am, 0, 1);
       var spinFlip = !!flip;
       if(rotation || spinFlip){
         ctx.translate(b.x, b.y + (offsetY || 0));
@@ -13212,7 +13247,7 @@ function drawBullets(){
     }
 
     if(b.kind === "fire"){
-      drawBulletImage(bulletFireImg, 16, 0, 0, spinFlip);
+      drawBulletImage(bulletFireImg, 16, 0, 0, spinFlip, b.fireVisualAlpha);
       continue;
     }
 

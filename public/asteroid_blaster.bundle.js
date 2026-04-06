@@ -141137,7 +141137,9 @@
     shield: "powerup_shield",
     armor: "powerup_armor",
     emp: "powerup_EMP",
-    lock: "powerup_targetlock"
+    lock: "powerup_targetlock",
+    scope: "powerup_scope",
+    autofire: "powerup_machinegun"
   };
   var BULLET_KEYS = {
     single: "bullet_single",
@@ -141150,6 +141152,17 @@
     rail: "bullet_rail",
     missile: "bullet_missile"
   };
+  function resolvePowerupTextureKey(p) {
+    if (!p || !p.type)
+      return null;
+    var pu = POWERUP_KEYS[p.type];
+    if (pu)
+      return pu;
+    if (p.group === "offense") {
+      return BULLET_KEYS[p.type] || null;
+    }
+    return null;
+  }
   var BACKGROUND_KEYS = ["background8", "background1", "background2", "background3", "background7", "background9", "ets_surface"];
   function createPhaserRenderer(opts) {
     var options = opts || {};
@@ -141472,6 +141485,12 @@
         } else {
           sprite.setDisplaySize(size, size);
         }
+        var fa = b.fireVisualAlpha;
+        var bulletAlpha = 1;
+        if (b.kind === "fire" && typeof fa === "number" && isFinite(fa)) {
+          bulletAlpha = Math.max(0, Math.min(1, fa)) * 0.98;
+        }
+        sprite.setAlpha(bulletAlpha);
         seen.add(id);
         if (b.kind === "missile") {
           var trail = spritePool.missileTrails.get(id);
@@ -141511,18 +141530,11 @@
       });
     }
     function syncPowerups(data) {
-      if (data.hideAsteroids) {
-        spritePool.powerups.forEach(function(sprite2) {
-          if (sprite2)
-            sprite2.setVisible(false);
-        });
-        return;
-      }
       var powerups2 = data.powerups || [];
       var seen = /* @__PURE__ */ new Set();
       for (var i = 0; i < powerups2.length; i++) {
         var p = powerups2[i];
-        var key = POWERUP_KEYS[p.type];
+        var key = resolvePowerupTextureKey(p);
         if (!key)
           continue;
         var id = p.uid || "p" + i + "_" + Math.round(p.x) + "_" + Math.round(p.y);
@@ -143147,7 +143159,7 @@
   var STAMPEDE_HOMING_VERTICAL_ACCEL = 62;
   var STAMPEDE_HOMING_MAX_VX = 135;
   var TARGET_ALIEN_WAVE_KILLS = 6;
-  var TARGET_ALIEN_BOSS_HP = 24;
+  var TARGET_ALIEN_BOSS_HP = 120;
   var TARGET_ALIEN_BOSS_BONUS_SCORE = 600;
   var TARGET_ALIEN_BOSS_MINERAL_BONUS = 15;
   var ENDLESS_ALIEN_WAVE_SPEED_STEP = 0.06;
@@ -148549,6 +148561,8 @@
     }
     showToast(screenshotMode ? "SCREENSHOT MODE" : "SCREENSHOT MODE OFF");
   }
+  var FIRE_SHOT_MAX_TRAVEL = 200;
+  var FIRE_SHOT_FADE_DISTANCE = 88;
   var autoFireCooldowns = {
     single: 0.18,
     laser: 0.12,
@@ -148632,7 +148646,17 @@
     if (mode === "laser") {
       bullets.push(Object.assign({ vy: -980, r: 5.2, kind: "laser", len: 22, w: 3.6 }, bulletBase));
     } else if (mode === "fire") {
-      bullets.push(Object.assign({ vy: -720, r: 6.2, kind: "fire" }, bulletBase));
+      var fireY = pilot.y - 24;
+      bullets.push(Object.assign({
+        vy: -720,
+        r: 6.2,
+        kind: "fire",
+        fireOriginX: pilot.x,
+        fireOriginY: fireY,
+        fireMaxTravel: FIRE_SHOT_MAX_TRAVEL,
+        fireFadeDist: FIRE_SHOT_FADE_DISTANCE,
+        fireVisualAlpha: 1
+      }, bulletBase, { y: fireY }));
     } else if (mode === "ice") {
       bullets.push(Object.assign({ vy: -880, r: 6.5, kind: "ice", y: pilot.y - 26 }, bulletBase));
     } else if (mode === "electric") {
@@ -152063,6 +152087,26 @@
         if (b.y < -40 || b.y > view.h + 40 || b.x < -40 || b.x > view.w + 40) {
           bullets.splice(bi, 1);
         }
+      } else if (b.kind === "fire") {
+        var ox = b.fireOriginX;
+        var oy = b.fireOriginY;
+        if (ox == null || oy == null) {
+          b.fireOriginX = b.x;
+          b.fireOriginY = b.y;
+          ox = b.x;
+          oy = b.y;
+        }
+        var maxTr = typeof b.fireMaxTravel === "number" ? b.fireMaxTravel : FIRE_SHOT_MAX_TRAVEL;
+        var fadeLen = typeof b.fireFadeDist === "number" ? b.fireFadeDist : FIRE_SHOT_FADE_DISTANCE;
+        var dist = Math.hypot(b.x - ox, b.y - oy);
+        var fadeStart = Math.max(0, maxTr - fadeLen);
+        if (dist >= maxTr || b.y < -24 || b.fireVisualAlpha != null && b.fireVisualAlpha <= 0.02) {
+          bullets.splice(bi, 1);
+        } else if (dist <= fadeStart) {
+          b.fireVisualAlpha = 1;
+        } else {
+          b.fireVisualAlpha = clamp(1 - (dist - fadeStart) / Math.max(1e-3, fadeLen), 0, 1);
+        }
       } else if (b.y < -20) {
         bullets.splice(bi, 1);
       }
@@ -152469,7 +152513,7 @@
         single: { push: 0.7, spin: 0.04, slow: 0.9, shake: 2.6 },
         laser: { push: 1.25, spin: 0.12, slow: 0.72, shake: 4.2 },
         rail: { push: 1.35, spin: 0.13, slow: 0.68, shake: 4.4 },
-        fire: { push: 1.05, spin: 0.08, slow: 0.8, shake: 3.6 },
+        fire: { push: 2.35, spin: 0.14, slow: 0.72, shake: 5.4 },
         ice: { push: 0.95, spin: 0.06, slow: 0.62, shake: 3.4 },
         electric: { push: 0.9, spin: 0.1, slow: 0.82, shake: 3.8 },
         plasma: { push: 1.15, spin: 0.11, slow: 0.75, shake: 4 },
@@ -152483,8 +152527,9 @@
       var ny = speed ? bvy / speed : -1;
       var basePush = Math.min(200, 40 + (bullet.r || 4) * 14);
       var push = basePush * profile2.push;
-      ast.vx = (ast.vx || 0) + nx * push * 0.16;
-      ast.vy = (ast.vy || 0) + ny * push * 0.16;
+      var impulseMul = kind2 === "fire" ? 0.26 : 0.16;
+      ast.vx = (ast.vx || 0) + nx * push * impulseMul;
+      ast.vy = (ast.vy || 0) + ny * push * impulseMul;
       ast.vx *= profile2.slow;
       ast.vy *= profile2.slow;
       ast.spin = (ast.spin || 0) + nx * -profile2.spin + (Math.random() - 0.5) * 0.03;
@@ -153458,9 +153503,7 @@
         drawAliens(ctx);
         drawAlienBullets(ctx);
       }
-      if (!state.hideAsteroids && !isAlienCombatOnlyPhase()) {
-        drawPowerups();
-      }
+      drawPowerups();
       drawBullets();
       drawScopeLaser();
       drawClaw();
@@ -155282,7 +155325,7 @@
         var t2 = (endY - b.y) / Math.max(-1e-3, dirY);
         var endX = b.x + dirX * t2;
         return { x: endX, y: endY };
-      }, drawBulletImage = function(asset, sizeMul, offsetY, rotation, flip) {
+      }, drawBulletImage = function(asset, sizeMul, offsetY, rotation, flip, alphaMul) {
         if (!asset || !asset.ready)
           return;
         var size = b.r * sizeMul;
@@ -155292,7 +155335,8 @@
         var drawW = iw * scale;
         var drawH = ih * scale;
         ctx.save();
-        ctx.globalAlpha = 0.95;
+        var am = typeof alphaMul === "number" && isFinite(alphaMul) ? alphaMul : 1;
+        ctx.globalAlpha = 0.95 * clamp(am, 0, 1);
         var spinFlip2 = !!flip;
         if (rotation || spinFlip2) {
           ctx.translate(b.x, b.y + (offsetY || 0));
@@ -155364,7 +155408,7 @@
         continue;
       }
       if (b.kind === "fire") {
-        drawBulletImage(bulletFireImg, 16, 0, 0, spinFlip);
+        drawBulletImage(bulletFireImg, 16, 0, 0, spinFlip, b.fireVisualAlpha);
         continue;
       }
       if (b.kind === "plasma") {
