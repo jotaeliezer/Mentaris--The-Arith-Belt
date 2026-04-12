@@ -393,11 +393,11 @@
     }
 
     .briefingCard{
-      width:min(800px, 92%);
+      width:min(1100px, 96%);
       border:1px solid var(--briefing-border);
-      border-radius:22px;
+      border-radius:26px;
       background: linear-gradient(160deg, rgba(12,16,32,.95), rgba(6,8,20,.9));
-      padding:14px 16px 12px;
+      padding:20px 22px 18px;
       box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.03) inset;
       position:relative;
       overflow:hidden;
@@ -438,14 +438,14 @@
       justify-content:flex-end;
     }
     .briefingTag{
-      border:1px solid rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.1);
       border-radius:999px;
-      padding:4px 9px;
+      padding:5px 11px;
       font-size:9px;
       letter-spacing:1.2px;
       text-transform:uppercase;
       color:rgba(232,236,255,.9);
-      background: rgba(0,0,0,.25);
+      background: rgba(0,0,0,.2);
       white-space:nowrap;
     }
     .briefingTag.risk{
@@ -454,46 +454,49 @@
       box-shadow: 0 0 16px var(--briefing-glow) inset;
     }
     .briefingMainPanel{
-      margin-top:6px;
-      background: rgba(6,10,20,.58);
-      border-color: rgba(255,255,255,.09);
-      padding:8px 10px !important;
+      margin-top:10px;
+      background: transparent;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important;
     }
     .briefingMainSplit{
       display:grid;
-      grid-template-columns: minmax(0, 1fr) 220px;
-      gap:8px;
+      grid-template-columns: minmax(0, 1fr) 248px;
+      gap:14px;
       align-items:stretch;
     }
     .briefingPrimary{
       display:flex;
       align-items:center;
-      gap:10px;
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:14px;
-      background: var(--briefing-surface);
-      padding:8px 10px;
+      gap:14px;
+      border: none;
+      border-radius:16px;
+      background: rgba(8, 12, 24, .55);
+      padding:12px 14px;
       min-height:0;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
     }
     .briefingLoadout{
       display:grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap:6px;
+      gap:10px;
     }
     .briefingLoadoutCard{
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:12px;
-      background: var(--briefing-surface);
-      padding:6px;
+      border: none;
+      border-radius:14px;
+      background: rgba(8, 12, 24, .5);
+      padding:8px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
     }
     .briefingBeltCard{
-      width:96px;
-      height:96px;
+      width:104px;
+      height:104px;
       border-radius:12px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(8,12,22,.6);
+      border: none;
+      background: rgba(8,12,22,.55);
       object-fit: cover;
-      box-shadow: inset 0 0 24px rgba(0,0,0,.35);
+      box-shadow: inset 0 0 28px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.06);
     }
     .briefingBeltWrap{
       display:flex;
@@ -508,20 +511,20 @@
       color:rgba(232,236,255,.7);
     }
     .briefingShotCard{
-      width:96px;
-      height:96px;
+      width:104px;
+      height:104px;
       border-radius:12px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(8,12,22,.6);
+      border: none;
+      background: rgba(8,12,22,.55);
       object-fit: contain;
-      box-shadow: inset 0 0 24px rgba(0,0,0,.35);
+      box-shadow: inset 0 0 28px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.06);
     }
     .briefingShotWrap{
       display:flex;
       flex-direction:column;
       align-items:center;
       gap:4px;
-      min-width:96px;
+      min-width:104px;
     }
     .briefingShotLabel{
       font-size:9px;
@@ -532,14 +535,14 @@
       min-height:10px;
     }
     .briefingShipCard{
-      width:96px;
-      height:96px;
+      width:104px;
+      height:104px;
       border-radius:12px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(8,12,22,.6);
+      border: none;
+      background: rgba(8,12,22,.55);
       object-fit: contain;
       padding:6px;
-      box-shadow: inset 0 0 24px rgba(0,0,0,.35);
+      box-shadow: inset 0 0 28px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.06);
       flex-shrink:0;
     }
     .briefingShipMeta h3{
@@ -598,26 +601,88 @@
       to{ transform: rotate(360deg); }
     }
 
-    .briefingGrid{
+    .briefingTelemetry{
+      margin-top:14px;
+      padding:12px 14px 14px;
+      border-radius:16px;
+      background: linear-gradient(165deg, rgba(0,229,255,.07), rgba(6,10,20,.42));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.07), 0 12px 40px rgba(0,0,0,.25);
+      position: relative;
+    }
+    .briefingTelemetry::before{
+      content:"";
+      position:absolute;
+      left:0;
+      top:10px;
+      bottom:10px;
+      width:3px;
+      border-radius:0 3px 3px 0;
+      background: linear-gradient(180deg, var(--briefing-accent), rgba(0,229,255,.15));
+      opacity:.85;
+    }
+    .briefingTelemetryHead{
+      font-size:9px;
+      letter-spacing:2.4px;
+      text-transform:uppercase;
+      color: rgba(232,236,255,.5);
+      margin:0 0 10px 8px;
+    }
+    .briefingTelemetryGrid{
       display:grid;
-      grid-template-columns: repeat(2, minmax(0,1fr));
-      gap:8px;
-      margin-top:6px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap:0;
+      margin-left:8px;
     }
-
-    .briefingStat{
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:10px;
-      background: rgba(8,12,22,.6);
-      padding:6px 10px;
+    .briefingTelemetryCell{
+      padding:8px 10px 10px;
+      text-align:center;
+      border-left:1px solid rgba(255,255,255,.07);
+    }
+    .briefingTelemetryCell:first-child{
+      border-left:none;
+    }
+    .bt-label{
+      display:block;
+      font-size:8px;
+      letter-spacing:1.5px;
+      text-transform:uppercase;
+      color: rgba(232,236,255,.48);
+      margin-bottom:5px;
+    }
+    .briefingTelemetryCell b{
+      font-size:16px;
+      font-weight:700;
+      letter-spacing:0.04em;
+      color: var(--briefing-accent);
+      line-height:1.1;
+    }
+    .briefingTelemetryObjective{
+      margin:12px 0 0 8px;
+      padding:10px 12px;
+      border-radius:12px;
+      background: rgba(0,0,0,.22);
       display:flex;
-      align-items:center;
+      align-items:flex-start;
       justify-content:space-between;
-      font-size:11px;
-      box-shadow: inset 0 0 14px rgba(0,0,0,.18);
+      gap:14px;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
     }
-    .briefingStat b{
-      font-size:12px;
+    .briefingTelemetryObjective .bt-label{
+      margin-bottom:0;
+      flex:0 0 auto;
+      padding-top:3px;
+      color: rgba(255,221,0,.75);
+    }
+    .briefingObjectiveValue{
+      margin:0;
+      font-size:13px;
+      font-weight:600;
+      letter-spacing:0.04em;
+      color: rgba(232,236,255,.92);
+      text-align:right;
+      flex:1;
+      min-width:0;
+      line-height:1.35;
     }
 
     .briefingHintBlock{
@@ -625,14 +690,15 @@
       min-width:0;
     }
     .briefingHints{
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:12px;
-      padding:8px 10px;
-      background: rgba(8,12,22,.74);
+      border: none;
+      border-radius:14px;
+      padding:10px 12px;
+      background: rgba(6,10,18,.55);
       min-height:52px;
       height:auto;
       max-height:64px;
       overflow:hidden;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
     }
     .briefingHintActions{
       margin-top:12px;
@@ -678,10 +744,11 @@
     }
     .briefingTutorial{
       margin-top:16px;
-      border:1px solid rgba(255,255,255,.08);
+      border: none;
       border-radius:14px;
       padding:10px 12px;
-      background: rgba(8,12,22,.65);
+      background: rgba(8,12,22,.5);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
     }
     .briefingTutorialTitle{
       font-size:11px;
@@ -723,9 +790,16 @@
       .briefingHintBlock{ width:100%; }
       .briefingStatusRow{ align-items:flex-start; flex-direction:column; }
       .briefingStatusTags{ justify-content:flex-start; }
+      .briefingTelemetryGrid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .briefingTelemetryCell:nth-child(3){ border-left:none; }
     }
     @media (max-width: 640px){
-      .briefingGrid{ grid-template-columns: 1fr; }
+      .briefingTelemetryGrid{ grid-template-columns: 1fr 1fr; }
+      .briefingTelemetryCell{ border-left:none; border-top:1px solid rgba(255,255,255,.07); padding-top:12px; }
+      .briefingTelemetryCell:nth-child(1),
+      .briefingTelemetryCell:nth-child(2){ border-top:none; padding-top:8px; }
+      .briefingTelemetryObjective{ flex-direction:column; align-items:flex-start; }
+      .briefingObjectiveValue{ text-align:left; }
       .briefingPrimary{ flex-direction:column; align-items:flex-start; }
       .briefingShipCard{ width:88px; height:88px; }
       .briefingBeltCard, .briefingShotCard{ width:84px; height:84px; }
@@ -1104,9 +1178,10 @@
       font-size:20px;
     }
     #briefingOverlay .title{
-      font-size:17px;
-      margin:0 0 2px;
-      line-height:1.2;
+      font-size:clamp(20px, 2.1vw, 26px);
+      margin:0 0 4px;
+      line-height:1.15;
+      letter-spacing:0.08em;
     }
     .funnelOverlay .subtitle,
     #campaignOverlay .subtitle,
@@ -1114,8 +1189,8 @@
       font-size:14px;
     }
     #briefingOverlay .subtitle{
-      font-size:12px;
-      line-height:1.35;
+      font-size:clamp(12px, 1.25vw, 14px);
+      line-height:1.4;
       margin:0;
     }
     .funnelOverlay .btn,
@@ -3087,12 +3162,30 @@
           </div>
         </div>
       </div>
-      <div class="briefingGrid">
-        <div class="briefingStat"><span>Lives</span><b id="briefingLives">--</b></div>
-        <div class="briefingStat"><span>Strikes</span><b id="briefingStrikes">--</b></div>
-        <div class="briefingStat"><span>Objective</span><b id="briefingTargeted">--</b></div>
-        <div class="briefingStat"><span>Time Limit</span><b id="briefingTimer">--</b></div>
-        <div class="briefingStat"><span>Asteroid Speed</span><b id="briefingSpeed">--</b></div>
+      <div class="briefingTelemetry" aria-label="Mission parameters">
+        <div class="briefingTelemetryHead">Flight parameters</div>
+        <div class="briefingTelemetryGrid">
+          <div class="briefingTelemetryCell">
+            <span class="bt-label">Lives</span>
+            <b id="briefingLives">--</b>
+          </div>
+          <div class="briefingTelemetryCell">
+            <span class="bt-label">Strikes</span>
+            <b id="briefingStrikes">--</b>
+          </div>
+          <div class="briefingTelemetryCell">
+            <span class="bt-label">Time limit</span>
+            <b id="briefingTimer">--</b>
+          </div>
+          <div class="briefingTelemetryCell">
+            <span class="bt-label">Asteroid speed</span>
+            <b id="briefingSpeed">--</b>
+          </div>
+        </div>
+        <div class="briefingTelemetryObjective">
+          <span class="bt-label">Objective lock</span>
+          <b id="briefingTargeted" class="briefingObjectiveValue">--</b>
+        </div>
       </div>
       <div class="briefingFooter">
         <div class="briefingCommander">

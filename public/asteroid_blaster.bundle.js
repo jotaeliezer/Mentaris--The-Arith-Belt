@@ -142939,6 +142939,8 @@
   var endPlacementLine = document.getElementById("endPlacementLine");
   var engagementTopRow = document.getElementById("engagementTopRow");
   var engagementIconRows = document.getElementById("engagementIconRows");
+  var engagementSplit = document.getElementById("engagementSplit");
+  var engagementColPowerups = document.getElementById("engagementColPowerups");
   var endMineralsCollected = document.getElementById("endMineralsCollected");
   var endMineralsTotal = document.getElementById("endMineralsTotal");
   var endSequenceTimers = [];
@@ -150308,17 +150310,7 @@
     if (stageId === "endStageEngagement") {
       endPhase = "engagement";
       transitionEndStage("endStageEngagement", function() {
-        if (endMineralsCollected) {
-          endMineralsCollected.textContent = "0";
-        }
-        if (endMineralsTotal) {
-          endMineralsTotal.textContent = "TOTAL MINERALS: --";
-        }
-        animateMineralsCount(state.mineralsEarned || 0, 1400, function() {
-          if (endMineralsTotal) {
-            endMineralsTotal.textContent = "TOTAL MINERALS: " + (Number(mineralsTotal) || 0);
-          }
-        });
+        animateMineralsCount(state.mineralsEarned || 0, 1400, null);
       });
       return;
     }
@@ -150404,7 +150396,7 @@
     }
     endScoreAnimId = requestAnimationFrame(tick2);
   }
-  function animateMineralsCount(target, durationMs, onDone) {
+  function animateMineralsCount(earnedTarget, durationMs, onDone) {
     if (!endMineralsCollected) {
       if (typeof onDone === "function")
         onDone();
@@ -150414,19 +150406,33 @@
       cancelAnimationFrame(endMineralAnimId);
       endMineralAnimId = 0;
     }
-    var safeTarget = Math.max(0, Math.round(Number(target) || 0));
+    var earnedEnd = Math.max(0, Math.round(Number(earnedTarget) || 0));
+    var totalEnd = Math.max(0, Math.round(Number(mineralsTotal) || 0));
+    var totalStart = Math.max(0, totalEnd - earnedEnd);
     var duration = Math.max(1, Number(durationMs) || 1200);
+    endMineralsCollected.textContent = "0";
+    if (endMineralsTotal) {
+      endMineralsTotal.textContent = "TOTAL MINERALS: " + totalStart;
+    }
     endMineralAnimStart = performance.now();
     function tick2(now) {
       var t = Math.min(1, (now - endMineralAnimStart) / duration);
       var eased = 1 - Math.pow(1 - t, 2);
-      var value = Math.round(safeTarget * eased);
-      endMineralsCollected.textContent = String(value);
+      var collectedVal = Math.round(earnedEnd * eased);
+      endMineralsCollected.textContent = String(collectedVal);
+      if (endMineralsTotal) {
+        var totalVal = Math.round(totalStart + (totalEnd - totalStart) * eased);
+        endMineralsTotal.textContent = "TOTAL MINERALS: " + totalVal;
+      }
       if (t < 1) {
         endMineralAnimId = requestAnimationFrame(tick2);
         return;
       }
       endMineralAnimId = 0;
+      endMineralsCollected.textContent = String(earnedEnd);
+      if (endMineralsTotal) {
+        endMineralsTotal.textContent = "TOTAL MINERALS: " + totalEnd;
+      }
       if (typeof onDone === "function")
         onDone();
     }
@@ -150598,17 +150604,7 @@
   function showEndEngagementPhase() {
     endPhase = "engagement";
     transitionEndStage("endStageEngagement", function() {
-      if (endMineralsCollected) {
-        endMineralsCollected.textContent = "0";
-      }
-      if (endMineralsTotal) {
-        endMineralsTotal.textContent = "TOTAL MINERALS: --";
-      }
-      animateMineralsCount(state.mineralsEarned || 0, 1400, function() {
-        if (endMineralsTotal) {
-          endMineralsTotal.textContent = "TOTAL MINERALS: " + (Number(mineralsTotal) || 0);
-        }
-      });
+      animateMineralsCount(state.mineralsEarned || 0, 1400, null);
       scheduleEndPhaseAdvance(END_PHASE_ENGAGEMENT_MS);
     });
   }
@@ -150878,6 +150874,12 @@
         statsListSecondary.style.justifyContent = "stretch";
         statsListSecondary.style.gridTemplateColumns = "";
       }
+      if (engagementColPowerups) {
+        engagementColPowerups.innerHTML = "";
+      }
+      if (engagementSplit) {
+        engagementSplit.classList.remove("engagementSplit--noPowerups");
+      }
       if (engagementTopRow && endMineralsSummary) {
         engagementTopRow.appendChild(endMineralsSummary);
       }
@@ -151018,8 +151020,9 @@
       ];
       var puKeys = Object.keys(puMerged);
       var hasEntries = shotEntries.length + puKeys.length + maneuverEntries.length;
-      renderEngagementRowsBySection(engagementSections, 3);
-      if (statsListSecondary && puKeys.length > 0) {
+      renderEngagementRowsBySection(engagementSections, 2);
+      var puMount = engagementColPowerups || statsListSecondary;
+      if (puMount && puKeys.length > 0) {
         var puSection = document.createElement("div");
         puSection.className = "engagementSection";
         var puTitle = document.createElement("div");
@@ -151061,7 +151064,10 @@
           puTable.appendChild(row);
         });
         puSection.appendChild(puTable);
-        statsListSecondary.appendChild(puSection);
+        puMount.appendChild(puSection);
+      }
+      if (engagementSplit) {
+        engagementSplit.classList.toggle("engagementSplit--noPowerups", puKeys.length === 0);
       }
       if (engagementIconRows) {
         engagementIconRows.style.display = hasEntries ? "block" : "none";
