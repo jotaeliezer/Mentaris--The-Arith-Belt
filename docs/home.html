@@ -1570,6 +1570,47 @@
       line-height:1.38;
     }
 
+    .campaignMapNodeDiscInner .campaignMapNodeArmorRing{
+      position:absolute;
+      inset:0;
+      border-radius:50%;
+      pointer-events:none;
+      z-index:2;
+      border:2px solid rgba(0,229,255,.58);
+      box-shadow:
+        0 0 28px rgba(0,229,255,.5),
+        0 0 10px rgba(0,229,255,.35),
+        inset 0 0 0 1px rgba(0,229,255,.22),
+        inset 0 0 18px rgba(0,229,255,.12);
+      background: radial-gradient(circle at 50% 40%, rgba(0,229,255,.18) 0%, rgba(0,229,255,.06) 48%, transparent 68%);
+      opacity:0.9;
+    }
+
+    #campaignMissionsView #campaignList .campaignMapNode.completed .campaignMapNodeDiscInner{
+      border-color: rgba(90,235,120,.82);
+      box-shadow: inset 0 0 22px rgba(0,0,0,.55), 0 0 0 1px rgba(90,235,120,.42), 0 0 18px rgba(90,235,120,.32);
+    }
+
+    #campaignMissionsView #campaignList .campaignMapNode.completed .campaignMapNodeWin{
+      color: rgba(90,235,120,.96);
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-size: 10px;
+    }
+
+    #campaignMissionsView #campaignList .campaignMapNode.completed .campaignMapNodeGlow{
+      background: radial-gradient(circle, rgba(90,235,120,.22), transparent 70%);
+      opacity: 0.95;
+    }
+
+    #campaignMissionsView .campaignDetailsCleared{
+      color: rgba(90,235,120,.96);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
     #campaignMissionsView #campaignList .campaignMapNode .campaignStatus{
       position:absolute;
       right:-4px;
@@ -7980,6 +8021,10 @@
         var sub = (modeLabel.indexOf("3") !== -1) ? "3" : "2";
         subLabel = isAdd ? (sub + "x" + sub) : ("1x" + sub);
       }
+      var cState = loadCampaignState(getActiveCampaignId());
+      var clearedHere = !!(cState.completed && cState.completed[index]);
+      var objRow = { label: "Objective:", value: clearedHere ? "Cleared" : describeWin(cfg) };
+      if(clearedHere) objRow.valueClass = "campaignDetailsCleared";
       var detailRows = [
         { label: "Mission:", value: getCampaignMissionDisplayTitle(getActiveCampaignId(), m, index) },
         { label: "Operation:", value: (isRational ? "Rationals" : (isSquare ? "Squares" : (isAdd ? "Addition" : "Multiplication"))) },
@@ -7992,7 +8037,8 @@
         { label: "Speed:", value: String(cfg.speed || 0) },
         { label: "Lives:", value: String(cfg.lives || 0) },
         { label: "Strikes:", value: String(cfg.strikes || 0) },
-        { label: "Ship:", value: (cfg.ship ? (shipNameMap[cfg.ship] || cfg.ship.toUpperCase()) : "Player Choice") }
+        { label: "Ship:", value: (cfg.ship ? (shipNameMap[cfg.ship] || cfg.ship.toUpperCase()) : "Player Choice") },
+        objRow
       ];
       typeCampaignDetailsRows(detailRows);
     }
@@ -8020,6 +8066,7 @@
           label.textContent = row.label + " ";
           var value = document.createElement("span");
           value.textContent = "";
+          if(row.valueClass) value.className = row.valueClass;
           line.appendChild(label);
           line.appendChild(value);
           campaignDetails.appendChild(line);
@@ -8059,6 +8106,7 @@
         var isLocked = !isDone && !isCurrent;
         var statusSymbol = isDone ? "\u2713" : (isLocked ? "-" : "\u2022");
         var win = describeWin(m.config);
+        var winLine = isDone ? "Cleared" : win;
         var fullTitle = getCampaignMissionDisplayTitle(cid, m, i);
         var titleParts = fullTitle.split(" — ");
         var lineMain = (i + 1) + ". " + (titleParts[0] || fullTitle);
@@ -8075,13 +8123,15 @@
         li.style.top = yPct + "%";
         li.innerHTML = "<div class=\"campaignMapNodeBody\">"
           + "<div class=\"campaignMapNodeGlow\"></div>"
-          + "<div class=\"campaignMapNodeDiscInner\"><img class=\"campaignMapNodeImg\" src=\"" + sprite + "\" alt=\"\" /></div>"
+          + "<div class=\"campaignMapNodeDiscInner\"><img class=\"campaignMapNodeImg\" src=\"" + sprite + "\" alt=\"\" />"
+          + (isDone ? "<div class=\"campaignMapNodeArmorRing\" aria-hidden=\"true\"></div>" : "")
+          + "</div>"
           + "</div>"
           + "<div class=\"campaignMapNodeMeta\">"
           + "<span class=\"campaignMapNodeNum\">Mission " + (i + 1) + "</span>"
           + "<span class=\"campaignMapNodeTitle\">" + lineMain + "</span>"
           + (lineBoss ? "<span class=\"campaignMapNodeBoss\">" + lineBoss + "</span>" : "")
-          + "<span class=\"campaignMapNodeWin\">" + win + "</span>"
+          + "<span class=\"campaignMapNodeWin\">" + winLine + "</span>"
           + "</div>"
           + "<span class=\"campaignStatus\">" + statusSymbol + "</span>";
         li.addEventListener("click", function(){
