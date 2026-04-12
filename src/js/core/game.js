@@ -12348,7 +12348,7 @@ function drawTutorialDashMarker(){
 
 function drawScopeLaser(){
   if(player.scopeTimer <= 0) return;
-  if(state.hideAsteroids || player.hidden) return;
+  if(player.hidden) return;
   var startX = player.x;
   var startY = player.y - player.h * 0.6;
   var endY = view.hudH + 8;
@@ -12363,6 +12363,19 @@ function drawScopeLaser(){
       var candidate = a.y + (a.r || 16) * 0.75;
       if(hitY == null || candidate > hitY){
         hitY = candidate;
+      }
+    }
+  }
+  for(var ai=0; ai<aliens.length; ai++){
+    var al = aliens[ai];
+    if(!al || al.dying || al.noHit) continue;
+    if(al.y >= startY) continue;
+    var dxA = Math.abs(al.x - startX);
+    var ar = al.r || 20;
+    if(dxA <= ar * 0.85){
+      var candA = al.y + ar * 0.75;
+      if(hitY == null || candA > hitY){
+        hitY = candA;
       }
     }
   }
@@ -15611,13 +15624,6 @@ overlayMenu.addEventListener("click", function(e){
   if(e.target === overlayMenu){
     playSfx(state, "menu_beep");
     closeSettings();
-  }
-});
-
-overlayEnd.addEventListener("click", function(e){
-  if(e.target === overlayEnd){
-    playSfx(state, "menu_beep");
-    hideEndOverlay();
   }
 });
 
