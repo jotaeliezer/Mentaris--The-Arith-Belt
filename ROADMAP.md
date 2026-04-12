@@ -23,7 +23,7 @@
 - [x] Personal best chip near the mode stepper
 
 ### 1.3 Remove / Retire Sandbox
-- [x] Sandbox removed from main menu unless unlocked via Settings → Access (master code revealed once when all campaigns are cleared)
+- [x] Sandbox always on menu; master code prompt on launch (code revealed once when all campaigns cleared); Settings → Access for optional verify
 - [ ] Move sandbox to hidden `?dev=1` URL param — optional extra gate for web builds
 - [ ] Extract local co-op toggle to a proper "CO-OP" option on the main menu before removing sandbox
 

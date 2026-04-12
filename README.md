@@ -158,7 +158,7 @@ High-level plan for upcoming work. The in-game **Roadmap** button on the home me
 ### Tier 1 — Polish and quick wins
 - Bug fixes: HUD danger state reset between sessions, shorter objective overlay copy, briefing launch button layout.
 - Mission briefing UI: stable launch control height, commander hint box, fill the objective chip.
-- Sandbox: hidden from the main menu; unlock via master access code (revealed once when every campaign is cleared), entered under **Settings → Access**.
+- Sandbox: master code required at launch from the home menu (code revealed once when every campaign is cleared); optional verify under **Settings → Access**.
 - HUD polish: optional vignette or scanline on the canvas for a stronger synthwave read.
 - More background pairs (ice belt, lava trench, deep void, cyber grid) toward roughly ten environments.
 - More ships (portraits, sprites, config), with a few unique passive traits.
@@ -169,11 +169,12 @@ High-level plan for upcoming work. The in-game **Roadmap** button on the home me
 - Achievements in local storage, toasts, gallery.
 - New question modes: mixed operations, speed rounds, boss-only runs.
 - Ship traits and loadout passives on briefing cards plus balance pass.
+- **Online / lobby multiplayer (coming soon):** room codes, synced co-op (WebSocket or Supabase Realtime), building on local sandbox split-screen experiments.
 
 ### Tier 3 — Backend and social
-- Online leaderboard (e.g. Supabase) and a Galactic Ranks screen.
+- **Global leaderboards (coming soon):** cloud-backed Galactic Ranks — submit runs, filter by mode, worldwide top lists (e.g. Supabase).
+- Online leaderboard follow-ups: privacy-friendly pilot names, no account for early access.
 - Owner admin dashboard for session analytics.
-- Lobby-style online co-op.
 - Player accounts after leaderboard usage justifies it.
 
 ### Shipping and tooling

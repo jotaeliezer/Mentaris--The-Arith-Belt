@@ -361,19 +361,19 @@
     ];
 
     var homePowerupCatalogDefense = [
-      { id: "shield", label: "Shield", icon: "images/powerup_shield.png", desc: "Temporary shield for 10 seconds." },
-      { id: "armor", label: "Armor", icon: "images/powerup_armor.png", desc: "Temporary armor for 12 seconds." }
+      { id: "shield", label: "Shield", icon: "images/powerup_shield.png", desc: "Blue bubble for ~10s real time: hits strip shield first before your hull takes damage." },
+      { id: "armor", label: "Armor", icon: "images/powerup_armor.png", desc: "Absorbs 5 hits before disarming." }
     ];
 
     var homePowerupCatalogOffense = [
-      { id: "dual", label: "Dual Blaster", icon: "images/shot_dualblasters.png", desc: "Two shots per tap for about 12 seconds." },
-      { id: "laser", label: "Laser Burst", icon: "images/shot_laser.png", desc: "High-speed laser shots for about 12 seconds." },
-      { id: "fire", label: "Fireball", icon: "images/shot_fre.png", desc: "Fireball shots for about 12 seconds." },
-      { id: "ice", label: "Ice Shards", icon: "images/shot_ice.png", desc: "Ice shots for about 12 seconds." },
-      { id: "electric", label: "Electric Bolts", icon: "images/shot_electric.png", desc: "Electric bolts for about 12 seconds." },
-      { id: "pierce", label: "Look Up Shot", icon: "images/shot_lookup.png", desc: "Piercing shots for about 12 seconds." },
-      { id: "plasma", label: "Plasma Orb", icon: "images/shot_plasma.png", desc: "Plasma shots for about 12 seconds." },
-      { id: "rail", label: "Rail Beam", icon: "images/shot_rail.png", desc: "Rail beam shots for about 12 seconds." }
+      { id: "dual", label: "Dual Blaster", icon: "images/shot_dualblasters.png", desc: "Two shots per tap—pre-launch pick lasts the mission; orange offense pickups use two knock charges (asteroid bump or alien bullet), then single shots." },
+      { id: "laser", label: "Laser Burst", icon: "images/shot_laser.png", desc: "Pre-launch pick: unlimited rapid beams for the mission. Orange offense pickup: same style with two knock charges—each bump or alien bullet spends one, then single shots return." },
+      { id: "fire", label: "Fireball", icon: "images/shot_fre.png", desc: "Pre-launch pick: unlimited fireballs for the mission. Orange offense pickup: two knock charges from bumps or alien shots, then revert to single." },
+      { id: "ice", label: "Ice Shards", icon: "images/shot_ice.png", desc: "Pre-launch pick: unlimited ice shards for the mission. Orange offense pickup: two knock charges, then single shots." },
+      { id: "electric", label: "Electric Bolts", icon: "images/shot_electric.png", desc: "Pre-launch pick: unlimited electric bolts for the mission. Orange offense pickup: two knock charges, then single shots." },
+      { id: "pierce", label: "Look Up Shot", icon: "images/shot_lookup.png", desc: "Pre-launch pick: unlimited pierce shots for the mission. Orange offense pickup: two knock charges, then single shots." },
+      { id: "plasma", label: "Plasma Orb", icon: "images/shot_plasma.png", desc: "Pre-launch pick: unlimited plasma orbs for the mission. Orange offense pickup: two knock charges, then single shots." },
+      { id: "rail", label: "Rail Beam", icon: "images/shot_rail.png", desc: "Pre-launch pick: unlimited rail beams for the mission. Orange offense pickup: two knock charges, then single shots." }
     ];
 
     var homeSfxCatalog = [

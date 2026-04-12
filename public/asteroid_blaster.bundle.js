@@ -143485,18 +143485,18 @@
     { id: "scope", label: "Scope", icon: powerupIcons.scope.src, desc: "Projects a laser guide to the nearest asteroid." }
   ];
   var powerupCatalogDefense = [
-    { id: "shield", label: "Shield", icon: powerupIcons.shield.src, desc: "Temporary shield for 10 seconds." },
+    { id: "shield", label: "Shield", icon: powerupIcons.shield.src, desc: "Blue bubble for ~10s real time: hits strip shield first before your hull takes damage." },
     { id: "armor", label: "Armor", icon: powerupIcons.armor.src, desc: "Absorbs 5 hits before disarming." }
   ];
   var powerupCatalogOffense = [
     { id: "missile", label: "Missile Shot", icon: shotIcons.missile ? shotIcons.missile.src : null, desc: "Type the correct answer to launch a seeking missile.", unlockType: "shot" },
-    { id: "laser", label: "Laser Burst", icon: shotIcons.laser ? shotIcons.laser.src : null, desc: "High-speed laser shots for about 12 seconds.", unlockType: "shot", defaultUnlocked: true },
-    { id: "fire", label: "Fireball", icon: shotIcons.fire ? shotIcons.fire.src : null, desc: "Fireball shots for about 12 seconds.", unlockType: "shot" },
-    { id: "ice", label: "Ice Shards", icon: shotIcons.ice ? shotIcons.ice.src : null, desc: "Ice shots for about 12 seconds.", unlockType: "shot" },
-    { id: "electric", label: "Electric Bolts", icon: shotIcons.electric ? shotIcons.electric.src : null, desc: "Electric bolts for about 12 seconds.", unlockType: "shot" },
-    { id: "pierce", label: "Bola Shot", icon: shotIcons.pierce ? shotIcons.pierce.src : null, desc: "Piercing shots for about 12 seconds.", unlockType: "shot" },
-    { id: "plasma", label: "Plasma Orb", icon: shotIcons.plasma ? shotIcons.plasma.src : null, desc: "Plasma shots for about 12 seconds.", unlockType: "shot" },
-    { id: "rail", label: "Rail Beam", icon: shotIcons.rail ? shotIcons.rail.src : null, desc: "Rail beam shots for about 12 seconds.", unlockType: "shot" }
+    { id: "laser", label: "Laser Burst", icon: shotIcons.laser ? shotIcons.laser.src : null, desc: "Pre-launch pick: unlimited rapid beams for the mission. Orange offense pickup: same style with two knock charges\u2014each asteroid bump or alien bullet spends one, then single shots return.", unlockType: "shot", defaultUnlocked: true },
+    { id: "fire", label: "Fireball", icon: shotIcons.fire ? shotIcons.fire.src : null, desc: "Pre-launch pick: unlimited fireballs for the mission. Orange offense pickup: two knock charges from bumps or alien shots, then revert to single.", unlockType: "shot" },
+    { id: "ice", label: "Ice Shards", icon: shotIcons.ice ? shotIcons.ice.src : null, desc: "Pre-launch pick: unlimited ice shards for the mission. Orange offense pickup: two knock charges, then single shots.", unlockType: "shot" },
+    { id: "electric", label: "Electric Bolts", icon: shotIcons.electric ? shotIcons.electric.src : null, desc: "Pre-launch pick: unlimited electric bolts for the mission. Orange offense pickup: two knock charges, then single shots.", unlockType: "shot" },
+    { id: "pierce", label: "Bola Shot", icon: shotIcons.pierce ? shotIcons.pierce.src : null, desc: "Pre-launch pick: unlimited bola pierce shots for the mission. Orange offense pickup: two knock charges, then single shots.", unlockType: "shot" },
+    { id: "plasma", label: "Plasma Orb", icon: shotIcons.plasma ? shotIcons.plasma.src : null, desc: "Pre-launch pick: unlimited plasma orbs for the mission. Orange offense pickup: two knock charges, then single shots.", unlockType: "shot" },
+    { id: "rail", label: "Rail Beam", icon: shotIcons.rail ? shotIcons.rail.src : null, desc: "Pre-launch pick: unlimited rail beams for the mission. Orange offense pickup: two knock charges, then single shots.", unlockType: "shot" }
   ];
   var shipCatalog = [
     { id: "classic", label: "Scarlet Classic", icon: "images/ships/Scarlet%20Classic.png", desc: "Retro heavy fighter with stable handling.", unlockType: "ship", defaultUnlocked: true },
@@ -146381,6 +146381,7 @@
       isBoss: true,
       forceIngress: true,
       ingressDur: 3.2,
+      x: view.w * 0.5,
       ingressTargetY: view.hudH + Math.min(Math.max(92, view.h * 0.18), 142),
       name: "Overmind",
       hp: TARGET_ALIEN_BOSS_HP,

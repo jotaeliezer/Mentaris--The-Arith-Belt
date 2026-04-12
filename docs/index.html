@@ -393,7 +393,7 @@
     }
 
     .briefingCard{
-      width:min(860px, 94vw);
+      width:min(920px, 94vw);
       border:1px solid var(--briefing-border);
       border-radius:26px;
       background: linear-gradient(160deg, rgba(12,16,32,.95), rgba(6,8,20,.9));
@@ -426,56 +426,128 @@
     .briefingStatusRow{
       display:flex;
       align-items:center;
-      justify-content:space-between;
+      justify-content:flex-start;
       gap:8px;
-      margin-top:4px;
+      margin-top:10px;
     }
-    .briefingStatusTags{
-      display:flex;
-      align-items:center;
-      gap:6px;
-      flex-wrap:wrap;
-      justify-content:flex-end;
+    .briefingObjectiveHero{
+      margin-top:14px;
+      padding:14px 16px 16px;
+      border-radius:16px;
+      background: linear-gradient(135deg, rgba(0,229,255,.12), rgba(8,14,28,.75) 55%, rgba(0,0,0,.35));
+      border:1px solid rgba(0,229,255,.35);
+      box-shadow:
+        0 0 0 1px rgba(0,0,0,.35) inset,
+        0 12px 40px rgba(0,229,255,.12),
+        0 0 28px rgba(0,229,255,.08);
+      position:relative;
+      overflow:hidden;
     }
-    .briefingTag{
-      border:1px solid rgba(255,255,255,.1);
-      border-radius:999px;
-      padding:5px 11px;
+    .briefingObjectiveHero::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: linear-gradient(100deg, transparent 40%, rgba(255,255,255,.06) 50%, transparent 60%);
+      animation: briefingSweep 6s ease-in-out infinite;
+      pointer-events:none;
+    }
+    .briefingObjectiveHeroEyebrow{
+      display:block;
       font-size:9px;
-      letter-spacing:1.2px;
+      letter-spacing:2.6px;
       text-transform:uppercase;
-      color:rgba(232,236,255,.9);
-      background: rgba(0,0,0,.2);
-      white-space:nowrap;
+      color:rgba(255,221,120,.95);
+      margin-bottom:8px;
+      position:relative;
+      z-index:1;
     }
-    .briefingTag.risk{
-      border-color: var(--briefing-border);
-      color: var(--briefing-accent);
-      box-shadow: 0 0 16px var(--briefing-glow) inset;
+    .briefingObjectiveHeroText{
+      margin:0;
+      font-size:clamp(17px, 2.4vw, 22px);
+      font-weight:800;
+      letter-spacing:0.06em;
+      line-height:1.25;
+      color:#f2fbff;
+      text-shadow: 0 0 22px rgba(0,229,255,.35), 0 2px 12px rgba(0,0,0,.5);
+      position:relative;
+      z-index:1;
     }
     .briefingMainPanel{
-      margin-top:10px;
+      margin-top:12px;
       background: transparent;
       border: none !important;
       box-shadow: none !important;
       padding: 0 !important;
     }
-    .briefingMainSplit{
+    .briefingLoadoutMatrix{
       display:grid;
-      grid-template-columns: minmax(0, 1fr) 220px;
-      gap:12px;
-      align-items:stretch;
+      grid-template-columns: auto 1fr;
+      gap:16px;
+      align-items:start;
     }
-    .briefingPrimary{
+    .briefingColLoadout{
+      min-width:0;
+    }
+    .briefingColShip{
       display:flex;
+      flex-direction:column;
       align-items:center;
-      gap:14px;
-      border: none;
+      gap:8px;
+      padding:12px 12px 14px;
       border-radius:16px;
       background: rgba(8, 12, 24, .55);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+      min-width:128px;
+    }
+    .briefingAssetLabel{
+      font-size:10px;
+      letter-spacing:1.6px;
+      text-transform:uppercase;
+      color:rgba(232,236,255,.88);
+      text-align:center;
+      max-width:140px;
+      line-height:1.25;
+      font-weight:700;
+    }
+    .briefingLoadoutTopRow{
+      display:grid;
+      grid-template-columns: auto auto minmax(140px, 1fr);
+      gap:12px;
+      align-items:start;
+    }
+    .briefingMissionMeta{
+      display:grid;
+      gap:8px 12px;
       padding:12px 14px;
+      border-radius:14px;
+      background: linear-gradient(165deg, rgba(0,229,255,.06), rgba(6,10,20,.5));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.07), 0 8px 24px rgba(0,0,0,.25);
       min-height:0;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
+    }
+    .briefingMetaRow{
+      display:grid;
+      grid-template-columns: 88px 1fr;
+      gap:10px;
+      align-items:baseline;
+      padding-bottom:6px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+    .briefingMetaRow:last-child{
+      border-bottom:none;
+      padding-bottom:0;
+    }
+    .briefingMetaKey{
+      font-size:8px;
+      letter-spacing:1.6px;
+      text-transform:uppercase;
+      color:rgba(232,236,255,.45);
+    }
+    .briefingMetaVal{
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:0.04em;
+      color: var(--briefing-accent);
+      line-height:1.3;
     }
     .briefingLoadout{
       display:grid;
@@ -535,8 +607,8 @@
       min-height:10px;
     }
     .briefingShipCard{
-      width:104px;
-      height:104px;
+      width:112px;
+      height:112px;
       border-radius:12px;
       border: none;
       background: rgba(8,12,22,.55);
@@ -544,17 +616,6 @@
       padding:6px;
       box-shadow: inset 0 0 28px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.06);
       flex-shrink:0;
-    }
-    .briefingShipMeta h3{
-      margin:0 0 4px;
-      font-size:14px;
-      letter-spacing:0.06em;
-      line-height:1.2;
-    }
-    #briefingOverlay .briefingShipMeta .monoSmall{
-      font-size:11px;
-      line-height:1.35;
-      margin:0 0 2px !important;
     }
 
     .briefingStatus{
@@ -656,35 +717,6 @@
       color: var(--briefing-accent);
       line-height:1.1;
     }
-    .briefingTelemetryObjective{
-      margin:12px 0 0 8px;
-      padding:10px 12px;
-      border-radius:12px;
-      background: rgba(0,0,0,.22);
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap:14px;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
-    }
-    .briefingTelemetryObjective .bt-label{
-      margin-bottom:0;
-      flex:0 0 auto;
-      padding-top:3px;
-      color: rgba(255,221,0,.75);
-    }
-    .briefingObjectiveValue{
-      margin:0;
-      font-size:13px;
-      font-weight:600;
-      letter-spacing:0.04em;
-      color: rgba(232,236,255,.92);
-      text-align:right;
-      flex:1;
-      min-width:0;
-      line-height:1.35;
-    }
-
     .briefingHintBlock{
       flex:1 1 auto;
       min-width:0;
@@ -696,7 +728,7 @@
       background: rgba(6,10,18,.55);
       min-height:52px;
       height:auto;
-      max-height:64px;
+      max-height:88px;
       overflow:hidden;
       box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
     }
@@ -719,28 +751,30 @@
     }
     .briefingFooter{
       display:flex;
-      gap:10px;
+      gap:14px;
       align-items:flex-end;
-      margin-top:6px;
+      margin-top:10px;
     }
     .briefingCommander{
       display:flex;
       flex-direction:column;
       align-items:center;
-      gap:4px;
-      min-width:108px;
+      gap:6px;
+      min-width:200px;
+      flex-shrink:0;
     }
     .briefingCommanderAvatar{
-      width:118px;
-      height:118px;
+      width:200px;
+      height:200px;
       object-fit:contain;
-      filter:drop-shadow(0 12px 24px rgba(0,0,0,.45));
+      filter:drop-shadow(0 16px 36px rgba(0,0,0,.5)) drop-shadow(0 0 24px rgba(0,229,255,.15));
     }
     .briefingCommanderName{
-      font-size:9px;
-      letter-spacing:1.2px;
+      font-size:10px;
+      letter-spacing:1.8px;
       text-transform:uppercase;
-      color:rgba(232,236,255,.85);
+      color:rgba(232,236,255,.92);
+      font-weight:700;
     }
     .briefingTutorial{
       margin-top:16px;
@@ -784,12 +818,17 @@
     }
 
     @media (max-width: 900px){
-      .briefingMainSplit{ grid-template-columns: 1fr; }
+      .briefingLoadoutMatrix{ grid-template-columns: 1fr; }
+      .briefingColShip{ flex-direction:row; justify-content:center; gap:16px; min-width:0; }
+      .briefingLoadoutTopRow{
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+      }
+      .briefingMissionMeta{ grid-column: 1 / -1; }
       .briefingLoadout{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .briefingFooter{ flex-wrap:wrap; }
       .briefingHintBlock{ width:100%; }
       .briefingStatusRow{ align-items:flex-start; flex-direction:column; }
-      .briefingStatusTags{ justify-content:flex-start; }
       .briefingTelemetryGrid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .briefingTelemetryCell:nth-child(3){ border-left:none; }
     }
@@ -798,12 +837,12 @@
       .briefingTelemetryCell{ border-left:none; border-top:1px solid rgba(255,255,255,.07); padding-top:12px; }
       .briefingTelemetryCell:nth-child(1),
       .briefingTelemetryCell:nth-child(2){ border-top:none; padding-top:8px; }
-      .briefingTelemetryObjective{ flex-direction:column; align-items:flex-start; }
-      .briefingObjectiveValue{ text-align:left; }
-      .briefingPrimary{ flex-direction:column; align-items:flex-start; }
-      .briefingShipCard{ width:88px; height:88px; }
+      .briefingColShip{ flex-direction:column; }
+      .briefingShipCard{ width:96px; height:96px; }
       .briefingBeltCard, .briefingShotCard{ width:84px; height:84px; }
-      .briefingCommanderAvatar{ width:96px; height:96px; }
+      .briefingCommander{ min-width:140px; }
+      .briefingCommanderAvatar{ width:140px; height:140px; }
+      .briefingMetaRow{ grid-template-columns: 76px 1fr; }
     }
 
     .choiceGrid{
@@ -1698,8 +1737,31 @@
     }
 
     #roadmapOverlay .card,
-    #sandboxRevealOverlay .card{
+    #aboutOverlay .card,
+    #sandboxRevealOverlay .card,
+    #sandboxLaunchOverlay .card{
       max-width:min(920px, 96vw);
+    }
+    #sandboxLaunchOverlay .sandboxLaunchForm{
+      display:grid;
+      gap:12px;
+      max-width:440px;
+    }
+    #sandboxLaunchOverlay .sandboxLaunchForm input{
+      width:100%;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.2);
+      background:rgba(0,0,0,.28);
+      color:#e8ecff;
+      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-size:13px;
+    }
+    #sandboxLaunchError{
+      min-height:1.3em;
+      font-size:12px;
+      letter-spacing:0.4px;
+      color:rgba(255,140,150,.95);
     }
     .roadmapScroll{
       max-height:min(72vh, 680px);
@@ -2275,7 +2337,8 @@
           <button id="btnStartGame" class="btn secondaryLabel menuExtra" type="button">Single Mission <small>Custom setup</small></button>
           <button id="btnTutorial" class="btn secondaryLabel menuExtra" type="button">Tutorial <small>Guided tour</small></button>
           <button id="btnRoadmap" class="btn secondaryLabel menuExtra" type="button">Roadmap <small>What is next</small></button>
-          <button id="btnSandbox" class="btn secondaryLabel menuExtra" type="button" hidden>Sandbox <small>Test shots & powerups</small></button>
+          <button id="btnAbout" class="btn secondaryLabel menuExtra" type="button">About <small>Game &amp; purpose</small></button>
+          <button id="btnSandbox" class="btn secondaryLabel menuExtra" type="button">Sandbox <small>Test shots & powerups</small></button>
           <button id="btnLeaderboards" class="btn secondaryLabel menuExtra" type="button">Leaderboards <small>Top runs</small></button>
           <button id="btnSettingsHome" class="btn secondaryLabel menuExtra" type="button">Settings <small>Audio levels</small></button>
           <a id="btnExitHome" class="btn secondaryLabel menuExtra" href="../../atmc.html">Exit <small>Return to hub</small></a>
@@ -2979,43 +3042,43 @@
                     <button type="button" class="shotTypeOption shotTypeInlineOption" data-shot="laser">
                       <img class="shotTypeImage" src="images/shots/shot_laser.png" alt="" />
                       <div class="shotTypeLabel">Laser</div>
-                      <div class="shotTypeDesc">Fast burst beam shots.</div>
+                      <div class="shotTypeDesc">Pre-launch pick: unlimited rapid beams for the mission. Orange offense pickup: same style until an asteroid bump or alien bullet removes one of two knock charges, then single shots.</div>
                     </button>
                     <button type="button" class="shotTypeOption shotTypeInlineOption locked" data-shot="fire" data-locked="true">
                       <div class="shotTypeCost costTag">450</div>
                       <img class="shotTypeImage" src="images/shots/shot_fire.png" alt="" />
                       <div class="shotTypeLabel">Fire</div>
-                      <div class="shotTypeDesc">Fireball shots for about 12 seconds.</div>
+                      <div class="shotTypeDesc">Pre-launch pick: unlimited fireballs for the mission. Orange offense pickup: two knock charges from bumps or alien shots, then revert to single.</div>
                     </button>
                     <button type="button" class="shotTypeOption shotTypeInlineOption locked" data-shot="ice" data-locked="true">
                       <div class="shotTypeCost costTag">450</div>
                       <img class="shotTypeImage" src="images/shots/shot_ice.png" alt="" />
                       <div class="shotTypeLabel">Ice</div>
-                      <div class="shotTypeDesc">Ice shards for about 12 seconds.</div>
+                      <div class="shotTypeDesc">Pre-launch pick: unlimited ice shards for the mission. Orange offense pickup: two knock charges, then single shots.</div>
                     </button>
                     <button type="button" class="shotTypeOption shotTypeInlineOption locked" data-shot="electric" data-locked="true">
                       <div class="shotTypeCost costTag">550</div>
                       <img class="shotTypeImage" src="images/shots/shot_electric.png" alt="" />
                       <div class="shotTypeLabel">Electric</div>
-                      <div class="shotTypeDesc">Electric bolts for about 12 seconds.</div>
+                      <div class="shotTypeDesc">Pre-launch pick: unlimited electric bolts for the mission. Orange offense pickup: two knock charges, then single shots.</div>
                     </button>
                     <button type="button" class="shotTypeOption shotTypeInlineOption locked" data-shot="pierce" data-locked="true">
                       <div class="shotTypeCost costTag">600</div>
                       <img class="shotTypeImage" src="images/shots/shot_bola.png" alt="" />
                       <div class="shotTypeLabel">Bola</div>
-                      <div class="shotTypeDesc">Piercing shots for about 12 seconds.</div>
+                      <div class="shotTypeDesc">Pre-launch pick: unlimited bola pierce shots for the mission. Orange offense pickup: two knock charges, then single shots.</div>
                     </button>
                     <button type="button" class="shotTypeOption shotTypeInlineOption locked" data-shot="plasma" data-locked="true">
                       <div class="shotTypeCost costTag">700</div>
                       <img class="shotTypeImage" src="images/shots/shot_plasma.png" alt="" />
                       <div class="shotTypeLabel">Plasma</div>
-                      <div class="shotTypeDesc">Plasma shots for about 12 seconds.</div>
+                      <div class="shotTypeDesc">Pre-launch pick: unlimited plasma orbs for the mission. Orange offense pickup: two knock charges, then single shots.</div>
                     </button>
                     <button type="button" class="shotTypeOption shotTypeInlineOption locked" data-shot="rail" data-locked="true">
                       <div class="shotTypeCost costTag">800</div>
                       <img class="shotTypeImage" src="images/shots/shot_rail.png" alt="" />
                       <div class="shotTypeLabel">Rail</div>
-                      <div class="shotTypeDesc">Rail beam shots for about 12 seconds.</div>
+                      <div class="shotTypeDesc">Pre-launch pick: unlimited rail beams for the mission. Orange offense pickup: two knock charges, then single shots.</div>
                     </button>
                     <button type="button" class="shotTypeOption shotTypeInlineOption locked" data-shot="missile" data-locked="true">
                       <div class="shotTypeCost costTag">900</div>
@@ -3135,43 +3198,43 @@
           <button type="button" class="shotTypeOption" data-shot="laser">
             <img class="shotTypeImage" src="images/shots/shot_laser.png" alt="" />
             <div class="shotTypeLabel">Laser</div>
-            <div class="shotTypeDesc">Fast burst beam shots.</div>
+            <div class="shotTypeDesc">Pre-launch pick: unlimited rapid beams for the mission. Orange offense pickup: same style until an asteroid bump or alien bullet removes one of two knock charges, then single shots.</div>
           </button>
           <button type="button" class="shotTypeOption locked" data-shot="fire" data-locked="true">
             <div class="shotTypeCost costTag">450</div>
             <img class="shotTypeImage" src="images/shots/shot_fire.png" alt="" />
             <div class="shotTypeLabel">Fire</div>
-            <div class="shotTypeDesc">Fireball shots for about 12 seconds.</div>
+            <div class="shotTypeDesc">Pre-launch pick: unlimited fireballs for the mission. Orange offense pickup: two knock charges from bumps or alien shots, then revert to single.</div>
           </button>
           <button type="button" class="shotTypeOption locked" data-shot="ice" data-locked="true">
             <div class="shotTypeCost costTag">450</div>
             <img class="shotTypeImage" src="images/shots/shot_ice.png" alt="" />
             <div class="shotTypeLabel">Ice</div>
-            <div class="shotTypeDesc">Ice shards for about 12 seconds.</div>
+            <div class="shotTypeDesc">Pre-launch pick: unlimited ice shards for the mission. Orange offense pickup: two knock charges, then single shots.</div>
           </button>
           <button type="button" class="shotTypeOption locked" data-shot="electric" data-locked="true">
             <div class="shotTypeCost costTag">550</div>
             <img class="shotTypeImage" src="images/shots/shot_electric.png" alt="" />
             <div class="shotTypeLabel">Electric</div>
-            <div class="shotTypeDesc">Electric bolts for about 12 seconds.</div>
+            <div class="shotTypeDesc">Pre-launch pick: unlimited electric bolts for the mission. Orange offense pickup: two knock charges, then single shots.</div>
           </button>
           <button type="button" class="shotTypeOption locked" data-shot="pierce" data-locked="true">
             <div class="shotTypeCost costTag">600</div>
             <img class="shotTypeImage" src="images/shots/shot_bola.png" alt="" />
             <div class="shotTypeLabel">Bola</div>
-            <div class="shotTypeDesc">Piercing shots for about 12 seconds.</div>
+            <div class="shotTypeDesc">Pre-launch pick: unlimited bola pierce shots for the mission. Orange offense pickup: two knock charges, then single shots.</div>
           </button>
           <button type="button" class="shotTypeOption locked" data-shot="plasma" data-locked="true">
             <div class="shotTypeCost costTag">700</div>
             <img class="shotTypeImage" src="images/shots/shot_plasma.png" alt="" />
             <div class="shotTypeLabel">Plasma</div>
-            <div class="shotTypeDesc">Plasma shots for about 12 seconds.</div>
+            <div class="shotTypeDesc">Pre-launch pick: unlimited plasma orbs for the mission. Orange offense pickup: two knock charges, then single shots.</div>
           </button>
           <button type="button" class="shotTypeOption locked" data-shot="rail" data-locked="true">
             <div class="shotTypeCost costTag">800</div>
             <img class="shotTypeImage" src="images/shots/shot_rail.png" alt="" />
             <div class="shotTypeLabel">Rail</div>
-            <div class="shotTypeDesc">Rail beam shots for about 12 seconds.</div>
+            <div class="shotTypeDesc">Pre-launch pick: unlimited rail beams for the mission. Orange offense pickup: two knock charges, then single shots.</div>
           </button>
           <button type="button" class="shotTypeOption locked" data-shot="missile" data-locked="true">
             <div class="shotTypeCost costTag">900</div>
@@ -3347,16 +3410,46 @@
 
           <div class="panel settingsPanel" data-settings-panel="access">
             <h3>Sandbox access</h3>
-            <p class="monoSmall" style="margin-bottom:10px;">Sandbox is hidden from the main menu. Enter the master access code (shown once when you have cleared every campaign) to unlock the Sandbox button.</p>
+            <p class="monoSmall" style="margin-bottom:10px;">Press <b>Sandbox</b> on the home menu and enter the master code to launch. The code is shown once when you have cleared every campaign (you can verify a copy below).</p>
             <div class="settingsAccessForm">
               <label>
-                ACCESS CODE
+                VERIFY CODE (OPTIONAL)
                 <input id="sandboxAccessInputHome" type="text" autocomplete="off" spellcheck="false" placeholder="Paste or type code" />
               </label>
               <div class="settingsAccessStatus" id="sandboxAccessStatusHome" aria-live="polite"></div>
-              <button type="button" class="btn" id="btnSandboxAccessSubmit">Unlock sandbox</button>
+              <button type="button" class="btn" id="btnSandboxAccessSubmit">Check code</button>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="aboutOverlay" class="overlay">
+    <div class="card">
+      <div class="cardHead">
+        <div>
+          <h2 class="title">About Mentaris</h2>
+          <p class="subtitle">The Arith Belt — math you play like an arcade.</p>
+        </div>
+        <button id="btnCloseAbout" class="btn" type="button">Close</button>
+      </div>
+      <div class="cardBody">
+        <div class="roadmapScroll monoSmall">
+          <p class="roadmapLead"><b>Mentaris: The Arith Belt</b> is a synthwave space shooter where every wave is a math problem. Asteroids carry answers—you read the prompt in the HUD, fly your ship, and blast the rock that matches before decoys or timers beat you.</p>
+          <h3>What it is</h3>
+          <ul>
+            <li>Fast sessions that mix mental math with reflex and positioning.</li>
+            <li>Multiple operations (multiplication, addition, rationals, squares, and more) and modes (digit hunt, classic, stampede, and others).</li>
+            <li>Campaign runs, missions, ship roster, power-ups, and alien waves layered on top of the core loop.</li>
+          </ul>
+          <h3>Why it exists</h3>
+          <ul>
+            <li>Make arithmetic practice feel like a reward loop—score, streaks, and ship upgrades—not a worksheet.</li>
+            <li>Give players a polished “math arcade” they can launch in a browser or desktop build for short daily reps or longer runs.</li>
+            <li>Anchor future features (leaderboards, co-op, more content) on a single clear mission: <b>learn math by flying it</b>.</li>
+          </ul>
+          <p class="roadmapNote">Built as Mentaris / The Arith Belt. Feedback and roadmap items live in the project README and ROADMAP.</p>
         </div>
       </div>
     </div>
@@ -3378,7 +3471,7 @@
           <ul>
             <li>Bug fixes: HUD danger class reset, shorter objective overlay, briefing launch button layout.</li>
             <li>Mission briefing UI: fixed launch height, commander hint box, objective chip populated.</li>
-            <li>Sandbox retired from casual menu; access via code (campaign completion reveals the code).</li>
+            <li>Sandbox: launch from home menu; master code required each time (revealed once when every campaign is cleared).</li>
             <li>HUD polish: optional vignette / scanline on canvas for synthwave feel.</li>
             <li>More backgrounds (ice belt, lava trench, deep void, cyber grid) toward ~10 environments.</li>
             <li>More ships (~20), portraits, sprites, unique passives for a few hulls.</li>
@@ -3390,12 +3483,13 @@
             <li>Achievements / badges in localStorage with toasts and gallery.</li>
             <li>More question modes: mixed operations, speed round, boss-only mode.</li>
             <li>Ship traits / loadout passives surfaced on briefing cards.</li>
+            <li><b>Online / lobby multiplayer (coming soon):</b> shared or split-screen co-op with room codes, synced sessions over WebSockets or Supabase Realtime — building on local sandbox co-op experiments first.</li>
           </ul>
           <h3>Tier 3 — Backend &amp; social</h3>
           <ul>
-            <li>Online leaderboard (e.g. Supabase): POST scores, filtered top lists, Galactic Ranks screen.</li>
+            <li><b>Global leaderboards (coming soon):</b> cloud-backed Galactic Ranks — POST mission scores, filter by mode and operation, read top-N worldwide (planned stack: Supabase or similar).</li>
+            <li>Online leaderboard detail work: privacy-friendly pilot names, no account required for first ship.</li>
             <li>Owner admin dashboard for session stats.</li>
-            <li>Lobby co-op multiplayer (WebSocket or Supabase Realtime).</li>
             <li>Player accounts after leaderboard proves demand.</li>
           </ul>
           <h3>Tech &amp; shipping (README)</h3>
@@ -3404,6 +3498,31 @@
             <li>Deploy: GitHub Pages via Actions; Vercel config; Electron packaging for Windows.</li>
           </ul>
           <p class="roadmapNote">See README.md (Roadmap) and ROADMAP.md for the living task list and suggested sequence.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sandboxLaunchOverlay" class="overlay">
+    <div class="card">
+      <div class="cardHead">
+        <div>
+          <h2 class="title">Sandbox access</h2>
+          <p class="subtitle">Enter the master code to open the training range.</p>
+        </div>
+        <button type="button" class="btn" id="btnSandboxLaunchClose">Cancel</button>
+      </div>
+      <div class="cardBody">
+        <div class="sandboxLaunchForm">
+          <label class="monoSmall">
+            ACCESS CODE
+            <input id="sandboxLaunchCodeInput" type="text" autocomplete="off" spellcheck="false" placeholder="Paste or type code" />
+          </label>
+          <div id="sandboxLaunchError" aria-live="polite"></div>
+          <div style="display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;">
+            <button type="button" class="btn" id="btnSandboxLaunchCancel">Back to menu</button>
+            <button type="button" class="btn btnConfirm" id="btnSandboxLaunchGo">Enter sandbox</button>
+          </div>
         </div>
       </div>
     </div>
@@ -3418,7 +3537,7 @@
         </div>
       </div>
       <div class="cardBody">
-        <p class="monoSmall" style="margin-bottom:12px;">Open <b>Settings → Access</b> and paste the code below. The Sandbox button will appear on the home menu.</p>
+        <p class="monoSmall" style="margin-bottom:12px;">Press <b>Sandbox</b> on the home menu and enter this code to launch. You can also verify a copy under <b>Settings → Access</b>.</p>
         <div class="sandboxCodeReveal" id="sandboxRevealCodeDisplay"></div>
         <div style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
           <button type="button" class="btn btnConfirm" id="btnSandboxRevealDismiss">Save &amp; close</button>
@@ -3490,38 +3609,52 @@
         <div style="width:100%;">
           <h2 class="title">Mission Briefing</h2>
           <p class="subtitle">Review your loadout before launch.</p>
+          <div class="briefingObjectiveHero">
+            <span class="briefingObjectiveHeroEyebrow">Mission objective</span>
+            <p class="briefingObjectiveHeroText" id="briefingTargeted">--</p>
+          </div>
           <div class="briefingStatusRow">
             <div class="briefingStatus" id="briefingStatus">
               <span class="briefingSpinner" aria-hidden="true"></span>
               <span id="briefingStatusText">Initializing launch sequence...</span>
             </div>
-            <div class="briefingStatusTags">
-              <span class="briefingTag objective" id="briefingObjectiveTag">Objective: --</span>
-              <span class="briefingTag risk" id="briefingRiskTag">Risk: Normal</span>
-            </div>
           </div>
         </div>
       </div>
       <div class="panel briefingMainPanel">
-        <div class="briefingMainSplit">
-          <div class="briefingPrimary">
+        <div class="briefingLoadoutMatrix">
+          <div class="briefingColShip">
+            <div class="briefingAssetLabel" id="briefingShip">--</div>
             <img class="briefingShipCard" id="briefingShipCard" src="images/ships/Crimson%20MK-7.png" alt="" />
-            <div class="briefingShipMeta">
-              <h3 id="briefingShip">Ship: --</h3>
-              <p class="monoSmall" id="briefingMode" style="margin:0;">Mode: --</p>
-              <p class="monoSmall" id="briefingDifficulty" style="margin:0;">Difficulty: --</p>
-              <p class="monoSmall" id="briefingOperation" style="margin:0;">Operation: --</p>
-              <p class="monoSmall" id="briefingSubmode" style="margin:0;">Submode: --</p>
-            </div>
           </div>
-          <div class="briefingLoadout">
-            <div class="briefingLoadoutCard briefingBeltWrap">
-              <div class="briefingBeltLabel" id="briefingBelt">--</div>
-              <img class="briefingBeltCard" id="briefingBeltCard" src="images/backgrounds/sector_run_d.png" alt="" />
-            </div>
-            <div class="briefingLoadoutCard briefingShotWrap">
-              <div class="briefingShotLabel" id="briefingShotLabel">--</div>
-              <img class="briefingShotCard" id="briefingShotCard" src="images/bullets/bullet_single.png" alt="" />
+          <div class="briefingColLoadout">
+            <div class="briefingLoadoutTopRow">
+              <div class="briefingLoadoutCard briefingBeltWrap">
+                <div class="briefingBeltLabel" id="briefingBelt">--</div>
+                <img class="briefingBeltCard" id="briefingBeltCard" src="images/backgrounds/sector_run_d.png" alt="" />
+              </div>
+              <div class="briefingLoadoutCard briefingShotWrap">
+                <div class="briefingShotLabel" id="briefingShotLabel">--</div>
+                <img class="briefingShotCard" id="briefingShotCard" src="images/bullets/bullet_single.png" alt="" />
+              </div>
+              <div class="briefingMissionMeta" aria-label="Mode and difficulty">
+                <div class="briefingMetaRow">
+                  <span class="briefingMetaKey">Mode</span>
+                  <span class="briefingMetaVal" id="briefingMode">—</span>
+                </div>
+                <div class="briefingMetaRow">
+                  <span class="briefingMetaKey">Difficulty</span>
+                  <span class="briefingMetaVal" id="briefingDifficulty">—</span>
+                </div>
+                <div class="briefingMetaRow">
+                  <span class="briefingMetaKey">Operation</span>
+                  <span class="briefingMetaVal" id="briefingOperation">—</span>
+                </div>
+                <div class="briefingMetaRow">
+                  <span class="briefingMetaKey">Submode</span>
+                  <span class="briefingMetaVal" id="briefingSubmode">—</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -3545,10 +3678,6 @@
             <span class="bt-label">Asteroid speed</span>
             <b id="briefingSpeed">--</b>
           </div>
-        </div>
-        <div class="briefingTelemetryObjective">
-          <span class="bt-label">Objective lock</span>
-          <b id="briefingTargeted" class="briefingObjectiveValue">--</b>
         </div>
       </div>
       <div class="briefingFooter">
@@ -3720,7 +3849,6 @@
     var campaignDataKeyBase = "mathsteroid.campaign.data.";
     var sandboxCampaignUnlockKey = "mentaris.sandbox.unlocked";
     var SANDBOX_ACCESS_CODE = "NEBULA-88RIFT-K9VX-MENTARIS-PLASMA-LOCK-7720";
-    var sandboxMenuUnlockKey = "mentaris.sandbox.menuUnlock";
     var sandboxRevealShownKey = "mentaris.sandbox.revealShown";
     var campaignDataVersion = 7;
     var campaignMaxFailuresDefault = 5;
@@ -4163,25 +4291,8 @@
     function getSandboxAccessCodeNormalized(){
       return normalizeSandboxAccessCode(SANDBOX_ACCESS_CODE);
     }
-    function isSandboxMenuUnlockedByCode(){
-      try{ return localStorage.getItem(sandboxMenuUnlockKey) === "1"; }catch(e){ return false; }
-    }
-    function tryUnlockSandboxMenuWithCode(raw){
-      if(getSandboxAccessCodeNormalized() === normalizeSandboxAccessCode(raw)){
-        try{ localStorage.setItem(sandboxMenuUnlockKey, "1"); }catch(e){}
-        return true;
-      }
-      return false;
-    }
-    function updateSandboxButtonMenuVisibility(){
-      if(typeof btnSandbox === "undefined" || !btnSandbox) return;
-      var show = isSandboxMenuUnlockedByCode();
-      btnSandbox.hidden = !show;
-      if(show){
-        btnSandbox.title = isSandboxUnlockedByCampaigns()
-          ? "Sandbox (campaigns cleared; access code used)."
-          : "Sandbox (unlocked via Settings access code).";
-      }
+    function isValidSandboxAccessCode(raw){
+      return getSandboxAccessCodeNormalized() === normalizeSandboxAccessCode(raw);
     }
     function dismissSandboxRevealOverlay(){
       var ov = document.getElementById("sandboxRevealOverlay");
@@ -4205,8 +4316,10 @@
       try{ localStorage.setItem(sandboxCampaignUnlockKey, unlocked ? "1" : "0"); }catch(e){}
       if(typeof btnSandbox !== "undefined" && btnSandbox){
         btnSandbox.setAttribute("data-campaign-unlocked", unlocked ? "true" : "false");
+        btnSandbox.title = unlocked
+          ? "Sandbox — enter master code to launch (shown when all campaigns are cleared)."
+          : "Sandbox — enter master code to launch.";
       }
-      updateSandboxButtonMenuVisibility();
       if(unlocked && typeof btnSandbox !== "undefined" && btnSandbox) maybeShowSandboxRevealOverlay();
       return unlocked;
     }
@@ -4545,19 +4658,19 @@
     ];
 
     var homePowerupCatalogDefense = [
-      { id: "shield", label: "Shield", icon: "images/powerups/powerup_shield.png", desc: "Temporary shield for 10 seconds." },
-      { id: "armor", label: "Armor", icon: "images/powerups/powerup_armor.png", desc: "Temporary armor for 12 seconds." }
+      { id: "shield", label: "Shield", icon: "images/powerups/powerup_shield.png", desc: "Blue bubble for ~10s real time: hits strip shield first before your hull takes damage." },
+      { id: "armor", label: "Armor", icon: "images/powerups/powerup_armor.png", desc: "Absorbs 5 hits before disarming." }
     ];
 
     var homePowerupCatalogOffense = [
       { id: "missile", label: "Missile Shot", icon: "images/shots/shot_missile.png", desc: "Type the correct answer to launch a seeking missile.", unlockType: "shot" },
-      { id: "laser", label: "Laser Burst", icon: "images/shots/shot_laser.png", desc: "High-speed laser shots for about 12 seconds.", unlockType: "shot", defaultUnlocked: true },
-      { id: "fire", label: "Fireball", icon: "images/shots/shot_fire.png", desc: "Fireball shots for about 12 seconds.", unlockType: "shot" },
-      { id: "ice", label: "Ice Shards", icon: "images/shots/shot_ice.png", desc: "Ice shots for about 12 seconds.", unlockType: "shot" },
-      { id: "electric", label: "Electric Bolts", icon: "images/shots/shot_electric.png", desc: "Electric bolts for about 12 seconds.", unlockType: "shot" },
-      { id: "pierce", label: "Bola Shot", icon: "images/shots/shot_bola.png", desc: "Piercing shots for about 12 seconds.", unlockType: "shot" },
-      { id: "plasma", label: "Plasma Orb", icon: "images/shots/shot_plasma.png", desc: "Plasma shots for about 12 seconds.", unlockType: "shot" },
-      { id: "rail", label: "Rail Beam", icon: "images/shots/shot_rail.png", desc: "Rail beam shots for about 12 seconds.", unlockType: "shot" }
+      { id: "laser", label: "Laser Burst", icon: "images/shots/shot_laser.png", desc: "Pre-launch pick: unlimited rapid beams for the mission. Orange offense pickup: same style with two knock charges—each asteroid bump or alien bullet spends one, then single shots return.", unlockType: "shot", defaultUnlocked: true },
+      { id: "fire", label: "Fireball", icon: "images/shots/shot_fire.png", desc: "Pre-launch pick: unlimited fireballs for the mission. Orange offense pickup: two knock charges from bumps or alien shots, then revert to single.", unlockType: "shot" },
+      { id: "ice", label: "Ice Shards", icon: "images/shots/shot_ice.png", desc: "Pre-launch pick: unlimited ice shards for the mission. Orange offense pickup: two knock charges, then single shots.", unlockType: "shot" },
+      { id: "electric", label: "Electric Bolts", icon: "images/shots/shot_electric.png", desc: "Pre-launch pick: unlimited electric bolts for the mission. Orange offense pickup: two knock charges, then single shots.", unlockType: "shot" },
+      { id: "pierce", label: "Bola Shot", icon: "images/shots/shot_bola.png", desc: "Pre-launch pick: unlimited bola pierce shots for the mission. Orange offense pickup: two knock charges, then single shots.", unlockType: "shot" },
+      { id: "plasma", label: "Plasma Orb", icon: "images/shots/shot_plasma.png", desc: "Pre-launch pick: unlimited plasma orbs for the mission. Orange offense pickup: two knock charges, then single shots.", unlockType: "shot" },
+      { id: "rail", label: "Rail Beam", icon: "images/shots/shot_rail.png", desc: "Pre-launch pick: unlimited rail beams for the mission. Orange offense pickup: two knock charges, then single shots.", unlockType: "shot" }
     ];
     var homeShipCatalog = [
       { id: "classic", label: "Scarlet Classic", icon: "images/ships/Scarlet%20Classic.png", desc: "Retro heavy fighter with stable handling.", unlockType: "ship", defaultUnlocked: true },
@@ -6560,8 +6673,6 @@
     var briefingTargeted = document.getElementById("briefingTargeted");
     var briefingTimer = document.getElementById("briefingTimer");
     var briefingSpeed = document.getElementById("briefingSpeed");
-    var briefingObjectiveTag = document.getElementById("briefingObjectiveTag");
-    var briefingRiskTag = document.getElementById("briefingRiskTag");
     var briefingHintText = document.getElementById("briefingHintText");
     var briefingReady = false;
     var briefingTimerId = null;
@@ -6795,6 +6906,29 @@
         }
       });
     }
+    var aboutOverlay = document.getElementById("aboutOverlay");
+    var btnAbout = document.getElementById("btnAbout");
+    var btnCloseAbout = document.getElementById("btnCloseAbout");
+    if(btnAbout && aboutOverlay){
+      btnAbout.addEventListener("click", function(){
+        playMenuBeep();
+        aboutOverlay.classList.add("show");
+      });
+    }
+    if(btnCloseAbout && aboutOverlay){
+      btnCloseAbout.addEventListener("click", function(){
+        playMenuBeep();
+        aboutOverlay.classList.remove("show");
+      });
+    }
+    if(aboutOverlay){
+      aboutOverlay.addEventListener("click", function(e){
+        if(e.target === aboutOverlay){
+          playMenuBeep();
+          aboutOverlay.classList.remove("show");
+        }
+      });
+    }
     if(btnSandboxRevealDismiss){
       btnSandboxRevealDismiss.addEventListener("click", function(){
         playMenuBeep();
@@ -6809,14 +6943,55 @@
         }
       });
     }
+    var sandboxLaunchErrorTimer = 0;
+    function openSandboxLaunchPrompt(){
+      if(sandboxLaunchErrorTimer){
+        clearTimeout(sandboxLaunchErrorTimer);
+        sandboxLaunchErrorTimer = 0;
+      }
+      var ov = document.getElementById("sandboxLaunchOverlay");
+      var inp = document.getElementById("sandboxLaunchCodeInput");
+      var err = document.getElementById("sandboxLaunchError");
+      if(err) err.textContent = "";
+      if(inp) inp.value = "";
+      if(ov) ov.classList.add("show");
+      if(inp) setTimeout(function(){ inp.focus(); }, 60);
+    }
+    function closeSandboxLaunchPrompt(){
+      if(sandboxLaunchErrorTimer){
+        clearTimeout(sandboxLaunchErrorTimer);
+        sandboxLaunchErrorTimer = 0;
+      }
+      var ov = document.getElementById("sandboxLaunchOverlay");
+      if(ov) ov.classList.remove("show");
+      var err = document.getElementById("sandboxLaunchError");
+      if(err) err.textContent = "";
+    }
+    function confirmSandboxLaunch(){
+      var inp = document.getElementById("sandboxLaunchCodeInput");
+      var err = document.getElementById("sandboxLaunchError");
+      var raw = inp ? inp.value : "";
+      if(isValidSandboxAccessCode(raw)){
+        if(err) err.textContent = "";
+        closeSandboxLaunchPrompt();
+        startSandbox();
+        return;
+      }
+      if(err) err.textContent = "Incorrect code.";
+      if(sandboxLaunchErrorTimer) clearTimeout(sandboxLaunchErrorTimer);
+      sandboxLaunchErrorTimer = setTimeout(function(){
+        sandboxLaunchErrorTimer = 0;
+        closeSandboxLaunchPrompt();
+      }, 2000);
+    }
+
     function submitSandboxAccessFromHome(){
       if(!sandboxAccessStatusHome) return;
       var raw = sandboxAccessInputHome ? sandboxAccessInputHome.value : "";
       sandboxAccessStatusHome.classList.remove("ok", "err");
-      if(tryUnlockSandboxMenuWithCode(raw)){
-        sandboxAccessStatusHome.textContent = "Sandbox unlocked. The button is on the home menu.";
+      if(isValidSandboxAccessCode(raw)){
+        sandboxAccessStatusHome.textContent = "Code matches. Use Sandbox on the home menu to launch.";
         sandboxAccessStatusHome.classList.add("ok");
-        updateSandboxButtonMenuVisibility();
         if(sandboxAccessInputHome) sandboxAccessInputHome.value = "";
       }else{
         sandboxAccessStatusHome.textContent = "That code does not match. Check dashes and spelling.";
@@ -6922,7 +7097,46 @@
     if(btnSandbox){
       btnSandbox.addEventListener("click", function(){
         playMenuBeep();
-        startSandbox();
+        openSandboxLaunchPrompt();
+      });
+    }
+    var sandboxLaunchOverlay = document.getElementById("sandboxLaunchOverlay");
+    var btnSandboxLaunchGo = document.getElementById("btnSandboxLaunchGo");
+    var btnSandboxLaunchCancel = document.getElementById("btnSandboxLaunchCancel");
+    var btnSandboxLaunchClose = document.getElementById("btnSandboxLaunchClose");
+    if(btnSandboxLaunchGo){
+      btnSandboxLaunchGo.addEventListener("click", function(){
+        playMenuBeep();
+        confirmSandboxLaunch();
+      });
+    }
+    if(btnSandboxLaunchCancel){
+      btnSandboxLaunchCancel.addEventListener("click", function(){
+        playMenuBeep();
+        closeSandboxLaunchPrompt();
+      });
+    }
+    if(btnSandboxLaunchClose){
+      btnSandboxLaunchClose.addEventListener("click", function(){
+        playMenuBeep();
+        closeSandboxLaunchPrompt();
+      });
+    }
+    if(sandboxLaunchOverlay){
+      sandboxLaunchOverlay.addEventListener("click", function(e){
+        if(e.target === sandboxLaunchOverlay){
+          playMenuBeep();
+          closeSandboxLaunchPrompt();
+        }
+      });
+    }
+    var sandboxLaunchCodeInput = document.getElementById("sandboxLaunchCodeInput");
+    if(sandboxLaunchCodeInput){
+      sandboxLaunchCodeInput.addEventListener("keydown", function(e){
+        if(e.key === "Enter"){
+          e.preventDefault();
+          confirmSandboxLaunch();
+        }
       });
     }
     if (startBtn && funnelOverlay) {
@@ -7473,18 +7687,42 @@
       return rocks[index % rocks.length];
     }
 
-    function setCampaignMapRoutePath(n){
+    var campaignMapScrollHooked = false;
+    function ensureCampaignMapScrollSync(){
+      var wrap = document.getElementById("campaignMapWrap");
+      if(!wrap || campaignMapScrollHooked) return;
+      campaignMapScrollHooked = true;
+      wrap.addEventListener("scroll", function(){
+        scheduleCampaignMapDecorResize();
+      }, { passive: true });
+    }
+
+    function updateCampaignMapRouteFromDOM(){
       var pathEl = document.getElementById("campaignMapPathLine");
-      if(!pathEl) return;
-      if(n < 2){
+      var wrap = document.getElementById("campaignMapWrap");
+      var list = document.getElementById("campaignList");
+      if(!pathEl || !wrap || !list) return;
+      var items = list.querySelectorAll("li.campaignMapNode");
+      if(items.length < 2){
         pathEl.setAttribute("d", "");
         return;
       }
+      var wPx = Math.max(wrap.scrollWidth, wrap.clientWidth, 1);
+      var h = Math.max(list.offsetHeight, wrap.scrollHeight, wrap.clientHeight || 0);
+      if(h < 1) h = 1;
+      var wr = wrap.getBoundingClientRect();
       var parts = [];
-      for(var pi = 0; pi < n; pi++){
-        var x = (pi % 2 === 0) ? 20 : 80;
-        var y = 82 - (pi / (n - 1)) * 64;
-        parts.push((pi === 0 ? "M" : "L") + " " + x + " " + y);
+      for(var i = 0; i < items.length; i++){
+        var disc = items[i].querySelector(".campaignMapNodeDiscInner");
+        if(!disc) continue;
+        var dr = disc.getBoundingClientRect();
+        var x = ((dr.left + dr.width * 0.5 - wr.left + wrap.scrollLeft) / wPx) * 100;
+        var y = ((dr.top + dr.height * 0.5 - wr.top + wrap.scrollTop) / h) * 100;
+        parts.push((parts.length ? "L" : "M") + " " + x.toFixed(2) + " " + y.toFixed(2));
+      }
+      if(parts.length < 2){
+        pathEl.setAttribute("d", "");
+        return;
       }
       pathEl.setAttribute("d", parts.join(" "));
     }
@@ -7506,7 +7744,7 @@
         svg.style.minHeight = h + "px";
         svg.style.height = h + "px";
       }
-      setCampaignMapRoutePath(getActiveCampaignMissions().length);
+      updateCampaignMapRouteFromDOM();
     }
 
     function scheduleCampaignMapDecorResize(){
@@ -7786,6 +8024,7 @@
         });
         campaignList.appendChild(li);
       }
+      ensureCampaignMapScrollSync();
       if(n <= 1){
         campaignList.style.minHeight = "";
       }else{
@@ -7969,7 +8208,7 @@
       if(briefingShipCard && shipCardImageByShip && shipCardImageByShip[shipKey]){
         briefingShipCard.src = shipCardImageByShip[shipKey];
       }
-      if(briefingShip) briefingShip.textContent = "Ship: " + (shipNameMap[shipKey] || shipKey.toUpperCase());
+      if(briefingShip) briefingShip.textContent = shipNameMap[shipKey] || shipKey.toUpperCase();
       var shotKey = String(config.shotType || "single");
       var shotLabel = shotTypeLabels[shotKey] || shotKey;
       if(briefingShotLabel){
@@ -8031,16 +8270,12 @@
           rational_frac: "Target Fraction",
           rational_dec: "Target Decimal"
         };
-        briefingMode.textContent = "Mode: " + (modeMap[modeLabel] || modeLabel.toUpperCase());
-        if(briefingObjectiveTag) briefingObjectiveTag.textContent = modeMap[modeLabel] || modeLabel.toUpperCase();
+        briefingMode.textContent = modeMap[modeLabel] || modeLabel.toUpperCase();
       }
       if(briefingDifficulty){
         var diffLabel = String(config.difficulty || "normal");
         var diffMap = { easy: "Easy", normal: "Normal", hard: "Hard", brutal: "Brutal" };
-        briefingDifficulty.textContent = "Difficulty: " + (diffMap[diffLabel] || diffLabel.toUpperCase());
-        if(briefingRiskTag){
-          briefingRiskTag.textContent = "Risk: " + (diffMap[diffLabel] || diffLabel.toUpperCase());
-        }
+        briefingDifficulty.textContent = diffMap[diffLabel] || diffLabel.toUpperCase();
         if(briefingOverlay){
           if(diffLabel === "easy") briefingOverlay.classList.add("briefing-easy");
           else if(diffLabel === "hard" || diffLabel === "brutal") briefingOverlay.classList.add("briefing-hard");
@@ -8055,17 +8290,17 @@
         if(modeLabel.indexOf("3") !== -1) sub = "3";
         else if(modeLabel.indexOf("2") !== -1) sub = "2";
         if(briefingOperation){
-          if(isRational) briefingOperation.textContent = "Operation: Rationals";
-          else if(isSquare) briefingOperation.textContent = "Operation: Squares";
-          else briefingOperation.textContent = "Operation: " + (isAdd ? "Addition" : "Multiplication");
+          if(isRational) briefingOperation.textContent = "Rationals";
+          else if(isSquare) briefingOperation.textContent = "Squares";
+          else briefingOperation.textContent = isAdd ? "Addition" : "Multiplication";
         }
         if(briefingSubmode){
           if(isRational){
-            briefingSubmode.textContent = "Submode: " + (modeLabel === "rational_dec" ? "Target Decimal" : "Target Fraction");
+            briefingSubmode.textContent = modeLabel === "rational_dec" ? "Target Decimal" : "Target Fraction";
           }else if(isSquare){
-            briefingSubmode.textContent = "Submode: " + (modeLabel === "square_root" ? "Shoot Roots" : "Shoot Squares");
+            briefingSubmode.textContent = modeLabel === "square_root" ? "Shoot Roots" : "Shoot Squares";
           }else{
-            briefingSubmode.textContent = "Submode: " + (isAdd ? (sub + "x" + sub) : ("1x" + sub));
+            briefingSubmode.textContent = isAdd ? (sub + "×" + sub) : ("1×" + sub);
           }
         }
       }
