@@ -1331,47 +1331,187 @@
       color:rgba(0,229,255,.95);
     }
 
-    #campaignList{
-      display:grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap:10px;
+    #campaignMissionsView .campaignMissionsPanel{
+      min-width:0;
     }
 
-    .campaignMissionCard{
+    .campaignMapWrap{
       position:relative;
-      align-items:flex-start;
-      justify-content:flex-start;
-      min-height:118px;
-      padding:14px 12px;
+      margin-top:10px;
+      min-height:clamp(360px, 52vh, 560px);
+      border-radius:16px;
+      overflow:auto;
+      border:1px solid rgba(255,255,255,.1);
+      box-shadow: inset 0 0 0 1px rgba(0,229,255,.07), 0 16px 44px rgba(0,0,0,.5);
     }
 
-    .campaignMissionTitle{
-      display:block;
-      font-size:16px;
-      line-height:1.25;
-      letter-spacing:.4px;
-      margin-right:30px;
-    }
-
-    .campaignMissionWin{
-      display:block;
-      margin-top:8px;
-      font-size:13px;
-      color:var(--muted);
-      letter-spacing:.2px;
-    }
-
-    .campaignMissionCard .campaignStatus{
+    .campaignMapStars{
       position:absolute;
-      right:10px;
-      top:8px;
-      font-size:24px;
+      inset:0;
+      pointer-events:none;
+      z-index:0;
+      background-color:#050810;
+      background-image:
+        radial-gradient(1.2px 1.2px at 7% 14%, rgba(255,255,255,.9), transparent),
+        radial-gradient(1px 1px at 18% 72%, rgba(255,255,255,.65), transparent),
+        radial-gradient(1px 1px at 31% 28%, rgba(255,255,255,.55), transparent),
+        radial-gradient(1.2px 1.2px at 44% 86%, rgba(255,255,255,.75), transparent),
+        radial-gradient(1px 1px at 56% 12%, rgba(255,255,255,.5), transparent),
+        radial-gradient(1px 1px at 68% 48%, rgba(255,255,255,.7), transparent),
+        radial-gradient(1.2px 1.2px at 79% 22%, rgba(255,255,255,.85), transparent),
+        radial-gradient(1px 1px at 88% 68%, rgba(255,255,255,.6), transparent),
+        radial-gradient(1px 1px at 12% 42%, rgba(200,230,255,.5), transparent),
+        radial-gradient(1.2px 1.2px at 92% 38%, rgba(255,255,255,.55), transparent),
+        radial-gradient(1px 1px at 25% 8%, rgba(255,255,255,.45), transparent),
+        radial-gradient(1px 1px at 73% 92%, rgba(255,255,255,.5), transparent),
+        radial-gradient(1.2px 1.2px at 52% 58%, rgba(255,255,255,.4), transparent),
+        radial-gradient(1px 1px at 6% 88%, rgba(255,255,255,.35), transparent),
+        radial-gradient(1px 1px at 95% 8%, rgba(255,255,255,.4), transparent),
+        linear-gradient(165deg, rgba(8,14,32,.5), rgba(4,8,18,.88));
+    }
+
+    .campaignMapRoutes{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      z-index:1;
+      pointer-events:none;
+    }
+
+    #campaignMissionsView #campaignList.campaignMapList{
+      position:relative;
+      z-index:2;
+      margin:0;
+      padding:0;
+      list-style:none;
+      min-height:clamp(360px, 52vh, 560px);
+      display:block;
+    }
+
+    #campaignMissionsView #campaignList.campaignMapList > li{
+      border:none;
+      background:transparent;
+      padding:0;
+      justify-content:flex-start;
+    }
+
+    #campaignMissionsView #campaignList .campaignMapNode{
+      position:absolute;
+      width:122px;
+      margin:0;
+      padding:0;
+      border:none;
+      background:transparent;
+      box-shadow:none;
+      transform: translate(-50%, -50%);
+      cursor:pointer;
+      transition: transform .22s ease, filter .22s ease, z-index .05s linear;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:6px;
+    }
+
+    #campaignMissionsView #campaignList .campaignMapNode:hover:not(.locked){
+      transform: translate(-50%, -50%) translateY(-10px) scale(1.05);
+      z-index:4;
+      filter: drop-shadow(0 16px 28px rgba(0,229,255,.35));
+    }
+
+    #campaignMissionsView #campaignList .campaignMapNode.selected:not(.locked){
+      filter: drop-shadow(0 0 22px rgba(0,229,255,.55));
+    }
+
+    .campaignMapNodeBody{
+      position:relative;
+      width:88px;
+      height:88px;
+      display:grid;
+      place-items:center;
+    }
+
+    .campaignMapNodeGlow{
+      position:absolute;
+      inset:-6px;
+      border-radius:50%;
+      background: radial-gradient(circle, rgba(0,229,255,.22), transparent 68%);
+      opacity:.85;
+      pointer-events:none;
+    }
+
+    .campaignMapNodeDiscInner{
+      position:relative;
+      width:76px;
+      height:76px;
+      border-radius:50%;
+      overflow:hidden;
+      border:2px solid rgba(0,229,255,.45);
+      background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.18), rgba(6,10,22,.95) 55%);
+      box-shadow: inset 0 0 22px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.08);
+      display:grid;
+      place-items:center;
+    }
+
+    .campaignMapNodeImg{
+      width:64px;
+      height:64px;
+      object-fit:contain;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,.5));
+    }
+
+    .campaignMapNodeMeta{
+      text-align:center;
+      width:132px;
+      pointer-events:none;
+    }
+
+    .campaignMapNodeNum{
+      display:block;
+      font-size:10px;
+      letter-spacing:1.6px;
+      color:rgba(0,229,255,.75);
+      text-transform:uppercase;
+      margin-bottom:2px;
+    }
+
+    .campaignMapNodeTitle{
+      display:block;
+      font-size:11px;
+      font-weight:700;
+      line-height:1.25;
+      letter-spacing:.35px;
+      color:#e8ecff;
+      max-height:2.6em;
+      overflow:hidden;
+    }
+
+    .campaignMapNodeBoss{
+      display:block;
+      margin-top:2px;
+      font-size:9px;
+      letter-spacing:.8px;
+      color:rgba(255,221,0,.88);
+      text-transform:uppercase;
+    }
+
+    .campaignMapNodeWin{
+      display:block;
+      margin-top:3px;
+      font-size:10px;
+      color:var(--muted);
+      letter-spacing:.15px;
+      line-height:1.25;
+    }
+
+    #campaignMissionsView #campaignList .campaignMapNode .campaignStatus{
+      position:absolute;
+      right:-4px;
+      top:-2px;
+      font-size:18px;
       line-height:1;
       font-weight:800;
-      letter-spacing:0;
-      text-transform:none;
-      min-width:20px;
-      justify-content:center;
+      text-shadow: 0 0 10px rgba(0,0,0,.8);
     }
 
     .campaignMissionCard.completed .campaignStatus{
@@ -1384,16 +1524,22 @@
       text-shadow: 0 0 12px rgba(255,90,90,.35);
     }
 
-    @media (max-width: 1120px){
-      #campaignList{
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
+    #campaignMissionsView #campaignList .campaignMapNode.locked{
+      opacity:0.5;
+      cursor:default;
+      filter: grayscale(0.35);
+    }
+
+    #campaignMissionsView #campaignList .campaignMapNode.locked:hover{
+      transform: translate(-50%, -50%);
+      filter: grayscale(0.35);
     }
 
     @media (max-width: 760px){
-      #campaignList{
-        grid-template-columns: 1fr;
-      }
+      .campaignMapNodeMeta{ width:118px; }
+      .campaignMapNodeBody{ width:76px; height:76px; }
+      .campaignMapNodeDiscInner{ width:64px; height:64px; }
+      .campaignMapNodeImg{ width:54px; height:54px; }
     }
 
     .campaignView{
@@ -3237,9 +3383,15 @@
         </div>
       </div>
       <div class="cardBody campaignView" id="campaignMissionsView">
-        <div class="panel">
+        <div class="panel campaignMissionsPanel">
           <h3>Missions</h3>
-          <ul class="list" id="campaignList"></ul>
+          <div class="campaignMapWrap" id="campaignMapWrap">
+            <div class="campaignMapStars" aria-hidden="true"></div>
+            <svg class="campaignMapRoutes" id="campaignMapRoutes" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              <path id="campaignMapPathLine" fill="none" stroke="rgba(0,229,255,.42)" stroke-width="1.1" stroke-dasharray="3 2.5" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+            </svg>
+            <ul class="list campaignMapList" id="campaignList"></ul>
+          </div>
         </div>
         <div class="panel">
           <h3>Details</h3>
@@ -6950,6 +7102,47 @@
       return mission.title + " — " + getCampaignMissionBossLabel(campaignId, mission, index);
     }
 
+    var campaignAlienSpriteByKey = {
+      et: "images/aliens/alien_ET.png",
+      brain: "images/aliens/alien_brain.png",
+      golem: "images/aliens/alien_golem.png",
+      galaga: "images/aliens/alien_galaga.png",
+      eye: "images/aliens/alien_eye.png",
+      saucer: "images/aliens/alien_saucer.png",
+      robot: "images/aliens/alien_robot.png",
+      spider: "images/aliens/alien_spider.png"
+    };
+
+    function getCampaignMissionNodeSprite(campaignId, mission, index){
+      if(!mission || !mission.config) return "images/asteroids/asteroid1.png";
+      var cfg = mission.config;
+      if(cfg.alienSwarm){
+        return campaignAlienSpriteByKey.et;
+      }
+      if(isCampaignMissionNonEndless(cfg)){
+        var ak = normalizeCampaignAlienKey(getCampaignMissionAlienKey(campaignId, mission, index));
+        if(ak && campaignAlienSpriteByKey[ak]) return campaignAlienSpriteByKey[ak];
+      }
+      var rocks = ["images/asteroids/asteroid1.png", "images/asteroids/asteroid2.png", "images/asteroids/asteroid3.png"];
+      return rocks[index % rocks.length];
+    }
+
+    function setCampaignMapRoutePath(n){
+      var pathEl = document.getElementById("campaignMapPathLine");
+      if(!pathEl) return;
+      if(n < 2){
+        pathEl.setAttribute("d", "");
+        return;
+      }
+      var parts = [];
+      for(var pi = 0; pi < n; pi++){
+        var x = (pi % 2 === 0) ? 23 : 77;
+        var y = 9 + (pi / (n - 1)) * 82;
+        parts.push((pi === 0 ? "M" : "L") + " " + x + " " + y);
+      }
+      pathEl.setAttribute("d", parts.join(" "));
+    }
+
     function getCampaignMissionBeltKey(campaignId, missionIndex, missionCount){
       var id = String(campaignId || campaignDefaultId);
       var idx = Math.max(0, Number(missionIndex) || 0);
@@ -7172,7 +7365,9 @@
       campaignList.innerHTML = "";
       var missions = getActiveCampaignMissions();
       var state = loadCampaignState(getActiveCampaignId());
-      for(var i=0; i<missions.length; i++){
+      var n = missions.length;
+      var cid = getActiveCampaignId();
+      for(var i=0; i<n; i++){
         var m = missions[i];
         var li = document.createElement("li");
         var isDone = state.completed && state.completed[i];
@@ -7180,14 +7375,30 @@
         var isLocked = !isDone && !isCurrent;
         var statusSymbol = isDone ? "\u2713" : (isLocked ? "-" : "\u2022");
         var win = describeWin(m.config);
-        var displayTitle = getCampaignMissionDisplayTitle(getActiveCampaignId(), m, i);
-        li.className = "campaignListItem campaignMissionCard"
+        var fullTitle = getCampaignMissionDisplayTitle(cid, m, i);
+        var titleParts = fullTitle.split(" — ");
+        var lineMain = (i + 1) + ". " + (titleParts[0] || fullTitle);
+        var lineBoss = titleParts.length > 1 ? titleParts[1] : "";
+        var sprite = getCampaignMissionNodeSprite(cid, m, i);
+        var yPct = n <= 1 ? 50 : (9 + (i / (n - 1)) * 82);
+        var xPct = (i % 2 === 0) ? 23 : 77;
+        li.className = "campaignListItem campaignMissionCard campaignMapNode"
           + (isDone ? " completed" : "")
           + (isCurrent ? " current" : "")
           + (isLocked ? " locked" : "");
         li.setAttribute("data-index", String(i));
-        li.innerHTML = "<span class=\"campaignMissionTitle\">" + (i + 1) + ". " + displayTitle + "</span>"
-          + "<span class=\"campaignMissionWin\">" + win + "</span>"
+        li.style.left = xPct + "%";
+        li.style.top = yPct + "%";
+        li.innerHTML = "<div class=\"campaignMapNodeBody\">"
+          + "<div class=\"campaignMapNodeGlow\"></div>"
+          + "<div class=\"campaignMapNodeDiscInner\"><img class=\"campaignMapNodeImg\" src=\"" + sprite + "\" alt=\"\" /></div>"
+          + "</div>"
+          + "<div class=\"campaignMapNodeMeta\">"
+          + "<span class=\"campaignMapNodeNum\">Mission " + (i + 1) + "</span>"
+          + "<span class=\"campaignMapNodeTitle\">" + lineMain + "</span>"
+          + (lineBoss ? "<span class=\"campaignMapNodeBoss\">" + lineBoss + "</span>" : "")
+          + "<span class=\"campaignMapNodeWin\">" + win + "</span>"
+          + "</div>"
           + "<span class=\"campaignStatus\">" + statusSymbol + "</span>";
         li.addEventListener("click", function(){
           var idx = parseInt(this.getAttribute("data-index"), 10);
@@ -7199,6 +7410,10 @@
         });
         campaignList.appendChild(li);
       }
+      setCampaignMapRoutePath(n);
+      requestAnimationFrame(function(){
+        setCampaignMapRoutePath(n);
+      });
       var startIndex = (state.index || 0);
       renderCampaignDetails(startIndex);
       var items = campaignList.querySelectorAll(".campaignListItem");
