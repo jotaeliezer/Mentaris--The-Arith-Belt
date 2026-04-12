@@ -148,3 +148,34 @@ The game is also configured for [Vercel](https://vercel.com) deployment via `ver
 - **Font:** [Oxanium](https://fonts.google.com/specimen/Oxanium) (Google Fonts)
 - **Desktop:** Electron
 - **Optional renderer:** Phaser 3 (planned migration)
+
+---
+
+## Roadmap (next steps)
+
+High-level plan for upcoming work. The in-game **Roadmap** button on the home menu summarizes the same themes; detailed checkboxes live in `ROADMAP.md`.
+
+### Tier 1 — Polish and quick wins
+- Bug fixes: HUD danger state reset between sessions, shorter objective overlay copy, briefing launch button layout.
+- Mission briefing UI: stable launch control height, commander hint box, fill the objective chip.
+- Sandbox: hidden from the main menu; unlock via master access code (revealed once when every campaign is cleared), entered under **Settings → Access**.
+- HUD polish: optional vignette or scanline on the canvas for a stronger synthwave read.
+- More background pairs (ice belt, lava trench, deep void, cyber grid) toward roughly ten environments.
+- More ships (portraits, sprites, config), with a few unique passive traits.
+
+### Tier 2 — Content depth
+- Campaign progression: longer mission chains, unlock flow, commander dialogue, rewards, campaign map polish.
+- Alien behavior variety (sniper, rusher, shielder, bomber) tied to sprites.
+- Achievements in local storage, toasts, gallery.
+- New question modes: mixed operations, speed rounds, boss-only runs.
+- Ship traits and loadout passives on briefing cards plus balance pass.
+
+### Tier 3 — Backend and social
+- Online leaderboard (e.g. Supabase) and a Galactic Ranks screen.
+- Owner admin dashboard for session analytics.
+- Lobby-style online co-op.
+- Player accounts after leaderboard usage justifies it.
+
+### Shipping and tooling
+- Keep esbuild as the web bundle path; optional Phaser renderer experiments.
+- GitHub Actions to Pages, Vercel, and Electron Windows builds as documented above.

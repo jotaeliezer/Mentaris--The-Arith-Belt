@@ -1697,6 +1697,79 @@
       z-index: 40;
     }
 
+    #roadmapOverlay .card,
+    #sandboxRevealOverlay .card{
+      max-width:min(920px, 96vw);
+    }
+    .roadmapScroll{
+      max-height:min(72vh, 680px);
+      overflow-y:auto;
+      padding-right:8px;
+      text-align:left;
+    }
+    .roadmapScroll h3{
+      margin:20px 0 8px;
+      font-size:12px;
+      letter-spacing:2px;
+      color:#bff2ff;
+      text-transform:uppercase;
+    }
+    .roadmapScroll h3:first-child{ margin-top:0; }
+    .roadmapScroll ul{
+      margin:0 0 14px 1.15em;
+      padding:0;
+      color:rgba(232,236,255,.88);
+      font-size:13px;
+      line-height:1.52;
+    }
+    .roadmapScroll .roadmapLead{
+      font-size:13px;
+      line-height:1.55;
+      color:rgba(232,236,255,.82);
+      margin:0 0 12px;
+    }
+    .roadmapScroll .roadmapNote{
+      font-size:11px;
+      letter-spacing:0.5px;
+      color:rgba(232,236,255,.5);
+      margin-top:18px;
+    }
+    .sandboxCodeReveal{
+      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-size:13px;
+      letter-spacing:0.1em;
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid rgba(0,229,255,.38);
+      background:rgba(0,0,0,.4);
+      color:#bff2ff;
+      word-break:break-word;
+      text-align:center;
+      line-height:1.45;
+    }
+    .settingsAccessForm{
+      display:grid;
+      gap:10px;
+      max-width:480px;
+    }
+    .settingsAccessForm input{
+      width:100%;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.2);
+      background:rgba(0,0,0,.28);
+      color:#e8ecff;
+      font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+      font-size:12px;
+    }
+    .settingsAccessStatus{
+      font-size:12px;
+      min-height:1.2em;
+      letter-spacing:0.4px;
+    }
+    .settingsAccessStatus.ok{ color:rgba(0,229,255,.9); }
+    .settingsAccessStatus.err{ color:rgba(255,120,130,.9); }
+
     #controlsOverlay .panel,
     #controlsOverlay .list,
     #controlsOverlay .monoSmall{
@@ -2201,7 +2274,8 @@
           <button id="btnCampaign" class="btn secondaryLabel menuExtra" type="button">Campaign <small>6 mission run</small></button>
           <button id="btnStartGame" class="btn secondaryLabel menuExtra" type="button">Single Mission <small>Custom setup</small></button>
           <button id="btnTutorial" class="btn secondaryLabel menuExtra" type="button">Tutorial <small>Guided tour</small></button>
-          <button id="btnSandbox" class="btn secondaryLabel menuExtra" type="button">Sandbox <small>Test shots & powerups</small></button>
+          <button id="btnRoadmap" class="btn secondaryLabel menuExtra" type="button">Roadmap <small>What is next</small></button>
+          <button id="btnSandbox" class="btn secondaryLabel menuExtra" type="button" hidden>Sandbox <small>Test shots & powerups</small></button>
           <button id="btnLeaderboards" class="btn secondaryLabel menuExtra" type="button">Leaderboards <small>Top runs</small></button>
           <button id="btnSettingsHome" class="btn secondaryLabel menuExtra" type="button">Settings <small>Audio levels</small></button>
           <a id="btnExitHome" class="btn secondaryLabel menuExtra" href="../../atmc.html">Exit <small>Return to hub</small></a>
@@ -3167,6 +3241,7 @@
           <button type="button" class="btn settingsTabBtn" data-settings-tab="display">DISPLAY</button>
           <button type="button" class="btn settingsTabBtn" data-settings-tab="controls">CONTROLS</button>
           <button type="button" class="btn settingsTabBtn" data-settings-tab="catalogs">CATALOGS</button>
+          <button type="button" class="btn settingsTabBtn" data-settings-tab="access">ACCESS</button>
         </div>
         <div class="settingsPanels">
           <div class="panel settingsPanel active" data-settings-panel="audio">
@@ -3269,11 +3344,88 @@
               </div>
             </div>
           </div>
+
+          <div class="panel settingsPanel" data-settings-panel="access">
+            <h3>Sandbox access</h3>
+            <p class="monoSmall" style="margin-bottom:10px;">Sandbox is hidden from the main menu. Enter the master access code (shown once when you have cleared every campaign) to unlock the Sandbox button.</p>
+            <div class="settingsAccessForm">
+              <label>
+                ACCESS CODE
+                <input id="sandboxAccessInputHome" type="text" autocomplete="off" spellcheck="false" placeholder="Paste or type code" />
+              </label>
+              <div class="settingsAccessStatus" id="sandboxAccessStatusHome" aria-live="polite"></div>
+              <button type="button" class="btn" id="btnSandboxAccessSubmit">Unlock sandbox</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
+  <div id="roadmapOverlay" class="overlay">
+    <div class="card">
+      <div class="cardHead">
+        <div>
+          <h2 class="title">Roadmap</h2>
+          <p class="subtitle">Planned work from the README and design notes.</p>
+        </div>
+        <button id="btnCloseRoadmap" class="btn" type="button">Close</button>
+      </div>
+      <div class="cardBody">
+        <div class="roadmapScroll monoSmall">
+          <p class="roadmapLead">This list mirrors the <b>README</b> roadmap section: polish, content, then online features. Full checklists live in <code>ROADMAP.md</code> in the repository.</p>
+          <h3>Tier 1 — Polish &amp; quick wins</h3>
+          <ul>
+            <li>Bug fixes: HUD danger class reset, shorter objective overlay, briefing launch button layout.</li>
+            <li>Mission briefing UI: fixed launch height, commander hint box, objective chip populated.</li>
+            <li>Sandbox retired from casual menu; access via code (campaign completion reveals the code).</li>
+            <li>HUD polish: optional vignette / scanline on canvas for synthwave feel.</li>
+            <li>More backgrounds (ice belt, lava trench, deep void, cyber grid) toward ~10 environments.</li>
+            <li>More ships (~20), portraits, sprites, unique passives for a few hulls.</li>
+          </ul>
+          <h3>Tier 2 — Content depth</h3>
+          <ul>
+            <li>Campaign progression: mission chain, unlocks, commander dialogue, rewards, campaign map.</li>
+            <li>Alien behavior diversity: sniper, rusher, shielder, bomber wired to sprites.</li>
+            <li>Achievements / badges in localStorage with toasts and gallery.</li>
+            <li>More question modes: mixed operations, speed round, boss-only mode.</li>
+            <li>Ship traits / loadout passives surfaced on briefing cards.</li>
+          </ul>
+          <h3>Tier 3 — Backend &amp; social</h3>
+          <ul>
+            <li>Online leaderboard (e.g. Supabase): POST scores, filtered top lists, Galactic Ranks screen.</li>
+            <li>Owner admin dashboard for session stats.</li>
+            <li>Lobby co-op multiplayer (WebSocket or Supabase Realtime).</li>
+            <li>Player accounts after leaderboard proves demand.</li>
+          </ul>
+          <h3>Tech &amp; shipping (README)</h3>
+          <ul>
+            <li>Build: esbundle to <code>asteroid_blaster.bundle.js</code>; optional Phaser renderer migration.</li>
+            <li>Deploy: GitHub Pages via Actions; Vercel config; Electron packaging for Windows.</li>
+          </ul>
+          <p class="roadmapNote">See README.md (Roadmap) and ROADMAP.md for the living task list and suggested sequence.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="sandboxRevealOverlay" class="overlay">
+    <div class="card">
+      <div class="cardHead">
+        <div>
+          <h2 class="title">Campaigns cleared</h2>
+          <p class="subtitle">You have finished every campaign. Here is your sandbox master key.</p>
+        </div>
+      </div>
+      <div class="cardBody">
+        <p class="monoSmall" style="margin-bottom:12px;">Open <b>Settings → Access</b> and paste the code below. The Sandbox button will appear on the home menu.</p>
+        <div class="sandboxCodeReveal" id="sandboxRevealCodeDisplay"></div>
+        <div style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
+          <button type="button" class="btn btnConfirm" id="btnSandboxRevealDismiss">Save &amp; close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div id="leaderboardsOverlay" class="overlay">
     <div class="card leaderboardsCard">
@@ -3567,6 +3719,9 @@
     var campaignStateKeyBase = "mathsteroid.campaign.state.";
     var campaignDataKeyBase = "mathsteroid.campaign.data.";
     var sandboxCampaignUnlockKey = "mentaris.sandbox.unlocked";
+    var SANDBOX_ACCESS_CODE = "NEBULA-88RIFT-K9VX-MENTARIS-PLASMA-LOCK-7720";
+    var sandboxMenuUnlockKey = "mentaris.sandbox.menuUnlock";
+    var sandboxRevealShownKey = "mentaris.sandbox.revealShown";
     var campaignDataVersion = 7;
     var campaignMaxFailuresDefault = 5;
     var campaignDefaultId = "sector_run";
@@ -4002,15 +4157,57 @@
       return true;
     }
 
+    function normalizeSandboxAccessCode(str){
+      return String(str || "").replace(/\s+/g, "").replace(/-/g, "").toUpperCase();
+    }
+    function getSandboxAccessCodeNormalized(){
+      return normalizeSandboxAccessCode(SANDBOX_ACCESS_CODE);
+    }
+    function isSandboxMenuUnlockedByCode(){
+      try{ return localStorage.getItem(sandboxMenuUnlockKey) === "1"; }catch(e){ return false; }
+    }
+    function tryUnlockSandboxMenuWithCode(raw){
+      if(getSandboxAccessCodeNormalized() === normalizeSandboxAccessCode(raw)){
+        try{ localStorage.setItem(sandboxMenuUnlockKey, "1"); }catch(e){}
+        return true;
+      }
+      return false;
+    }
+    function updateSandboxButtonMenuVisibility(){
+      if(typeof btnSandbox === "undefined" || !btnSandbox) return;
+      var show = isSandboxMenuUnlockedByCode();
+      btnSandbox.hidden = !show;
+      if(show){
+        btnSandbox.title = isSandboxUnlockedByCampaigns()
+          ? "Sandbox (campaigns cleared; access code used)."
+          : "Sandbox (unlocked via Settings access code).";
+      }
+    }
+    function dismissSandboxRevealOverlay(){
+      var ov = document.getElementById("sandboxRevealOverlay");
+      if(ov) ov.classList.remove("show");
+      try{ localStorage.setItem(sandboxRevealShownKey, "1"); }catch(e){}
+    }
+    function maybeShowSandboxRevealOverlay(){
+      if(!isSandboxUnlockedByCampaigns()) return;
+      var shown = false;
+      try{ shown = localStorage.getItem(sandboxRevealShownKey) === "1"; }catch(e){}
+      if(shown) return;
+      var ov = document.getElementById("sandboxRevealOverlay");
+      var disp = document.getElementById("sandboxRevealCodeDisplay");
+      if(!ov || !disp) return;
+      disp.textContent = SANDBOX_ACCESS_CODE;
+      ov.classList.add("show");
+    }
+
     function syncSandboxCampaignUnlock(){
       var unlocked = isSandboxUnlockedByCampaigns();
       try{ localStorage.setItem(sandboxCampaignUnlockKey, unlocked ? "1" : "0"); }catch(e){}
-      if(btnSandbox){
+      if(typeof btnSandbox !== "undefined" && btnSandbox){
         btnSandbox.setAttribute("data-campaign-unlocked", unlocked ? "true" : "false");
-        btnSandbox.title = unlocked
-          ? "Sandbox unlocked by clearing all campaigns."
-          : "Sandbox campaign-unlock hook is active.";
       }
+      updateSandboxButtonMenuVisibility();
+      if(unlocked && typeof btnSandbox !== "undefined" && btnSandbox) maybeShowSandboxRevealOverlay();
       return unlocked;
     }
 
@@ -6570,6 +6767,76 @@
         leaderboardsOverlay.classList.add("show");
       });
     }
+    var roadmapOverlay = document.getElementById("roadmapOverlay");
+    var btnRoadmap = document.getElementById("btnRoadmap");
+    var btnCloseRoadmap = document.getElementById("btnCloseRoadmap");
+    var sandboxRevealOverlay = document.getElementById("sandboxRevealOverlay");
+    var btnSandboxRevealDismiss = document.getElementById("btnSandboxRevealDismiss");
+    var sandboxAccessInputHome = document.getElementById("sandboxAccessInputHome");
+    var sandboxAccessStatusHome = document.getElementById("sandboxAccessStatusHome");
+    var btnSandboxAccessSubmit = document.getElementById("btnSandboxAccessSubmit");
+    if(btnRoadmap && roadmapOverlay){
+      btnRoadmap.addEventListener("click", function(){
+        playMenuBeep();
+        roadmapOverlay.classList.add("show");
+      });
+    }
+    if(btnCloseRoadmap && roadmapOverlay){
+      btnCloseRoadmap.addEventListener("click", function(){
+        playMenuBeep();
+        roadmapOverlay.classList.remove("show");
+      });
+    }
+    if(roadmapOverlay){
+      roadmapOverlay.addEventListener("click", function(e){
+        if(e.target === roadmapOverlay){
+          playMenuBeep();
+          roadmapOverlay.classList.remove("show");
+        }
+      });
+    }
+    if(btnSandboxRevealDismiss){
+      btnSandboxRevealDismiss.addEventListener("click", function(){
+        playMenuBeep();
+        dismissSandboxRevealOverlay();
+      });
+    }
+    if(sandboxRevealOverlay){
+      sandboxRevealOverlay.addEventListener("click", function(e){
+        if(e.target === sandboxRevealOverlay){
+          playMenuBeep();
+          dismissSandboxRevealOverlay();
+        }
+      });
+    }
+    function submitSandboxAccessFromHome(){
+      if(!sandboxAccessStatusHome) return;
+      var raw = sandboxAccessInputHome ? sandboxAccessInputHome.value : "";
+      sandboxAccessStatusHome.classList.remove("ok", "err");
+      if(tryUnlockSandboxMenuWithCode(raw)){
+        sandboxAccessStatusHome.textContent = "Sandbox unlocked. The button is on the home menu.";
+        sandboxAccessStatusHome.classList.add("ok");
+        updateSandboxButtonMenuVisibility();
+        if(sandboxAccessInputHome) sandboxAccessInputHome.value = "";
+      }else{
+        sandboxAccessStatusHome.textContent = "That code does not match. Check dashes and spelling.";
+        sandboxAccessStatusHome.classList.add("err");
+      }
+    }
+    if(btnSandboxAccessSubmit){
+      btnSandboxAccessSubmit.addEventListener("click", function(){
+        playMenuBeep();
+        submitSandboxAccessFromHome();
+      });
+    }
+    if(sandboxAccessInputHome){
+      sandboxAccessInputHome.addEventListener("keydown", function(e){
+        if(e.key === "Enter"){
+          e.preventDefault();
+          submitSandboxAccessFromHome();
+        }
+      });
+    }
     if (btnSettingsHome && settingsOverlay) {
       btnSettingsHome.addEventListener("click", function(){
         playMenuBeep();
@@ -7226,6 +7493,7 @@
     function syncCampaignMapDecorSize(){
       var wrap = document.getElementById("campaignMapWrap");
       var list = document.getElementById("campaignList");
+      var svg = document.getElementById("campaignMapRoutes");
       if(!wrap || !list) return;
       var h = Math.max(list.offsetHeight, wrap.scrollHeight, wrap.clientHeight || 0);
       var stars = wrap.querySelector(".campaignMapStars");
@@ -7233,7 +7501,6 @@
         stars.style.minHeight = h + "px";
         stars.style.height = h + "px";
       }
-      var svg = document.getElementById("campaignMapRoutes");
       if(svg){
         svg.style.width = "100%";
         svg.style.minHeight = h + "px";
