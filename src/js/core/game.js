@@ -5353,21 +5353,36 @@ function spawnPowerup(type, group, x, y, opts){
   });
 }
 
+function pickSecondaryPowerupTypeForRandomDrop(stampedeActive){
+  var pool = ["time","time","emp","emp","magnet","lock","repair","autofire","scope"];
+  if(stampedeActive){
+    pool = ["emp","emp","autofire","autofire","time","magnet","lock","repair","scope","emp","autofire"];
+  }
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function pickDefenseOrSecondaryPowerupDrop(stampedeActive, lowHull, hullRepairBias){
+  if(lowHull && hullRepairBias && Math.random() < 0.6){
+    return { type: "repair", group: "secondary" };
+  }
+  if(Math.random() < 0.4){
+    var dType = Math.random() < 0.55 ? "shield" : "armor";
+    return { type: dType, group: "defense" };
+  }
+  return { type: pickSecondaryPowerupTypeForRandomDrop(stampedeActive), group: "secondary" };
+}
+
 function choosePowerupDrop(){
   var roll = Math.random();
   var lowHull = player.hull < 0.3;
   var stampedeActive = isStampedeMode();
-  var allowOffense = true;
   if(state.alienSwarm){
     if(lowHull && roll < 0.5){
       var sType = Math.random() < 0.6 ? "repair" : pickSecondaryType();
       return { type: sType, group: "secondary" };
     }
-    if(roll < 0.3 && allowOffense){
-      var offense = ["laser", "fire", "ice", "electric", "pierce", "plasma", "rail"];
-      if(isMissileAllowed()) offense.unshift("missile");
-      var oType = offense[Math.floor(Math.random() * offense.length)];
-      return { type: oType, group: "offense" };
+    if(roll < 0.3){
+      return pickDefenseOrSecondaryPowerupDrop(stampedeActive, lowHull, true);
     }
     if(roll < 0.6){
       var dRoll = Math.random();
@@ -5389,11 +5404,8 @@ function choosePowerupDrop(){
       var sType = Math.random() < 0.6 ? "repair" : pickSecondaryType();
       return { type: sType, group: "secondary" };
     }
-    if(roll < 0.65 && allowOffense){
-      var offense = ["laser", "fire", "ice", "electric", "pierce", "plasma", "rail"];
-      if(isMissileAllowed()) offense.unshift("missile");
-      var oType = offense[Math.floor(Math.random() * offense.length)];
-      return { type: oType, group: "offense" };
+    if(roll < 0.65){
+      return pickDefenseOrSecondaryPowerupDrop(stampedeActive, lowHull, true);
     }
     if(roll < 0.85){
       var sType = pickSecondaryType();
@@ -5407,11 +5419,8 @@ function choosePowerupDrop(){
     var sType = Math.random() < 0.6 ? "repair" : pickSecondaryType();
     return { type: sType, group: "secondary" };
   }
-  if(roll < 0.3 && allowOffense){
-    var offense = ["laser", "fire", "ice", "electric", "pierce", "plasma", "rail"];
-    if(isMissileAllowed()) offense.unshift("missile");
-    var oType = offense[Math.floor(Math.random() * offense.length)];
-    return { type: oType, group: "offense" };
+  if(roll < 0.3){
+    return pickDefenseOrSecondaryPowerupDrop(stampedeActive, lowHull, true);
   }
   if(roll < 0.4){
     var dRoll = Math.random();
@@ -7985,6 +7994,10 @@ function clearEndSequenceTimers(){
     cancelAnimationFrame(endMineralAnimId);
     endMineralAnimId = 0;
   }
+  if(endScoreAnimId){
+    cancelAnimationFrame(endScoreAnimId);
+    endScoreAnimId = 0;
+  }
 }
 
 function resetEndScoresRevealState(){
@@ -8339,6 +8352,36 @@ function scheduleEndPhaseAdvance(delayMs){
     advanceEndSequencePhase();
   }, safeDelay);
   endSequenceTimers.push(endPhaseTimeoutId);
+}
+
+function skipToFinalMissionStatsEngagement(e){
+  if(e){
+    if(typeof e.preventDefault === "function") e.preventDefault();
+    if(e.button != null && e.button !== 0) return;
+    var el = e.target;
+    if(el && el.closest && el.closest("button, a, input, textarea, select, label")) return;
+  }
+  if(!overlayEnd || !overlayEnd.classList.contains("show") || !endSequenceActive) return;
+  if(endPhase !== "summary" && endPhase !== "engagement") return;
+  clearEndSequenceTimers();
+  if(endSequence){
+    endSequence.classList.remove("phase-fade-out");
+  }
+  var finalScore = Math.max(0, Math.round(Number(state.score) || 0));
+  if(endScoreValue){
+    endScoreValue.textContent = String(finalScore);
+  }
+  var earned = Math.max(0, Math.round(Number(state.mineralsEarned) || 0));
+  if(endMineralsCollected){
+    endMineralsCollected.textContent = String(earned);
+  }
+  if(endMineralsTotal){
+    endMineralsTotal.textContent = "TOTAL MINERALS: " + (Number(mineralsTotal) || 0);
+  }
+  endPhase = "engagement";
+  transitionEndStage("endStageEngagement", function(){
+    scheduleEndPhaseAdvance(END_PHASE_ENGAGEMENT_MS);
+  });
 }
 
 function showEndSummaryPhase(){
@@ -9426,7 +9469,7 @@ function update(dt){
   var accel = 1 - Math.exp(-accelRate * dtReal);
   player.moveSpeed += (targetSpeed - player.moveSpeed) * accel;
   var desiredVX = dirX * player.moveSpeed;
-  var desiredVY = state.pullDownRemaining > 0 ? Math.min(0, dirY * player.moveSpeed) : dirY * player.moveSpeed;
+  var desiredVY = dirY * player.moveSpeed;
 
   var response = profile.response || 14;
   var alpha = 1 - Math.exp(-response * dtReal);
@@ -15374,6 +15417,10 @@ if(btnHome){
 }
 if(btnRestart){ btnRestart.addEventListener("click", function(){ hardRestart(); }); }
 btnEndRestart.addEventListener("click", function(){ hardRestart(); });
+
+if(overlayEnd){
+  overlayEnd.addEventListener("pointerdown", skipToFinalMissionStatsEngagement, true);
+}
 
 btnEndSettings.addEventListener("click", function(){
   playSfx(state, "menu_beep");
