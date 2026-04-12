@@ -16,6 +16,66 @@
 }
 
 *{ box-sizing:border-box; }
+
+/* Scrollbars: vertical (cyan belt) vs horizontal (solar flare) — WebKit + Firefox */
+:root{
+  --sb-track: rgba(6,10,22,.97);
+  --sb-border-v: rgba(0,229,255,.22);
+  --sb-border-h: rgba(255,221,0,.22);
+}
+
+*::-webkit-scrollbar-corner{
+  background: var(--sb-track);
+}
+
+*::-webkit-scrollbar:vertical{
+  width: 11px;
+}
+*::-webkit-scrollbar:horizontal{
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track:vertical{
+  background: linear-gradient(90deg, rgba(4,8,18,.98), rgba(8,14,28,.92));
+  border-left: 1px solid var(--sb-border-v);
+  border-radius: 0 8px 8px 0;
+}
+*::-webkit-scrollbar-track:horizontal{
+  background: linear-gradient(180deg, rgba(4,8,18,.98), rgba(12,8,20,.92));
+  border-top: 1px solid var(--sb-border-h);
+  border-radius: 0 0 8px 8px;
+}
+
+*::-webkit-scrollbar-thumb:vertical{
+  background: linear-gradient(180deg, rgba(0,229,255,.55), rgba(0,130,175,.42));
+  border-radius: 6px;
+  border: 2px solid rgba(2,6,14,.92);
+  box-shadow: inset 0 0 8px rgba(255,255,255,.12);
+}
+*::-webkit-scrollbar-thumb:vertical:hover{
+  background: linear-gradient(180deg, rgba(90,240,255,.65), rgba(0,160,205,.5));
+}
+*::-webkit-scrollbar-thumb:horizontal{
+  background: linear-gradient(90deg, rgba(255,221,0,.5), rgba(175,0,111,.4));
+  border-radius: 5px;
+  border: 2px solid rgba(2,6,14,.92);
+  box-shadow: inset 0 0 6px rgba(255,255,255,.1);
+}
+*::-webkit-scrollbar-thumb:horizontal:hover{
+  background: linear-gradient(90deg, rgba(255,235,150,.58), rgba(200,40,140,.48));
+}
+
+*::-webkit-scrollbar-button{
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+html, body, #wrap, #gameShell, .overlay .card, .panel, textarea, select{
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,229,255,.55) var(--sb-track);
+}
+
 html,body{ height:100%; }
 body{
   margin:0;
