@@ -3734,8 +3734,8 @@
           <h3>Missions</h3>
           <div class="campaignMapWrap" id="campaignMapWrap">
             <div class="campaignMapStars" aria-hidden="true"></div>
-            <svg class="campaignMapRoutes" id="campaignMapRoutes" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-              <path id="campaignMapPathLine" fill="none" stroke="rgba(0,229,255,.42)" stroke-width="1.1" stroke-dasharray="3 2.5" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+            <svg class="campaignMapRoutes" id="campaignMapRoutes" viewBox="0 0 1 1" preserveAspectRatio="xMinYMin meet" aria-hidden="true">
+              <path id="campaignMapPathLine" fill="none" stroke="rgba(0,229,255,.42)" stroke-width="1.1" stroke-dasharray="3 2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
             </svg>
             <ul class="list campaignMapList" id="campaignList"></ul>
           </div>
@@ -7688,19 +7688,48 @@
     }
 
     var campaignMapScrollHooked = false;
+    var campaignMapRouteRaf = 0;
+    function requestCampaignMapRoutePaint(){
+      if(campaignMapRouteRaf) return;
+      campaignMapRouteRaf = requestAnimationFrame(function(){
+        campaignMapRouteRaf = 0;
+        updateCampaignMapRouteFromDOM();
+      });
+    }
     function ensureCampaignMapScrollSync(){
       var wrap = document.getElementById("campaignMapWrap");
       if(!wrap || campaignMapScrollHooked) return;
       campaignMapScrollHooked = true;
       wrap.addEventListener("scroll", function(){
-        scheduleCampaignMapDecorResize();
+        requestCampaignMapRoutePaint();
       }, { passive: true });
+      wrap.addEventListener("transitionend", function(e){
+        if(!e.target || !e.target.closest) return;
+        if(e.target.closest(".campaignMapNode")) requestCampaignMapRoutePaint();
+      }, true);
+    }
+
+    function campaignMapFmt(n){
+      return (Math.round(n * 100) / 100).toFixed(2);
+    }
+    function campaignMapAppendMinorArc(d, cx, cy, r, x1, y1, x2, y2){
+      var a1 = Math.atan2(y1 - cy, x1 - cx);
+      var a2 = Math.atan2(y2 - cy, x2 - cx);
+      var delta = a2 - a1;
+      while(delta > Math.PI) delta -= Math.PI * 2;
+      while(delta < -Math.PI) delta += Math.PI * 2;
+      if(Math.abs(delta) < 0.004){
+        return d + " L " + campaignMapFmt(x2) + " " + campaignMapFmt(y2);
+      }
+      var sweep = delta > 0 ? 1 : 0;
+      return d + " A " + campaignMapFmt(r) + " " + campaignMapFmt(r) + " 0 0 " + sweep + " " + campaignMapFmt(x2) + " " + campaignMapFmt(y2);
     }
 
     function updateCampaignMapRouteFromDOM(){
       var pathEl = document.getElementById("campaignMapPathLine");
       var wrap = document.getElementById("campaignMapWrap");
       var list = document.getElementById("campaignList");
+      var svg = document.getElementById("campaignMapRoutes");
       if(!pathEl || !wrap || !list) return;
       var items = list.querySelectorAll("li.campaignMapNode");
       if(items.length < 2){
@@ -7710,21 +7739,59 @@
       var wPx = Math.max(wrap.scrollWidth, wrap.clientWidth, 1);
       var h = Math.max(list.offsetHeight, wrap.scrollHeight, wrap.clientHeight || 0);
       if(h < 1) h = 1;
+      if(svg){
+        svg.setAttribute("viewBox", "0 0 " + wPx + " " + h);
+        svg.style.width = wPx + "px";
+        svg.style.minWidth = wPx + "px";
+        svg.style.height = h + "px";
+        svg.style.minHeight = h + "px";
+      }
       var wr = wrap.getBoundingClientRect();
-      var parts = [];
+      var centers = [];
+      var radii = [];
       for(var i = 0; i < items.length; i++){
         var disc = items[i].querySelector(".campaignMapNodeDiscInner");
         if(!disc) continue;
         var dr = disc.getBoundingClientRect();
-        var x = ((dr.left + dr.width * 0.5 - wr.left + wrap.scrollLeft) / wPx) * 100;
-        var y = ((dr.top + dr.height * 0.5 - wr.top + wrap.scrollTop) / h) * 100;
-        parts.push((parts.length ? "L" : "M") + " " + x.toFixed(2) + " " + y.toFixed(2));
+        var cx = wrap.scrollLeft + (dr.left + dr.width * 0.5 - wr.left);
+        var cy = wrap.scrollTop + (dr.top + dr.height * 0.5 - wr.top);
+        centers.push({ x: cx, y: cy });
+        var rPx = Math.min(dr.width, dr.height) * 0.5 - 0.5;
+        if(rPx < 2) rPx = Math.min(dr.width, dr.height) * 0.5;
+        radii.push(rPx);
       }
-      if(parts.length < 2){
+      if(centers.length < 2){
         pathEl.setAttribute("d", "");
         return;
       }
-      pathEl.setAttribute("d", parts.join(" "));
+      var d = "";
+      var prevEx = 0;
+      var prevEy = 0;
+      for(var s = 0; s < centers.length - 1; s++){
+        var Ci = centers[s];
+        var Cj = centers[s + 1];
+        var ri = radii[s];
+        var rj = radii[s + 1];
+        var dx = Cj.x - Ci.x;
+        var dy = Cj.y - Ci.y;
+        var segLen = Math.hypot(dx, dy);
+        if(segLen < 1e-3) continue;
+        var ux = dx / segLen;
+        var uy = dy / segLen;
+        var sx = Ci.x + ux * ri;
+        var sy = Ci.y + uy * ri;
+        var ex = Cj.x - ux * rj;
+        var ey = Cj.y - uy * rj;
+        if(!d){
+          d = "M " + campaignMapFmt(sx) + " " + campaignMapFmt(sy) + " L " + campaignMapFmt(ex) + " " + campaignMapFmt(ey);
+        }else{
+          d = campaignMapAppendMinorArc(d, Ci.x, Ci.y, ri, prevEx, prevEy, sx, sy);
+          d += " L " + campaignMapFmt(ex) + " " + campaignMapFmt(ey);
+        }
+        prevEx = ex;
+        prevEy = ey;
+      }
+      pathEl.setAttribute("d", d);
     }
 
     var campaignMapDecorResizeTimer = 0;
@@ -7740,9 +7807,12 @@
         stars.style.height = h + "px";
       }
       if(svg){
-        svg.style.width = "100%";
-        svg.style.minHeight = h + "px";
+        var wPx = Math.max(wrap.scrollWidth, wrap.clientWidth, 1);
+        svg.setAttribute("viewBox", "0 0 " + wPx + " " + h);
+        svg.style.width = wPx + "px";
+        svg.style.minWidth = wPx + "px";
         svg.style.height = h + "px";
+        svg.style.minHeight = h + "px";
       }
       updateCampaignMapRouteFromDOM();
     }
