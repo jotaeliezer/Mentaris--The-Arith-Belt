@@ -1102,10 +1102,10 @@ body.launching #menuWrap{
 
 .engagementSplit{
   display:grid;
-  grid-template-columns: minmax(200px, 0.36fr) minmax(260px, 1fr);
+  grid-template-columns: minmax(280px, 1.12fr) minmax(200px, 0.52fr);
   gap:18px 22px;
   width:100%;
-  align-items:start;
+  align-items:stretch;
 }
 .engagementSplit.engagementSplit--noPowerups{
   grid-template-columns: 1fr;
@@ -1117,6 +1117,27 @@ body.launching #menuWrap{
   display:flex;
   flex-direction:column;
   width:100%;
+  min-height:100%;
+  align-self:stretch;
+  gap:14px;
+}
+
+.engagementSideHint{
+  flex-shrink:0;
+  text-align:center;
+  letter-spacing:0.06em;
+  color:rgba(184,222,255,.78);
+  padding:8px 12px;
+  border-radius:12px;
+  border:1px solid rgba(0,229,255,.14);
+  background: rgba(4,10,22,.45);
+  line-height:1.35;
+}
+
+#endStageEngagement #engagementColIcons > #statsListSecondary{
+  flex:1;
+  min-height:0;
+  justify-content:center;
 }
 
 .endPlacementPanel{
@@ -1148,21 +1169,23 @@ body.launching #menuWrap{
 #endStageEngagement .endMineralsSummary{
   margin-left:auto;
   margin-right:auto;
-  max-width:380px;
-  padding:12px 14px 14px;
+  max-width:min(520px, 100%);
+  padding:10px 16px;
   display:flex;
-  flex-direction:column;
+  flex-direction:row;
+  flex-wrap:wrap;
   align-items:center;
   justify-content:center;
-  text-align:center;
-  gap:8px;
+  text-align:left;
+  gap:12px 18px;
   grid-template-columns:unset;
 }
 
 #endStageEngagement .endMineralsIconWrap{
-  width:56px;
-  height:56px;
-  margin:0 auto;
+  width:52px;
+  height:52px;
+  margin:0;
+  flex-shrink:0;
 }
 
 #endStageEngagement .endMineralsIcon{
@@ -1171,12 +1194,13 @@ body.launching #menuWrap{
 }
 
 #endStageEngagement .endMineralsMeta{
-  width:100%;
-  text-align:center;
+  flex:1;
+  min-width:min(280px, 100%);
+  text-align:left;
 }
 
 #endStageEngagement .endMineralsValue{
-  font-size:30px;
+  font-size:26px;
   line-height:1.05;
 }
 
@@ -2195,6 +2219,26 @@ input[type="checkbox"]{ transform: translateY(1px); }
   color:#e8ecff;
 }
 
+#endStageEngagement #engagementColIcons #statsListSecondary .endStatsMiniTile{
+  min-height:76px;
+  padding:10px 12px;
+  gap:10px;
+}
+
+#endStageEngagement #engagementColIcons #statsListSecondary .endStatsMiniIcon{
+  width:56px;
+  height:56px;
+}
+
+#endStageEngagement #engagementColIcons #statsListSecondary .endStatsMiniIcon img{
+  width:44px;
+  height:44px;
+}
+
+#endStageEngagement #engagementColIcons #statsListSecondary .endStatsMiniCount{
+  font-size:20px;
+}
+
 #endStageEngagement #statsListSecondary .endStatsMiniActionBadge{
   font-size:7px;
   letter-spacing:0.8px;
@@ -2320,6 +2364,9 @@ input[type="checkbox"]{ transform: translateY(1px); }
   padding:9px 10px;
   gap:8px;
 }
+#engagementColPowerups .puStatsRow:nth-child(even):not(.puStatsHeader){
+  background:rgba(0,229,255,.035);
+}
 .puStatsRow:last-child{ border-bottom:none; }
 .puStatsRow:nth-child(odd):not(.puStatsHeader){ background:rgba(255,255,255,.02); }
 .puStatsHeader{
@@ -2403,7 +2450,7 @@ input[type="checkbox"]{ transform: translateY(1px); }
     min-height:0;
   }
   .engagementSplit{
-    grid-template-columns: minmax(180px, 0.42fr) minmax(220px, 1fr);
+    grid-template-columns: minmax(220px, 1fr) minmax(160px, 0.48fr);
     gap:14px;
   }
 }

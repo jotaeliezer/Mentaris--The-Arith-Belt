@@ -8666,7 +8666,7 @@ function endGame(reason){
       statsListSecondary.style.display = "flex";
       statsListSecondary.style.flexDirection = "column";
       statsListSecondary.style.gap = "6px";
-      statsListSecondary.style.justifyContent = "stretch";
+      statsListSecondary.style.justifyContent = "center";
       statsListSecondary.style.gridTemplateColumns = "";
     }
     if(engagementColPowerups){
@@ -8862,6 +8862,25 @@ function endGame(reason){
     }
     if(engagementSplit){
       engagementSplit.classList.toggle("engagementSplit--noPowerups", puKeys.length === 0);
+    }
+
+    var engagementSideHint = document.getElementById("engagementSideHint");
+    if(engagementSideHint){
+      if(puKeys.length > 0){
+        var puPicked = 0;
+        var puMissed = 0;
+        puKeys.forEach(function(k){
+          var row = puMerged[k];
+          if(!row) return;
+          puPicked += row.collected || 0;
+          puMissed += row.missed || 0;
+        });
+        engagementSideHint.textContent = "Session pickups: " + puPicked + " collected · " + puMissed + " drifted past";
+        engagementSideHint.hidden = false;
+      }else{
+        engagementSideHint.textContent = "";
+        engagementSideHint.hidden = true;
+      }
     }
 
     if(engagementIconRows){

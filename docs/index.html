@@ -1364,7 +1364,11 @@
 
     .campaignMapStars{
       position:absolute;
-      inset:0;
+      top:0;
+      left:0;
+      right:0;
+      width:100%;
+      min-height:100%;
       pointer-events:none;
       z-index:0;
       background-color:#050810;
@@ -1389,9 +1393,12 @@
 
     .campaignMapRoutes{
       position:absolute;
-      inset:0;
+      top:0;
+      left:0;
       width:100%;
-      height:100%;
+      min-height:100%;
+      height:auto;
+      display:block;
       z-index:1;
       pointer-events:none;
     }
@@ -1421,7 +1428,7 @@
       border:none;
       background:transparent;
       box-shadow:none;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, calc(-50% - var(--campaign-orbit-nudge)));
       cursor:pointer;
       transition: transform .22s ease, filter .22s ease, z-index .05s linear;
       display:flex;
@@ -1431,7 +1438,7 @@
     }
 
     #campaignMissionsView #campaignList .campaignMapNode:hover:not(.locked){
-      transform: translate(-50%, -50%) translateY(-10px) scale(1.05);
+      transform: translate(-50%, calc(-50% - var(--campaign-orbit-nudge))) translateY(-10px) scale(1.05);
       z-index:4;
       filter: drop-shadow(0 16px 28px rgba(0,229,255,.35));
     }
@@ -1551,11 +1558,12 @@
     }
 
     #campaignMissionsView #campaignList .campaignMapNode.locked:hover{
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, calc(-50% - var(--campaign-orbit-nudge)));
       filter: grayscale(0.35);
     }
 
     @media (max-width: 760px){
+      #campaignMissionsView{ --campaign-orbit-nudge: 40px; }
       .campaignMapNodeMeta{ width:118px; }
       .campaignMapNodeBody{ width:76px; height:76px; }
       .campaignMapNodeDiscInner{ width:64px; height:64px; }
@@ -1576,6 +1584,7 @@
     }
 
     #campaignMissionsView{
+      --campaign-orbit-nudge: 48px;
       grid-template-columns: minmax(0, 1.92fr) minmax(260px, 300px);
       gap:20px;
       align-items:stretch;
@@ -5920,6 +5929,7 @@
       var selected = (document.querySelector('input[name=\"ship\"]:checked') || {}).value || "mk7";
       updateShipCarousel(selected);
       updateShotTypeCarousel((shotTypeInput && shotTypeInput.value) || "single");
+      if(typeof scheduleCampaignMapDecorResize === "function") scheduleCampaignMapDecorResize();
     });
     var startBtn = document.getElementById("btnStartGame");
     var btnLaunchHome = document.getElementById("btnLaunchHome");
@@ -7212,6 +7222,36 @@
       pathEl.setAttribute("d", parts.join(" "));
     }
 
+    var campaignMapDecorResizeTimer = 0;
+    function syncCampaignMapDecorSize(){
+      var wrap = document.getElementById("campaignMapWrap");
+      var list = document.getElementById("campaignList");
+      if(!wrap || !list) return;
+      var h = Math.max(list.offsetHeight, wrap.scrollHeight, wrap.clientHeight || 0);
+      var stars = wrap.querySelector(".campaignMapStars");
+      if(stars){
+        stars.style.minHeight = h + "px";
+        stars.style.height = h + "px";
+      }
+      var svg = document.getElementById("campaignMapRoutes");
+      if(svg){
+        svg.style.width = "100%";
+        svg.style.minHeight = h + "px";
+        svg.style.height = h + "px";
+      }
+      setCampaignMapRoutePath(getActiveCampaignMissions().length);
+    }
+
+    function scheduleCampaignMapDecorResize(){
+      if(campaignMapDecorResizeTimer) clearTimeout(campaignMapDecorResizeTimer);
+      campaignMapDecorResizeTimer = setTimeout(function(){
+        campaignMapDecorResizeTimer = 0;
+        if(campaignMissionsView && campaignMissionsView.classList.contains("active")){
+          syncCampaignMapDecorSize();
+        }
+      }, 100);
+    }
+
     function getCampaignMissionBeltKey(campaignId, missionIndex, missionCount){
       var id = String(campaignId || campaignDefaultId);
       var idx = Math.max(0, Number(missionIndex) || 0);
@@ -7484,9 +7524,14 @@
       }else{
         campaignList.style.minHeight = Math.max(520, n * 108 + 200) + "px";
       }
-      setCampaignMapRoutePath(n);
+      syncCampaignMapDecorSize();
       requestAnimationFrame(function(){
-        setCampaignMapRoutePath(n);
+        syncCampaignMapDecorSize();
+      });
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+          syncCampaignMapDecorSize();
+        });
       });
       var startIndex = (state.index || 0);
       renderCampaignDetails(startIndex);
