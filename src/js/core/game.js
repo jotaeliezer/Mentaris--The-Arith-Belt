@@ -4155,14 +4155,67 @@ function formatRepeatingMarkup(text){
   return before + "<span class=\"repeatOverline\">" + repeat + "</span>" + after;
 }
 
-function buildRationalPool(minDen, maxDen){
-  var out = [];
-  for(var d=minDen; d<=maxDen; d++){
-    if(d <= 0) continue;
-    var dec = formatRepeatingDecimal(1, d);
-    out.push({ den: d, frac: "1/" + d, dec: dec });
+function rationalNumeratorsForDifficulty(diffRaw){
+  var diff = String(diffRaw || "normal").toLowerCase();
+  if(diff === "easy") return [1, 2, 3];
+  if(diff === "normal") return [1, 2, 3, 4, 5];
+  if(diff === "hard") return [5, 6, 7, 8];
+  if(diff === "brutal") return [8, 9, 10, 11];
+  return [1, 2, 3, 4, 5];
+}
+
+function rationalFracGcd(a, b){
+  a = Math.abs(a);
+  b = Math.abs(b);
+  while(b){
+    var t = b;
+    b = a % b;
+    a = t;
   }
-  return out;
+  return a || 1;
+}
+
+function reduceRationalPair(n, d){
+  if(!d) return { n: 0, d: 1 };
+  var g = rationalFracGcd(n, d);
+  return { n: Math.round(n / g), d: Math.round(d / g) };
+}
+
+/**
+ * Valid reduced fractions n/d with d in [minDen,maxDen], raw numerator in numerSet,
+ * raw n <= d, and reduced denominator > 1 (skip integers like 4/4 -> 1).
+ */
+function buildRationalPool(minDen, maxDen, difficulty){
+  var numSet = rationalNumeratorsForDifficulty(difficulty);
+  var byKey = {};
+  for(var d = minDen; d <= maxDen; d++){
+    if(d <= 0) continue;
+    for(var si = 0; si < numSet.length; si++){
+      var rawN = numSet[si];
+      if(rawN < 1 || rawN > d) continue;
+      var r = reduceRationalPair(rawN, d);
+      if(r.d <= 1) continue;
+      var key = r.n + "/" + r.d;
+      if(byKey[key]) continue;
+      var dec = formatRepeatingDecimal(r.n, r.d);
+      byKey[key] = { num: r.n, den: r.d, frac: key, dec: dec };
+    }
+  }
+  return Object.keys(byKey).map(function(k){ return byKey[k]; });
+}
+
+function buildRationalPoolWithFallback(minDen, maxDen, difficulty){
+  var diff = String(difficulty || "normal").toLowerCase();
+  var order = [diff, "brutal", "normal", "easy"];
+  var tried = {};
+  for(var oi = 0; oi < order.length; oi++){
+    var dTry = order[oi];
+    if(tried[dTry]) continue;
+    tried[dTry] = true;
+    var pool = buildRationalPool(minDen, maxDen, dTry);
+    if(pool.length) return pool;
+  }
+  return buildRationalPool(2, 12, "brutal");
 }
 
 function shouldEndByQuestionLimit(){
@@ -4488,10 +4541,10 @@ function nextProblem(){
       minDen = maxDen;
       maxDen = tmpDen;
     }
-    var pool = buildRationalPool(minDen, maxDen);
-    if(!pool.length) pool = buildRationalPool(2, 12);
+    var diffRat = String(state.difficulty || "normal").toLowerCase();
+    var pool = buildRationalPoolWithFallback(minDen, maxDen, diffRat);
     var entry = pool[randi(0, pool.length - 1)];
-    state.a = 1;
+    state.a = entry.num;
     state.b = entry.den;
     state.rationalPool = pool;
     state.rationalQuestion = (state.questionMode === "rational_frac") ? entry.dec : entry.frac;
@@ -4728,7 +4781,9 @@ function baseMulDecoy(correct){
 }
 
 function genRationalDecoys(correct, count){
-  var pool = (state.rationalPool && state.rationalPool.length) ? state.rationalPool : buildRationalPool(2, 12);
+  var pool = (state.rationalPool && state.rationalPool.length)
+    ? state.rationalPool
+    : buildRationalPoolWithFallback(2, 12, String(state.difficulty || "normal"));
   var useFraction = state.questionMode === "rational_frac";
   var out = new Set();
   var tries = 0;
