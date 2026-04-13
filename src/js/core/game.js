@@ -370,6 +370,7 @@ function addSecondaryPowerup(type){
     }
   }
   syncSelectedSecondary();
+  syncAutofireWithSecondarySlots(player);
   if(tutorialActive && tutorialStepId === "secondary_slots" && tourGuide){
     if(countActiveSecondarySlots(player) >= 3){
       tourGuide.notify("secondary_slot");
@@ -410,6 +411,7 @@ function addSecondaryPowerupForPilot(pilot, type){
     }
   }
   syncSelectedSecondaryForPilot(pilot);
+  syncAutofireWithSecondarySlots(pilot);
 }
 
 function isMissileModeActiveForPilot(pilot){
@@ -419,15 +421,47 @@ function isMissileModeActiveForPilot(pilot){
 
 function pilotHasAutofireAvailable(pilot){
   if(!pilot) return false;
-  if(pilot.autoFireActive) return true;
+  if(pilot.autoFireActive && (pilot.autoFireAmmo || 0) > 0) return true;
+  return hasSecondaryType(pilot, "autofire");
+}
+
+function pilotHasAutofireSlotRow(pilot){
+  if(!pilot) return false;
   var slots = getSecondarySlotsForPilot(pilot);
   for(var i=0; i<slots.length; i++){
-    var slot = slots[i];
-    if(slot && slot.type === "autofire" && (slot.count || 0) > 0){
-      return true;
-    }
+    if(slots[i] && slots[i].type === "autofire") return true;
   }
   return false;
+}
+
+function clearAutofireRuntime(pilot){
+  if(!pilot) return;
+  pilot.autoFireActive = false;
+  pilot.autoFireSpinning = false;
+  pilot.autoFireSpinTimer = 0;
+  pilot.autoFireSpinSfxPlayed = false;
+  pilot.autoFireAmmo = 0;
+  pilot.autoFireAmmoMax = 0;
+}
+
+/**
+ * If autofire is no longer present in secondary slots (replaced / spent),
+ * or there are no charges left and the magazine is empty, clear runtime autofire.
+ */
+function syncAutofireWithSecondarySlots(pilot){
+  if(!pilot) return;
+  var hasRow = pilotHasAutofireSlotRow(pilot);
+  var hasCharges = hasSecondaryType(pilot, "autofire");
+  var ammo = pilot.autoFireAmmo || 0;
+  if(!hasRow){
+    clearAutofireRuntime(pilot);
+    cleanupAutoFireSlotsOnPilot(pilot);
+    return;
+  }
+  if(!hasCharges && ammo <= 0){
+    clearAutofireRuntime(pilot);
+    cleanupAutoFireSlotsOnPilot(pilot);
+  }
 }
 
 function shouldBlockMissilePickupForPilot(pilot){
@@ -1249,7 +1283,7 @@ var powerupCatalogSecondary = [
   { id: "emp", label: "EMP Burst", icon: powerupIcons.emp.src, desc: "Triggers immediately and cascades non-answer asteroids." },
   { id: "lock", label: "Target Lock", icon: powerupIcons.lock.src, desc: "Grants one Target Lock charge (press X to steer shots to the correct asteroid)." },
   { id: "autofire", label: "Auto-Fire", icon: powerupIcons.machinegun.src, desc: "Activates a rapid-fire magazine for the current shot type." },
-  { id: "ammo", label: "Ammo Cache", icon: powerupIcons.ammo.src, desc: "Bonus ammo pickup for special weapon handling." },
+  { id: "ammo", label: "Ammo Cache", icon: powerupIcons.ammo.src, desc: "Restores primary blaster ammo (shared magazine for the run)." },
   { id: "scope", label: "Scope", icon: powerupIcons.scope.src, desc: "Projects a laser guide to the nearest asteroid." }
 ];
 
@@ -3766,6 +3800,70 @@ function getMissileBurstCount(answerStr, target){
   return 1;
 }
 
+var PRIMARY_AMMO_PICKUP_BUNDLE = 22;
+var PRIMARY_AMMO_QUESTION_SHOTS = 12;
+var PRIMARY_AMMO_DECOY_WEIGHT = 1.5;
+var PRIMARY_AMMO_FLOOR_QUESTION = 40;
+var PRIMARY_AMMO_FLOOR_ENDLESS = 120;
+
+function pilotPrimaryAmmoUnlimited(pilot){
+  return !!(pilot && pilot.primaryAmmoUnlimited);
+}
+
+function getPrimaryAmmoSoftCap(primaryAmmoStart){
+  var s = primaryAmmoStart | 0;
+  return Math.max(s * 3, s + 60);
+}
+
+function computePrimaryAmmoStart(){
+  var dec = Math.max(0, state.decoys | 0);
+  var ql = state.questionLimit | 0;
+  if(ql > 0){
+    return Math.max(PRIMARY_AMMO_FLOOR_QUESTION, Math.round(ql * PRIMARY_AMMO_QUESTION_SHOTS + dec * PRIMARY_AMMO_DECOY_WEIGHT));
+  }
+  var t = state.timeLimitSec | 0;
+  var lives = Math.max(0, state.livesStart | 0);
+  return Math.max(PRIMARY_AMMO_FLOOR_ENDLESS, Math.round((t || 120) * 2 + lives * 30 + dec * 2));
+}
+
+function initPrimaryAmmoForPilot(pilot){
+  if(!pilot) return;
+  if(tutorialActive){
+    pilot.primaryAmmoUnlimited = true;
+    pilot.primaryAmmo = 0;
+    pilot.primaryAmmoStart = 0;
+    return;
+  }
+  var start = computePrimaryAmmoStart();
+  pilot.primaryAmmoUnlimited = false;
+  pilot.primaryAmmoStart = start;
+  pilot.primaryAmmo = start;
+}
+
+function addPrimaryAmmoForPilot(pilot, amount){
+  if(!pilot || pilotPrimaryAmmoUnlimited(pilot)) return;
+  var add = amount | 0;
+  if(add <= 0) return;
+  var cap = getPrimaryAmmoSoftCap(pilot.primaryAmmoStart || PRIMARY_AMMO_FLOOR_QUESTION);
+  pilot.primaryAmmo = Math.min(cap, Math.max(0, (pilot.primaryAmmo | 0) + add));
+}
+
+function pilotHasPrimaryAmmo(pilot, need){
+  if(!pilot) return false;
+  if(pilotPrimaryAmmoUnlimited(pilot)) return true;
+  return ((pilot.primaryAmmo | 0) >= (need | 0));
+}
+
+function consumePrimaryAmmoForPilot(pilot, n){
+  if(!pilot) return true;
+  if(pilotPrimaryAmmoUnlimited(pilot)) return true;
+  var need = n | 0;
+  if(need <= 0) return true;
+  if((pilot.primaryAmmo | 0) < need) return false;
+  pilot.primaryAmmo -= need;
+  return true;
+}
+
 function launchMissile(target, opts){
   if(!target) return false;
   var dx = target.x - player.x;
@@ -3821,6 +3919,8 @@ function launchMissileBurst(target, count, targetType){
   if(!target) return false;
   var shots = Math.max(0, count | 0);
   if(shots <= 0) return false;
+  if(!pilotHasPrimaryAmmo(player, shots)) return false;
+  if(!consumePrimaryAmmoForPilot(player, shots)) return false;
   playSfx(state, "shot_missile");
   var spread = Math.max(0, shots - 1);
   var baseOffset = 6;
@@ -3857,7 +3957,12 @@ function handleMissileInput(digit){
   if(buffer && buffer === answer){
     var targetInfo = findMissileTarget();
     if(targetInfo && targetInfo.target && canMissileLock(targetInfo.target)){
-    launchMissileBurst(targetInfo.target, getMissileBurstCount(answer, targetInfo.target), targetInfo.type);
+      var burstCount = getMissileBurstCount(answer, targetInfo.target);
+      if(pilotHasPrimaryAmmo(player, burstCount)){
+        launchMissileBurst(targetInfo.target, burstCount, targetInfo.type);
+      }else{
+        showToast("OUT OF AMMO");
+      }
     }
     state.missileBuffer = "";
     state.missileBufferTimer = 0;
@@ -3872,6 +3977,12 @@ function openMissileInput(){
   if((player.blasterMode || "single") !== "missile") return false;
   var answer = getMissileAnswerString();
   if(!answer) return false;
+  var targetGuess = findMissileTarget();
+  var burstNeed = getMissileBurstCount(answer, targetGuess && targetGuess.target ? targetGuess.target : null);
+  if(!pilotHasPrimaryAmmo(player, burstNeed)){
+    showToast("OUT OF AMMO");
+    return false;
+  }
   missileInputActive = true;
   missileInputAnswer = answer;
   missileInputDeadline = performance.now() + 5000;
@@ -3929,8 +4040,14 @@ function attemptMissileLaunch(){
   if(value !== missileInputAnswer) return false;
   var targetInfo = findMissileTarget();
   if(targetInfo && targetInfo.target && canMissileLock(targetInfo.target)){
-    launchMissileBurst(targetInfo.target, getMissileBurstCount(missileInputAnswer, targetInfo.target), targetInfo.type);
-    closeMissileInput();
+    var burstN = getMissileBurstCount(missileInputAnswer, targetInfo.target);
+    if(!pilotHasPrimaryAmmo(player, burstN)){
+      closeMissileInput("OUT OF AMMO");
+    }else if(launchMissileBurst(targetInfo.target, burstN, targetInfo.type)){
+      closeMissileInput();
+    }else{
+      closeMissileInput("MISSILE NO LOCK");
+    }
   }else{
     closeMissileInput("MISSILE NO LOCK");
   }
@@ -5412,9 +5529,9 @@ function spawnPowerup(type, group, x, y, opts){
 }
 
 function pickSecondaryPowerupTypeForRandomDrop(stampedeActive){
-  var pool = ["time","time","emp","emp","magnet","lock","repair","autofire","scope"];
+  var pool = ["time","time","emp","emp","magnet","lock","repair","autofire","scope","ammo","ammo"];
   if(stampedeActive){
-    pool = ["emp","emp","autofire","autofire","time","magnet","lock","repair","scope","emp","autofire"];
+    pool = ["emp","emp","autofire","autofire","time","magnet","lock","repair","scope","ammo","emp","autofire"];
   }
   return pool[Math.floor(Math.random() * pool.length)];
 }
@@ -5451,9 +5568,9 @@ function choosePowerupDrop(){
     return { type: sType, group: "secondary" };
   }
   function pickSecondaryType(){
-    var pool = ["time","time","emp","emp","magnet","lock","repair","autofire","scope"];
+    var pool = ["time","time","emp","emp","magnet","lock","repair","autofire","scope","ammo","ammo"];
     if(stampedeActive){
-      pool = ["emp","emp","autofire","autofire","time","magnet","lock","repair","scope","emp","autofire"];
+      pool = ["emp","emp","autofire","autofire","time","magnet","lock","repair","scope","ammo","emp","autofire"];
     }
     return pool[Math.floor(Math.random() * pool.length)];
   }
@@ -5567,6 +5684,11 @@ function applyPowerup(p){
     player.scopeTimer = 1;
     showToast("DEFENSE -> SCOPE ONLINE");
   }else if(p.group === "secondary"){
+    if(p.type === "ammo"){
+      addPrimaryAmmoForPilot(player, PRIMARY_AMMO_PICKUP_BUNDLE);
+      showToast("AMMO +" + PRIMARY_AMMO_PICKUP_BUNDLE);
+      return;
+    }
     if(p.type === "scope"){
       player.scopeTimer = 1;
       showToast("SECONDARY -> SCOPE ONLINE");
@@ -5628,6 +5750,11 @@ function applyPowerupForPilot(pilot, pilotId, powerup){
     pilot.scopeTimer = 1;
     showToast("DEFENSE -> SCOPE ONLINE");
   }else if(p.group === "secondary"){
+    if(p.type === "ammo"){
+      addPrimaryAmmoForPilot(pilot, PRIMARY_AMMO_PICKUP_BUNDLE);
+      showToast("AMMO +" + PRIMARY_AMMO_PICKUP_BUNDLE);
+      return;
+    }
     if(p.type === "scope"){
       pilot.scopeTimer = 1;
       showToast("SECONDARY -> SCOPE ONLINE");
@@ -6088,6 +6215,7 @@ function resetSession(){
   player.fadeOutActive = false;
   player.fadeOutT = 0;
   player.fadeOutDur = 0;
+  initPrimaryAmmoForPilot(player);
   answerHitsSincePowerup = 0;
   hiddenPowerupActive = false;
   resetSurvivorTimer();
@@ -6129,6 +6257,7 @@ function resetSession(){
     pilot2.lives = pilot2.livesStart;
     resetPilotStats(1);
     resetPilotStats(2);
+    initPrimaryAmmoForPilot(ensurePilot2());
     positionSandboxPilots();
   }
   applyMousepadAutoStart();
@@ -6506,17 +6635,25 @@ function recordShotCountForPilot(pilotId, type){
   recordPilotShot(pilotId, type);
 }
 
-function cleanupAutoFireSlots(){
-  var slots = getSecondarySlots();
+function cleanupAutoFireSlotsOnPilot(pilot){
+  if(!pilot) return;
+  var slots = getSecondarySlotsForPilot(pilot);
   var changed = false;
   for(var i=0; i<slots.length; i++){
     var slot = slots[i];
-    if(slot && slot.type === "autofire" && !(slot.count > 0) && !player.autoFireActive && !((player.autoFireAmmo || 0) > 0)){
+    if(slot && slot.type === "autofire" && !(slot.count > 0) && !pilot.autoFireActive && !((pilot.autoFireAmmo || 0) > 0)){
       slots[i] = null;
       changed = true;
     }
   }
-  if(changed) syncSelectedSecondary();
+  if(changed){
+    if(pilot === player) syncSelectedSecondary();
+    else syncSelectedSecondaryForPilot(pilot);
+  }
+}
+
+function cleanupAutoFireSlots(){
+  cleanupAutoFireSlotsOnPilot(player);
 }
 
 function fireForPilot(pilot, pilotId, cooldownOverride){
@@ -6525,6 +6662,14 @@ function fireForPilot(pilot, pilotId, cooldownOverride){
   if(tutorialActive && tutorialMineralsFreeze) return false;
   if(pilotId === 1 && tutorialActive && tutorialShootLocked) return false;
   if(pilot.cooldown > 0) return;
+  if(!pilotHasPrimaryAmmo(pilot, 1)){
+    var nowAmmo = performance.now();
+    if(!(pilot._ammoEmptyToastT && nowAmmo - pilot._ammoEmptyToastT < 950)){
+      pilot._ammoEmptyToastT = nowAmmo;
+      showToast("OUT OF AMMO");
+    }
+    return false;
+  }
 
   if(typeof cooldownOverride === "number" && isFinite(cooldownOverride)){
     pilot.cooldown = cooldownOverride;
@@ -6578,6 +6723,7 @@ function fireForPilot(pilot, pilotId, cooldownOverride){
   if(mode === "rail") gunSfx = "shot_railbeam";
   playSfx(state, gunSfx);
   if(tourGuide) tourGuide.notify("fire");
+  consumePrimaryAmmoForPilot(pilot, 1);
   return true;
 }
 
@@ -9615,6 +9761,10 @@ function update(dt){
   }
 
   player.cooldown = Math.max(0, player.cooldown - dtReal);
+  syncAutofireWithSecondarySlots(player);
+  if(isSandboxMultiplayer() && pilot2){
+    syncAutofireWithSecondarySlots(pilot2);
+  }
   if(player.autoFireActive && player.autoFireAmmo > 0){
     var shootHeld = (!tutorialActive || !tutorialShootLocked) && (keys.has(keyBindings.shoot) || pointerDown || touchActionHeld.fire);
     if(shootHeld){
@@ -11627,7 +11777,7 @@ function draw(){
       var diff = String(state.difficulty || "normal").toLowerCase();
       strikeLimit = diff === "easy" ? 25 : diff === "normal" ? 20 : diff === "hard" ? 15 : 10;
     }
-    function drawHudBarsForPilot(barX, barW, hullRatio, livesLeft, livesStart, wrongCount, hpPulse){
+    function drawHudBarsForPilot(barX, barW, hullRatio, livesLeft, livesStart, wrongCount, hpPulse, pilotForAmmo){
       var hudBars = [];
       hudBars.push({
         label: "HP",
@@ -11768,6 +11918,46 @@ function draw(){
         }
         ctx.restore();
       }
+
+      if(pilotForAmmo && !pilotForAmmo.primaryAmmoUnlimited){
+        var ammoBarH = 6;
+        var ammoRowY = barY + (hudBars.length ? hudBars.length * (barH + barGap) + 4 : 4);
+        if(maxLives > 0 && strikeLimit <= 0){
+          var lifeYAmmo = barY + hudBars.length * (barH + barGap) + 6;
+          ammoRowY = lifeYAmmo + 6 + 8;
+        }
+        if(strikeLimit > 0){
+          var strikeYAmmo = (strikeLabelY != null) ? strikeLabelY : (barY + hudBars.length * (barH + barGap) + 6);
+          ammoRowY = strikeYAmmo + 6 + 8;
+        }
+        var ammoCur = pilotForAmmo.primaryAmmo | 0;
+        var ammoStart = Math.max(1, pilotForAmmo.primaryAmmoStart | 0);
+        var ammoRatio = clamp(ammoCur / ammoStart, 0, 1);
+        var warnEmpty = ammoCur <= 0;
+        ctx.save();
+        ctx.fillStyle = labelColor;
+        ctx.font = labelStyle;
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        ctx.fillText("AMMO", barX - 8, ammoRowY + ammoBarH / 2);
+        ctx.fillStyle = "rgba(0,0,0,.4)";
+        ctx.strokeStyle = "rgba(255,255,255,.2)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(barX, ammoRowY, barW, ammoBarH, 4);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = warnEmpty ? "rgba(255,80,80,.55)" : "rgba(255,200,90,.92)";
+        if(barW * ammoRatio > 0.5){
+          ctx.beginPath();
+          ctx.roundRect(barX, ammoRowY, barW * ammoRatio, ammoBarH, 4);
+          ctx.fill();
+        }
+        ctx.fillStyle = labelColor;
+        ctx.textAlign = "left";
+        ctx.fillText(String(ammoCur), barX + barW + 8, ammoRowY + ammoBarH / 2);
+        ctx.restore();
+      }
     }
     if(splitHud){
       var laneW1 = lane1.maxX - lane1.minX;
@@ -11779,8 +11969,8 @@ function draw(){
       var p1Stats = ensurePilotStats(1);
       var p2Stats = ensurePilotStats(2);
       var p2Hud = ensurePilot2();
-      drawHudBarsForPilot(barX1, barW1, player.hull, state.lives || 0, state.livesStart || 0, p1Stats.wrong || 0, player.lowHullPulse || 0);
-      drawHudBarsForPilot(barX2, barW2, p2Hud.hull, p2Hud.lives || 0, p2Hud.livesStart || 0, p2Stats.wrong || 0, p2Hud.lowHullPulse || 0);
+      drawHudBarsForPilot(barX1, barW1, player.hull, state.lives || 0, state.livesStart || 0, p1Stats.wrong || 0, player.lowHullPulse || 0, player);
+      drawHudBarsForPilot(barX2, barW2, p2Hud.hull, p2Hud.lives || 0, p2Hud.livesStart || 0, p2Stats.wrong || 0, p2Hud.lowHullPulse || 0, p2Hud);
       var gapStart = lane1.maxX;
       var gapEnd = lane2.minX;
       if(gapEnd > gapStart){
@@ -11800,7 +11990,7 @@ function draw(){
     }else{
       var barX = 96;
       var barW = Math.min(260, w * 0.35);
-      drawHudBarsForPilot(barX, barW, player.hull, state.lives || 0, state.livesStart || 0, state.wrong || 0, player.lowHullPulse || 0);
+      drawHudBarsForPilot(barX, barW, player.hull, state.lives || 0, state.livesStart || 0, state.wrong || 0, player.lowHullPulse || 0, player);
     }
 
     var profile = getShipProfile(player.shipType);
@@ -13062,6 +13252,7 @@ function getPowerupColor(p){
       : p.type === "magnet" ? "rgba(255,221,0,.7)"
       : p.type === "emp" ? "rgba(175,0,111,.7)"
       : p.type === "autofire" ? "rgba(255,221,0,.85)"
+      : p.type === "ammo" ? "rgba(255,180,72,.82)"
       : "rgba(193,216,47,.7)";
   }
   if(p.type === "missile") return "rgba(255,221,0,.8)";

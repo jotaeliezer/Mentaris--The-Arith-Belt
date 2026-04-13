@@ -1869,6 +1869,26 @@
       border-bottom:1px solid rgba(255,255,255,.1);
     }
 
+    #settingsOverlay .settingsCatalogsWrap{
+      position:relative;
+      z-index:0;
+      min-height:260px;
+    }
+    #settingsOverlay #shotTypeOverlay.shotTypeOverlayCatalogs{
+      position:absolute;
+      inset:0;
+      z-index:25;
+      align-items:center;
+      justify-content:center;
+      padding:10px;
+      border-radius:14px;
+    }
+    #settingsOverlay #shotTypeOverlay.shotTypeOverlayCatalogs .card{
+      width:min(100%, 720px);
+      max-height:min(68vh, 520px);
+      overflow:auto;
+    }
+
     .settingsAccessForm{
       display:grid;
       gap:10px;
@@ -3235,78 +3255,6 @@
       </div>
     </div>
   </div>
-  <div id="shotTypeOverlay" class="overlay">
-    <div class="card">
-      <div class="cardHead">
-        <div>
-          <h2 class="title">Shot Type</h2>
-          <p class="subtitle">Choose your starting blaster.</p>
-        </div>
-        <button id="btnCloseShotType" class="btn">Close</button>
-      </div>
-      <div class="cardBody">
-        <div class="shotTypeCarousel" id="shotTypeCarousel">
-          <div class="shotTypeTrack" id="shotTypeTrack">
-          <button type="button" class="shotTypeOption" data-shot="single">
-            <img class="shotTypeImage" src="images/bullets/bullet_single.png" alt="" />
-            <div class="shotTypeLabel">Single</div>
-            <div class="shotTypeDesc">Standard blaster shot.</div>
-          </button>
-          <button type="button" class="shotTypeOption" data-shot="laser">
-            <img class="shotTypeImage" src="images/shots/shot_laser.png" alt="" />
-            <div class="shotTypeLabel">Laser</div>
-            <div class="shotTypeDesc">Pre-launch pick: unlimited rapid beams for the mission. Orange offense pickup: same style until an asteroid bump or alien bullet removes one of two knock charges, then single shots.</div>
-          </button>
-          <button type="button" class="shotTypeOption locked" data-shot="fire" data-locked="true">
-            <div class="shotTypeCost costTag">450</div>
-            <img class="shotTypeImage" src="images/shots/shot_fire.png" alt="" />
-            <div class="shotTypeLabel">Fire</div>
-            <div class="shotTypeDesc">Pre-launch pick: unlimited fireballs for the mission. Orange offense pickup: two knock charges from bumps or alien shots, then revert to single.</div>
-          </button>
-          <button type="button" class="shotTypeOption locked" data-shot="ice" data-locked="true">
-            <div class="shotTypeCost costTag">450</div>
-            <img class="shotTypeImage" src="images/shots/shot_ice.png" alt="" />
-            <div class="shotTypeLabel">Ice</div>
-            <div class="shotTypeDesc">Pre-launch pick: unlimited ice shards for the mission. Orange offense pickup: two knock charges, then single shots.</div>
-          </button>
-          <button type="button" class="shotTypeOption locked" data-shot="electric" data-locked="true">
-            <div class="shotTypeCost costTag">550</div>
-            <img class="shotTypeImage" src="images/shots/shot_electric.png" alt="" />
-            <div class="shotTypeLabel">Electric</div>
-            <div class="shotTypeDesc">Pre-launch pick: unlimited electric bolts for the mission. Orange offense pickup: two knock charges, then single shots.</div>
-          </button>
-          <button type="button" class="shotTypeOption locked" data-shot="pierce" data-locked="true">
-            <div class="shotTypeCost costTag">600</div>
-            <img class="shotTypeImage" src="images/shots/shot_bola.png" alt="" />
-            <div class="shotTypeLabel">Bola</div>
-            <div class="shotTypeDesc">Pre-launch pick: unlimited bola pierce shots for the mission. Orange offense pickup: two knock charges, then single shots.</div>
-          </button>
-          <button type="button" class="shotTypeOption locked" data-shot="plasma" data-locked="true">
-            <div class="shotTypeCost costTag">700</div>
-            <img class="shotTypeImage" src="images/shots/shot_plasma.png" alt="" />
-            <div class="shotTypeLabel">Plasma</div>
-            <div class="shotTypeDesc">Pre-launch pick: unlimited plasma orbs for the mission. Orange offense pickup: two knock charges, then single shots.</div>
-          </button>
-          <button type="button" class="shotTypeOption locked" data-shot="rail" data-locked="true">
-            <div class="shotTypeCost costTag">800</div>
-            <img class="shotTypeImage" src="images/shots/shot_rail.png" alt="" />
-            <div class="shotTypeLabel">Rail</div>
-            <div class="shotTypeDesc">Pre-launch pick: unlimited rail beams for the mission. Orange offense pickup: two knock charges, then single shots.</div>
-          </button>
-          <button type="button" class="shotTypeOption locked" data-shot="missile" data-locked="true">
-            <div class="shotTypeCost costTag">900</div>
-            <img class="shotTypeImage" src="images/shots/shot_missile.png" alt="" />
-            <div class="shotTypeLabel">Missile</div>
-            <div class="shotTypeDesc">Type the correct answer to launch a seeking missile.</div>
-          </button>
-          </div>
-        </div>
-        <div class="row" style="margin-top:12px;">
-          <button id="btnUseShotType" class="btn" type="button">USE SHOT</button>
-        </div>
-      </div>
-    </div>
-  </div>
   <div id="purchaseOverlay" class="overlay">
     <div class="card purchaseCard">
       <div class="cardHead">
@@ -3443,6 +3391,7 @@
           </div>
 
           <div class="panel settingsPanel" data-settings-panel="catalogs">
+            <div class="settingsCatalogsWrap">
             <h3>Catalogs</h3>
             <div class="catalogFilterRow">
               <button type="button" class="btn catalogFilterBtn active" data-catalog-filter="secondary">Secondary</button>
@@ -3468,6 +3417,79 @@
                 <h3>Ships</h3>
                 <ul class="list catalogList" id="shipsCatalogListHome"></ul>
               </div>
+            </div>
+            <div id="shotTypeOverlay" class="overlay shotTypeOverlayCatalogs">
+              <div class="card">
+                <div class="cardHead">
+                  <div>
+                    <h2 class="title">Shot Type</h2>
+                    <p class="subtitle">Choose your starting blaster.</p>
+                  </div>
+                  <button id="btnCloseShotType" class="btn">Close</button>
+                </div>
+                <div class="cardBody">
+                  <div class="shotTypeCarousel" id="shotTypeCarousel">
+                    <div class="shotTypeTrack" id="shotTypeTrack">
+                    <button type="button" class="shotTypeOption" data-shot="single">
+                      <img class="shotTypeImage" src="images/bullets/bullet_single.png" alt="" />
+                      <div class="shotTypeLabel">Single</div>
+                      <div class="shotTypeDesc">Standard blaster shot.</div>
+                    </button>
+                    <button type="button" class="shotTypeOption" data-shot="laser">
+                      <img class="shotTypeImage" src="images/shots/shot_laser.png" alt="" />
+                      <div class="shotTypeLabel">Laser</div>
+                      <div class="shotTypeDesc">Pre-launch pick: unlimited rapid beams for the mission. Orange offense pickup: same style until an asteroid bump or alien bullet removes one of two knock charges, then single shots.</div>
+                    </button>
+                    <button type="button" class="shotTypeOption locked" data-shot="fire" data-locked="true">
+                      <div class="shotTypeCost costTag">450</div>
+                      <img class="shotTypeImage" src="images/shots/shot_fire.png" alt="" />
+                      <div class="shotTypeLabel">Fire</div>
+                      <div class="shotTypeDesc">Pre-launch pick: unlimited fireballs for the mission. Orange offense pickup: two knock charges from bumps or alien shots, then revert to single.</div>
+                    </button>
+                    <button type="button" class="shotTypeOption locked" data-shot="ice" data-locked="true">
+                      <div class="shotTypeCost costTag">450</div>
+                      <img class="shotTypeImage" src="images/shots/shot_ice.png" alt="" />
+                      <div class="shotTypeLabel">Ice</div>
+                      <div class="shotTypeDesc">Pre-launch pick: unlimited ice shards for the mission. Orange offense pickup: two knock charges, then single shots.</div>
+                    </button>
+                    <button type="button" class="shotTypeOption locked" data-shot="electric" data-locked="true">
+                      <div class="shotTypeCost costTag">550</div>
+                      <img class="shotTypeImage" src="images/shots/shot_electric.png" alt="" />
+                      <div class="shotTypeLabel">Electric</div>
+                      <div class="shotTypeDesc">Pre-launch pick: unlimited electric bolts for the mission. Orange offense pickup: two knock charges, then single shots.</div>
+                    </button>
+                    <button type="button" class="shotTypeOption locked" data-shot="pierce" data-locked="true">
+                      <div class="shotTypeCost costTag">600</div>
+                      <img class="shotTypeImage" src="images/shots/shot_bola.png" alt="" />
+                      <div class="shotTypeLabel">Bola</div>
+                      <div class="shotTypeDesc">Pre-launch pick: unlimited bola pierce shots for the mission. Orange offense pickup: two knock charges, then single shots.</div>
+                    </button>
+                    <button type="button" class="shotTypeOption locked" data-shot="plasma" data-locked="true">
+                      <div class="shotTypeCost costTag">700</div>
+                      <img class="shotTypeImage" src="images/shots/shot_plasma.png" alt="" />
+                      <div class="shotTypeLabel">Plasma</div>
+                      <div class="shotTypeDesc">Pre-launch pick: unlimited plasma orbs for the mission. Orange offense pickup: two knock charges, then single shots.</div>
+                    </button>
+                    <button type="button" class="shotTypeOption locked" data-shot="rail" data-locked="true">
+                      <div class="shotTypeCost costTag">800</div>
+                      <img class="shotTypeImage" src="images/shots/shot_rail.png" alt="" />
+                      <div class="shotTypeLabel">Rail</div>
+                      <div class="shotTypeDesc">Pre-launch pick: unlimited rail beams for the mission. Orange offense pickup: two knock charges, then single shots.</div>
+                    </button>
+                    <button type="button" class="shotTypeOption locked" data-shot="missile" data-locked="true">
+                      <div class="shotTypeCost costTag">900</div>
+                      <img class="shotTypeImage" src="images/shots/shot_missile.png" alt="" />
+                      <div class="shotTypeLabel">Missile</div>
+                      <div class="shotTypeDesc">Type the correct answer to launch a seeking missile.</div>
+                    </button>
+                    </div>
+                  </div>
+                  <div class="row" style="margin-top:12px;">
+                    <button id="btnUseShotType" class="btn" type="button">USE SHOT</button>
+                  </div>
+                </div>
+              </div>
+            </div>
             </div>
           </div>
         </div>
@@ -6050,6 +6072,9 @@
       updateShotTypeCarouselFor(shotTypeInlineCarousel, shotTypeInlineTrack, shotTypeInlineOptions, selected);
     }
     function openShotTypeOverlay(){
+      if(settingsOverlay) settingsOverlay.classList.add("show");
+      setSettingsTabHome("catalogs");
+      renderHomeCatalogs();
       if(shotTypeOverlay) shotTypeOverlay.classList.add("show");
       requestAnimationFrame(function(){
         setShotTypePreview((shotTypeInput && shotTypeInput.value) || "single");
@@ -7190,6 +7215,7 @@
     if (btnCloseSettings && settingsOverlay) {
       btnCloseSettings.addEventListener("click", function(){
         playMenuBeep();
+        closeShotTypeOverlay();
         settingsOverlay.classList.remove("show");
         stopAllPreviewAudioHome();
       });
@@ -7197,6 +7223,7 @@
     if (btnCloseSettingsBottom && settingsOverlay) {
       btnCloseSettingsBottom.addEventListener("click", function(){
         playMenuBeep();
+        closeShotTypeOverlay();
         settingsOverlay.classList.remove("show");
         stopAllPreviewAudioHome();
       });
@@ -7429,8 +7456,13 @@
     }
     if (settingsOverlay) {
       settingsOverlay.addEventListener("click", function(e){
-        if (e.target === settingsOverlay) settingsOverlay.classList.remove("show");
-        if (e.target === settingsOverlay) stopAllPreviewAudioHome();
+        if (e.target !== settingsOverlay) return;
+        if(shotTypeOverlay && shotTypeOverlay.classList.contains("show")){
+          closeShotTypeOverlay();
+          return;
+        }
+        settingsOverlay.classList.remove("show");
+        stopAllPreviewAudioHome();
       });
     }
     if (campaignOverlay) {
