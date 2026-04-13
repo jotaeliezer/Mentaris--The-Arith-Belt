@@ -1850,6 +1850,19 @@
       text-align:center;
       line-height:1.45;
     }
+    .settingsExtraMenu{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin:0 0 14px;
+      padding-bottom:14px;
+      border-bottom:1px solid rgba(255,255,255,.1);
+    }
+    .settingsExtraMenu .btn{
+      flex:1 1 160px;
+      min-width:140px;
+    }
+
     .settingsAccessForm{
       display:grid;
       gap:10px;
@@ -2377,9 +2390,6 @@
           <button id="btnCampaign" class="btn secondaryLabel menuExtra" type="button">Campaign <small>6 mission run</small></button>
           <button id="btnStartGame" class="btn secondaryLabel menuExtra" type="button">Single Mission <small>Custom setup</small></button>
           <button id="btnTutorial" class="btn secondaryLabel menuExtra" type="button">Tutorial <small>Guided tour</small></button>
-          <button id="btnRoadmap" class="btn secondaryLabel menuExtra" type="button">Roadmap <small>What is next</small></button>
-          <button id="btnAbout" class="btn secondaryLabel menuExtra" type="button">About <small>Game &amp; purpose</small></button>
-          <button id="btnSandbox" class="btn secondaryLabel menuExtra" type="button">Sandbox <small>Test shots & powerups</small></button>
           <button id="btnLeaderboards" class="btn secondaryLabel menuExtra" type="button">Leaderboards <small>Top runs</small></button>
           <button id="btnSettingsHome" class="btn secondaryLabel menuExtra" type="button">Settings <small>Audio levels</small></button>
           <a id="btnExitHome" class="btn secondaryLabel menuExtra" href="../../atmc.html">Exit <small>Return to hub</small></a>
@@ -3340,6 +3350,11 @@
         </div>
       </div>
       <div class="cardBody settingsBody">
+        <div class="settingsExtraMenu">
+          <button id="btnRoadmap" class="btn secondaryLabel menuExtra" type="button">Roadmap <small>What is next</small></button>
+          <button id="btnAbout" class="btn secondaryLabel menuExtra" type="button">About <small>Game &amp; purpose</small></button>
+          <button id="btnSandbox" class="btn secondaryLabel menuExtra" type="button">Sandbox <small>Test shots & powerups</small></button>
+        </div>
         <div class="settingsTabs">
           <button type="button" class="btn settingsTabBtn active" data-settings-tab="audio">AUDIO</button>
           <button type="button" class="btn settingsTabBtn" data-settings-tab="display">DISPLAY</button>
@@ -3451,7 +3466,7 @@
 
           <div class="panel settingsPanel" data-settings-panel="access">
             <h3>Sandbox access</h3>
-            <p class="monoSmall" style="margin-bottom:10px;">Press <b>Sandbox</b> on the home menu and enter the master code to launch. The code is shown once when you have cleared every campaign (you can verify a copy below).</p>
+            <p class="monoSmall" style="margin-bottom:10px;">Use <b>Sandbox</b> at the top of this Settings panel and enter the master code to launch. The code is shown once when you have cleared every campaign (you can verify a copy below).</p>
             <div class="settingsAccessForm">
               <label>
                 VERIFY CODE (OPTIONAL)
@@ -3512,7 +3527,7 @@
           <ul>
             <li>Clearer HUD when danger spikes, shorter mission banners, and steadier briefing launch controls.</li>
             <li>Briefing screen polish: consistent layout, stronger commander hints, and sharper objective chips.</li>
-            <li>Sandbox: open from the home menu with a master code (shown once when you clear every campaign).</li>
+            <li>Sandbox: open from Settings with a master code (shown once when you clear every campaign).</li>
             <li>Optional synthwave touches on the action view—subtle scanlines or vignette for atmosphere.</li>
             <li>More starfield environments (ice belt, lava trench, deep void, cyber grid) toward a richer tour of the belt.</li>
             <li>More ships with portraits and sprites, plus a few hulls with standout passive perks.</li>
@@ -3573,7 +3588,7 @@
         </div>
       </div>
       <div class="cardBody">
-        <p class="monoSmall" style="margin-bottom:12px;">Press <b>Sandbox</b> on the home menu and enter this code to launch. You can also verify a copy under <b>Settings → Access</b>.</p>
+        <p class="monoSmall" style="margin-bottom:12px;">Open <b>Settings</b>, tap <b>Sandbox</b> at the top, and enter this code to launch. You can also verify a copy under <b>Settings → Access</b>.</p>
         <div class="sandboxCodeReveal" id="sandboxRevealCodeDisplay"></div>
         <div style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
           <button type="button" class="btn btnConfirm" id="btnSandboxRevealDismiss">Save &amp; close</button>
@@ -6925,6 +6940,8 @@
     if(btnRoadmap && roadmapOverlay){
       btnRoadmap.addEventListener("click", function(){
         playMenuBeep();
+        if(settingsOverlay) settingsOverlay.classList.remove("show");
+        if(typeof stopAllPreviewAudioHome === "function") stopAllPreviewAudioHome();
         roadmapOverlay.classList.add("show");
       });
     }
@@ -6948,6 +6965,8 @@
     if(btnAbout && aboutOverlay){
       btnAbout.addEventListener("click", function(){
         playMenuBeep();
+        if(settingsOverlay) settingsOverlay.classList.remove("show");
+        if(typeof stopAllPreviewAudioHome === "function") stopAllPreviewAudioHome();
         aboutOverlay.classList.add("show");
       });
     }
@@ -7026,7 +7045,7 @@
       var raw = sandboxAccessInputHome ? sandboxAccessInputHome.value : "";
       sandboxAccessStatusHome.classList.remove("ok", "err");
       if(isValidSandboxAccessCode(raw)){
-        sandboxAccessStatusHome.textContent = "Code matches. Use Sandbox on the home menu to launch.";
+        sandboxAccessStatusHome.textContent = "Code matches. Open Settings and use Sandbox at the top to launch.";
         sandboxAccessStatusHome.classList.add("ok");
         if(sandboxAccessInputHome) sandboxAccessInputHome.value = "";
       }else{
@@ -7133,6 +7152,8 @@
     if(btnSandbox){
       btnSandbox.addEventListener("click", function(){
         playMenuBeep();
+        if(settingsOverlay) settingsOverlay.classList.remove("show");
+        if(typeof stopAllPreviewAudioHome === "function") stopAllPreviewAudioHome();
         openSandboxLaunchPrompt();
       });
     }
