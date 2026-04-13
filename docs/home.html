@@ -1777,6 +1777,16 @@
       z-index: 40;
     }
 
+    #settingsOverlay.overlay{
+      z-index: 48;
+    }
+    #aboutOverlay.overlay,
+    #roadmapOverlay.overlay,
+    #sandboxLaunchOverlay.overlay,
+    #sandboxRevealOverlay.overlay{
+      z-index: 52;
+    }
+
     #roadmapOverlay .card,
     #aboutOverlay .card,
     #sandboxRevealOverlay .card,
@@ -1852,15 +1862,11 @@
     }
     .settingsExtraMenu{
       display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      margin:0 0 14px;
-      padding-bottom:14px;
+      flex-direction:column;
+      gap:8px;
+      margin:0;
+      padding:0 0 12px;
       border-bottom:1px solid rgba(255,255,255,.1);
-    }
-    .settingsExtraMenu .btn{
-      flex:1 1 160px;
-      min-width:140px;
     }
 
     .settingsAccessForm{
@@ -3350,17 +3356,19 @@
         </div>
       </div>
       <div class="cardBody settingsBody">
-        <div class="settingsExtraMenu">
-          <button id="btnRoadmap" class="btn secondaryLabel menuExtra" type="button">Roadmap <small>What is next</small></button>
-          <button id="btnAbout" class="btn secondaryLabel menuExtra" type="button">About <small>Game &amp; purpose</small></button>
-          <button id="btnSandbox" class="btn secondaryLabel menuExtra" type="button">Sandbox <small>Test shots & powerups</small></button>
-        </div>
-        <div class="settingsTabs">
-          <button type="button" class="btn settingsTabBtn active" data-settings-tab="audio">AUDIO</button>
-          <button type="button" class="btn settingsTabBtn" data-settings-tab="display">DISPLAY</button>
-          <button type="button" class="btn settingsTabBtn" data-settings-tab="controls">CONTROLS</button>
-          <button type="button" class="btn settingsTabBtn" data-settings-tab="catalogs">CATALOGS</button>
-          <button type="button" class="btn settingsTabBtn" data-settings-tab="access">ACCESS</button>
+        <div class="settingsNavColumn">
+          <div class="settingsExtraMenu">
+            <button id="btnRoadmap" class="btn settingsSideBtn" type="button" title="What is next">Roadmap</button>
+            <button id="btnAbout" class="btn settingsSideBtn" type="button" title="Game and purpose">About</button>
+            <button id="btnSandbox" class="btn settingsSideBtn" type="button" title="Test shots and powerups">Sandbox</button>
+          </div>
+          <div class="settingsTabs">
+            <button type="button" class="btn settingsTabBtn active" data-settings-tab="audio">AUDIO</button>
+            <button type="button" class="btn settingsTabBtn" data-settings-tab="display">DISPLAY</button>
+            <button type="button" class="btn settingsTabBtn" data-settings-tab="controls">CONTROLS</button>
+            <button type="button" class="btn settingsTabBtn" data-settings-tab="catalogs">CATALOGS</button>
+            <button type="button" class="btn settingsTabBtn" data-settings-tab="access">ACCESS</button>
+          </div>
         </div>
         <div class="settingsPanels">
           <div class="panel settingsPanel active" data-settings-panel="audio">
@@ -6940,8 +6948,6 @@
     if(btnRoadmap && roadmapOverlay){
       btnRoadmap.addEventListener("click", function(){
         playMenuBeep();
-        if(settingsOverlay) settingsOverlay.classList.remove("show");
-        if(typeof stopAllPreviewAudioHome === "function") stopAllPreviewAudioHome();
         roadmapOverlay.classList.add("show");
       });
     }
@@ -6965,8 +6971,6 @@
     if(btnAbout && aboutOverlay){
       btnAbout.addEventListener("click", function(){
         playMenuBeep();
-        if(settingsOverlay) settingsOverlay.classList.remove("show");
-        if(typeof stopAllPreviewAudioHome === "function") stopAllPreviewAudioHome();
         aboutOverlay.classList.add("show");
       });
     }
@@ -7152,8 +7156,6 @@
     if(btnSandbox){
       btnSandbox.addEventListener("click", function(){
         playMenuBeep();
-        if(settingsOverlay) settingsOverlay.classList.remove("show");
-        if(typeof stopAllPreviewAudioHome === "function") stopAllPreviewAudioHome();
         openSandboxLaunchPrompt();
       });
     }

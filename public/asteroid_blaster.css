@@ -2773,7 +2773,17 @@ input[type="checkbox"]{ transform: translateY(1px); }
   gap:10px;
 }
 
-#settingsOverlay .settingsTabBtn{
+#settingsOverlay .settingsNavColumn{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  min-width:0;
+}
+
+#settingsOverlay .settingsTabBtn,
+#settingsOverlay .settingsSideBtn{
+  width:100%;
+  text-align:center;
   text-transform:uppercase;
   letter-spacing:.8px;
 }
