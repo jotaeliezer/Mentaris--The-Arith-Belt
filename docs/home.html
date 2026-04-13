@@ -3367,7 +3367,6 @@
             <button type="button" class="btn settingsTabBtn" data-settings-tab="display">DISPLAY</button>
             <button type="button" class="btn settingsTabBtn" data-settings-tab="controls">CONTROLS</button>
             <button type="button" class="btn settingsTabBtn" data-settings-tab="catalogs">CATALOGS</button>
-            <button type="button" class="btn settingsTabBtn" data-settings-tab="access">ACCESS</button>
           </div>
         </div>
         <div class="settingsPanels">
@@ -3471,19 +3470,6 @@
               </div>
             </div>
           </div>
-
-          <div class="panel settingsPanel" data-settings-panel="access">
-            <h3>Sandbox access</h3>
-            <p class="monoSmall" style="margin-bottom:10px;">Use <b>Sandbox</b> at the top of this Settings panel and enter the master code to launch. The code is shown once when you have cleared every campaign (you can verify a copy below).</p>
-            <div class="settingsAccessForm">
-              <label>
-                VERIFY CODE (OPTIONAL)
-                <input id="sandboxAccessInputHome" type="text" autocomplete="off" spellcheck="false" placeholder="Paste or type code" />
-              </label>
-              <div class="settingsAccessStatus" id="sandboxAccessStatusHome" aria-live="polite"></div>
-              <button type="button" class="btn" id="btnSandboxAccessSubmit">Check code</button>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -3524,32 +3510,13 @@
       <div class="cardHead">
         <div>
           <h2 class="title">Roadmap</h2>
-          <p class="subtitle">What is coming next—tighter feel first, then richer missions, then online play.</p>
+          <p class="subtitle">Galactic ranks, leaderboards, and what comes next for social play.</p>
         </div>
         <button id="btnCloseRoadmap" class="btn" type="button">Close</button>
       </div>
       <div class="cardBody">
         <div class="roadmapScroll monoSmall">
-          <p class="roadmapLead">We work in three waves: polish the moment-to-moment flight, deepen campaigns and enemies, then add social and online features so you can share scores and fly with friends.</p>
-          <h3>Tier 1 — Polish &amp; quick wins</h3>
-          <ul>
-            <li>Clearer HUD when danger spikes, shorter mission banners, and steadier briefing launch controls.</li>
-            <li>Briefing screen polish: consistent layout, stronger commander hints, and sharper objective chips.</li>
-            <li>Sandbox: open from Settings with a master code (shown once when you clear every campaign).</li>
-            <li>Optional synthwave touches on the action view—subtle scanlines or vignette for atmosphere.</li>
-            <li>More starfield environments (ice belt, lava trench, deep void, cyber grid) toward a richer tour of the belt.</li>
-            <li>More ships with portraits and sprites, plus a few hulls with standout passive perks.</li>
-            <li>Faster loads and a smoother Windows install for players who prefer the desktop build.</li>
-          </ul>
-          <h3>Tier 2 — Content depth</h3>
-          <ul>
-            <li>Campaign progression: mission chains, unlocks, commander dialogue, rewards, and the mission map you already see evolving.</li>
-            <li>Smarter alien roles—snipers, rushers, shielders, bombers—each with a clear personality on screen.</li>
-            <li>Achievements and badges saved on your device, with toasts and a gallery to show them off.</li>
-            <li>More question modes: mixed operations, speed rounds, boss-focused runs.</li>
-            <li>Ship traits and loadout passives called out clearly on briefing cards before you launch.</li>
-            <li><b>Online / lobby multiplayer (coming soon):</b> room codes, split-screen or shared runs, and synced co-op—building on the local sandbox co-op you can try today.</li>
-          </ul>
+          <p class="roadmapLead">This wave is about sharing your runs globally—cloud-backed Galactic Ranks, low-friction pilot names, and optional accounts once the boards feel great for everyone.</p>
           <h3>Tier 3 — Galactic ranks &amp; social</h3>
           <ul>
             <li><b>Global leaderboards (coming soon):</b> cloud-backed Galactic Ranks—send your mission scores, filter by mode and operation, and see how you stack up worldwide.</li>
@@ -3596,7 +3563,7 @@
         </div>
       </div>
       <div class="cardBody">
-        <p class="monoSmall" style="margin-bottom:12px;">Open <b>Settings</b>, tap <b>Sandbox</b> at the top, and enter this code to launch. You can also verify a copy under <b>Settings → Access</b>.</p>
+        <p class="monoSmall" style="margin-bottom:12px;">Open <b>Settings</b>, tap <b>Sandbox</b> at the top, and enter this code to launch.</p>
         <div class="sandboxCodeReveal" id="sandboxRevealCodeDisplay"></div>
         <div style="margin-top:18px; display:flex; justify-content:flex-end; gap:10px;">
           <button type="button" class="btn btnConfirm" id="btnSandboxRevealDismiss">Save &amp; close</button>
