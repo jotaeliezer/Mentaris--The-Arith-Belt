@@ -5,6 +5,7 @@ import { playSfx } from "../core/audio.js";
 
 export var aliens = [];
 export var alienBullets = [];
+export var alienMines = [];
 
 export var alienConfig = {
   enabled: true,
@@ -22,6 +23,33 @@ export var alienTypes = {
     score: 900,
     radius: 24,
     behavior: "strafe"
+  },
+  sniper: {
+    id: "sniper",
+    name: "Sniper",
+    hp: 1,
+    speed: 48,
+    score: 1100,
+    radius: 22,
+    behavior: "sniper"
+  },
+  rusher: {
+    id: "rusher",
+    name: "Rusher",
+    hp: 1,
+    speed: 220,
+    score: 950,
+    radius: 22,
+    behavior: "rusher"
+  },
+  bomber: {
+    id: "bomber",
+    name: "Bomber",
+    hp: 2,
+    speed: 72,
+    score: 1200,
+    radius: 26,
+    behavior: "bomber"
   }
 };
 
@@ -72,6 +100,7 @@ function ensureAlienSprites(){
 export function resetAliens(){
   aliens.length = 0;
   alienBullets.length = 0;
+  alienMines.length = 0;
   spawnTimer = alienConfig.spawnCooldown;
   alienId = 1;
   unlocked = false;
@@ -84,14 +113,17 @@ export function setAlienUnlocked(value){
   }
 }
 
-function spawnAlienBullet(x, y, vx, vy, radius, life){
+function spawnAlienBullet(x, y, vx, vy, radius, life, extra){
+  var ex = extra || {};
   alienBullets.push({
     x: x,
     y: y,
     vx: vx,
     vy: vy,
     r: radius || 4,
-    life: life || 2.8
+    life: life || 2.8,
+    kind: ex.kind || "bolt",
+    dmg: typeof ex.dmg === "number" ? ex.dmg : null
   });
 }
 
@@ -117,6 +149,86 @@ function fireBossBurst(a, player){
   spawnAlienBullet(a.x, a.y, Math.cos(ang) * speed, Math.sin(ang) * speed, 5, 3.1);
 }
 
+function fireBossRing(a){
+  var n = 8;
+  var speed = 300;
+  for(var ri = 0; ri < n; ri++){
+    var ang = (ri / n) * Math.PI * 2 + (a.t || 0) * 0.4;
+    spawnAlienBullet(a.x, a.y, Math.cos(ang) * speed, Math.sin(ang) * speed, 4, 2.6);
+  }
+}
+
+function fireBossFan(a, player){
+  var dx = player.x - a.x;
+  var dy = player.y - a.y;
+  var base = Math.atan2(dy, dx);
+  var speed = 360;
+  var spread = 0.35;
+  for(var fi = -2; fi <= 2; fi++){
+    var ang = base + fi * spread * 0.5;
+    spawnAlienBullet(a.x, a.y, Math.cos(ang) * speed, Math.sin(ang) * speed, 4, 2.9);
+  }
+}
+
+function fireSniperShot(a, player){
+  var dx = player.x - a.x;
+  var dy = player.y - a.y;
+  var dist = Math.max(1, Math.hypot(dx, dy));
+  var speed = 720;
+  spawnAlienBullet(a.x, a.y, (dx / dist) * speed, (dy / dist) * speed, 5, 4.2, { kind: "sniper", dmg: 0.48 });
+}
+
+export function spawnAlienMine(x, y, vy){
+  alienMines.push({
+    x: x,
+    y: y,
+    vy: typeof vy === "number" ? vy : 88 + Math.random() * 40,
+    r: 11,
+    age: 0,
+    fuse: 5
+  });
+}
+
+export function updateAlienMines(dt, view){
+  var blasts = [];
+  for(var mi = alienMines.length - 1; mi >= 0; mi--){
+    var m = alienMines[mi];
+    m.age += dt;
+    m.y += m.vy * dt;
+    if(m.age >= m.fuse){
+      blasts.push({ x: m.x, y: m.y, r: 88 });
+      alienMines.splice(mi, 1);
+      continue;
+    }
+    if(m.y - m.r > view.h + 80 || m.y + m.r < -100){
+      alienMines.splice(mi, 1);
+    }
+  }
+  return blasts;
+}
+
+export function drawAlienMines(ctx){
+  if(!alienMines.length) return;
+  ctx.save();
+  for(var i = 0; i < alienMines.length; i++){
+    var m = alienMines[i];
+    var pulse = 0.75 + 0.25 * Math.sin((m.age || 0) * 10);
+    ctx.globalAlpha = 0.9;
+    ctx.strokeStyle = "rgba(255,60,90," + (0.5 + (m.age / m.fuse) * 0.45) + ")";
+    ctx.fillStyle = "rgba(255,40,70," + (0.35 * pulse) + ")";
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.moveTo(m.x, m.y - m.r * pulse);
+    ctx.lineTo(m.x + m.r * pulse, m.y);
+    ctx.lineTo(m.x, m.y + m.r * pulse);
+    ctx.lineTo(m.x - m.r * pulse, m.y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
 export function spawnAlien(typeId, question, answer, view, opts){
   var t = alienTypes[typeId] || alienTypes.scout;
   var options = opts || {};
@@ -140,6 +252,13 @@ export function spawnAlien(typeId, question, answer, view, opts){
   var ingressTargetY = (typeof options.ingressTargetY === "number" && Number.isFinite(options.ingressTargetY))
     ? options.ingressTargetY
     : (view.hudH + Math.min(Math.max(70, view.h * 0.14), 115));
+  var behForSpawn = options.behavior || t.behavior;
+  if(behForSpawn === "sniper" && !options.isBoss){
+    ingressTargetY = view.hudH + 52;
+    x = randi(Math.floor(view.w * 0.18), Math.max(Math.floor(view.w * 0.18) + 30, Math.floor(view.w * 0.82)));
+    y = -55;
+    ingressDur = Math.max(ingressDur, 0.52);
+  }
   var a = {
     uid: alienId++,
     id: options.id || t.id,
@@ -171,16 +290,26 @@ export function spawnAlien(typeId, question, answer, view, opts){
     ingressTimer: ingressEnabled ? ingressDur : 0,
     ingressDur: ingressDur,
     ingressStartY: y,
-    ingressTargetY: ingressTargetY
+    ingressTargetY: ingressTargetY,
+    noEscape: behForSpawn === "sniper" || behForSpawn === "rusher" || !!options.isBoss,
+    sniperCharge: 0,
+    bomberDropT: 0,
+    bossPatternIdx: 0
   };
   var spriteKey = normalizeAlienSpriteKey(options.spriteKey || forcedAlienSpriteKey);
   var spriteIndex = getAlienSpriteIndexByKey(spriteKey);
   if(spriteIndex >= 0){
     a.spriteIndex = spriteIndex;
   }
+  if(!options.isBoss && a.spriteIndex < 0){
+    if(typeId === "sniper") a.spriteIndex = 3;
+    else if(typeId === "rusher") a.spriteIndex = 7;
+    else if(typeId === "bomber") a.spriteIndex = 5;
+  }
   if(a.isBoss){
     a.fireCooldown = 0.95;
     a.strafeTimer = 0.45;
+    a.bossPatternIdx = 0;
   }
   aliens.push(a);
   return a;
@@ -198,7 +327,14 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
   spawnTimer -= dt;
   if(unlocked && spawnTimer <= 0 && aliens.length < alienConfig.maxOnScreen){
     var q = questionFn();
-    var spawned = spawnAlien("scout", q.question, q.answer, view);
+    var typePick = "scout";
+    if(!(state && state.alienSwarm)){
+      var rPick = Math.random();
+      if(rPick < 0.2) typePick = "sniper";
+      else if(rPick < 0.38) typePick = "rusher";
+      else if(rPick < 0.54) typePick = "bomber";
+    }
+    var spawned = spawnAlien(typePick, q.question, q.answer, view);
     if(state && state.alienSwarm && spawned){
       spawned.swarmDigit = (q && q.digit != null) ? q.digit : randi(0, 9);
       spawned.swarmCorrectDigit = (q && q.correctDigit != null) ? q.correctDigit : null;
@@ -296,6 +432,82 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
       }
       continue;
     }
+
+    var behavior = a.behavior || "strafe";
+    if(behavior === "sniper"){
+      var topY = a.ingressTargetY != null ? a.ingressTargetY : (view.hudH + 52);
+      a.y += (topY - a.y) * Math.min(1, dt * 2.4);
+      a.strafeTimer -= dt;
+      if(a.strafeTimer <= 0){
+        a.strafeTimer = 0.8 + Math.random() * 0.9;
+        a.strafeTarget = randi(50, Math.max(90, view.w - 50));
+      }
+      a.x += (a.strafeTarget - a.x) * dt * 0.55;
+      a.sniperCharge = (a.sniperCharge || 0) + dt;
+      if(a.sniperCharge >= 3){
+        a.sniperCharge = 0;
+        if(player && !(a.x + a.r < 0 || a.x - a.r > view.w)){
+          playSfx(state, "alien_shooting", 0.95);
+          fireSniperShot(a, player);
+        }
+      }
+      if(a.x < a.r + 10) a.x = a.r + 10;
+      if(a.x > view.w - a.r - 10) a.x = view.w - a.r - 10;
+      if(a.life >= alienConfig.escapeSeconds){
+        aliens.splice(i, 1);
+        escaped += 1;
+      }
+      continue;
+    }
+    if(behavior === "rusher"){
+      if(player){
+        var rdx = player.x - a.x;
+        var rdy = player.y - a.y;
+        var rd = Math.max(1, Math.hypot(rdx, rdy));
+        var ch = (a.speed || 200) * 1.05;
+        a.vx = (rdx / rd) * ch;
+        a.vy = (rdy / rd) * ch * 0.92;
+      }
+      a.x += a.vx * dt;
+      a.y += a.vy * dt;
+      if(a.x < a.r + 10) a.x = a.r + 10;
+      if(a.x > view.w - a.r - 10) a.x = view.w - a.r - 10;
+      if(a.y < view.hudH + a.r) a.y = view.hudH + a.r + 2;
+      if(a.life >= alienConfig.escapeSeconds){
+        aliens.splice(i, 1);
+        escaped += 1;
+      }
+      continue;
+    }
+    if(behavior === "bomber"){
+      var diffB = String((state && state.difficulty) || "normal").toLowerCase();
+      var brutalB = diffB === "brutal";
+      var errB = brutalB ? 1 : 0.2;
+      a.strafeTimer -= dt;
+      if(a.strafeTimer <= 0){
+        a.strafeTimer = 0.6 + Math.random() * 0.9;
+        a.strafeTarget = randi(40, Math.max(80, view.w - 40));
+      }
+      var chaseB = (a.strafeTarget - a.x) * 0.55;
+      var wobB = Math.sin(a.t * 1.2 + a.uid) * (55 * errB);
+      a.vx = (wobB + chaseB) * (brutalB ? 1 : 0.65);
+      a.vy = (a.speed * 0.32) * (brutalB ? 1 : 0.72);
+      a.x += a.vx * dt;
+      a.y += a.vy * dt;
+      a.bomberDropT = (a.bomberDropT || 0) + dt;
+      if(a.bomberDropT >= 1.35){
+        a.bomberDropT = 0;
+        spawnAlienMine(a.x, a.y + a.r + 6, 72 + Math.random() * 35);
+      }
+      if(a.x < a.r + 10) a.x = a.r + 10;
+      if(a.x > view.w - a.r - 10) a.x = view.w - a.r - 10;
+      if(a.life >= alienConfig.escapeSeconds){
+        aliens.splice(i, 1);
+        escaped += 1;
+      }
+      continue;
+    }
+
     var diff = String((state && state.difficulty) || "normal").toLowerCase();
     var brutal = diff === "brutal";
     // Keep brutal highly erratic, but calm down the default movement.
@@ -346,7 +558,7 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
     a.x += a.vx * dt;
     a.y += a.vy * dt;
 
-    if(!a.escapeActive && a.y >= view.h * 0.7){
+    if(!a.noEscape && !a.escapeActive && a.y >= view.h * 0.7){
       a.escapeActive = true;
       a.escapeBoost = 0;
       a.escapeSequence = true;
@@ -387,13 +599,33 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
           a.burstShots -= 1;
           a.fireCooldown = 0.22;
         }else{
-          if((bossFireMode++ % 2) === 0){
+          a.bossPatternIdx = ((a.bossPatternIdx | 0) + 1) % 6;
+          var pat = a.bossPatternIdx;
+          if(pat === 0){
             fireBossSpread(a, player);
-            a.fireCooldown = 1.15;
-          }else{
+            a.fireCooldown = 1.05;
+          }else if(pat === 1){
+            fireBossRing(a);
+            a.fireCooldown = 1.25;
+          }else if(pat === 2){
+            fireBossFan(a, player);
+            a.fireCooldown = 0.95;
+          }else if(pat === 3){
             fireBossBurst(a, player);
-            a.burstShots = 1;
-            a.fireCooldown = 0.24;
+            a.burstShots = 2;
+            a.fireCooldown = 0.22;
+          }else if(pat === 4){
+            var spiralN = 5;
+            for(var si = 0; si < spiralN; si++){
+              var sang = (a.t || 0) * 1.6 + (si / spiralN) * Math.PI * 2;
+              var sspd = 280 + si * 28;
+              spawnAlienBullet(a.x, a.y, Math.cos(sang) * sspd, Math.sin(sang) * sspd, 4, 2.7);
+            }
+            a.fireCooldown = 1.1;
+          }else{
+            fireBossSpread(a, player);
+            fireBossBurst(a, player);
+            a.fireCooldown = 1.35;
           }
         }
       }else{
@@ -428,7 +660,7 @@ export function updateAlienBullets(dt, view){
   }
 }
 
-export function drawAliens(ctx){
+export function drawAliens(ctx, player){
   ensureAlienSprites();
   ctx.save();
   for(var i=0; i<aliens.length; i++){
@@ -440,6 +672,20 @@ export function drawAliens(ctx){
     var shake = a.hitShake ? a.hitShake * 18 : 0;
     var shakeX = shake ? (Math.sin((a.t || 0) * 80) + Math.cos((a.t || 0) * 54)) * 0.6 * shake : 0;
     var shakeY = shake ? (Math.cos((a.t || 0) * 92) + Math.sin((a.t || 0) * 66)) * 0.6 * shake : 0;
+    if((a.behavior || "") === "sniper" && player && !a.dying && (a.sniperCharge || 0) > 0.05){
+      var aimAlpha = Math.min(0.85, (a.sniperCharge || 0) / 3 * 0.95);
+      ctx.save();
+      ctx.strokeStyle = "rgba(255,40,60," + (0.25 + aimAlpha * 0.55) + ")";
+      ctx.lineWidth = 2 + aimAlpha * 2;
+      ctx.setLineDash([10, 8]);
+      ctx.beginPath();
+      ctx.moveTo(a.x + shakeX, a.y + shakeY);
+      ctx.lineTo(player.x, player.y - 4);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+
     var glow = ctx.createRadialGradient(a.x, a.y, a.r * 0.2, a.x, a.y, a.r * (a.isBoss ? 1.95 : 1.5));
     glow.addColorStop(0, a.isBoss ? "rgba(170,240,255,.44)" : "rgba(80,255,220,.35)");
     glow.addColorStop(1, "rgba(0,0,0,0)");
@@ -540,10 +786,26 @@ export function drawAlienBullets(ctx){
   for(var i=0; i<alienBullets.length; i++){
     var b = alienBullets[i];
     ctx.globalAlpha = 0.9;
-    ctx.fillStyle = "rgba(255,77,109,.85)";
-    ctx.beginPath();
-    ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
-    ctx.fill();
+    if(b.kind === "sniper"){
+      var ang = Math.atan2(b.vy, b.vx);
+      var len = Math.max(18, Math.hypot(b.vx, b.vy) * 0.045);
+      ctx.strokeStyle = "rgba(255,50,70,.95)";
+      ctx.lineWidth = Math.max(3, b.r * 0.55);
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(b.x - Math.cos(ang) * len, b.y - Math.sin(ang) * len);
+      ctx.lineTo(b.x + Math.cos(ang) * len * 1.2, b.y + Math.sin(ang) * len * 1.2);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(255,200,210,.9)";
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, Math.max(2, b.r * 0.35), 0, Math.PI * 2);
+      ctx.fill();
+    }else{
+      ctx.fillStyle = "rgba(255,77,109,.85)";
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+      ctx.fill();
+    }
   }
   ctx.restore();
 }

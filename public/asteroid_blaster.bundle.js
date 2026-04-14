@@ -139469,6 +139469,11 @@
       primaryAmmo: 0,
       primaryAmmoStart: 0,
       primaryAmmoUnlimited: true,
+      menuPrimaryBlaster: "single",
+      missileArmed: false,
+      speedBoostTimer: 0,
+      powerInvincibleTimer: 0,
+      pushawayTimer: 0,
       secondaryMode: "none",
       secondaryCharges: 0,
       secondaryInventory: {},
@@ -141661,6 +141666,7 @@
   // src/js/entities/aliens.js
   var aliens = [];
   var alienBullets = [];
+  var alienMines = [];
   var alienConfig = {
     enabled: true,
     spawnCooldown: 22,
@@ -141676,12 +141682,38 @@
       score: 900,
       radius: 24,
       behavior: "strafe"
+    },
+    sniper: {
+      id: "sniper",
+      name: "Sniper",
+      hp: 1,
+      speed: 48,
+      score: 1100,
+      radius: 22,
+      behavior: "sniper"
+    },
+    rusher: {
+      id: "rusher",
+      name: "Rusher",
+      hp: 1,
+      speed: 220,
+      score: 950,
+      radius: 22,
+      behavior: "rusher"
+    },
+    bomber: {
+      id: "bomber",
+      name: "Bomber",
+      hp: 2,
+      speed: 72,
+      score: 1200,
+      radius: 26,
+      behavior: "bomber"
     }
   };
   var spawnTimer = alienConfig.spawnCooldown;
   var alienId = 1;
   var unlocked = false;
-  var bossFireMode = 0;
   var forcedAlienSpriteKey = "";
   var alienSprites = [
     { key: "et", src: "images/aliens/alien_ET.png", img: null },
@@ -141724,6 +141756,7 @@
   function resetAliens() {
     aliens.length = 0;
     alienBullets.length = 0;
+    alienMines.length = 0;
     spawnTimer = alienConfig.spawnCooldown;
     alienId = 1;
     unlocked = false;
@@ -141734,14 +141767,17 @@
       spawnTimer = 0;
     }
   }
-  function spawnAlienBullet(x, y, vx, vy, radius, life) {
+  function spawnAlienBullet(x, y, vx, vy, radius, life, extra) {
+    var ex = extra || {};
     alienBullets.push({
       x,
       y,
       vx,
       vy,
       r: radius || 4,
-      life: life || 2.8
+      life: life || 2.8,
+      kind: ex.kind || "bolt",
+      dmg: typeof ex.dmg === "number" ? ex.dmg : null
     });
   }
   function fireBossSpread(a, player2) {
@@ -141763,6 +141799,81 @@
     var jitter = Math.random() * 0.16 - 0.08;
     var ang = Math.atan2(dy, dx) + jitter;
     spawnAlienBullet(a.x, a.y, Math.cos(ang) * speed, Math.sin(ang) * speed, 5, 3.1);
+  }
+  function fireBossRing(a) {
+    var n = 8;
+    var speed = 300;
+    for (var ri = 0; ri < n; ri++) {
+      var ang = ri / n * Math.PI * 2 + (a.t || 0) * 0.4;
+      spawnAlienBullet(a.x, a.y, Math.cos(ang) * speed, Math.sin(ang) * speed, 4, 2.6);
+    }
+  }
+  function fireBossFan(a, player2) {
+    var dx = player2.x - a.x;
+    var dy = player2.y - a.y;
+    var base = Math.atan2(dy, dx);
+    var speed = 360;
+    var spread = 0.35;
+    for (var fi = -2; fi <= 2; fi++) {
+      var ang = base + fi * spread * 0.5;
+      spawnAlienBullet(a.x, a.y, Math.cos(ang) * speed, Math.sin(ang) * speed, 4, 2.9);
+    }
+  }
+  function fireSniperShot(a, player2) {
+    var dx = player2.x - a.x;
+    var dy = player2.y - a.y;
+    var dist = Math.max(1, Math.hypot(dx, dy));
+    var speed = 720;
+    spawnAlienBullet(a.x, a.y, dx / dist * speed, dy / dist * speed, 5, 4.2, { kind: "sniper", dmg: 0.48 });
+  }
+  function spawnAlienMine(x, y, vy) {
+    alienMines.push({
+      x,
+      y,
+      vy: typeof vy === "number" ? vy : 88 + Math.random() * 40,
+      r: 11,
+      age: 0,
+      fuse: 5
+    });
+  }
+  function updateAlienMines(dt, view2) {
+    var blasts = [];
+    for (var mi = alienMines.length - 1; mi >= 0; mi--) {
+      var m = alienMines[mi];
+      m.age += dt;
+      m.y += m.vy * dt;
+      if (m.age >= m.fuse) {
+        blasts.push({ x: m.x, y: m.y, r: 88 });
+        alienMines.splice(mi, 1);
+        continue;
+      }
+      if (m.y - m.r > view2.h + 80 || m.y + m.r < -100) {
+        alienMines.splice(mi, 1);
+      }
+    }
+    return blasts;
+  }
+  function drawAlienMines(ctx2) {
+    if (!alienMines.length)
+      return;
+    ctx2.save();
+    for (var i = 0; i < alienMines.length; i++) {
+      var m = alienMines[i];
+      var pulse = 0.75 + 0.25 * Math.sin((m.age || 0) * 10);
+      ctx2.globalAlpha = 0.9;
+      ctx2.strokeStyle = "rgba(255,60,90," + (0.5 + m.age / m.fuse * 0.45) + ")";
+      ctx2.fillStyle = "rgba(255,40,70," + 0.35 * pulse + ")";
+      ctx2.lineWidth = 2.4;
+      ctx2.beginPath();
+      ctx2.moveTo(m.x, m.y - m.r * pulse);
+      ctx2.lineTo(m.x + m.r * pulse, m.y);
+      ctx2.lineTo(m.x, m.y + m.r * pulse);
+      ctx2.lineTo(m.x - m.r * pulse, m.y);
+      ctx2.closePath();
+      ctx2.fill();
+      ctx2.stroke();
+    }
+    ctx2.restore();
   }
   function spawnAlien(typeId, question, answer, view2, opts) {
     var t = alienTypes[typeId] || alienTypes.scout;
@@ -141787,6 +141898,13 @@
     var ingressEnabled = options.forceIngress === true || !options.isBoss;
     var ingressDur = typeof options.ingressDur === "number" && Number.isFinite(options.ingressDur) ? Math.max(0.12, options.ingressDur) : 0.34;
     var ingressTargetY = typeof options.ingressTargetY === "number" && Number.isFinite(options.ingressTargetY) ? options.ingressTargetY : view2.hudH + Math.min(Math.max(70, view2.h * 0.14), 115);
+    var behForSpawn = options.behavior || t.behavior;
+    if (behForSpawn === "sniper" && !options.isBoss) {
+      ingressTargetY = view2.hudH + 52;
+      x = randi(Math.floor(view2.w * 0.18), Math.max(Math.floor(view2.w * 0.18) + 30, Math.floor(view2.w * 0.82)));
+      y = -55;
+      ingressDur = Math.max(ingressDur, 0.52);
+    }
     var a = {
       uid: alienId++,
       id: options.id || t.id,
@@ -141818,16 +141936,29 @@
       ingressTimer: ingressEnabled ? ingressDur : 0,
       ingressDur,
       ingressStartY: y,
-      ingressTargetY
+      ingressTargetY,
+      noEscape: behForSpawn === "sniper" || behForSpawn === "rusher" || !!options.isBoss,
+      sniperCharge: 0,
+      bomberDropT: 0,
+      bossPatternIdx: 0
     };
     var spriteKey = normalizeAlienSpriteKey(options.spriteKey || forcedAlienSpriteKey);
     var spriteIndex = getAlienSpriteIndexByKey(spriteKey);
     if (spriteIndex >= 0) {
       a.spriteIndex = spriteIndex;
     }
+    if (!options.isBoss && a.spriteIndex < 0) {
+      if (typeId === "sniper")
+        a.spriteIndex = 3;
+      else if (typeId === "rusher")
+        a.spriteIndex = 7;
+      else if (typeId === "bomber")
+        a.spriteIndex = 5;
+    }
     if (a.isBoss) {
       a.fireCooldown = 0.95;
       a.strafeTimer = 0.45;
+      a.bossPatternIdx = 0;
     }
     aliens.push(a);
     return a;
@@ -141843,7 +141974,17 @@
     spawnTimer -= dt;
     if (unlocked && spawnTimer <= 0 && aliens.length < alienConfig.maxOnScreen) {
       var q = questionFn();
-      var spawned = spawnAlien("scout", q.question, q.answer, view2);
+      var typePick = "scout";
+      if (!(state2 && state2.alienSwarm)) {
+        var rPick = Math.random();
+        if (rPick < 0.2)
+          typePick = "sniper";
+        else if (rPick < 0.38)
+          typePick = "rusher";
+        else if (rPick < 0.54)
+          typePick = "bomber";
+      }
+      var spawned = spawnAlien(typePick, q.question, q.answer, view2);
       if (state2 && state2.alienSwarm && spawned) {
         spawned.swarmDigit = q && q.digit != null ? q.digit : randi(0, 9);
         spawned.swarmCorrectDigit = q && q.correctDigit != null ? q.correctDigit : null;
@@ -141942,6 +142083,87 @@
         }
         continue;
       }
+      var behavior = a.behavior || "strafe";
+      if (behavior === "sniper") {
+        var topY = a.ingressTargetY != null ? a.ingressTargetY : view2.hudH + 52;
+        a.y += (topY - a.y) * Math.min(1, dt * 2.4);
+        a.strafeTimer -= dt;
+        if (a.strafeTimer <= 0) {
+          a.strafeTimer = 0.8 + Math.random() * 0.9;
+          a.strafeTarget = randi(50, Math.max(90, view2.w - 50));
+        }
+        a.x += (a.strafeTarget - a.x) * dt * 0.55;
+        a.sniperCharge = (a.sniperCharge || 0) + dt;
+        if (a.sniperCharge >= 3) {
+          a.sniperCharge = 0;
+          if (player2 && !(a.x + a.r < 0 || a.x - a.r > view2.w)) {
+            playSfx(state2, "alien_shooting", 0.95);
+            fireSniperShot(a, player2);
+          }
+        }
+        if (a.x < a.r + 10)
+          a.x = a.r + 10;
+        if (a.x > view2.w - a.r - 10)
+          a.x = view2.w - a.r - 10;
+        if (a.life >= alienConfig.escapeSeconds) {
+          aliens.splice(i, 1);
+          escaped += 1;
+        }
+        continue;
+      }
+      if (behavior === "rusher") {
+        if (player2) {
+          var rdx = player2.x - a.x;
+          var rdy = player2.y - a.y;
+          var rd = Math.max(1, Math.hypot(rdx, rdy));
+          var ch = (a.speed || 200) * 1.05;
+          a.vx = rdx / rd * ch;
+          a.vy = rdy / rd * ch * 0.92;
+        }
+        a.x += a.vx * dt;
+        a.y += a.vy * dt;
+        if (a.x < a.r + 10)
+          a.x = a.r + 10;
+        if (a.x > view2.w - a.r - 10)
+          a.x = view2.w - a.r - 10;
+        if (a.y < view2.hudH + a.r)
+          a.y = view2.hudH + a.r + 2;
+        if (a.life >= alienConfig.escapeSeconds) {
+          aliens.splice(i, 1);
+          escaped += 1;
+        }
+        continue;
+      }
+      if (behavior === "bomber") {
+        var diffB = String(state2 && state2.difficulty || "normal").toLowerCase();
+        var brutalB = diffB === "brutal";
+        var errB = brutalB ? 1 : 0.2;
+        a.strafeTimer -= dt;
+        if (a.strafeTimer <= 0) {
+          a.strafeTimer = 0.6 + Math.random() * 0.9;
+          a.strafeTarget = randi(40, Math.max(80, view2.w - 40));
+        }
+        var chaseB = (a.strafeTarget - a.x) * 0.55;
+        var wobB = Math.sin(a.t * 1.2 + a.uid) * (55 * errB);
+        a.vx = (wobB + chaseB) * (brutalB ? 1 : 0.65);
+        a.vy = a.speed * 0.32 * (brutalB ? 1 : 0.72);
+        a.x += a.vx * dt;
+        a.y += a.vy * dt;
+        a.bomberDropT = (a.bomberDropT || 0) + dt;
+        if (a.bomberDropT >= 1.35) {
+          a.bomberDropT = 0;
+          spawnAlienMine(a.x, a.y + a.r + 6, 72 + Math.random() * 35);
+        }
+        if (a.x < a.r + 10)
+          a.x = a.r + 10;
+        if (a.x > view2.w - a.r - 10)
+          a.x = view2.w - a.r - 10;
+        if (a.life >= alienConfig.escapeSeconds) {
+          aliens.splice(i, 1);
+          escaped += 1;
+        }
+        continue;
+      }
       var diff = String(state2 && state2.difficulty || "normal").toLowerCase();
       var brutal = diff === "brutal";
       var erraticFactor = brutal ? 1 : 0.22;
@@ -141989,7 +142211,7 @@
       }
       a.x += a.vx * dt;
       a.y += a.vy * dt;
-      if (!a.escapeActive && a.y >= view2.h * 0.7) {
+      if (!a.noEscape && !a.escapeActive && a.y >= view2.h * 0.7) {
         a.escapeActive = true;
         a.escapeBoost = 0;
         a.escapeSequence = true;
@@ -142031,13 +142253,33 @@
             a.burstShots -= 1;
             a.fireCooldown = 0.22;
           } else {
-            if (bossFireMode++ % 2 === 0) {
+            a.bossPatternIdx = ((a.bossPatternIdx | 0) + 1) % 6;
+            var pat = a.bossPatternIdx;
+            if (pat === 0) {
               fireBossSpread(a, player2);
-              a.fireCooldown = 1.15;
-            } else {
+              a.fireCooldown = 1.05;
+            } else if (pat === 1) {
+              fireBossRing(a);
+              a.fireCooldown = 1.25;
+            } else if (pat === 2) {
+              fireBossFan(a, player2);
+              a.fireCooldown = 0.95;
+            } else if (pat === 3) {
               fireBossBurst(a, player2);
-              a.burstShots = 1;
-              a.fireCooldown = 0.24;
+              a.burstShots = 2;
+              a.fireCooldown = 0.22;
+            } else if (pat === 4) {
+              var spiralN = 5;
+              for (var si = 0; si < spiralN; si++) {
+                var sang = (a.t || 0) * 1.6 + si / spiralN * Math.PI * 2;
+                var sspd = 280 + si * 28;
+                spawnAlienBullet(a.x, a.y, Math.cos(sang) * sspd, Math.sin(sang) * sspd, 4, 2.7);
+              }
+              a.fireCooldown = 1.1;
+            } else {
+              fireBossSpread(a, player2);
+              fireBossBurst(a, player2);
+              a.fireCooldown = 1.35;
             }
           }
         } else {
@@ -142068,7 +142310,7 @@
       }
     }
   }
-  function drawAliens(ctx2) {
+  function drawAliens(ctx2, player2) {
     ensureAlienSprites();
     ctx2.save();
     for (var i = 0; i < aliens.length; i++) {
@@ -142078,6 +142320,19 @@
       var shake = a.hitShake ? a.hitShake * 18 : 0;
       var shakeX = shake ? (Math.sin((a.t || 0) * 80) + Math.cos((a.t || 0) * 54)) * 0.6 * shake : 0;
       var shakeY = shake ? (Math.cos((a.t || 0) * 92) + Math.sin((a.t || 0) * 66)) * 0.6 * shake : 0;
+      if ((a.behavior || "") === "sniper" && player2 && !a.dying && (a.sniperCharge || 0) > 0.05) {
+        var aimAlpha = Math.min(0.85, (a.sniperCharge || 0) / 3 * 0.95);
+        ctx2.save();
+        ctx2.strokeStyle = "rgba(255,40,60," + (0.25 + aimAlpha * 0.55) + ")";
+        ctx2.lineWidth = 2 + aimAlpha * 2;
+        ctx2.setLineDash([10, 8]);
+        ctx2.beginPath();
+        ctx2.moveTo(a.x + shakeX, a.y + shakeY);
+        ctx2.lineTo(player2.x, player2.y - 4);
+        ctx2.stroke();
+        ctx2.setLineDash([]);
+        ctx2.restore();
+      }
       var glow = ctx2.createRadialGradient(a.x, a.y, a.r * 0.2, a.x, a.y, a.r * (a.isBoss ? 1.95 : 1.5));
       glow.addColorStop(0, a.isBoss ? "rgba(170,240,255,.44)" : "rgba(80,255,220,.35)");
       glow.addColorStop(1, "rgba(0,0,0,0)");
@@ -142174,10 +142429,26 @@
     for (var i = 0; i < alienBullets.length; i++) {
       var b = alienBullets[i];
       ctx2.globalAlpha = 0.9;
-      ctx2.fillStyle = "rgba(255,77,109,.85)";
-      ctx2.beginPath();
-      ctx2.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-      ctx2.fill();
+      if (b.kind === "sniper") {
+        var ang = Math.atan2(b.vy, b.vx);
+        var len = Math.max(18, Math.hypot(b.vx, b.vy) * 0.045);
+        ctx2.strokeStyle = "rgba(255,50,70,.95)";
+        ctx2.lineWidth = Math.max(3, b.r * 0.55);
+        ctx2.lineCap = "round";
+        ctx2.beginPath();
+        ctx2.moveTo(b.x - Math.cos(ang) * len, b.y - Math.sin(ang) * len);
+        ctx2.lineTo(b.x + Math.cos(ang) * len * 1.2, b.y + Math.sin(ang) * len * 1.2);
+        ctx2.stroke();
+        ctx2.fillStyle = "rgba(255,200,210,.9)";
+        ctx2.beginPath();
+        ctx2.arc(b.x, b.y, Math.max(2, b.r * 0.35), 0, Math.PI * 2);
+        ctx2.fill();
+      } else {
+        ctx2.fillStyle = "rgba(255,77,109,.85)";
+        ctx2.beginPath();
+        ctx2.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx2.fill();
+      }
     }
     ctx2.restore();
   }
@@ -142252,6 +142523,107 @@
   PowerupManager.prototype.update = function() {
     this.flush();
   };
+
+  // src/js/core/hud_theme.js
+  var hudTheme = {
+    surfacePanel: "rgba(8, 12, 24, 0.78)",
+    surfacePanelMid: "rgba(8, 12, 24, 0.72)",
+    surfaceDark: "rgba(0, 0, 0, 0.45)",
+    strokeSoft: "rgba(255, 255, 255, 0.22)",
+    strokeMuted: "rgba(255, 255, 255, 0.2)",
+    strokeRing: "rgba(255, 255, 255, 0.2)",
+    textPrimary: "rgba(232, 236, 255, 0.95)",
+    textMuted: "rgba(232, 236, 255, 0.75)",
+    textDim: "rgba(232, 236, 255, 0.88)",
+    accentCyan: "rgba(0, 229, 255, 0.92)",
+    accentCyanSoft: "rgba(110, 228, 255, 0.94)",
+    warnAmmo: "rgba(255, 200, 90, 0.9)",
+    badAmmo: "rgba(255, 80, 80, 0.75)",
+    /** Pause / dim overlays on canvas */
+    pauseOverlay: "rgba(0, 0, 0, 0.35)",
+    barTrack: "rgba(0, 0, 0, 0.4)",
+    glowCyan: "rgba(0, 229, 255, 0.35)",
+    missionFail: "rgba(255, 77, 109, 0.92)",
+    missionFailGlow: "rgba(255, 77, 109, 0.35)",
+    timeUpGold: "rgba(255, 221, 0, 0.92)",
+    timeUpGlow: "rgba(255, 221, 0, 0.35)",
+    mineralTutorialGlow: "rgba(110, 220, 255, 0.26)",
+    digitArrowFill: "rgba(255, 255, 255, 0.85)",
+    textScreenshot: "rgba(232, 236, 255, 0.55)",
+    accentCyanBadge: "rgba(0, 229, 255, 0.2)",
+    strokeHigh: "rgba(255, 255, 255, 0.8)",
+    strokeNearWhite: "rgba(255, 255, 255, 0.88)",
+    strokePeak: "rgba(255, 255, 255, 0.9)",
+    fillPeak: "rgba(255, 255, 255, 0.9)",
+    pickupSlotEmptyStroke: "rgba(232, 236, 255, 0.35)",
+    pickupSlotEmptyFill: "rgba(232, 236, 255, 0.06)",
+    strokePickupIcon: "rgba(255, 255, 255, 0.85)",
+    strokePickupIconStrong: "rgba(255, 255, 255, 0.9)",
+    accentRingTrack: "rgba(0, 229, 255, 0.26)",
+    accentRingFill: "rgba(0, 229, 255, 0.8)",
+    accentSlotBadge: "rgba(0, 229, 255, 0.9)",
+    textHudStrong: "rgba(232, 236, 255, 0.9)",
+    strokeBoxSelected: "rgba(0, 229, 255, 0.6)",
+    tutorialDotSurface: "rgba(8, 12, 24, 0.75)",
+    tutorialDotActiveStroke: "rgba(0, 229, 255, 0.9)",
+    tutorialDotInactiveStroke: "rgba(255, 255, 255, 0.65)",
+    tutorialDotActiveText: "rgba(0, 229, 255, 0.95)",
+    tutorialDotInactiveText: "rgba(232, 236, 255, 0.85)",
+    timerBarFill: "rgba(0, 169, 255, 0.9)",
+    timerBarGlow: "rgba(0, 169, 255, 0.35)",
+    timerWarnFill: "rgba(255, 180, 60, 0.92)",
+    timerWarnGlow: "rgba(255, 180, 60, 0.35)",
+    progressBarFill: "rgba(210, 210, 210, 0.92)",
+    progressBarGlow: "rgba(255, 255, 255, 0.25)",
+    hpPulseGlow: "rgba(255, 80, 80, 0.75)",
+    livesActive: "rgba(255, 80, 80, 0.9)",
+    livesInactive: "rgba(255, 80, 80, 0.2)",
+    livesStroke: "rgba(255, 120, 120, 0.5)",
+    strikeActive: "rgba(255, 210, 90, 0.95)",
+    strikeInactive: "rgba(255, 210, 90, 0.2)",
+    strikeStroke: "rgba(255, 220, 120, 0.55)",
+    /** Radial gradients / rings (tutorial portal, similar FX) */
+    accentGlowStopStrong: "rgba(0, 229, 255, 0.5)",
+    accentGlowStopMid: "rgba(0, 229, 255, 0.18)",
+    accentGlowStopOuter: "rgba(0, 229, 255, 0.44)",
+    accentGlowStopOuterMid: "rgba(0, 229, 255, 0.14)",
+    accentStrokeHard: "rgba(0, 229, 255, 0.95)",
+    accentLockRing: "rgba(0, 229, 255, 0.65)",
+    labelBackdrop: "rgba(0, 0, 0, 0.6)",
+    shipFloorGlow: "rgba(0, 229, 255, 0.06)",
+    barHpFill: "rgba(28, 220, 120, 0.9)",
+    barHpGlow: "rgba(28, 220, 120, 0.35)",
+    fontLabel: "600 11px Oxanium, sans-serif",
+    fontLabelSm: "600 10px Oxanium, sans-serif",
+    fontTitleSm: "700 14px Oxanium, sans-serif",
+    fontHudTitle: "700 20px Oxanium, sans-serif",
+    fontHudSub: "600 14px Oxanium, sans-serif",
+    fontTiny: "600 12px Oxanium, sans-serif",
+    radiusPanel: 8,
+    radiusTile: 10,
+    radiusPill: 3
+  };
+  function hudQuestionFontSize(w) {
+    return Math.max(28, Math.min(64, w * 0.06));
+  }
+  function getMissionBriefInjectedCss() {
+    var scrim = "rgba(6, 10, 20, 0.72)";
+    var cardBg = "rgba(8, 12, 24, 0.92)";
+    var cardBorder = "rgba(0, 210, 255, 0.28)";
+    var shadow = "0 18px 48px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.04)";
+    var btnBg = "rgba(8, 12, 24, 0.65)";
+    var btnBorder = "rgba(0, 210, 255, 0.35)";
+    return "#missionBriefOverlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:18;background:" + scrim + ";backdrop-filter:blur(4px);}#missionBriefOverlay.show{display:flex;}#missionBriefOverlay .missionBrief-wrap{display:flex;align-items:flex-end;gap:18px;}#missionBriefOverlay .missionBrief-avatarWrap{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:220px;}#missionBriefOverlay .missionBrief-avatar{width:230px;height:230px;object-fit:contain;filter:drop-shadow(0 12px 26px rgba(0,0,0,.45));}#missionBriefOverlay .missionBrief-avatarName{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.85);}#missionBriefOverlay .missionBrief-card{background:" + cardBg + ";border:1px solid " + cardBorder + ";border-radius:18px;padding:18px 20px;max-width:480px;width:min(480px,92%);box-shadow:" + shadow + ';font-family:"Oxanium",sans-serif;transform:scale(0.92);opacity:0;transition:transform .35s ease, opacity .35s ease;}#missionBriefOverlay.show .missionBrief-card{transform:scale(1);opacity:1;}#missionBriefOverlay .missionBrief-card.is-exiting{transform:scale(0.86);opacity:0;}#missionBriefOverlay h3{margin:0 0 10px;font-size:14px;letter-spacing:1.6px;text-transform:uppercase;color:#e8ecff;}#missionBriefOverlay p{margin:0 0 16px;font-size:13px;line-height:1.6;color:rgba(232,236,255,.8);white-space:pre-line;}#missionBriefOverlay .brief-actions{display:flex;justify-content:flex-end;}#missionBriefOverlay .brief-btn{background:' + btnBg + ";border:1px solid " + btnBorder + ';color:#e8ecff;border-radius:12px;padding:8px 12px;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:"Oxanium",sans-serif;}';
+  }
+  function getSandboxPanelInjectedCss() {
+    var shell = "rgba(8, 12, 24, 0.9)";
+    var border = "rgba(0, 210, 255, 0.22)";
+    var group = "rgba(8, 12, 24, 0.45)";
+    var line = "rgba(255, 255, 255, 0.12)";
+    var btn = "rgba(8, 12, 24, 0.55)";
+    var accent = "rgba(0, 229, 255, 0.55)";
+    return ".sandboxPanel{position:fixed;top:90px;left:16px;z-index:45;width:min(460px,calc(100vw - 32px));max-height:calc(100vh - 112px);overflow:auto;background:" + shell + ";border:1px solid " + border + ";border-radius:16px;padding:12px 14px;box-shadow:0 24px 60px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.04);}.sandboxPanel .sandboxHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}.sandboxPanel h4{margin:0;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.82);}.sandboxPanel .sandboxToggle{border:1px solid " + line + ";background:" + btn + ";color:#e8ecff;border-radius:10px;padding:4px 8px;font-size:10px;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;}.sandboxPanel.collapsed .sandboxBody{display:none;}.sandboxPanel .sandboxSectionTools{display:flex;gap:8px;margin-bottom:8px;}.sandboxPanel .sandboxSectionTools .sandboxToggle{flex:1;}.sandboxPanel .sandboxGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}.sandboxPanel .sandboxGroup{margin:0;border:1px solid " + border + ";background:" + group + ";border-radius:12px;padding:8px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);}.sandboxPanel .sandboxGroupHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}.sandboxPanel .sandboxGroupTitle{font-size:11px;letter-spacing:1.1px;text-transform:uppercase;color:rgba(232,236,255,.78);}.sandboxPanel .sandboxGroupToggle{border:1px solid " + line + ";background:" + btn + ";color:#e8ecff;border-radius:8px;padding:2px 6px;font-size:10px;cursor:pointer;}.sandboxPanel .sandboxGroup.collapsed .sandboxGroupBody{display:none;}.sandboxPanel .sandboxButtons{display:flex;flex-wrap:wrap;gap:6px;}.sandboxPanel .sandboxBtn{border:1px solid " + line + ";background:" + btn + ";color:#e8ecff;border-radius:10px;padding:6px 8px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;}.sandboxPanel .sandboxBtn.active{border-color:" + accent + ";box-shadow:0 0 0 1px rgba(0,229,255,.22) inset;}.sandboxPanel .sandboxBtn:hover{transform:translateY(-1px);border-color:" + accent + ";box-shadow:0 8px 18px rgba(0,0,0,.28);}.sandboxPanel .sandboxNote{font-size:11px;color:rgba(232,236,255,.55);margin:6px 0 4px;}@media (max-width: 960px){.sandboxPanel{top:78px;left:10px;width:min(420px,calc(100vw - 20px));max-height:calc(100vh - 96px);}.sandboxPanel .sandboxGrid{grid-template-columns:1fr;}}";
+  }
 
   // src/js/core/game.js
   var canvas = document.getElementById("canvas");
@@ -143281,7 +143653,6 @@
   var backgroundReady = [];
   var backgroundIndex = 0;
   var backgroundScroll = 0;
-  var backgroundScrollSplit = 0;
   var backgroundScale = 1;
   var PHASER_BACKGROUND_SCROLL_SPEED = 5.8;
   var BACKGROUND_SCROLL_SPEED = 8.8;
@@ -143387,7 +143758,10 @@
     scope: { img: new Image(), ready: false, src: "images/powerups/powerup_scope.png" },
     ammo: { img: new Image(), ready: false, src: "images/powerups/powerup_ammo.png" },
     machinegun: { img: new Image(), ready: false, src: "images/powerups/powerup_machinegun.png" },
-    autofire: { img: new Image(), ready: false, src: "images/powerups/powerup_machinegun.png" }
+    autofire: { img: new Image(), ready: false, src: "images/powerups/powerup_machinegun.png" },
+    speedup: { img: new Image(), ready: false, src: "images/powerups/powerup_timedelay.png" },
+    invincibility: { img: new Image(), ready: false, src: "images/powerups/powerup_shield.png" },
+    pushaway: { img: new Image(), ready: false, src: "images/powerups/powerup_magnet.png" }
   };
   Object.keys(powerupIcons).forEach(function(key) {
     var icon = powerupIcons[key];
@@ -143516,6 +143890,9 @@
     { id: "lock", label: "Target Lock", icon: powerupIcons.lock.src, desc: "Grants one Target Lock charge (press X to steer shots to the correct asteroid)." },
     { id: "autofire", label: "Auto-Fire", icon: powerupIcons.machinegun.src, desc: "Activates a rapid-fire magazine for the current shot type." },
     { id: "ammo", label: "Ammo Cache", icon: powerupIcons.ammo.src, desc: "Restores primary blaster ammo (shared magazine for the run)." },
+    { id: "speedup", label: "Afterburner", icon: powerupIcons.speedup.src, desc: "Boosts ship thrust for 20 seconds." },
+    { id: "invincibility", label: "Battle Screen", icon: powerupIcons.invincibility.src, desc: "Negates hull damage from asteroid and alien hits for 20 seconds." },
+    { id: "pushaway", label: "Repulsor Field", icon: powerupIcons.pushaway.src, desc: "Pushes nearby asteroids away for 20s; the answer rock snaps back if it leaves the field." },
     { id: "scope", label: "Scope", icon: powerupIcons.scope.src, desc: "Projects a laser guide to the nearest asteroid." }
   ];
   var powerupCatalogDefense = [
@@ -144273,7 +144650,7 @@
     var k = (e.key || "").toLowerCase();
     var code = e.code || "";
     var keyNorm = normalizeKeyEvent(e);
-    var prevent = ["arrowleft", "arrowright", "arrowup", "arrowdown", "a", "d", "w", "s", "p", "m", "b", "1", "2", "3", "0"];
+    var prevent = ["arrowleft", "arrowright", "arrowup", "arrowdown", "a", "d", "w", "s", "p", "m", "b", "v", "1", "2", "3", "0"];
     if (keyBindings.shoot) {
       prevent.push(keyBindings.shoot);
       if (keyBindings.shoot === "space")
@@ -144304,6 +144681,11 @@
       toggleScreenshot();
     if (k === "m")
       openSettings();
+    if (k === "v" && !e.repeat && state.running && !state.paused && !state.over && isMissileAllowed()) {
+      player.missileArmed = !player.missileArmed;
+      syncBlasterFromMenu();
+      showToast(player.missileArmed ? "MISSILE MODULE ON (V)" : "MISSILE MODULE OFF (V)");
+    }
     if (keyNorm === keyBindings.shoot && !e.repeat) {
       if (tutorialActive && (tutorialShootLocked || tutorialMineralsFreeze)) {
         return;
@@ -144422,10 +144804,21 @@
     mousepadDeadzonePad = mousepadPadDefaults.deadzone;
   }
   function isSandboxMultiplayer() {
-    return !!(sandboxMode && state.sandboxTwoPilots);
+    return false;
   }
   function isSandboxSplitMode() {
-    return isSandboxMultiplayer() && state.sandboxTwoPilotsMode === "split";
+    return false;
+  }
+  function disableCoopSplitSanitize() {
+    state.sandboxTwoPilots = false;
+    state.sandboxTwoPilotsMode = "shared";
+    if (state.sandboxMultiplayer) {
+      state.sandboxMultiplayer.enabled = false;
+      state.sandboxMultiplayer.mode = "shared";
+    }
+    sandboxMultiplayer.enabled = false;
+    sandboxMultiplayer.mode = "shared";
+    setSplitGameplay(false);
   }
   function clampPilotToLane(pilot, laneId) {
     if (!pilot || !isSandboxSplitMode())
@@ -144616,6 +145009,9 @@
       if (pilot.lockTimer === 0)
         pilot.lockTargetId = 0;
     }
+    pilot.speedBoostTimer = Math.max(0, (pilot.speedBoostTimer || 0) - dtReal2);
+    pilot.powerInvincibleTimer = Math.max(0, (pilot.powerInvincibleTimer || 0) - dtReal2);
+    pilot.pushawayTimer = Math.max(0, (pilot.pushawayTimer || 0) - dtReal2);
   }
   function createPilotStats() {
     return {
@@ -144639,9 +145035,6 @@
     if (!pilotStats[pilotId])
       pilotStats[pilotId] = createPilotStats();
     return pilotStats[pilotId];
-  }
-  function resetPilotStats(pilotId) {
-    pilotStats[pilotId] = createPilotStats();
   }
   function recordPilotShot(pilotId, mode) {
     var stats = ensurePilotStats(pilotId);
@@ -144724,18 +145117,6 @@
     if (!silent) {
       showToast(p2.mouseControlEnabled ? "PILOT 2 MOUSE ON" : "PILOT 2 MOUSE OFF");
     }
-  }
-  function pickAlternateShipType(primary) {
-    var order = ["classic", "spire", "am2", "mk7", "fizard", "ember", "azure", "bu2x", "mantas", "cyan", "veloz", "verde9", "whiteflame8", "datsawze", "apextiburoniv"];
-    var idx = order.indexOf(primary);
-    if (idx < 0)
-      idx = 0;
-    for (var i = 1; i <= order.length; i++) {
-      var next = order[(idx + i) % order.length];
-      if (next && next !== primary)
-        return next;
-    }
-    return primary || "mk7";
   }
   function setMissionBriefActive(active) {
     missionBriefShowing = !!active;
@@ -145208,7 +145589,7 @@
         var targetY2 = clamp(pilot2Mouse.y, topLimit + p2.h / 2 + 6, bottomLimit - p2.h / 2);
         var dx2 = targetX2 - p2.x;
         var dy2 = targetY2 - p2.y;
-        var settle2 = 1 - Math.exp(-10 * dtReal);
+        var settle2 = (1 - Math.exp(-10 * dtReal)) * ((p2.speedBoostTimer || 0) > 0 ? 1.32 : 1);
         p2.x += dx2 * settle2;
         p2.y += dy2 * settle2;
         var velScale = 1 / Math.max(1e-3, dtReal);
@@ -147443,7 +147824,8 @@
       spawnAt: getElapsedSeconds(),
       spawnSide,
       spawnFade: spawnSide === "top" ? 1 : 0,
-      spawnFadeDur: spawnSide === "top" ? 0 : 0.4
+      spawnFadeDur: spawnSide === "top" ? 0 : 0.4,
+      correctAnchorX: isCorrect ? spawnX : null
     };
     if (isCorrect && !tutorialActive && !hiddenPowerupActive && answerHitsSincePowerup >= 7) {
       var drop = choosePowerupDrop();
@@ -147666,9 +148048,9 @@
     });
   }
   function pickSecondaryPowerupTypeForRandomDrop(stampedeActive) {
-    var pool = ["time", "time", "emp", "emp", "magnet", "lock", "repair", "autofire", "scope", "ammo", "ammo"];
+    var pool = ["time", "time", "emp", "emp", "magnet", "lock", "repair", "autofire", "scope", "ammo", "ammo", "speedup", "invincibility", "pushaway"];
     if (stampedeActive) {
-      pool = ["emp", "emp", "autofire", "autofire", "time", "magnet", "lock", "repair", "scope", "ammo", "emp", "autofire"];
+      pool = ["emp", "emp", "autofire", "autofire", "time", "magnet", "lock", "repair", "scope", "ammo", "speedup", "invincibility", "pushaway", "emp", "autofire"];
     }
     return pool[Math.floor(Math.random() * pool.length)];
   }
@@ -147703,9 +148085,9 @@
       return { type: sType, group: "secondary" };
     }
     function pickSecondaryType() {
-      var pool = ["time", "time", "emp", "emp", "magnet", "lock", "repair", "autofire", "scope", "ammo", "ammo"];
+      var pool = ["time", "time", "emp", "emp", "magnet", "lock", "repair", "autofire", "scope", "ammo", "ammo", "speedup", "invincibility", "pushaway"];
       if (stampedeActive) {
-        pool = ["emp", "emp", "autofire", "autofire", "time", "magnet", "lock", "repair", "scope", "ammo", "emp", "autofire"];
+        pool = ["emp", "emp", "autofire", "autofire", "time", "magnet", "lock", "repair", "scope", "ammo", "speedup", "invincibility", "pushaway", "emp", "autofire"];
       }
       return pool[Math.floor(Math.random() * pool.length)];
     }
@@ -147820,6 +148202,21 @@
       player.scopeTimer = 1;
       showToast("DEFENSE -> SCOPE ONLINE");
     } else if (p.group === "secondary") {
+      if (p.type === "speedup") {
+        player.speedBoostTimer = 20;
+        showToast("SPEED BOOST 20s");
+        return;
+      }
+      if (p.type === "invincibility") {
+        player.powerInvincibleTimer = 20;
+        showToast("INVINCIBILITY 20s");
+        return;
+      }
+      if (p.type === "pushaway") {
+        player.pushawayTimer = 20;
+        showToast("REPULSOR 20s");
+        return;
+      }
       if (p.type === "ammo") {
         addPrimaryAmmoForPilot(player, PRIMARY_AMMO_PICKUP_BUNDLE);
         showToast("AMMO +" + PRIMARY_AMMO_PICKUP_BUNDLE);
@@ -147898,6 +148295,21 @@
       pilot.scopeTimer = 1;
       showToast("DEFENSE -> SCOPE ONLINE");
     } else if (p.group === "secondary") {
+      if (p.type === "speedup") {
+        pilot.speedBoostTimer = 20;
+        showToast("SPEED BOOST 20s");
+        return;
+      }
+      if (p.type === "invincibility") {
+        pilot.powerInvincibleTimer = 20;
+        showToast("INVINCIBILITY 20s");
+        return;
+      }
+      if (p.type === "pushaway") {
+        pilot.pushawayTimer = 20;
+        showToast("REPULSOR 20s");
+        return;
+      }
       if (p.type === "ammo") {
         addPrimaryAmmoForPilot(pilot, PRIMARY_AMMO_PICKUP_BUNDLE);
         showToast("AMMO +" + PRIMARY_AMMO_PICKUP_BUNDLE);
@@ -147960,28 +148372,62 @@
     player.blasterHitsRemaining = 0;
     player.blasterTimer = 0;
   }
+  function pilotPowerInvincible(pilot) {
+    return !!(pilot && (pilot.powerInvincibleTimer || 0) > 0);
+  }
+  function syncBlasterFromMenu() {
+    if (tutorialActive || sandboxMode || !player)
+      return;
+    if (!inputs.shotType)
+      return;
+    var domVal = String(inputs.shotType.value || "single");
+    var primary = player.menuPrimaryBlaster || "single";
+    if (primary === "missile" || !shotIcons[primary] && primary !== "single") {
+      primary = "single";
+    }
+    if (player.missileArmed && isMissileAllowed()) {
+      player.blasterMode = "missile";
+      player.blasterHitsRemaining = 9999;
+      player.blasterTimer = 0;
+    } else {
+      player.missileArmed = false;
+      player.blasterMode = primary;
+      if (primary === "single") {
+        player.blasterHitsRemaining = 0;
+      } else {
+        player.blasterHitsRemaining = 9999;
+      }
+      player.blasterTimer = 0;
+    }
+  }
   function applySelectedShotType() {
     if (tutorialActive) {
       if (inputs.shotType)
         inputs.shotType.value = "single";
       resetShotType();
+      player.missileArmed = false;
+      player.menuPrimaryBlaster = "single";
       return;
     }
     if (sandboxMode || !inputs.shotType)
       return;
-    var selected = String(inputs.shotType.value || "single");
-    if (selected !== "single" && selected !== "missile" && !shotIcons[selected]) {
-      selected = "single";
+    var domVal = String(inputs.shotType.value || "single");
+    if (domVal !== "missile") {
+      if (domVal !== "single" && !shotIcons[domVal]) {
+        domVal = "single";
+      }
+      player.menuPrimaryBlaster = domVal;
     }
-    if (selected === "missile" && !isMissileAllowed())
-      selected = "single";
-    player.blasterMode = selected;
-    if (selected === "single") {
-      player.blasterHitsRemaining = 0;
+    if (domVal === "missile") {
+      if (isMissileAllowed()) {
+        player.missileArmed = true;
+      } else {
+        player.missileArmed = false;
+      }
     } else {
-      player.blasterHitsRemaining = 9999;
-      player.blasterTimer = 0;
+      player.missileArmed = false;
     }
+    syncBlasterFromMenu();
   }
   function triggerTutorialRecovery(reason) {
     if (!tutorialActive || !tourGuide || tutorialRecoveryActive || tutorialHullRecoveryShown)
@@ -148116,6 +148562,7 @@
     if (!state.sound)
       setDrone(state, false);
     setSoundtrack(state, state.sound && !state.over && (state.running || countdownActive || introActive || missionBriefShowing));
+    disableCoopSplitSanitize();
   }
   function stopMissionClearedSfx() {
     if (missionClearFx.sfxClip) {
@@ -148353,6 +148800,9 @@
     player.autoFireSpinning = false;
     player.autoFireSpinTimer = 0;
     player.autoFireSpinSfxPlayed = false;
+    player.speedBoostTimer = 0;
+    player.powerInvincibleTimer = 0;
+    player.pushawayTimer = 0;
     applySelectedShotType();
     player.hull = 1;
     player.lowHullAlarmed = false;
@@ -148392,25 +148842,6 @@
       setSoundtrackStartIndex(getSoundtrackStartIndex());
       setSoundtrack(state, true);
       state.soundtrackPrimed = true;
-    }
-    if (isSandboxMultiplayer()) {
-      ensurePilot2();
-      pilot2.hull = 1;
-      pilot2.lowHullAlarmed = false;
-      pilot2.lastDamageAt = 0;
-      pilot2.invuln = 0;
-      pilot2.hitFlash = 0;
-      pilot2.armorFlashTimer = 0;
-      pilot2.armorFlashDur = 0.14;
-      pilot2.shipShake = 0;
-      pilot2.dead = false;
-      pilot2.hidden = false;
-      pilot2.livesStart = Math.max(0, state.livesStart || state.lives || 0);
-      pilot2.lives = pilot2.livesStart;
-      resetPilotStats(1);
-      resetPilotStats(2);
-      initPrimaryAmmoForPilot(ensurePilot2());
-      positionSandboxPilots();
     }
     applyMousepadAutoStart();
   }
@@ -151860,7 +152291,8 @@
     var inputMag = Math.min(1, Math.hypot(inputX, inputY));
     var dirX = inputMag > 0 ? inputX / inputMag : 0;
     var dirY = inputMag > 0 ? inputY / inputMag : 0;
-    var targetSpeed = spinActive ? 0 : player.speed * inputMag;
+    var spdBoostMul = player.speedBoostTimer > 0 ? 1.45 : 1;
+    var targetSpeed = spinActive ? 0 : player.speed * inputMag * spdBoostMul;
     if (state.collisionSlow > 0)
       targetSpeed *= 0.18;
     var accelUp = profile.accelUp || 6;
@@ -152388,6 +152820,39 @@
       }
     }
     updateAlienBullets(dtSlow, view);
+    var mineBlasts = updateAlienMines(dtSlow, view);
+    if (mineBlasts && mineBlasts.length) {
+      for (var mbi = 0; mbi < mineBlasts.length; mbi++) {
+        var blast = mineBlasts[mbi];
+        spawnParticles(blast.x, blast.y, "spark");
+        spawnParticles(blast.x, blast.y, "smoke");
+        playSfx(state, "explosion", 0.55);
+        if (!pilotPowerInvincible(player)) {
+          var bdx = player.x - blast.x;
+          var bdy = player.y - 8 - blast.y;
+          if (bdx * bdx + bdy * bdy < blast.r * blast.r) {
+            if (player.invuln <= 0) {
+              kickShake(20, 0.2);
+              triggerCameraFlash(0.2);
+              var mineDmg = 0.32;
+              if (isArmorActiveForPilot(player))
+                mineDmg *= 0.4;
+              if (!isShieldActiveForPilot(player) && !isArmorActiveForPilot(player)) {
+                player.hull = clamp(player.hull - mineDmg, 0, 1);
+                markDamage(player);
+                if (consumeShipLife("MINE BLAST"))
+                  return;
+                if (player.hull <= 0 && !tutorialActive) {
+                  state.endReasonDetail = "MINE BLAST";
+                  endGame("destroyed");
+                  return;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
     updateParticles(dtReal2);
     updateMineralPopups(dtReal2);
     updateMineralHudPulse(dtReal2);
@@ -152422,21 +152887,6 @@
       var dyp = p.y - player.y;
       if (Math.hypot(dxp, dyp) < p.r + 18) {
         collectedBy = 1;
-      } else if (isSandboxMultiplayer()) {
-        var p2 = ensurePilot2();
-        var dxp2 = p.x - p2.x;
-        var dyp2 = p.y - p2.y;
-        if (Math.hypot(dxp2, dyp2) < p.r + 18) {
-          collectedBy = 2;
-        }
-      }
-      if (collectedBy) {
-        if (isSandboxSplitMode()) {
-          var lane = getLaneIdForX(p.x);
-          if (collectedBy === 1 && lane !== 1 || collectedBy === 2 && lane !== 2) {
-            collectedBy = 0;
-          }
-        }
       }
       if (collectedBy) {
         if (p.type === "mineral") {
@@ -152464,18 +152914,10 @@
           state.spawnTimer = Math.max(state.spawnTimer || 0, 1.4);
           tutorialShootLocked = true;
         }
-        if (!isSandboxMultiplayer()) {
-          state.powerupsCollected += 1;
-          if (!state.powerupsCollectedByType)
-            state.powerupsCollectedByType = {};
-          state.powerupsCollectedByType[p.type] = (state.powerupsCollectedByType[p.type] || 0) + 1;
-        } else {
-          var pStats = ensurePilotStats(collectedBy);
-          pStats.powerupsCollected += 1;
-          if (p.type) {
-            pStats.powerupsCollectedByType[p.type] = (pStats.powerupsCollectedByType[p.type] || 0) + 1;
-          }
-        }
+        state.powerupsCollected += 1;
+        if (!state.powerupsCollectedByType)
+          state.powerupsCollectedByType = {};
+        state.powerupsCollectedByType[p.type] = (state.powerupsCollectedByType[p.type] || 0) + 1;
         if (p.group === "offense") {
           playSfx(state, "shot_powerup");
         } else if (p.type === "repair") {
@@ -152511,21 +152953,10 @@
           powerups.splice(pi, 1);
           continue;
         }
-        if (!isSandboxMultiplayer()) {
-          state.powerupsMissed += 1;
-          if (!state.powerupsMissedByType)
-            state.powerupsMissedByType = {};
-          state.powerupsMissedByType[p.type] = (state.powerupsMissedByType[p.type] || 0) + 1;
-        } else {
-          var missPilot = isSandboxSplitMode() ? getLaneIdForX(p.x) : 1;
-          var missStats = ensurePilotStats(missPilot);
-          missStats.powerupsMissed += 1;
-          if (p.type) {
-            if (!missStats.powerupsMissedByType)
-              missStats.powerupsMissedByType = {};
-            missStats.powerupsMissedByType[p.type] = (missStats.powerupsMissedByType[p.type] || 0) + 1;
-          }
-        }
+        state.powerupsMissed += 1;
+        if (!state.powerupsMissedByType)
+          state.powerupsMissedByType = {};
+        state.powerupsMissedByType[p.type] = (state.powerupsMissedByType[p.type] || 0) + 1;
         if (tutorialActive && tutorialStepId === "powerup") {
           spawnPowerup(p.type, p.group);
         }
@@ -152591,6 +153022,39 @@
           a.vx *= 1 - Math.min(1, dtReal2 * 2.2);
         if (a.vy != null)
           a.vy *= 1 - Math.min(1, dtReal2 * 1.8);
+      }
+      var pushActive1 = (player.pushawayTimer || 0) > 0;
+      if (pushActive1 && !a.ghost) {
+        let applyPushFrom = function(pilot, ast) {
+          if (!pilot || (pilot.pushawayTimer || 0) <= 0)
+            return;
+          var dpx = ast.x - pilot.x;
+          var dpy = ast.y - pilot.y;
+          var dp = Math.hypot(dpx, dpy);
+          var pr = 240;
+          if (dp < pr && dp > 0.01) {
+            var str = (1 - dp / pr) * 480 * dtReal2;
+            ast.x += dpx / dp * str;
+            ast.y += dpy / dp * str * 0.82;
+            if (ast.vx != null)
+              ast.vx += dpx / dp * str * 0.14;
+            if (ast.vy != null)
+              ast.vy += dpy / dp * str * 0.1;
+          }
+        };
+        applyPushFrom(player, a);
+      }
+      if ((player.pushawayTimer || 0) > 0 && isCurrentWaveCorrectAsteroid(a)) {
+        var outBelow = a.y - a.r > r.height + 35;
+        var outSide = a.x + a.r < -100 || a.x - a.r > r.width + 100;
+        if (outBelow || outSide) {
+          var anchorX = typeof a.correctAnchorX === "number" ? a.correctAnchorX : a.x;
+          var laneB = getLaneBounds(0);
+          a.x = clamp(anchorX, laneB.minX + a.r + 4, laneB.maxX - a.r - 4);
+          a.y = -45 - Math.random() * 25;
+          a.vx = (a.vx || 0) * 0.35;
+          a.vy = Math.max(Math.abs(a.baseVy || 95) * 0.88, 70);
+        }
       }
       if (a.effectTimer != null) {
         a.effectTimer -= dtSlow;
@@ -153246,7 +153710,7 @@
         if (player.phaseTimer > 0) {
           continue;
         }
-        if (player.invuln <= 0) {
+        if (player.invuln <= 0 && !pilotPowerInvincible(player)) {
           clearScopeOnHit();
           registerShotTypeHit(2, true);
           resetSurvivorTimer();
@@ -153406,6 +153870,10 @@
       var dyp = abul.y - (player.y - 4);
       if (dxp * dxp + dyp * dyp < (abul.r + 16) * (abul.r + 16)) {
         alienBullets.splice(ab, 1);
+        if (pilotPowerInvincible(player)) {
+          playSfx(state, "impact", 0.22);
+          continue;
+        }
         if (player.invuln <= 0) {
           clearScopeOnHit();
           registerShotTypeHit(1, false);
@@ -153419,7 +153887,7 @@
           var knockBackBullet = 0.5;
           player.vx = -dxp / distP * player.speed * knockBackBullet;
           player.vy = -dyp / distP * player.speed * knockBackBullet;
-          var dmgHit = 0.35;
+          var dmgHit = typeof abul.dmg === "number" && isFinite(abul.dmg) ? abul.dmg : 0.35;
           if (isArmorActiveForPilot(player))
             dmgHit = dmgHit * 0.4;
           if (isShieldActiveForPilot(player)) {
@@ -153477,75 +153945,7 @@
             }
           }
         }
-      }
-      if (isSandboxMultiplayer()) {
-        var p2b = ensurePilot2();
-        if (p2b.dead)
-          continue;
-        if (isSandboxSplitMode()) {
-          var laneAb = getLaneIdForX(abul.x);
-          if (laneAb !== 2)
-            continue;
-        }
-        var dxp2 = abul.x - p2b.x;
-        var dyp2 = abul.y - (p2b.y - 4);
-        if (dxp2 * dxp2 + dyp2 * dyp2 < (abul.r + 16) * (abul.r + 16)) {
-          alienBullets.splice(ab, 1);
-          if (p2b.invuln <= 0) {
-            clearScopeOnHitForPilot(p2b);
-            registerShotTypeHitForPilot(p2b, 1, false);
-            resetSurvivorTimer();
-            kickShake(16, 0.14);
-            triggerCameraFlash(0.14);
-            p2b.shipShake = Math.max(p2b.shipShake || 0, 1);
-            var distP2 = Math.max(1, Math.hypot(dxp2, dyp2));
-            var knockBackBullet2 = 0.5;
-            p2b.vx = -dxp2 / distP2 * p2b.speed * knockBackBullet2;
-            p2b.vy = -dyp2 / distP2 * p2b.speed * knockBackBullet2;
-            var dmgHit2 = 0.35;
-            if (isArmorActiveForPilot(p2b))
-              dmgHit2 = dmgHit2 * 0.4;
-            if (isShieldActiveForPilot(p2b)) {
-              impactDebris(p2b.x, p2b.y - 8);
-              playSfx(state, "impact", 0.35);
-              p2b.hitFlash = 1;
-              p2b.invuln = 0.35;
-              showToast("SHIELD BLOCK");
-            } else if (isArmorActiveForPilot(p2b)) {
-              impactShipHit(p2b.x, p2b.y - 10);
-              playSfx(state, "impact_thud", 0.45);
-              p2b.hitFlash = 1;
-              p2b.invuln = 0.35;
-              showToast("ARMOR ABSORB");
-              consumeArmorBlockForPilot(p2b);
-            } else {
-              impactShipHit(p2b.x, p2b.y - 10);
-              playSfx(state, "crash", 0.45);
-              p2b.hitFlash = 1;
-              p2b.invuln = 0.45;
-              p2b.hull = clamp(p2b.hull - dmgHit2, 0, 1);
-              markDamage(p2b);
-              if (p2b.hull <= 0) {
-                p2b.hull = 0;
-                p2b.lives = Math.max(0, (p2b.lives || 0) - 1);
-                if (p2b.lives <= 0) {
-                  p2b.dead = true;
-                  p2b.hidden = true;
-                  showToast("PILOT DOWN");
-                } else {
-                  p2b.hull = 1;
-                  p2b.lowHullAlarmed = false;
-                  p2b.invuln = Math.max(p2b.invuln || 0, 0.6);
-                  showToast("HULL CRITICAL");
-                }
-              } else {
-                updateLowHullAlarm(p2b, dmgHit2);
-                playSfx(state, "ship_damaged");
-                showToast("ALIEN HIT");
-              }
-            }
-          }
-        }
+        continue;
       }
     }
     powerupManager.update();
@@ -153679,62 +154079,7 @@
     }
     ctx.clearRect(0, 0, w, h);
     if (!phaserActive && !tutorialActive) {
-      var splitBg = isSandboxSplitMode();
-      if (splitBg) {
-        let drawLaneBackground = function(lane, bgIdx, scrollOffset) {
-          if (backgroundSprites[bgIdx] && backgroundReady[bgIdx]) {
-            var bgImg3 = backgroundSprites[bgIdx];
-            var laneW = lane.maxX - lane.minX;
-            var baseScale3 = laneW / bgImg3.width;
-            var scale2 = baseScale3 * backgroundScale;
-            var drawW2 = Math.ceil(bgImg3.width * scale2) + 4;
-            var drawH3 = Math.ceil(bgImg3.height * scale2) + 4;
-            var offX2 = Math.floor((lane.minX + lane.maxX - drawW2) / 2);
-            var offY2 = Math.floor(h - drawH3 + scrollOffset);
-            ctx.save();
-            ctx.beginPath();
-            ctx.rect(lane.minX, 0, laneW, h);
-            ctx.clip();
-            ctx.globalAlpha = 0.55;
-            ctx.drawImage(bgImg3, offX2, offY2, drawW2, drawH3);
-            ctx.restore();
-          } else if (SHOW_STARS) {
-            ctx.save();
-            ctx.beginPath();
-            ctx.rect(lane.minX, 0, lane.maxX - lane.minX, h);
-            ctx.clip();
-            drawStars(w, h, true);
-            ctx.restore();
-          }
-        };
-        var lane1 = getLaneBounds(1);
-        var lane2 = getLaneBounds(2);
-        var bgIdx1 = backgroundIndex;
-        var bgIdx2 = backgroundIndex;
-        var bgReady1 = backgroundSprites[bgIdx1] && backgroundReady[bgIdx1];
-        var bgReady2 = backgroundSprites[bgIdx2] && backgroundReady[bgIdx2];
-        var maxScroll1 = 0;
-        var maxScroll2 = 0;
-        if (!state.paused && !screenshotMode) {
-          if (bgReady1) {
-            var bgImg1 = backgroundSprites[bgIdx1];
-            var baseScale1 = Math.max((lane1.maxX - lane1.minX) / bgImg1.width, h / bgImg1.height);
-            var drawH1 = Math.ceil(bgImg1.height * (baseScale1 * backgroundScale)) + 4;
-            maxScroll1 = Math.max(1, drawH1 - h);
-          }
-          if (bgReady2) {
-            var bgImg2 = backgroundSprites[bgIdx2];
-            var baseScale2 = Math.max((lane2.maxX - lane2.minX) / bgImg2.width, h / bgImg2.height);
-            var drawH2 = Math.ceil(bgImg2.height * (baseScale2 * backgroundScale)) + 4;
-            maxScroll2 = Math.max(1, drawH2 - h);
-          }
-          var maxScroll = Math.max(maxScroll1, maxScroll2, 1);
-          backgroundScroll = (backgroundScroll + getBackgroundScrollStep(BACKGROUND_SCROLL_SPEED, bg.dt || 1 / 60)) % maxScroll;
-          backgroundScrollSplit = backgroundScroll;
-        }
-        drawLaneBackground(lane1, bgIdx1, backgroundScroll);
-        drawLaneBackground(lane2, bgIdx2, backgroundScrollSplit);
-      } else if (backgroundSprites[backgroundIndex] && backgroundReady[backgroundIndex]) {
+      if (backgroundSprites[backgroundIndex] && backgroundReady[backgroundIndex]) {
         var bgImg = backgroundSprites[backgroundIndex];
         var baseScale = w / bgImg.width;
         var scale = baseScale * backgroundScale;
@@ -153755,7 +154100,7 @@
       drawStars(w, h, true, true);
     }
     if (state.paused && state.running) {
-      ctx.fillStyle = "rgba(0,0,0,.35)";
+      ctx.fillStyle = hudTheme.pauseOverlay;
       ctx.fillRect(0, 0, w, h);
     }
     updateTimerHud();
@@ -153776,7 +154121,8 @@
           drawAsteroid(asteroids[i]);
       }
       if (!state.hideAsteroids || sandboxMode && state.sandboxAlienWaveActive || isAlienCombatOnlyPhase()) {
-        drawAliens(ctx);
+        drawAliens(ctx, player);
+        drawAlienMines(ctx);
         drawAlienBullets(ctx);
       }
       drawPowerups();
@@ -153790,9 +154136,6 @@
     drawDashGhosts();
     drawTutorialDots();
     drawShip();
-    if (isSandboxMultiplayer()) {
-      drawPilotShip(ensurePilot2());
-    }
     drawFrontclearFx();
     drawDownshockFx();
     drawKnock3Fx();
@@ -153810,7 +154153,7 @@
           continue;
         ctx.save();
         ctx.globalCompositeOperation = "lighter";
-        ctx.fillStyle = "rgba(110,220,255,.26)";
+        ctx.fillStyle = hudTheme.mineralTutorialGlow;
         ctx.beginPath();
         ctx.arc(pm.x, pm.y, pm.r * 2.4, 0, Math.PI * 2);
         ctx.fill();
@@ -153830,11 +154173,11 @@
       var alphaOut = clamp(1 - (t - 2) / 0.5, 0, 1);
       var alpha = Math.min(alphaIn, alphaOut);
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = "rgba(255,77,109,.92)";
+      ctx.fillStyle = hudTheme.missionFail;
       ctx.font = "700 " + Math.max(28, Math.min(64, w * 0.06)) + "px Oxanium, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.shadowColor = "rgba(255,77,109,.35)";
+      ctx.shadowColor = hudTheme.missionFailGlow;
       ctx.shadowBlur = 12;
       ctx.fillText("MISSION FAILED", w / 2, h / 2 - 12);
       ctx.restore();
@@ -153846,11 +154189,11 @@
       var alphaOut2 = clamp(1 - (t2 - 2) / 0.5, 0, 1);
       var alpha2 = Math.min(alphaIn2, alphaOut2);
       ctx.globalAlpha = alpha2;
-      ctx.fillStyle = "rgba(0,229,255,.92)";
+      ctx.fillStyle = hudTheme.accentCyan;
       ctx.font = "700 " + Math.max(28, Math.min(64, w * 0.06)) + "px Oxanium, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.shadowColor = "rgba(0,229,255,.35)";
+      ctx.shadowColor = hudTheme.glowCyan;
       ctx.shadowBlur = 12;
       ctx.fillText("MISSION CLEARED", w / 2, h / 2 - 12);
       ctx.restore();
@@ -153880,7 +154223,7 @@
           var leftW = ctx.measureText(qDisplay.slice(0, qParsed.repeatStart)).width;
           var repeatW = ctx.measureText(qDisplay.slice(qParsed.repeatStart, qParsed.repeatStart + qParsed.repeatLen)).width;
           var lineY = questionTop - size * 0.08;
-          ctx.strokeStyle = "rgba(232,236,255,.85)";
+          ctx.strokeStyle = hudTheme.textDim;
           ctx.lineWidth = Math.max(1, size * 0.06);
           ctx.beginPath();
           ctx.moveTo(qLeft + leftW, lineY);
@@ -153901,7 +154244,7 @@
           var arrowW = Math.max(8, size * 0.22);
           var arrowH = Math.max(6, size * 0.16);
           ctx.save();
-          ctx.fillStyle = "rgba(255,255,255,.85)";
+          ctx.fillStyle = hudTheme.digitArrowFill;
           ctx.beginPath();
           ctx.moveTo(arrowX, arrowY + arrowH);
           ctx.lineTo(arrowX - arrowW / 2, arrowY);
@@ -153910,27 +154253,27 @@
           ctx.fill();
           ctx.restore();
         }
-      }, drawHudBarsForPilot = function(barX3, barW3, hullRatio, livesLeft, livesStart, wrongCount, hpPulse, pilotForAmmo) {
+      }, drawHudBarsForPilot = function(barX2, barW2, hullRatio, livesLeft, livesStart, wrongCount, hpPulse, pilotForAmmo) {
         var hudBars = [];
         hudBars.push({
           label: "HP",
           ratio: clamp(hullRatio, 0, 1),
-          fill: "rgba(28,220,120,.9)",
-          glow: "rgba(28,220,120,.35)"
+          fill: hudTheme.barHpFill,
+          glow: hudTheme.barHpGlow
         });
         if (state.timeLimitSec > 0) {
           var elapsedProg = getElapsedSeconds();
           var remainingProg = Math.max(0, state.timeLimitSec - elapsedProg);
           var timeRatio = clamp(remainingProg / state.timeLimitSec, 0, 1);
-          var fillColor = "rgba(0,169,255,.9)";
-          var glowColor = "rgba(0,169,255,.35)";
+          var fillColor = hudTheme.timerBarFill;
+          var glowColor = hudTheme.timerBarGlow;
           if (remainingProg <= 15) {
             var pulse2 = 0.65 + 0.35 * Math.sin(performance.now() * 0.02);
             fillColor = "rgba(255,80,80," + (0.7 + 0.2 * pulse2).toFixed(2) + ")";
             glowColor = "rgba(255,80,80," + (0.4 + 0.35 * pulse2).toFixed(2) + ")";
           } else if (remainingProg <= 30) {
-            fillColor = "rgba(255,180,60,.92)";
-            glowColor = "rgba(255,180,60,.35)";
+            fillColor = hudTheme.timerWarnFill;
+            glowColor = hudTheme.timerWarnGlow;
           }
           hudBars.push({
             label: "TIMER",
@@ -153958,11 +154301,11 @@
             var bY = barY + bi * (barH + barGap);
             var b = hudBars[bi];
             ctx.save();
-            ctx.fillStyle = "rgba(0,0,0,.4)";
-            ctx.strokeStyle = "rgba(255,255,255,.22)";
+            ctx.fillStyle = hudTheme.barTrack;
+            ctx.strokeStyle = hudTheme.strokeSoft;
             ctx.lineWidth = 1.5;
             ctx.beginPath();
-            ctx.roundRect(barX3, bY, barW3, barH, 8);
+            ctx.roundRect(barX2, bY, barW2, barH, hudTheme.radiusPanel);
             ctx.fill();
             ctx.stroke();
             ctx.fillStyle = b.fill;
@@ -153971,11 +154314,11 @@
             if (b.label === "HP" && hpPulse > 0) {
               var hpPulseWave = (Math.sin(performance.now() * 0.03) + 1) * 0.5;
               ctx.globalAlpha = 0.75 + 0.25 * hpPulseWave;
-              ctx.shadowColor = "rgba(255,80,80,.75)";
+              ctx.shadowColor = hudTheme.hpPulseGlow;
               ctx.shadowBlur = 10 + 8 * hpPulseWave;
             }
             ctx.beginPath();
-            ctx.roundRect(barX3, bY, barW3 * b.ratio, barH, 8);
+            ctx.roundRect(barX2, bY, barW2 * b.ratio, barH, hudTheme.radiusPanel);
             ctx.fill();
             if (b.label === "HP" && hpPulse > 0) {
               ctx.globalAlpha = 1;
@@ -153985,7 +154328,7 @@
             ctx.font = labelStyle;
             ctx.textAlign = "right";
             ctx.textBaseline = "middle";
-            ctx.fillText(b.label, barX3 - 8, bY + barH / 2);
+            ctx.fillText(b.label, barX2 - 8, bY + barH / 2);
             ctx.restore();
           }
         }
@@ -153994,13 +154337,13 @@
         if (maxLives > 0) {
           var livesGap = 4;
           var lifeH = 6;
-          var availableW = barW3 - livesGap * (maxLives - 1);
+          var availableW = barW2 - livesGap * (maxLives - 1);
           var lifeW = Math.max(6, Math.floor(availableW / maxLives));
           if (lifeW > 18)
             lifeW = 18;
           var totalW = lifeW * maxLives + livesGap * (maxLives - 1);
-          if (totalW > barW3) {
-            lifeW = Math.max(5, Math.floor((barW3 - livesGap * (maxLives - 1)) / maxLives));
+          if (totalW > barW2) {
+            lifeW = Math.max(5, Math.floor((barW2 - livesGap * (maxLives - 1)) / maxLives));
           }
           var lifeY = barY + hudBars.length * (barH + barGap) + 6;
           ctx.save();
@@ -154008,13 +154351,13 @@
           ctx.font = labelStyle;
           ctx.textAlign = "right";
           ctx.textBaseline = "middle";
-          ctx.fillText("LIVES", barX3 - 8, lifeY + lifeH / 2);
+          ctx.fillText("LIVES", barX2 - 8, lifeY + lifeH / 2);
           for (var li = 0; li < maxLives; li++) {
-            var lx = barX3 + li * (lifeW + livesGap);
+            var lx = barX2 + li * (lifeW + livesGap);
             var isActive = li < livesLeft;
-            ctx.fillStyle = isActive ? "rgba(255,80,80,.9)" : "rgba(255,80,80,.2)";
+            ctx.fillStyle = isActive ? hudTheme.livesActive : hudTheme.livesInactive;
             ctx.fillRect(lx, lifeY, lifeW, lifeH);
-            ctx.strokeStyle = "rgba(255,120,120,.5)";
+            ctx.strokeStyle = hudTheme.livesStroke;
             ctx.lineWidth = 1;
             ctx.strokeRect(lx, lifeY, lifeW, lifeH);
           }
@@ -154026,13 +154369,13 @@
           var strikesLeft = Math.max(0, strikeLimit - strikesUsed);
           var strikeGap = 4;
           var strikeH = 6;
-          var strikeAvailW = barW3 - strikeGap * (strikeLimit - 1);
+          var strikeAvailW = barW2 - strikeGap * (strikeLimit - 1);
           var strikeW = Math.max(6, Math.floor(strikeAvailW / strikeLimit));
           if (strikeW > 18)
             strikeW = 18;
           var strikeTotalW = strikeW * strikeLimit + strikeGap * (strikeLimit - 1);
-          if (strikeTotalW > barW3) {
-            strikeW = Math.max(5, Math.floor((barW3 - strikeGap * (strikeLimit - 1)) / strikeLimit));
+          if (strikeTotalW > barW2) {
+            strikeW = Math.max(5, Math.floor((barW2 - strikeGap * (strikeLimit - 1)) / strikeLimit));
           }
           var strikeY = strikeLabelY != null ? strikeLabelY : barY + hudBars.length * (barH + barGap) + 6;
           ctx.save();
@@ -154040,13 +154383,13 @@
           ctx.font = labelStyle;
           ctx.textAlign = "right";
           ctx.textBaseline = "middle";
-          ctx.fillText("STRIKES", barX3 - 8, strikeY + strikeH / 2);
+          ctx.fillText("STRIKES", barX2 - 8, strikeY + strikeH / 2);
           for (var si = 0; si < strikeLimit; si++) {
-            var sx = barX3 + si * (strikeW + strikeGap);
+            var sx = barX2 + si * (strikeW + strikeGap);
             var strikeActive = si < strikesLeft;
-            ctx.fillStyle = strikeActive ? "rgba(255,210,90,.95)" : "rgba(255,210,90,.2)";
+            ctx.fillStyle = strikeActive ? hudTheme.strikeActive : hudTheme.strikeInactive;
             ctx.fillRect(sx, strikeY, strikeW, strikeH);
-            ctx.strokeStyle = "rgba(255,220,120,.55)";
+            ctx.strokeStyle = hudTheme.strikeStroke;
             ctx.lineWidth = 1;
             ctx.strokeRect(sx, strikeY, strikeW, strikeH);
           }
@@ -154072,25 +154415,92 @@
           ctx.font = labelStyle;
           ctx.textAlign = "right";
           ctx.textBaseline = "middle";
-          ctx.fillText("AMMO", barX3 - 8, ammoRowY + ammoBarH / 2);
-          ctx.fillStyle = "rgba(0,0,0,.4)";
-          ctx.strokeStyle = "rgba(255,255,255,.2)";
+          ctx.fillText("AMMO", barX2 - 8, ammoRowY + ammoBarH / 2);
+          ctx.fillStyle = hudTheme.barTrack;
+          ctx.strokeStyle = hudTheme.strokeMuted;
           ctx.lineWidth = 1;
           ctx.beginPath();
-          ctx.roundRect(barX3, ammoRowY, barW3, ammoBarH, 4);
+          ctx.roundRect(barX2, ammoRowY, barW2, ammoBarH, hudTheme.radiusPill);
           ctx.fill();
           ctx.stroke();
-          ctx.fillStyle = warnEmpty ? "rgba(255,80,80,.55)" : "rgba(255,200,90,.92)";
-          if (barW3 * ammoRatio > 0.5) {
+          ctx.fillStyle = warnEmpty ? hudTheme.badAmmo : hudTheme.warnAmmo;
+          if (barW2 * ammoRatio > 0.5) {
             ctx.beginPath();
-            ctx.roundRect(barX3, ammoRowY, barW3 * ammoRatio, ammoBarH, 4);
+            ctx.roundRect(barX2, ammoRowY, barW2 * ammoRatio, ammoBarH, hudTheme.radiusPill);
             ctx.fill();
           }
           ctx.fillStyle = labelColor;
           ctx.textAlign = "left";
-          ctx.fillText(String(ammoCur), barX3 + barW3 + 8, ammoRowY + ammoBarH / 2);
+          ctx.fillText(String(ammoCur), barX2 + barW2 + 8, ammoRowY + ammoBarH / 2);
           ctx.restore();
         }
+      }, blasterTagForHud = function(mode) {
+        var m = String(mode || "single");
+        var map = {
+          single: "SGL",
+          laser: "LZR",
+          missile: "MSL",
+          fire: "FIR",
+          ice: "ICE",
+          electric: "ELC",
+          pierce: "BOL",
+          plasma: "PLM",
+          rail: "RAL"
+        };
+        return map[m] || m.slice(0, 3).toUpperCase();
+      }, drawBottomRightAmmoReadout = function(pilotHud, rightEdge, bottomEdge) {
+        if (!pilotHud)
+          return;
+        var panelW = 128;
+        var panelH = 30;
+        var x0 = rightEdge - panelW;
+        var y0 = bottomEdge - panelH;
+        var mode = pilotHud.blasterMode || "single";
+        var tag = blasterTagForHud(mode);
+        ctx.save();
+        ctx.globalAlpha = hudFade;
+        ctx.fillStyle = hudTheme.surfacePanel;
+        ctx.strokeStyle = hudTheme.strokeSoft;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.roundRect(x0, y0, panelW, panelH, hudTheme.radiusTile);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = hudTheme.textDim;
+        ctx.font = "600 11px Oxanium, sans-serif";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        ctx.fillText("AMMO \xB7 " + tag, x0 + 8, y0 + 5);
+        if (pilotHud.primaryAmmoUnlimited) {
+          ctx.font = "700 14px Oxanium, sans-serif";
+          ctx.textAlign = "right";
+          ctx.textBaseline = "bottom";
+          ctx.fillStyle = hudTheme.accentCyan;
+          ctx.fillText("\u221E", x0 + panelW - 8, y0 + panelH - 5);
+        } else {
+          var ammoCur = pilotHud.primaryAmmo | 0;
+          var ammoStart = Math.max(1, pilotHud.primaryAmmoStart | 0);
+          var ammoRatio = clamp(ammoCur / ammoStart, 0, 1);
+          var barY2 = y0 + 20;
+          var barW2 = panelW - 16;
+          var barH2 = 5;
+          ctx.fillStyle = hudTheme.surfaceDark;
+          ctx.beginPath();
+          ctx.roundRect(x0 + 8, barY2, barW2, barH2, hudTheme.radiusPill);
+          ctx.fill();
+          ctx.fillStyle = ammoCur <= 0 ? hudTheme.badAmmo : hudTheme.warnAmmo;
+          if (barW2 * ammoRatio > 0.25) {
+            ctx.beginPath();
+            ctx.roundRect(x0 + 8, barY2, barW2 * ammoRatio, barH2, hudTheme.radiusPill);
+            ctx.fill();
+          }
+          ctx.fillStyle = hudTheme.textHudStrong;
+          ctx.font = "600 10px Oxanium, sans-serif";
+          ctx.textAlign = "right";
+          ctx.textBaseline = "bottom";
+          ctx.fillText(String(ammoCur) + "/" + String(ammoStart), x0 + panelW - 8, y0 + panelH - 4);
+        }
+        ctx.restore();
       };
       if (introActive) {
         return;
@@ -154106,32 +154516,22 @@
       ctx.save();
       ctx.globalAlpha = hudFade;
       ctx.save();
-      var size = Math.max(28, Math.min(64, w * 0.06));
-      ctx.fillStyle = "rgba(232,236,255,.95)";
+      var size = hudQuestionFontSize(w);
+      ctx.fillStyle = hudTheme.textPrimary;
       ctx.font = "700 " + size + "px Oxanium, sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
-      ctx.shadowColor = "rgba(0,229,255,.35)";
+      ctx.shadowColor = hudTheme.glowCyan;
       ctx.shadowBlur = 8;
-      var labelStyle = "600 11px Oxanium, sans-serif";
-      var labelColor = "rgba(232,236,255,.75)";
+      var labelStyle = hudTheme.fontLabel;
+      var labelColor = hudTheme.textMuted;
       var op = isAdditionMode() ? "+" : "x";
       var questionTop = view.hudH + 14;
       var qRaw = getQuestionRawText();
       var qParsed = parseRepeatingText(qRaw);
       var qDisplay = qParsed.display;
-      var splitHud = isSandboxSplitMode();
-      var lane1 = splitHud ? getLaneBounds(1) : null;
-      var lane2 = splitHud ? getLaneBounds(2) : null;
       if (!(tutorialActive && tutorialHideQuestion) && !(sandboxMode && state.sandboxAlienWaveActive) && !isAlienCombatOnlyPhase() && !missionBriefShowing) {
-        if (splitHud) {
-          var cx1 = (lane1.minX + lane1.maxX) / 2;
-          var cx2 = (lane2.minX + lane2.maxX) / 2;
-          drawQuestionAt(cx1);
-          drawQuestionAt(cx2);
-        } else {
-          drawQuestionAt(w / 2);
-        }
+        drawQuestionAt(w / 2);
       }
       ctx.restore();
       var barH = 10;
@@ -154142,39 +154542,9 @@
         var diff = String(state.difficulty || "normal").toLowerCase();
         strikeLimit = diff === "easy" ? 25 : diff === "normal" ? 20 : diff === "hard" ? 15 : 10;
       }
-      if (splitHud) {
-        var laneW1 = lane1.maxX - lane1.minX;
-        var laneW2 = lane2.maxX - lane2.minX;
-        var barW1 = Math.min(240, laneW1 * 0.55);
-        var barW2 = Math.min(240, laneW2 * 0.55);
-        var barX1 = lane1.minX + 76;
-        var barX2 = lane2.minX + 76;
-        var p1Stats = ensurePilotStats(1);
-        var p2Stats = ensurePilotStats(2);
-        var p2Hud = ensurePilot2();
-        drawHudBarsForPilot(barX1, barW1, player.hull, state.lives || 0, state.livesStart || 0, p1Stats.wrong || 0, player.lowHullPulse || 0, player);
-        drawHudBarsForPilot(barX2, barW2, p2Hud.hull, p2Hud.lives || 0, p2Hud.livesStart || 0, p2Stats.wrong || 0, p2Hud.lowHullPulse || 0, p2Hud);
-        var gapStart = lane1.maxX;
-        var gapEnd = lane2.minX;
-        if (gapEnd > gapStart) {
-          ctx.save();
-          ctx.fillStyle = "rgba(0,0,0,.55)";
-          ctx.fillRect(gapStart, view.hudH + 6, gapEnd - gapStart, h - view.hudH - 16);
-          ctx.strokeStyle = "rgba(255,255,255,.12)";
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.moveTo(gapStart, view.hudH + 6);
-          ctx.lineTo(gapStart, h - 10);
-          ctx.moveTo(gapEnd, view.hudH + 6);
-          ctx.lineTo(gapEnd, h - 10);
-          ctx.stroke();
-          ctx.restore();
-        }
-      } else {
-        var barX = 96;
-        var barW = Math.min(260, w * 0.35);
-        drawHudBarsForPilot(barX, barW, player.hull, state.lives || 0, state.livesStart || 0, state.wrong || 0, player.lowHullPulse || 0, player);
-      }
+      var barX = 96;
+      var barW = Math.min(260, w * 0.35);
+      drawHudBarsForPilot(barX, barW, player.hull, state.lives || 0, state.livesStart || 0, state.wrong || 0, player.lowHullPulse || 0, player);
       var profile = getShipProfile(player.shipType);
       var dashLeft = Math.max(0, player.dashCooldown || 0);
       var shockLeft = Math.max(0, player.shockwaveCooldown || 0);
@@ -154190,14 +154560,14 @@
       var cy = view.hudH + radius + 8;
       ctx.save();
       ctx.lineWidth = 3;
-      ctx.strokeStyle = "rgba(255,255,255,.2)";
+      ctx.strokeStyle = hudTheme.strokeRing;
       ctx.beginPath();
       ctx.arc(leftX, cy, radius, 0, Math.PI * 2);
       ctx.stroke();
       ctx.beginPath();
       ctx.arc(rightX, cy, radius, 0, Math.PI * 2);
       ctx.stroke();
-      ctx.strokeStyle = "rgba(0,229,255,.75)";
+      ctx.strokeStyle = hudTheme.accentCyan;
       ctx.beginPath();
       ctx.arc(leftX, cy, radius, -Math.PI / 2, -Math.PI / 2 + dashFrac * Math.PI * 2);
       ctx.stroke();
@@ -154235,105 +154605,34 @@
         ctx.scale(pulse, pulse);
         ctx.translate(-centerX, -centerY);
         ctx.drawImage(mineralIconImg.img, mX, mY, mSize, mSize);
-        ctx.fillStyle = "rgba(232,236,255,.95)";
+        ctx.fillStyle = hudTheme.textPrimary;
         ctx.font = "700 18px Oxanium, sans-serif";
         ctx.textAlign = "left";
         ctx.textBaseline = "middle";
         ctx.fillText(String(mineralCount), mX + mSize + 8, mY + mSize / 2);
         ctx.restore();
       }
-      if (isSandboxMultiplayer() && !isSandboxSplitMode()) {
-        var p2Hud = ensurePilot2();
-        var barX2 = w - barW - 96;
-        var barY2 = barY;
-        var barH2 = barH;
-        var barGap2 = barGap;
-        var hudBars2 = [];
-        var hullRatio2 = clamp(p2Hud.hull, 0, 1);
-        hudBars2.push({
-          label: "HP",
-          ratio: hullRatio2,
-          fill: "rgba(28,220,120,.9)",
-          glow: "rgba(28,220,120,.35)"
-        });
-        if (hudBars2.length) {
-          for (var b2 = 0; b2 < hudBars2.length; b2++) {
-            var bY2 = barY2 + b2 * (barH2 + barGap2);
-            var bHud = hudBars2[b2];
-            ctx.save();
-            ctx.fillStyle = "rgba(0,0,0,.4)";
-            ctx.strokeStyle = "rgba(255,255,255,.22)";
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.roundRect(barX2, bY2, barW, barH2, 8);
-            ctx.fill();
-            ctx.stroke();
-            ctx.fillStyle = bHud.fill;
-            ctx.shadowColor = bHud.glow;
-            ctx.shadowBlur = 6;
-            ctx.beginPath();
-            ctx.roundRect(barX2, bY2, barW * bHud.ratio, barH2, 8);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = labelColor;
-            ctx.font = labelStyle;
-            ctx.textAlign = "left";
-            ctx.textBaseline = "middle";
-            ctx.fillText(bHud.label, barX2 + barW + 8, bY2 + barH2 / 2);
-            ctx.restore();
-          }
-        }
-        var maxLives2 = Math.max(0, p2Hud.livesStart || state.livesStart || 0);
-        if (maxLives2 > 0) {
-          var livesLeft2 = Math.max(0, Math.min(p2Hud.lives || 0, maxLives2));
-          var lifeGap2 = 4;
-          var lifeH2 = 6;
-          var availableW2 = barW - lifeGap2 * (maxLives2 - 1);
-          var lifeW2 = Math.max(6, Math.floor(availableW2 / maxLives2));
-          if (lifeW2 > 18)
-            lifeW2 = 18;
-          var totalW2 = lifeW2 * maxLives2 + lifeGap2 * (maxLives2 - 1);
-          if (totalW2 > barW) {
-            lifeW2 = Math.max(5, Math.floor((barW - lifeGap2 * (maxLives2 - 1)) / maxLives2));
-          }
-          var lifeY2 = barY2 + hudBars2.length * (barH2 + barGap2) + 6;
-          ctx.save();
-          ctx.fillStyle = labelColor;
-          ctx.font = labelStyle;
-          ctx.textAlign = "left";
-          ctx.textBaseline = "middle";
-          ctx.fillText("LIVES", barX2 + barW + 8, lifeY2 + lifeH2 / 2);
-          for (var li2 = 0; li2 < maxLives2; li2++) {
-            var lx2 = barX2 + li2 * (lifeW2 + lifeGap2);
-            var isActive2 = li2 < livesLeft2;
-            ctx.fillStyle = isActive2 ? "rgba(255,80,80,.9)" : "rgba(255,80,80,.2)";
-            ctx.fillRect(lx2, lifeY2, lifeW2, lifeH2);
-            ctx.strokeStyle = "rgba(255,120,120,.5)";
-            ctx.lineWidth = 1;
-            ctx.strokeRect(lx2, lifeY2, lifeW2, lifeH2);
-          }
-          ctx.restore();
-        }
-      }
       drawActivePickupHud(hudFade, rightX, cy, radius, w);
+      var ammoHudBottom = h - 12;
+      drawBottomRightAmmoReadout(player, w - 12, ammoHudBottom);
       ctx.restore();
       ctx.restore();
     }
     if (state.paused && state.running) {
       ctx.save();
-      ctx.fillStyle = "rgba(232,236,255,.92)";
-      ctx.font = "700 20px Oxanium, sans-serif";
+      ctx.fillStyle = hudTheme.textPrimary;
+      ctx.font = hudTheme.fontHudTitle;
       ctx.textAlign = "center";
       ctx.fillText("PAUSED", w / 2, h / 2 - 6);
-      ctx.font = "600 14px Oxanium, sans-serif";
-      ctx.fillStyle = "rgba(232,236,255,.72)";
+      ctx.font = hudTheme.fontHudSub;
+      ctx.fillStyle = hudTheme.textMuted;
       ctx.fillText("PRESS P TO RESUME", w / 2, h / 2 + 18);
       ctx.restore();
     }
     if (screenshotMode && state.running) {
       ctx.save();
-      ctx.fillStyle = "rgba(232,236,255,.55)";
-      ctx.font = "600 12px Oxanium, sans-serif";
+      ctx.fillStyle = hudTheme.textScreenshot;
+      ctx.font = hudTheme.fontTiny;
       ctx.textAlign = "right";
       ctx.textBaseline = "bottom";
       ctx.fillText("SCREENSHOT MODE (0)", w - 12, h - 10);
@@ -154348,8 +154647,8 @@
       var rEmpty = size * 0.42;
       ctx.save();
       ctx.translate(cx, cy);
-      ctx.strokeStyle = "rgba(232,236,255,.35)";
-      ctx.fillStyle = "rgba(232,236,255,.06)";
+      ctx.strokeStyle = hudTheme.pickupSlotEmptyStroke;
+      ctx.fillStyle = hudTheme.pickupSlotEmptyFill;
       ctx.lineWidth = Math.max(1.4, size * 0.08);
       if (ctx.setLineDash)
         ctx.setLineDash([6, 5]);
@@ -154368,7 +154667,7 @@
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
     ctx.lineWidth = Math.max(1.4, size * 0.08);
-    ctx.strokeStyle = "rgba(255,255,255,.85)";
+    ctx.strokeStyle = hudTheme.strokePickupIcon;
     ctx.fillStyle = getPowerupColor({ type, group });
     if (icon && icon.ready) {
       var iw = icon.img.naturalWidth || icon.img.width || size;
@@ -154389,7 +154688,7 @@
         ctx.arc(0, 0, 12, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
-        ctx.strokeStyle = "rgba(255,255,255,.9)";
+        ctx.strokeStyle = hudTheme.strokePickupIconStrong;
         ctx.lineWidth = 2.4;
         ctx.beginPath();
         ctx.moveTo(-5, 0);
@@ -154433,7 +154732,7 @@
         ctx.arc(0, 0, 12, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
-        ctx.strokeStyle = "rgba(255,255,255,.9)";
+        ctx.strokeStyle = hudTheme.strokePickupIconStrong;
         ctx.lineWidth = 2.2;
         ctx.beginPath();
         ctx.moveTo(0, 0);
@@ -154441,7 +154740,7 @@
         ctx.moveTo(0, 0);
         ctx.lineTo(4, 2);
         ctx.stroke();
-        ctx.fillStyle = "rgba(255,255,255,.9)";
+        ctx.fillStyle = hudTheme.fillPeak;
         ctx.beginPath();
         ctx.arc(0, 0, 1.6, 0, Math.PI * 2);
         ctx.fill();
@@ -154470,6 +154769,50 @@
         ctx.lineTo(8, 0);
         ctx.moveTo(0, -8);
         ctx.lineTo(0, 8);
+        ctx.stroke();
+        ctx.restore();
+        return;
+      }
+      if (type === "speedup") {
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.moveTo(-10, 4);
+        ctx.lineTo(2, -8);
+        ctx.lineTo(10, 0);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-6, 8);
+        ctx.lineTo(8, -6);
+        ctx.stroke();
+        ctx.restore();
+        return;
+      }
+      if (type === "invincibility") {
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.arc(0, -2, 9, Math.PI, 0, false);
+        ctx.lineTo(8, 6);
+        ctx.lineTo(-8, 6);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, 2);
+        ctx.lineTo(0, 8);
+        ctx.stroke();
+        ctx.restore();
+        return;
+      }
+      if (type === "pushaway") {
+        ctx.lineWidth = 2.2;
+        for (var pr = 0; pr < 4; pr++) {
+          var ang = pr / 4 * Math.PI * 2 - Math.PI / 2;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(ang) * 4, Math.sin(ang) * 4);
+          ctx.lineTo(Math.cos(ang) * 12, Math.sin(ang) * 12);
+          ctx.stroke();
+        }
+        ctx.beginPath();
+        ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
         ctx.stroke();
         ctx.restore();
         return;
@@ -154643,11 +154986,11 @@
       var entry = entries[i];
       var y = startY + i * (boxSize + gap);
       ctx.save();
-      ctx.fillStyle = "rgba(8,12,24,.72)";
-      ctx.strokeStyle = entry.selected ? "rgba(0,229,255,.6)" : "rgba(255,255,255,.22)";
+      ctx.fillStyle = hudTheme.surfacePanelMid;
+      ctx.strokeStyle = entry.selected ? hudTheme.strokeBoxSelected : hudTheme.strokeSoft;
       ctx.lineWidth = 1.2;
       ctx.beginPath();
-      ctx.roundRect(x, y, boxSize, boxSize, 10);
+      ctx.roundRect(x, y, boxSize, boxSize, hudTheme.radiusTile);
       ctx.fill();
       ctx.stroke();
       drawHudPickupIcon(entry, x + boxSize / 2, y + boxSize / 2, iconSize);
@@ -154656,11 +154999,11 @@
         var ringR = boxSize / 2 - 4;
         ctx.save();
         ctx.lineWidth = 2.4;
-        ctx.strokeStyle = "rgba(0,229,255,.26)";
+        ctx.strokeStyle = hudTheme.accentRingTrack;
         ctx.beginPath();
         ctx.arc(x + boxSize / 2, y + boxSize / 2, ringR, 0, Math.PI * 2, false);
         ctx.stroke();
-        ctx.strokeStyle = "rgba(0,229,255,.8)";
+        ctx.strokeStyle = hudTheme.accentRingFill;
         var ringStart = -Math.PI / 2;
         var ringEnd = ringStart + Math.PI * 2 * ammoRatio;
         ctx.beginPath();
@@ -154669,20 +155012,20 @@
         ctx.restore();
       }
       if (entry.slot) {
-        ctx.fillStyle = "rgba(0,229,255,.9)";
+        ctx.fillStyle = hudTheme.accentSlotBadge;
         ctx.font = "700 11px Oxanium, sans-serif";
         ctx.textAlign = "left";
         ctx.textBaseline = "top";
         ctx.fillText(String(entry.slot), x + 6, y + 5);
       }
       if (entry.type === "autofire" && player.autoFireActive) {
-        ctx.fillStyle = "rgba(232,236,255,.9)";
+        ctx.fillStyle = hudTheme.textHudStrong;
         ctx.font = "700 11px Oxanium, sans-serif";
         ctx.textAlign = "right";
         ctx.textBaseline = "bottom";
         ctx.fillText(String(player.autoFireAmmo || 0), x + boxSize - 6, y + boxSize - 4);
       } else if (entry.charges != null && entry.charges > 1 && entry.charges < 9999) {
-        ctx.fillStyle = "rgba(232,236,255,.9)";
+        ctx.fillStyle = hudTheme.textHudStrong;
         ctx.font = "700 11px Oxanium, sans-serif";
         ctx.textAlign = "right";
         ctx.textBaseline = "bottom";
@@ -154703,8 +155046,8 @@
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
     var glow = ctx.createRadialGradient(x, y, ringR * 0.2, x, y, ringR * 1.8);
-    glow.addColorStop(0, "rgba(0,229,255,.5)");
-    glow.addColorStop(0.45, "rgba(0,229,255,.18)");
+    glow.addColorStop(0, hudTheme.accentGlowStopStrong);
+    glow.addColorStop(0.45, hudTheme.accentGlowStopMid);
     glow.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = glow;
     ctx.beginPath();
@@ -154714,13 +155057,13 @@
     ctx.translate(x, y);
     ctx.rotate(tutorialPortalT * 0.9);
     ctx.globalAlpha = 0.9;
-    ctx.strokeStyle = "rgba(0,229,255,.9)";
+    ctx.strokeStyle = hudTheme.accentCyan;
     ctx.lineWidth = 2.6;
     ctx.beginPath();
     ctx.arc(0, 0, ringR, 0, Math.PI * 2);
     ctx.stroke();
     ctx.globalAlpha = 0.65;
-    ctx.strokeStyle = "rgba(255,255,255,.8)";
+    ctx.strokeStyle = hudTheme.strokeHigh;
     ctx.lineWidth = 1.6;
     ctx.beginPath();
     ctx.arc(0, 0, ringR * 0.6, 0, Math.PI * 2);
@@ -154740,19 +155083,19 @@
     ctx.save();
     ctx.globalCompositeOperation = "lighter";
     var glow = ctx.createRadialGradient(x, y, ringR * 0.25, x, y, ringR * 1.9);
-    glow.addColorStop(0, "rgba(0,229,255,.44)");
-    glow.addColorStop(0.45, "rgba(0,229,255,.14)");
+    glow.addColorStop(0, hudTheme.accentGlowStopOuter);
+    glow.addColorStop(0.45, hudTheme.accentGlowStopOuterMid);
     glow.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = glow;
     ctx.beginPath();
     ctx.arc(x, y, ringR * 1.5, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = "rgba(0,229,255,.95)";
+    ctx.strokeStyle = hudTheme.accentStrokeHard;
     ctx.lineWidth = 2.8;
     ctx.beginPath();
     ctx.arc(x, y, ringR, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.strokeStyle = "rgba(255,255,255,.88)";
+    ctx.strokeStyle = hudTheme.strokeNearWhite;
     ctx.lineWidth = 1.6;
     ctx.beginPath();
     ctx.arc(x, y, ringR * 0.62, 0, Math.PI * 2);
@@ -154958,7 +155301,7 @@
     if (document.getElementById("missionBriefStyles") == null) {
       var style = document.createElement("style");
       style.id = "missionBriefStyles";
-      style.textContent = '#missionBriefOverlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:18;background:rgba(6,10,20,.7);backdrop-filter:blur(4px);}#missionBriefOverlay.show{display:flex;}#missionBriefOverlay .missionBrief-wrap{display:flex;align-items:flex-end;gap:18px;}#missionBriefOverlay .missionBrief-avatarWrap{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:220px;}#missionBriefOverlay .missionBrief-avatar{width:230px;height:230px;object-fit:contain;filter:drop-shadow(0 12px 26px rgba(0,0,0,.45));}#missionBriefOverlay .missionBrief-avatarName{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.85);}#missionBriefOverlay .missionBrief-card{background:rgba(8,12,24,.92);border:1px solid rgba(0,229,255,.3);border-radius:18px;padding:18px 20px;max-width:480px;width:min(480px,92%);box-shadow:0 18px 48px rgba(0,0,0,.5);font-family:"Oxanium",sans-serif;transform:scale(0.92);opacity:0;transition:transform .35s ease, opacity .35s ease;}#missionBriefOverlay.show .missionBrief-card{transform:scale(1);opacity:1;}#missionBriefOverlay .missionBrief-card.is-exiting{transform:scale(0.86);opacity:0;}#missionBriefOverlay h3{margin:0 0 10px;font-size:14px;letter-spacing:1.6px;text-transform:uppercase;color:#e8ecff;}#missionBriefOverlay p{margin:0 0 16px;font-size:13px;line-height:1.6;color:rgba(232,236,255,.8);white-space:pre-line;}#missionBriefOverlay .brief-actions{display:flex;justify-content:flex-end;}#missionBriefOverlay .brief-btn{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#e8ecff;border-radius:12px;padding:8px 12px;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:"Oxanium",sans-serif;}';
+      style.textContent = getMissionBriefInjectedCss();
       document.head.appendChild(style);
     }
     missionBriefOverlay = document.createElement("div");
@@ -155350,14 +155693,14 @@
       var radius = active ? 10 : 8;
       ctx.save();
       ctx.globalAlpha = alpha * (active ? 1 : 0.7);
-      ctx.fillStyle = "rgba(8,12,24,.75)";
-      ctx.strokeStyle = active ? "rgba(0,229,255,.9)" : "rgba(255,255,255,.65)";
+      ctx.fillStyle = hudTheme.tutorialDotSurface;
+      ctx.strokeStyle = active ? hudTheme.tutorialDotActiveStroke : hudTheme.tutorialDotInactiveStroke;
       ctx.lineWidth = active ? 2.2 : 1.4;
       ctx.beginPath();
       ctx.arc(dot.x, dot.y, radius, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-      ctx.fillStyle = active ? "rgba(0,229,255,.95)" : "rgba(232,236,255,.85)";
+      ctx.fillStyle = active ? hudTheme.tutorialDotActiveText : hudTheme.tutorialDotInactiveText;
       ctx.fillText(String(dot.n || i + 1), dot.x, dot.y + 0.5);
       ctx.restore();
     }
@@ -155409,7 +155752,7 @@
       return p.type === "shield" ? "rgba(193,216,47,.7)" : "rgba(255,77,109,.7)";
     }
     if (p.group === "secondary") {
-      return p.type === "repair" ? "rgba(0,229,255,.7)" : p.type === "time" ? "rgba(175,0,111,.7)" : p.type === "magnet" ? "rgba(255,221,0,.7)" : p.type === "emp" ? "rgba(175,0,111,.7)" : p.type === "autofire" ? "rgba(255,221,0,.85)" : p.type === "ammo" ? "rgba(255,180,72,.82)" : "rgba(193,216,47,.7)";
+      return p.type === "repair" ? "rgba(0,229,255,.7)" : p.type === "time" ? "rgba(175,0,111,.7)" : p.type === "magnet" ? "rgba(255,221,0,.7)" : p.type === "emp" ? "rgba(175,0,111,.7)" : p.type === "autofire" ? "rgba(255,221,0,.85)" : p.type === "ammo" ? "rgba(255,180,72,.82)" : p.type === "speedup" ? "rgba(0,229,255,.78)" : p.type === "invincibility" ? "rgba(255,220,120,.85)" : p.type === "pushaway" ? "rgba(180,120,255,.78)" : "rgba(193,216,47,.7)";
     }
     if (p.type === "missile")
       return "rgba(255,221,0,.8)";
@@ -155464,7 +155807,7 @@
       ctx.restore();
       return;
     }
-    if (p.group === "secondary" && (p.type === "repair" || p.type === "magnet" || p.type === "time")) {
+    if (p.group === "secondary" && (p.type === "repair" || p.type === "magnet" || p.type === "time" || p.type === "speedup" || p.type === "invincibility" || p.type === "pushaway")) {
       ctx.save();
       ctx.globalCompositeOperation = "source-over";
       if (p.type === "repair") {
@@ -155493,7 +155836,7 @@
         ctx.rect(5, -12, 6, 6);
         ctx.fill();
         ctx.stroke();
-      } else {
+      } else if (p.type === "time") {
         ctx.beginPath();
         ctx.arc(0, 0, 12, 0, Math.PI * 2);
         ctx.fill();
@@ -155510,6 +155853,41 @@
         ctx.beginPath();
         ctx.arc(0, 0, 1.6, 0, Math.PI * 2);
         ctx.fill();
+      } else if (p.type === "speedup") {
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.moveTo(-10, 4);
+        ctx.lineTo(2, -8);
+        ctx.lineTo(10, 0);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(-6, 8);
+        ctx.lineTo(8, -6);
+        ctx.stroke();
+      } else if (p.type === "invincibility") {
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.arc(0, -2, 9, Math.PI, 0, false);
+        ctx.lineTo(8, 6);
+        ctx.lineTo(-8, 6);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, 2);
+        ctx.lineTo(0, 8);
+        ctx.stroke();
+      } else if (p.type === "pushaway") {
+        ctx.lineWidth = 2.2;
+        for (var pr2 = 0; pr2 < 4; pr2++) {
+          var ang2 = pr2 / 4 * Math.PI * 2 - Math.PI / 2;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(ang2) * 4, Math.sin(ang2) * 4);
+          ctx.lineTo(Math.cos(ang2) * 12, Math.sin(ang2) * 12);
+          ctx.stroke();
+        }
+        ctx.beginPath();
+        ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+        ctx.stroke();
       }
       ctx.restore();
       return;
@@ -155911,7 +156289,7 @@
     if (player.lockTimer > 0 && a.id === state.correctAsteroidId && a.waveId === state.waveId) {
       ctx.save();
       ctx.globalAlpha = fadeAlpha;
-      ctx.strokeStyle = "rgba(0,229,255,.65)";
+      ctx.strokeStyle = hudTheme.accentLockRing;
       ctx.lineWidth = 2.2;
       ctx.beginPath();
       ctx.arc(drawX, drawY, a.r + 8, 0, Math.PI * 2);
@@ -155926,11 +156304,11 @@
       var ratio = clamp(a.hitsRemaining / Math.max(1, a.hitsTotal), 0, 1);
       ctx.save();
       ctx.globalAlpha = fadeAlpha;
-      ctx.fillStyle = "rgba(0,0,0,.35)";
+      ctx.fillStyle = hudTheme.pauseOverlay;
       ctx.fillRect(barX, barY, barW, barH);
       ctx.fillStyle = "rgba(70,255,120,.9)";
       ctx.fillRect(barX, barY + barH * (1 - ratio), barW, barH * ratio);
-      ctx.strokeStyle = "rgba(255,255,255,.2)";
+      ctx.strokeStyle = hudTheme.strokeRing;
       ctx.lineWidth = 1;
       ctx.strokeRect(barX - 0.5, barY - 0.5, barW + 1, barH + 1);
       ctx.restore();
@@ -155947,17 +156325,17 @@
       var pad = Math.max(6, size * 0.55);
       var boxW = ctx.measureText(text).width + pad;
       var boxH = size * 1.05;
-      ctx.fillStyle = "rgba(0,0,0,.6)";
+      ctx.fillStyle = hudTheme.labelBackdrop;
       ctx.beginPath();
       ctx.roundRect(drawX - boxW / 2, drawY - boxH / 2, boxW, boxH, 6);
       ctx.fill();
-      ctx.fillStyle = "rgba(232,236,255,.90)";
+      ctx.fillStyle = hudTheme.textHudStrong;
       ctx.fillText(text, drawX, drawY);
       if (parsed.repeatStart >= 0 && parsed.repeatLen > 0) {
         var leftW = ctx.measureText(text.slice(0, parsed.repeatStart)).width;
         var repeatW = ctx.measureText(text.slice(parsed.repeatStart, parsed.repeatStart + parsed.repeatLen)).width;
         var lineY = drawY - size * 0.52;
-        ctx.strokeStyle = "rgba(232,236,255,.85)";
+        ctx.strokeStyle = hudTheme.textDim;
         ctx.lineWidth = Math.max(1, size * 0.06);
         ctx.beginPath();
         ctx.moveTo(drawX - ctx.measureText(text).width / 2 + leftW, lineY);
@@ -156011,14 +156389,6 @@
     if (player.compassTimer > 0) {
       drawCompassArrow();
     }
-  }
-  function drawPilotShip(pilot) {
-    if (!pilot || pilot.hidden)
-      return;
-    var prev = player;
-    player = pilot;
-    drawShip();
-    player = prev;
   }
   function drawDashGhosts() {
     if (!dashGhosts.length)
@@ -156103,6 +156473,9 @@
     if (dist >= a.r + 16)
       return false;
     if (!force && pilot.invuln > 0) {
+      return false;
+    }
+    if (pilotPowerInvincible(pilot)) {
       return false;
     }
     if (isStampedeMode() && a.isCorrect && a.waveId === state.waveId) {
@@ -156195,6 +156568,9 @@
       return false;
     }
     if (player.phaseTimer > 0 || player.overflightTimer > 0) {
+      return false;
+    }
+    if (pilotPowerInvincible(player)) {
       return false;
     }
     if (isStampedeMode() && a.isCorrect && a.waveId === state.waveId) {
@@ -156452,11 +156828,11 @@
       return;
     ctx.save();
     ctx.globalAlpha = player.clawPromptAlpha;
-    ctx.fillStyle = "rgba(232,236,255,0.9)";
-    ctx.font = "600 12px Oxanium, sans-serif";
+    ctx.fillStyle = hudTheme.textHudStrong;
+    ctx.font = hudTheme.fontTiny;
     ctx.textAlign = "center";
     ctx.textBaseline = "bottom";
-    ctx.shadowColor = "rgba(0,229,255,.35)";
+    ctx.shadowColor = hudTheme.glowCyan;
     ctx.shadowBlur = 6;
     ctx.fillText("HOLD X TO GRAB", player.x, player.y - 52);
     ctx.restore();
@@ -156575,7 +156951,7 @@
     ctx.globalAlpha = baseAlpha * 0.9;
     ctx.beginPath();
     ctx.arc(0, 3, 30, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(0,229,255,.06)";
+    ctx.fillStyle = hudTheme.shipFloorGlow;
     ctx.fill();
     ctx.restore();
     ctx.save();
@@ -157835,8 +158211,8 @@
     ctx.globalAlpha = 0.85;
     ctx.translate(baseX, baseY);
     ctx.rotate(ang);
-    ctx.fillStyle = "rgba(0,229,255,.9)";
-    ctx.strokeStyle = "rgba(0,0,0,.35)";
+    ctx.fillStyle = hudTheme.accentCyan;
+    ctx.strokeStyle = hudTheme.pauseOverlay;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(len, 0);
@@ -158406,12 +158782,12 @@
     if (!document.getElementById(styleId)) {
       var style = document.createElement("style");
       style.id = styleId;
-      style.textContent = ".sandboxPanel{position:fixed;top:90px;left:16px;z-index:45;width:min(460px,calc(100vw - 32px));max-height:calc(100vh - 112px);overflow:auto;background:rgba(6,10,18,.88);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:12px 14px;box-shadow:0 24px 60px rgba(0,0,0,.45);}.sandboxPanel .sandboxHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}.sandboxPanel h4{margin:0;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.8);}.sandboxPanel .sandboxToggle{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e8ecff;border-radius:10px;padding:4px 8px;font-size:10px;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;}.sandboxPanel.collapsed .sandboxBody{display:none;}.sandboxPanel .sandboxSectionTools{display:flex;gap:8px;margin-bottom:8px;}.sandboxPanel .sandboxSectionTools .sandboxToggle{flex:1;}.sandboxPanel .sandboxGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}.sandboxPanel .sandboxGroup{margin:0;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);border-radius:12px;padding:8px;}.sandboxPanel .sandboxGroupHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}.sandboxPanel .sandboxGroupTitle{font-size:11px;letter-spacing:1.1px;text-transform:uppercase;color:rgba(232,236,255,.78);}.sandboxPanel .sandboxGroupToggle{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e8ecff;border-radius:8px;padding:2px 6px;font-size:10px;cursor:pointer;}.sandboxPanel .sandboxGroup.collapsed .sandboxGroupBody{display:none;}.sandboxPanel .sandboxButtons{display:flex;flex-wrap:wrap;gap:6px;}.sandboxPanel .sandboxBtn{border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#e8ecff;border-radius:10px;padding:6px 8px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;}.sandboxPanel .sandboxBtn.active{border-color:rgba(0,229,255,.6);box-shadow:0 0 0 1px rgba(0,229,255,.25) inset;}.sandboxPanel .sandboxBtn:hover{transform:translateY(-1px);border-color:rgba(0,229,255,.6);box-shadow:0 8px 18px rgba(0,0,0,.25);}.sandboxPanel .sandboxNote{font-size:11px;color:rgba(232,236,255,.55);margin:6px 0 4px;}@media (max-width: 960px){.sandboxPanel{top:78px;left:10px;width:min(420px,calc(100vw - 20px));max-height:calc(100vh - 96px);}.sandboxPanel .sandboxGrid{grid-template-columns:1fr;}}";
+      style.textContent = getSandboxPanelInjectedCss();
       document.head.appendChild(style);
     }
     sandboxPanel = document.createElement("div");
     sandboxPanel.className = "sandboxPanel";
-    sandboxPanel.innerHTML = "<div class='sandboxHeader'><h4>Sandbox</h4><button class='sandboxToggle' id='sandboxToggle' type='button'>Hide</button></div><div class='sandboxBody'><div class='sandboxSectionTools'><button class='sandboxToggle' id='sandboxExpandAll' type='button'>Expand All</button><button class='sandboxToggle' id='sandboxCollapseAll' type='button'>Collapse All</button></div><div class='sandboxGrid'><div class='sandboxGroup' data-section='session'><div class='sandboxGroupHeader'><div class='sandboxGroupTitle'>Session</div><button class='sandboxGroupToggle' data-section-toggle='session' type='button'>-</button></div><div class='sandboxGroupBody'><div class='sandboxButtons' id='sandboxActionsSession'></div></div></div><div class='sandboxGroup' data-section='multiplayer'><div class='sandboxGroupHeader'><div class='sandboxGroupTitle'>Multiplayer</div><button class='sandboxGroupToggle' data-section-toggle='multiplayer' type='button'>-</button></div><div class='sandboxGroupBody'><div class='sandboxButtons' id='sandboxMultiplayer'></div><div class='sandboxButtons' id='sandboxMultiplayerMode'></div></div></div><div class='sandboxGroup' data-section='operation'><div class='sandboxGroupHeader'><div class='sandboxGroupTitle'>Operation</div><button class='sandboxGroupToggle' data-section-toggle='operation' type='button'>-</button></div><div class='sandboxGroupBody'><div class='sandboxButtons' id='sandboxOperations'></div><div class='sandboxNote'>Modes: Multiplication</div><div class='sandboxButtons' id='sandboxModesMul'></div><div class='sandboxNote'>Modes: Addition</div><div class='sandboxButtons' id='sandboxModesAdd'></div><div class='sandboxNote'>Modes: Squares</div><div class='sandboxButtons' id='sandboxModesSquare'></div><div class='sandboxNote'>Modes: Rationals</div><div class='sandboxButtons' id='sandboxModesRational'></div></div></div><div class='sandboxGroup' data-section='loadout'><div class='sandboxGroupHeader'><div class='sandboxGroupTitle'>Loadout</div><button class='sandboxGroupToggle' data-section-toggle='loadout' type='button'>-</button></div><div class='sandboxGroupBody'><div class='sandboxNote'>Shot Types</div><div class='sandboxButtons' id='sandboxShots'></div><div class='sandboxNote'>Defense</div><div class='sandboxButtons' id='sandboxDefense'></div><div class='sandboxNote'>Secondary</div><div class='sandboxButtons' id='sandboxSecondary'></div></div></div><div class='sandboxGroup' data-section='cosmetics'><div class='sandboxGroupHeader'><div class='sandboxGroupTitle'>Cosmetics</div><button class='sandboxGroupToggle' data-section-toggle='cosmetics' type='button'>-</button></div><div class='sandboxGroupBody'><div class='sandboxNote'>Ships</div><div class='sandboxButtons' id='sandboxShips'></div><div class='sandboxNote'>Clusters</div><div class='sandboxButtons' id='sandboxBelts'></div></div></div><div class='sandboxGroup' data-section='experimental'><div class='sandboxGroupHeader'><div class='sandboxGroupTitle'>Experimental</div><button class='sandboxGroupToggle' data-section-toggle='experimental' type='button'>-</button></div><div class='sandboxGroupBody'><div class='sandboxButtons' id='sandboxActionsExperimental'></div></div></div></div></div>";
+    sandboxPanel.innerHTML = "<div class='sandboxHeader'><h4>Sandbox</h4><button class='sandboxToggle' id='sandboxToggle' type='button'>Hide</button></div><div class='sandboxBody'><div class='sandboxSectionTools'><button class='sandboxToggle' id='sandboxExpandAll' type='button'>Expand All</button><button class='sandboxToggle' id='sandboxCollapseAll' type='button'>Collapse All</button></div><div class='sandboxGrid'><div class='sandboxGroup' data-section='session'><div class='sandboxGroupHeader'><div class='sandboxGroupTitle'>Session</div><button class='sandboxGroupToggle' data-section-toggle='session' type='button'>-</button></div><div class='sandboxGroupBody'><div class='sandboxButtons' id='sandboxActionsSession'></div></div></div><div class='sandboxGroup' data-section='operation'><div class='sandboxGroupHeader'><div class='sandboxGroupTitle'>Operation</div><button class='sandboxGroupToggle' data-section-toggle='operation' type='button'>-</button></div><div class='sandboxGroupBody'><div class='sandboxButtons' id='sandboxOperations'></div><div class='sandboxNote'>Modes: Multiplication</div><div class='sandboxButtons' id='sandboxModesMul'></div><div class='sandboxNote'>Modes: Addition</div><div class='sandboxButtons' id='sandboxModesAdd'></div><div class='sandboxNote'>Modes: Squares</div><div class='sandboxButtons' id='sandboxModesSquare'></div><div class='sandboxNote'>Modes: Rationals</div><div class='sandboxButtons' id='sandboxModesRational'></div></div></div><div class='sandboxGroup' data-section='loadout'><div class='sandboxGroupHeader'><div class='sandboxGroupTitle'>Loadout</div><button class='sandboxGroupToggle' data-section-toggle='loadout' type='button'>-</button></div><div class='sandboxGroupBody'><div class='sandboxNote'>Shot Types</div><div class='sandboxButtons' id='sandboxShots'></div><div class='sandboxNote'>Defense</div><div class='sandboxButtons' id='sandboxDefense'></div><div class='sandboxNote'>Secondary</div><div class='sandboxButtons' id='sandboxSecondary'></div></div></div><div class='sandboxGroup' data-section='cosmetics'><div class='sandboxGroupHeader'><div class='sandboxGroupTitle'>Cosmetics</div><button class='sandboxGroupToggle' data-section-toggle='cosmetics' type='button'>-</button></div><div class='sandboxGroupBody'><div class='sandboxNote'>Ships</div><div class='sandboxButtons' id='sandboxShips'></div><div class='sandboxNote'>Clusters</div><div class='sandboxButtons' id='sandboxBelts'></div></div></div><div class='sandboxGroup' data-section='experimental'><div class='sandboxGroupHeader'><div class='sandboxGroupTitle'>Experimental</div><button class='sandboxGroupToggle' data-section-toggle='experimental' type='button'>-</button></div><div class='sandboxGroupBody'><div class='sandboxButtons' id='sandboxActionsExperimental'></div></div></div></div></div>";
     document.body.appendChild(sandboxPanel);
     var sandboxToggleBtn = sandboxPanel.querySelector("#sandboxToggle");
     if (sandboxToggleBtn) {
@@ -158441,7 +158817,6 @@
     }
     var sectionDefaults = {
       session: true,
-      multiplayer: false,
       operation: true,
       loadout: true,
       cosmetics: false,
@@ -158536,8 +158911,6 @@
     }
     var actionsContainer = sandboxPanel.querySelector("#sandboxActionsSession");
     var experimentalContainer = sandboxPanel.querySelector("#sandboxActionsExperimental");
-    var multiplayerContainer = sandboxPanel.querySelector("#sandboxMultiplayer");
-    var multiplayerModeContainer = sandboxPanel.querySelector("#sandboxMultiplayerMode");
     var btnSpawnTarget = null;
     var btnInfLives = null;
     var btnNoScore = null;
@@ -158546,9 +158919,6 @@
     var btnStampede = null;
     var btnAlienWave = null;
     var btnGamepad = null;
-    var btnTwoPilots = null;
-    var btnSharedArena = null;
-    var btnSplitArena = null;
     if (actionsContainer) {
       btnSpawnTarget = addButton(actionsContainer, "Spawn Target", spawnSandboxTarget);
       btnInfLives = addButton(actionsContainer, "Infinite Lives", function() {
@@ -158584,74 +158954,6 @@
       btnGamepad = addButton(experimentalContainer, "Gamepad Off", function() {
         cycleTouchControlsMode();
         updateSandboxGamepadButton();
-      });
-    }
-    if (multiplayerContainer) {
-      btnTwoPilots = addButton(multiplayerContainer, "Two Pilots", function() {
-        state.sandboxTwoPilots = !state.sandboxTwoPilots;
-        if (state.sandboxMultiplayer) {
-          state.sandboxMultiplayer.enabled = state.sandboxTwoPilots;
-        }
-        sandboxMultiplayer.enabled = state.sandboxTwoPilots;
-        if (state.sandboxTwoPilots) {
-          ensurePilot2();
-          setPilot2MouseControl(true, true);
-          pilot2.shipType = pickAlternateShipType(player.shipType);
-          resetPilotStats(1);
-          resetPilotStats(2);
-          positionSandboxPilots();
-        }
-        updateSandboxToggle(btnTwoPilots, state.sandboxTwoPilots);
-        setSandboxButtonEnabled(btnSharedArena, state.sandboxTwoPilots);
-        setSandboxButtonEnabled(btnSplitArena, state.sandboxTwoPilots);
-        showToast(state.sandboxTwoPilots ? "TWO PILOTS ON \u2022 PILOT 2 MOUSE ON" : "TWO PILOTS OFF");
-      });
-    }
-    if (multiplayerModeContainer) {
-      btnSharedArena = addButton(multiplayerModeContainer, "Shared Arena", function() {
-        if (!state.sandboxTwoPilots) {
-          state.sandboxTwoPilots = true;
-          if (state.sandboxMultiplayer)
-            state.sandboxMultiplayer.enabled = true;
-          sandboxMultiplayer.enabled = true;
-          ensurePilot2();
-          setPilot2MouseControl(true, true);
-          pilot2.shipType = pickAlternateShipType(player.shipType);
-          resetPilotStats(1);
-          resetPilotStats(2);
-          positionSandboxPilots();
-          updateSandboxToggle(btnTwoPilots, true);
-        }
-        state.sandboxTwoPilotsMode = "shared";
-        if (state.sandboxMultiplayer)
-          state.sandboxMultiplayer.mode = "shared";
-        sandboxMultiplayer.mode = "shared";
-        updateSandboxToggle(btnSharedArena, true);
-        updateSandboxToggle(btnSplitArena, false);
-        showToast("MODE -> SHARED ARENA");
-      });
-      btnSplitArena = addButton(multiplayerModeContainer, "Split Arena", function() {
-        if (!state.sandboxTwoPilots) {
-          state.sandboxTwoPilots = true;
-          if (state.sandboxMultiplayer)
-            state.sandboxMultiplayer.enabled = true;
-          sandboxMultiplayer.enabled = true;
-          ensurePilot2();
-          setPilot2MouseControl(true, true);
-          pilot2.shipType = pickAlternateShipType(player.shipType);
-          resetPilotStats(1);
-          resetPilotStats(2);
-          positionSandboxPilots();
-          updateSandboxToggle(btnTwoPilots, true);
-        }
-        state.sandboxTwoPilotsMode = "split";
-        if (state.sandboxMultiplayer)
-          state.sandboxMultiplayer.mode = "split";
-        sandboxMultiplayer.mode = "split";
-        setSplitGameplay(isSandboxSplitMode());
-        updateSandboxToggle(btnSplitArena, true);
-        updateSandboxToggle(btnSharedArena, false);
-        showToast("MODE -> SPLIT ARENA");
       });
     }
     function setSandboxQuestionMode(mode, operation) {
@@ -158789,7 +159091,7 @@
       applyPowerup({ type: "armor", group: "defense" });
     });
     var secContainer = sandboxPanel.querySelector("#sandboxSecondary");
-    ["time", "emp", "magnet", "lock", "autofire", "repair", "scope"].forEach(function(type) {
+    ["time", "emp", "magnet", "lock", "autofire", "repair", "scope", "speedup", "invincibility", "pushaway"].forEach(function(type) {
       addButton(secContainer, type, function() {
         addSecondaryPowerup(type);
         showToast("SECONDARY + " + type.toUpperCase());
@@ -158847,18 +159149,7 @@
     updateSandboxToggle(btnAlienWave, !!(state.sandboxAlienWaveActive || state.sandboxAlienWave));
     updateSandboxGamepadButton();
     updateSandboxToggle(btnStampede, state.stampedeMode);
-    updateSandboxToggle(btnTwoPilots, state.sandboxTwoPilots);
-    updateSandboxToggle(btnSharedArena, state.sandboxTwoPilotsMode !== "split");
-    updateSandboxToggle(btnSplitArena, state.sandboxTwoPilotsMode === "split");
-    setSandboxButtonEnabled(btnSharedArena, state.sandboxTwoPilots);
-    setSandboxButtonEnabled(btnSplitArena, state.sandboxTwoPilots);
-    setSplitGameplay(isSandboxSplitMode());
-    if (state.sandboxMultiplayer) {
-      state.sandboxMultiplayer.enabled = state.sandboxTwoPilots;
-      state.sandboxMultiplayer.mode = state.sandboxTwoPilotsMode;
-    }
-    sandboxMultiplayer.enabled = state.sandboxTwoPilots;
-    sandboxMultiplayer.mode = state.sandboxTwoPilotsMode;
+    disableCoopSplitSanitize();
     for (var ob = 0; ob < opButtons.length; ob++) {
       updateSandboxToggle(opButtons[ob].btn, opButtons[ob].id === state.operation);
     }
