@@ -972,6 +972,8 @@ var tutorialDashMarkerArmed = false;
 var tutorialDashMarkerT = 0;
 var answerHitsSincePowerup = 0;
 var hiddenPowerupActive = false;
+var campaignAmmoRescueAcc = 0;
+var campaignAmmoRescueDone = false;
 var survivorTimer = 0;
 var survivorRewardReady = false;
 var cleanWaveStreak = 0;
@@ -3846,12 +3848,18 @@ function getPrimaryAmmoSoftCap(primaryAmmoStart){
 function computePrimaryAmmoStart(){
   var dec = Math.max(0, state.decoys | 0);
   var ql = state.questionLimit | 0;
+  var base;
   if(ql > 0){
-    return Math.max(PRIMARY_AMMO_FLOOR_QUESTION, Math.round(ql * PRIMARY_AMMO_QUESTION_SHOTS + dec * PRIMARY_AMMO_DECOY_WEIGHT));
+    base = Math.max(PRIMARY_AMMO_FLOOR_QUESTION, Math.round(ql * PRIMARY_AMMO_QUESTION_SHOTS + dec * PRIMARY_AMMO_DECOY_WEIGHT));
+  }else{
+    var t = state.timeLimitSec | 0;
+    var lives = Math.max(0, state.livesStart | 0);
+    base = Math.max(PRIMARY_AMMO_FLOOR_ENDLESS, Math.round((t || 120) * 2 + lives * 30 + dec * 2));
   }
-  var t = state.timeLimitSec | 0;
-  var lives = Math.max(0, state.livesStart | 0);
-  return Math.max(PRIMARY_AMMO_FLOOR_ENDLESS, Math.round((t || 120) * 2 + lives * 30 + dec * 2));
+  if(campaignActive || (state && state.campaignActive)){
+    base = Math.round(base * 1.42);
+  }
+  return base;
 }
 
 function initPrimaryAmmoForPilot(pilot){
@@ -5341,7 +5349,8 @@ function spawnAsteroid(label, isCorrect, laneId){
     spawnFadeDur: (spawnSide === "top") ? 0 : 0.4,
     correctAnchorX: isCorrect ? spawnX : null
   };
-  if(isCorrect && !tutorialActive && !hiddenPowerupActive && answerHitsSincePowerup >= 7){
+  var hiddenHitThresh = (campaignActive || (state && state.campaignActive)) ? 4 : 7;
+  if(isCorrect && !tutorialActive && !hiddenPowerupActive && answerHitsSincePowerup >= hiddenHitThresh){
     var drop = choosePowerupDrop();
     if(drop){
       a.hiddenPowerup = drop;
@@ -5580,6 +5589,15 @@ function choosePowerupDrop(){
   var roll = Math.random();
   var lowHull = player.hull < 0.3;
   var stampedeActive = isStampedeMode();
+  var inCampaign = campaignActive || !!(state && state.campaignActive);
+  if(inCampaign && player && !pilotPrimaryAmmoUnlimited(player)){
+    var softCap = getPrimaryAmmoSoftCap(player.primaryAmmoStart || PRIMARY_AMMO_FLOOR_QUESTION);
+    var ammoCur = player.primaryAmmo | 0;
+    var lowAmmoThresh = Math.max(12, Math.floor(softCap * 0.14));
+    if(ammoCur <= lowAmmoThresh && Math.random() < 0.52){
+      return { type: "ammo", group: "secondary" };
+    }
+  }
   if(state.alienSwarm){
     if(lowHull && roll < 0.5){
       var sType = Math.random() < 0.6 ? "repair" : pickSecondaryType();
@@ -6317,6 +6335,8 @@ function resetSession(){
   initPrimaryAmmoForPilot(player);
   answerHitsSincePowerup = 0;
   hiddenPowerupActive = false;
+  campaignAmmoRescueAcc = 0;
+  campaignAmmoRescueDone = false;
   resetSurvivorTimer();
   cleanWaveStreak = 0;
   waveHadWrongHit = false;
@@ -6436,6 +6456,8 @@ function startCountdown(skipReset){
   player.hidden = false;
   answerHitsSincePowerup = 0;
   hiddenPowerupActive = false;
+  campaignAmmoRescueAcc = 0;
+  campaignAmmoRescueDone = false;
 
   var steps = ["3","2","1","GO"];
   var i = 0;
@@ -9776,6 +9798,21 @@ function update(dt){
       if(maybeSpawnEventPowerup(1.0)){
         resetSurvivorTimer();
       }
+    }
+  }
+  if(campaignActive && state.running && !state.over && !state.paused && !tutorialActive && player && !pilotPrimaryAmmoUnlimited(player)){
+    var paRescue = player.primaryAmmo | 0;
+    var qlRescue = state.questionLimit | 0;
+    if(paRescue <= 0 && qlRescue > 0 && !campaignAmmoRescueDone){
+      campaignAmmoRescueAcc += dtReal;
+      if(campaignAmmoRescueAcc >= 2.6){
+        campaignAmmoRescueDone = true;
+        campaignAmmoRescueAcc = 0;
+        spawnPowerup("ammo", "secondary", player.x, Math.max(view.hudH + 70, player.y - 110), { pop: true, popScale: 0.92 });
+        showToast("COMMANDER SOLVER — AMMO DROP");
+      }
+    }else if(paRescue > 0){
+      campaignAmmoRescueAcc = 0;
     }
   }
 

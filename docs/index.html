@@ -1453,9 +1453,54 @@
       width:100%;
       min-height:100%;
       height:auto;
-      display:block;
+      display:none;
       z-index:1;
       pointer-events:none;
+    }
+
+    @keyframes campaignCommanderBob{
+      0%, 100%{ transform: translateY(0); }
+      50%{ transform: translateY(-6px); }
+    }
+
+    #campaignMissionsView #campaignList .campaignMapNode .campaignMapCommanderCue{
+      position:absolute;
+      pointer-events:none;
+      top:32%;
+      font-size:9px;
+      font-weight:800;
+      letter-spacing:0.12em;
+      line-height:1.35;
+      color: rgba(255, 244, 210, 0.96);
+      text-shadow: 0 0 14px rgba(0,229,255,.5), 0 2px 10px rgba(0,0,0,.9);
+      white-space:nowrap;
+      animation: campaignCommanderBob 2.75s ease-in-out infinite;
+      z-index:6;
+    }
+
+    #campaignMissionsView #campaignList .campaignMapNodePosL .campaignMapCommanderCue{
+      left: calc(50% + 46px);
+      transform-origin: left center;
+    }
+
+    #campaignMissionsView #campaignList .campaignMapNodePosR .campaignMapCommanderCue{
+      right: calc(50% + 46px);
+      transform-origin: right center;
+      text-align:right;
+    }
+
+    #campaignMissionsView #campaignList .campaignMapNode.current:not(.locked){
+      z-index:5;
+      transform: translate(-50%, calc(-50% - var(--campaign-orbit-nudge))) scale(1.16);
+    }
+
+    #campaignMissionsView #campaignList .campaignMapNode.current:not(.locked) .campaignMapNodeGlow{
+      opacity:1;
+      inset:-10px;
+    }
+
+    #campaignMissionsView #campaignList .campaignMapNode.current:not(.locked):hover{
+      transform: translate(-50%, calc(-50% - var(--campaign-orbit-nudge))) scale(1.16) translateY(-8px);
     }
 
     #campaignMissionsView #campaignList.campaignMapList{
@@ -8142,6 +8187,7 @@
         var yPct = n <= 1 ? 50 : (82 - (i / (n - 1)) * 64);
         var xPct = (i % 2 === 0) ? 20 : 80;
         li.className = "campaignListItem campaignMissionCard campaignMapNode"
+          + (i % 2 === 0 ? " campaignMapNodePosL" : " campaignMapNodePosR")
           + (isDone ? " completed" : "")
           + (isCurrent ? " current" : "")
           + (isLocked ? " locked" : "");
@@ -8160,6 +8206,7 @@
           + (lineBoss ? "<span class=\"campaignMapNodeBoss\">" + lineBoss + "</span>" : "")
           + "<span class=\"campaignMapNodeWin\">" + winLine + "</span>"
           + "</div>"
+          + ((isCurrent && !isDone) ? "<span class=\"campaignMapCommanderCue\" aria-hidden=\"true\">COMMANDER SOLVER</span>" : "")
           + "<span class=\"campaignStatus\">" + statusSymbol + "</span>";
         li.addEventListener("click", function(){
           var idx = parseInt(this.getAttribute("data-index"), 10);
