@@ -160,6 +160,11 @@ body::before{
   overflow:hidden;
 }
 
+/* Allow ship intro to rise from below the playfield without clipping */
+#gameShell.intro-drop{
+  overflow:visible;
+}
+
 #controlDock{
   position:absolute;
   top:14px;

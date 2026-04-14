@@ -127,6 +127,10 @@ body::before{
   overflow:hidden;
 }
 
+#gameShell.intro-drop{
+  overflow:visible;
+}
+
 #controlDock{
   position:absolute;
   top:14px;

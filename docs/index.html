@@ -447,6 +447,7 @@
       content:"";
       position:absolute;
       inset:0;
+      z-index:0;
       background: linear-gradient(100deg, transparent 40%, rgba(255,255,255,.06) 50%, transparent 60%);
       animation: briefingSweep 6s ease-in-out infinite;
       pointer-events:none;
@@ -562,8 +563,8 @@
       box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
     }
     .briefingBeltCard{
-      width:104px;
-      height:104px;
+      width:148px;
+      height:148px;
       border-radius:12px;
       border: none;
       background: rgba(8,12,22,.55);
@@ -583,8 +584,8 @@
       color:rgba(232,236,255,.7);
     }
     .briefingShotCard{
-      width:104px;
-      height:104px;
+      width:148px;
+      height:148px;
       border-radius:12px;
       border: none;
       background: rgba(8,12,22,.55);
@@ -596,7 +597,7 @@
       flex-direction:column;
       align-items:center;
       gap:4px;
-      min-width:104px;
+      min-width:148px;
     }
     .briefingShotLabel{
       font-size:9px;
@@ -607,8 +608,8 @@
       min-height:10px;
     }
     .briefingShipCard{
-      width:112px;
-      height:112px;
+      width:168px;
+      height:168px;
       border-radius:12px;
       border: none;
       background: rgba(8,12,22,.55);
@@ -690,7 +691,7 @@
     }
     .briefingTelemetryGrid{
       display:grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap:0;
       margin-left:8px;
     }
@@ -718,19 +719,22 @@
       line-height:1.1;
     }
     .briefingHintBlock{
-      flex:1 1 auto;
-      min-width:0;
+      flex:1 1 52%;
+      min-width:min(100%, 420px);
     }
     .briefingHints{
-      border: none;
-      border-radius:14px;
-      padding:10px 12px;
-      background: rgba(6,10,18,.55);
-      min-height:52px;
+      border: 2px solid rgba(255, 210, 120, 0.42);
+      border-radius:10px 10px 14px 10px;
+      padding:18px 22px 20px;
+      background: linear-gradient(180deg, rgba(10,16,28,.92), rgba(6,10,18,.88));
+      min-height:120px;
       height:auto;
-      max-height:88px;
-      overflow:hidden;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+      max-height:none;
+      overflow:auto;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.07),
+        0 0 0 2px rgba(0,0,0,.45),
+        0 14px 36px rgba(0,0,0,.5);
     }
     .briefingHintActions{
       margin-top:12px;
@@ -740,7 +744,19 @@
     .briefingLaunchBlock{
       flex-shrink:0;
       display:flex;
+      flex-direction:column;
       align-items:flex-end;
+      justify-content:flex-end;
+      gap:12px;
+      min-width:200px;
+    }
+    .briefingStatusLaunch{
+      flex-direction:row;
+      align-items:center;
+      justify-content:flex-end;
+      gap:10px;
+      text-align:right;
+      max-width:280px;
     }
     .briefingLaunchBtn{
       white-space:nowrap;
@@ -751,9 +767,9 @@
     }
     .briefingFooter{
       display:flex;
-      gap:14px;
-      align-items:flex-end;
-      margin-top:10px;
+      gap:18px;
+      align-items:stretch;
+      margin-top:14px;
     }
     .briefingCommander{
       display:flex;
@@ -810,11 +826,11 @@
       margin-bottom:3px;
     }
     .briefingHintText{
-      font-size:11px;
-      line-height:1.35;
-      color:rgba(232,236,255,.88);
-      letter-spacing:0.05em;
-      min-height:14px;
+      font-size:14px;
+      line-height:1.5;
+      color:rgba(232,236,255,.9);
+      letter-spacing:0.04em;
+      min-height:18px;
     }
 
     @media (max-width: 900px){
@@ -828,9 +844,9 @@
       .briefingLoadout{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .briefingFooter{ flex-wrap:wrap; }
       .briefingHintBlock{ width:100%; }
-      .briefingStatusRow{ align-items:flex-start; flex-direction:column; }
+      .briefingStatusLaunch{ max-width:100%; justify-content:flex-start; text-align:left; }
       .briefingTelemetryGrid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .briefingTelemetryCell:nth-child(3){ border-left:none; }
+      .briefingTelemetryCell:nth-child(2n+1){ border-left:none; }
     }
     @media (max-width: 640px){
       .briefingTelemetryGrid{ grid-template-columns: 1fr 1fr; }
@@ -3661,12 +3677,6 @@
             <span class="briefingObjectiveHeroEyebrow">Mission objective</span>
             <p class="briefingObjectiveHeroText" id="briefingTargeted">--</p>
           </div>
-          <div class="briefingStatusRow">
-            <div class="briefingStatus" id="briefingStatus">
-              <span class="briefingSpinner" aria-hidden="true"></span>
-              <span id="briefingStatusText">Initializing launch sequence...</span>
-            </div>
-          </div>
         </div>
       </div>
       <div class="panel briefingMainPanel">
@@ -3722,10 +3732,6 @@
             <span class="bt-label">Time limit</span>
             <b id="briefingTimer">--</b>
           </div>
-          <div class="briefingTelemetryCell">
-            <span class="bt-label">Asteroid speed</span>
-            <b id="briefingSpeed">--</b>
-          </div>
         </div>
       </div>
       <div class="briefingFooter">
@@ -3740,6 +3746,10 @@
           </div>
         </div>
         <div class="briefingLaunchBlock">
+          <div class="briefingStatus briefingStatusLaunch" id="briefingStatus">
+            <span class="briefingSpinner" aria-hidden="true"></span>
+            <span id="briefingStatusText">Initializing launch sequence...</span>
+          </div>
           <button id="btnBriefingSkip" class="btn briefingLaunchBtn">Launch Mission</button>
         </div>
       </div>
@@ -8444,18 +8454,7 @@
       if(briefingLives) briefingLives.textContent = String(config.lives);
       if(briefingStrikes) briefingStrikes.textContent = String(config.strikes);
       if(briefingTargeted){
-        if(config.targetMode === "off"){
-          if(config.timerMode === "off"){
-            briefingTargeted.textContent = "Endless";
-          }else{
-            briefingTargeted.textContent = "Survive " + config.timerMode + "s";
-          }
-        }else if(String(config.targetMode).charAt(0) === "q"){
-          var targetCount = String(config.targetMode).slice(1);
-          briefingTargeted.textContent = "Eliminate " + targetCount + " targets";
-        }else{
-          briefingTargeted.textContent = String(config.targetMode);
-        }
+        briefingTargeted.textContent = describeWin(config);
       }
       if(briefingTimer){
         if(config.timerMode === "off"){
@@ -8464,11 +8463,6 @@
           briefingTimer.textContent = config.timerMode + "s";
         }
       }
-      if(briefingSpeed){
-        var speed = parseFloat(config.speed);
-        briefingSpeed.textContent = Number.isFinite(speed) ? (speed.toFixed(2) + "x") : "--";
-      }
-
       startHintCycle();
 
       briefingTimerId = setTimeout(function(){

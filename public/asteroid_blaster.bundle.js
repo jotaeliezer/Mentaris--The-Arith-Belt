@@ -148551,6 +148551,7 @@
       }
       if (selectedShotType === "missile" && !isMissileAllowed())
         selectedShotType = "single";
+      player.menuPrimaryBlaster = selectedShotType;
       player.blasterMode = selectedShotType;
       if (selectedShotType === "single") {
         player.blasterHitsRemaining = 0;
@@ -148918,11 +148919,10 @@
       gameOverSfxTimer = 0;
     }
     countdownActive = true;
-    var r = canvas.getBoundingClientRect();
-    countdownTarget.x = r.width / 2;
-    countdownTarget.y = r.height - 58;
+    countdownTarget.x = view.w * 0.5;
+    countdownTarget.y = view.h - 58;
     player.x = countdownTarget.x;
-    player.y = r.height + 120;
+    player.y = view.h + 200;
     bullets.length = 0;
     asteroids.length = 0;
     powerups.length = 0;
@@ -149473,11 +149473,138 @@
     state.slowMoWaveY = view.h + 20;
     state.slowMoWaveSpeed = 420;
   }
+  function tryResolveAlienKillAfterAccumulatedHits(al, ai3) {
+    var alienHitsRequired = Math.max(1, Math.round(al && al.hitsRequired != null ? al.hitsRequired : al && al.answer != null ? al.answer : 1));
+    if (al.hitsTaken < alienHitsRequired)
+      return false;
+    if (al.isBoss && state.alienBossRetreatMode) {
+      state.aliensShot += 1;
+      if (!state.aliensShotByType)
+        state.aliensShotByType = {};
+      var retreatSrc = getAlienSpriteSrcFor(al);
+      if (retreatSrc) {
+        state.aliensShotByType[retreatSrc] = (state.aliensShotByType[retreatSrc] || 0) + 1;
+      }
+      state.score += al.score || 0;
+      playSfx(state, "alien_kill", 0.45);
+      al.retreating = true;
+      al.noHit = true;
+      al.hitShake = 0;
+      al.stunTimer = 0;
+      al.fireCooldown = 99;
+      al.escapeActive = false;
+      al.escapeSequence = false;
+      al.escapePhase = "";
+      al.escapeTimer = 0;
+      al.retreatSpeed = 82;
+      al.retreatDrift = (Math.random() * 2 - 1) * 18;
+      showToast("BOSS RETREATING");
+      return true;
+    }
+    if (state.alienSwarm && al.swarmDigit != null && al.swarmCorrectDigit != null && al.swarmDigit === al.swarmCorrectDigit) {
+      var poolId = al.poolId;
+      var removed = 0;
+      for (var sw = aliens.length - 1; sw >= 0; sw--) {
+        var swAlien = aliens[sw];
+        if (swAlien.poolId === poolId) {
+          removed += 1;
+          state.score += swAlien.score || al.score;
+          impactDebris(swAlien.x, swAlien.y);
+          if (!state.aliensShotByType)
+            state.aliensShotByType = {};
+          var swSrc = getAlienSpriteSrcFor(swAlien);
+          if (swSrc) {
+            state.aliensShotByType[swSrc] = (state.aliensShotByType[swSrc] || 0) + 1;
+          }
+          aliens.splice(sw, 1);
+        }
+      }
+      state.aliensShot += removed;
+      playSfx(state, "alien_kill", 0.65);
+      if (tourGuide)
+        tourGuide.notify("alien");
+      showToast("ALIEN POOL CLEARED");
+      (function() {
+        var _d = choosePowerupDrop();
+        if (_d)
+          spawnPowerup(_d.type, _d.group, al.x, al.y);
+      })();
+      resetAlienSwarmPool();
+      return true;
+    }
+    state.aliensShot += 1;
+    if (!state.aliensShotByType)
+      state.aliensShotByType = {};
+    var alienSrc = getAlienSpriteSrcFor(al);
+    if (alienSrc) {
+      state.aliensShotByType[alienSrc] = (state.aliensShotByType[alienSrc] || 0) + 1;
+    }
+    state.score += al.score;
+    impactDebris(al.x, al.y);
+    playSfx(state, "alien_kill", 0.65);
+    if (tourGuide)
+      tourGuide.notify("alien");
+    if (al.isBoss) {
+      al.dying = true;
+      al.dyingT = 0;
+      al.dyingDur = 2.8;
+      al.noHit = true;
+      al.noDamage = true;
+      al.fireCooldown = 9999;
+      state.alienBossDeathPending = true;
+    } else {
+      aliens.splice(ai3, 1);
+      if (tutorialActive) {
+        alienConfig.enabled = false;
+        alienConfig.maxOnScreen = 0;
+      }
+      showToast("ALIEN CLEARED");
+      (function() {
+        var _d = choosePowerupDrop();
+        if (_d)
+          spawnPowerup(_d.type, _d.group, al.x, al.y);
+      })();
+    }
+    return true;
+  }
+  function applyEmpShockDamageToAliens(empY, waveId) {
+    var band = 36;
+    for (var eai = aliens.length - 1; eai >= 0; eai--) {
+      var eal = aliens[eai];
+      if (!eal || eal.dying || eal.retreating || eal.noHit)
+        continue;
+      if (eal._lastEmpWaveId === waveId)
+        continue;
+      if (Math.abs(eal.y - empY) > band)
+        continue;
+      eal._lastEmpWaveId = waveId;
+      var req = Math.max(1, Math.round(eal.hitsRequired != null ? eal.hitsRequired : eal.answer != null ? eal.answer : 1));
+      var taken = Math.max(0, eal.hitsTaken | 0);
+      var rem = Math.max(0, req - taken);
+      if (rem <= 0)
+        continue;
+      var loss = Math.max(1, Math.floor(rem * 0.2));
+      if (state.alienSwarm) {
+        eal.showDigitTimer = 0.55;
+        eal.hitFlashTimer = 0.3;
+        eal.hitFlashDur = 0.3;
+      } else {
+        eal.hitFlashTimer = 0.35;
+        eal.hitFlashDur = 0.35;
+      }
+      playSfx(state, "alien_hit", 0.48);
+      eal.hitShake = Math.max(eal.hitShake || 0, 0.85);
+      eal.stunTimer = Math.max(eal.stunTimer || 0, 0.55);
+      eal.hitsTaken = Math.min(req, taken + loss);
+      tryResolveAlienKillAfterAccumulatedHits(eal, eai);
+    }
+  }
   function startEmpWave() {
     state.empWaveActive = true;
     state.empWaveY = view.h + 30;
     state.empWaveSpeed = 720;
     state.empWavePhase = 0;
+    state.empAlienWaveId = (state.empAlienWaveId || 0) + 1;
     var cascade = [];
     for (var i = 0; i < asteroids.length; i++) {
       var a = asteroids[i];
@@ -152067,6 +152194,9 @@
     if (state.empWaveActive) {
       state.empWaveY -= (state.empWaveSpeed || 600) * dtReal2;
       state.empWavePhase = (state.empWavePhase || 0) + dtReal2 * 6;
+      if (state.empAlienWaveId) {
+        applyEmpShockDamageToAliens(state.empWaveY, state.empAlienWaveId);
+      }
       if (state.empWaveY <= -120) {
         state.empWaveActive = false;
       }
@@ -153602,98 +153732,8 @@
           al.hitShake = 0.75;
           al.stunTimer = Math.max(al.stunTimer || 0, 0.4);
           al.hitsTaken += 1;
-          var alienHitsRequired = Math.max(1, Math.round(al && al.hitsRequired != null ? al.hitsRequired : al && al.answer != null ? al.answer : 1));
-          if (al.hitsTaken >= alienHitsRequired) {
-            if (al.isBoss && state.alienBossRetreatMode) {
-              state.aliensShot += 1;
-              if (!state.aliensShotByType)
-                state.aliensShotByType = {};
-              var retreatSrc = getAlienSpriteSrcFor(al);
-              if (retreatSrc) {
-                state.aliensShotByType[retreatSrc] = (state.aliensShotByType[retreatSrc] || 0) + 1;
-              }
-              state.score += al.score || 0;
-              playSfx(state, "alien_kill", 0.45);
-              al.retreating = true;
-              al.noHit = true;
-              al.hitShake = 0;
-              al.stunTimer = 0;
-              al.fireCooldown = 99;
-              al.escapeActive = false;
-              al.escapeSequence = false;
-              al.escapePhase = "";
-              al.escapeTimer = 0;
-              al.retreatSpeed = 82;
-              al.retreatDrift = (Math.random() * 2 - 1) * 18;
-              showToast("BOSS RETREATING");
-              break;
-            }
-            if (state.alienSwarm && al.swarmDigit != null && al.swarmCorrectDigit != null && al.swarmDigit === al.swarmCorrectDigit) {
-              var poolId = al.poolId;
-              var removed = 0;
-              for (var sw = aliens.length - 1; sw >= 0; sw--) {
-                var swAlien = aliens[sw];
-                if (swAlien.poolId === poolId) {
-                  removed += 1;
-                  state.score += swAlien.score || al.score;
-                  impactDebris(swAlien.x, swAlien.y);
-                  if (!state.aliensShotByType)
-                    state.aliensShotByType = {};
-                  var swSrc = getAlienSpriteSrcFor(swAlien);
-                  if (swSrc) {
-                    state.aliensShotByType[swSrc] = (state.aliensShotByType[swSrc] || 0) + 1;
-                  }
-                  aliens.splice(sw, 1);
-                }
-              }
-              state.aliensShot += removed;
-              playSfx(state, "alien_kill", 0.65);
-              if (tourGuide)
-                tourGuide.notify("alien");
-              showToast("ALIEN POOL CLEARED");
-              (function() {
-                var _d = choosePowerupDrop();
-                if (_d)
-                  spawnPowerup(_d.type, _d.group, al.x, al.y);
-              })();
-              resetAlienSwarmPool();
-              break;
-            } else {
-              state.aliensShot += 1;
-              if (!state.aliensShotByType)
-                state.aliensShotByType = {};
-              var alienSrc = getAlienSpriteSrcFor(al);
-              if (alienSrc) {
-                state.aliensShotByType[alienSrc] = (state.aliensShotByType[alienSrc] || 0) + 1;
-              }
-              state.score += al.score;
-              impactDebris(al.x, al.y);
-              playSfx(state, "alien_kill", 0.65);
-              if (tourGuide)
-                tourGuide.notify("alien");
-              if (al.isBoss) {
-                al.dying = true;
-                al.dyingT = 0;
-                al.dyingDur = 2.8;
-                al.noHit = true;
-                al.noDamage = true;
-                al.fireCooldown = 9999;
-                state.alienBossDeathPending = true;
-              } else {
-                aliens.splice(ai3, 1);
-                if (tutorialActive) {
-                  alienConfig.enabled = false;
-                  alienConfig.maxOnScreen = 0;
-                }
-                showToast("ALIEN CLEARED");
-                (function() {
-                  var _d = choosePowerupDrop();
-                  if (_d)
-                    spawnPowerup(_d.type, _d.group, al.x, al.y);
-                })();
-              }
-              break;
-            }
+          if (tryResolveAlienKillAfterAccumulatedHits(al, ai3)) {
+            break;
           }
         }
       }
@@ -159175,9 +159215,8 @@
     loadMinerals();
     updateDecoyFunctionAvailability();
     primeFullscreen();
-    var r = canvas.getBoundingClientRect();
-    var centerY = view.hudH + (r.height - view.hudH) * 0.55;
-    player.x = r.width / 2;
+    var centerY = view.hudH + (view.h - view.hudH) * 0.55;
+    player.x = view.w * 0.5;
     player.y = centerY;
     syncHud();
     setTutorialQuestionHidden(false);
