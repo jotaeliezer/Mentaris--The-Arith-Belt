@@ -145784,7 +145784,8 @@
     view.h = h;
     view.hudH = document.getElementById("hud").getBoundingClientRect().height;
     player.x = clamp(player.x || w / 2, player.w / 2 + 10, w - player.w / 2 - 10);
-    player.y = clamp(player.y || h - 58, 80, h - 58);
+    var yMax = introActive || countdownActive ? h + 420 : h - 58;
+    player.y = clamp(player.y || h - 58, 80, yMax);
     if (isSandboxMultiplayer()) {
       positionSandboxPilots();
     }

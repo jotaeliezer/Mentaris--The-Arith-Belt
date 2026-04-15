@@ -3130,7 +3130,10 @@ function resize(){
   view.hudH = document.getElementById("hud").getBoundingClientRect().height;
 
   player.x = clamp(player.x || w/2, player.w/2 + 10, w - player.w/2 - 10);
-  player.y = clamp(player.y || (h - 58), 80, h - 58);
+  // During intro/countdown the ship starts below the playfield; do not clamp it onto the belt
+  // (bootstrap repair and fullscreen call resize() and would otherwise cancel the rise-in).
+  var yMax = (introActive || countdownActive) ? (h + 420) : (h - 58);
+  player.y = clamp(player.y || (h - 58), 80, yMax);
   if(isSandboxMultiplayer()){
     positionSandboxPilots();
   }

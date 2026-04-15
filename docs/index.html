@@ -395,11 +395,11 @@
 
     .briefingCard{
       width:min(920px, 94vw);
-      border:1px solid var(--briefing-border);
+      border:none;
       border-radius:var(--ui-radius-card);
       background: var(--ui-gradient-card);
       padding:20px 22px 18px;
-      box-shadow: var(--ui-shadow-card), var(--ui-inset-fine);
+      box-shadow:none;
       position:relative;
       overflow:hidden;
     }
@@ -413,7 +413,7 @@
       animation: briefingSweep 7.5s ease-in-out infinite;
     }
     .briefingOverlay.ready .briefingCard{
-      animation: briefingReadyPulse 2.2s ease-in-out infinite;
+      animation:none;
     }
     @keyframes briefingSweep{
       0%, 70%{ transform: translateX(-42%); opacity:0; }
@@ -436,11 +436,8 @@
       padding:14px 16px 16px;
       border-radius:var(--ui-radius-control);
       background: var(--ui-gradient-hero);
-      border:1px solid var(--ui-border-accent-strong);
-      box-shadow:
-        0 0 0 1px rgba(0,0,0,.35) inset,
-        0 12px 40px rgba(0,229,255,.12),
-        0 0 28px rgba(0,229,255,.08);
+      border:none;
+      box-shadow:none;
       position:relative;
       overflow:hidden;
     }
@@ -520,7 +517,7 @@
       padding:12px 12px 14px;
       border-radius:var(--ui-radius-control);
       background: var(--ui-surface-tile);
-      box-shadow: var(--ui-inset-tile);
+      box-shadow:none;
       min-width:128px;
     }
     .briefingAssetLabel{
@@ -535,7 +532,7 @@
     }
     .briefingLoadoutTopRow{
       display:grid;
-      grid-template-columns: minmax(200px, 1.35fr) auto auto;
+      grid-template-columns: auto auto minmax(200px, 1.35fr);
       gap:12px;
       align-items:start;
     }
@@ -545,8 +542,10 @@
       padding:12px 14px;
       border-radius:var(--ui-radius-tile);
       background: var(--ui-gradient-meta);
-      box-shadow: var(--ui-inset-meta), var(--ui-shadow-meta);
+      box-shadow:none;
       min-height:0;
+      justify-self:stretch;
+      width:100%;
     }
     .briefingMetaRow{
       display:grid;
@@ -592,7 +591,7 @@
       border: none;
       background: rgba(8,12,22,.55);
       object-fit: cover;
-      box-shadow: inset 0 0 28px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.06);
+      box-shadow: inset 0 0 28px rgba(0,0,0,.4);
     }
     .briefingBeltWrap{
       display:flex;
@@ -613,7 +612,7 @@
       border: none;
       background: rgba(8,12,22,.55);
       object-fit: contain;
-      box-shadow: inset 0 0 28px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.06);
+      box-shadow: inset 0 0 28px rgba(0,0,0,.4);
     }
     .briefingShotWrap{
       display:flex;
@@ -638,7 +637,7 @@
       background: rgba(8,12,22,.55);
       object-fit: contain;
       padding:6px;
-      box-shadow: inset 0 0 28px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.06);
+      box-shadow: inset 0 0 28px rgba(0,0,0,.4);
       flex-shrink:0;
     }
 
@@ -745,20 +744,20 @@
       flex:1 1 0;
       min-width:0;
       max-width:none;
+      display:flex;
+      flex-direction:column;
     }
     .briefingHints{
-      border: 2px solid rgba(255, 210, 120, 0.42);
+      border:none;
       border-radius:10px 10px 14px 10px;
-      padding:18px 22px 20px;
+      padding:20px 22px 24px;
       background: linear-gradient(180deg, rgba(10,16,28,.92), rgba(6,10,18,.88));
-      min-height:120px;
+      flex:1;
+      min-height:220px;
       height:auto;
       max-height:none;
       overflow:auto;
-      box-shadow:
-        inset 0 0 0 1px rgba(255,255,255,.07),
-        0 0 0 2px rgba(0,0,0,.45),
-        0 14px 36px rgba(0,0,0,.5);
+      box-shadow:none;
     }
     .briefingHintActions{
       margin-top:12px;
@@ -3784,6 +3783,14 @@
           </div>
           <div class="briefingColLoadout">
             <div class="briefingLoadoutTopRow">
+              <div class="briefingLoadoutCard briefingBeltWrap">
+                <div class="briefingBeltLabel" id="briefingBelt">--</div>
+                <img class="briefingBeltCard" id="briefingBeltCard" src="images/backgrounds/sector_run_d.png" alt="" />
+              </div>
+              <div class="briefingLoadoutCard briefingShotWrap">
+                <div class="briefingShotLabel" id="briefingShotLabel">--</div>
+                <img class="briefingShotCard" id="briefingShotCard" src="images/bullets/bullet_single.png" alt="" />
+              </div>
               <div class="briefingMissionMeta" aria-label="Mode, difficulty, and flight parameters">
                 <div class="briefingMetaRow">
                   <span class="briefingMetaKey">Mode</span>
@@ -3813,14 +3820,6 @@
                   <span class="briefingMetaKey">Time limit</span>
                   <span class="briefingMetaVal" id="briefingTimer">—</span>
                 </div>
-              </div>
-              <div class="briefingLoadoutCard briefingBeltWrap">
-                <div class="briefingBeltLabel" id="briefingBelt">--</div>
-                <img class="briefingBeltCard" id="briefingBeltCard" src="images/backgrounds/sector_run_d.png" alt="" />
-              </div>
-              <div class="briefingLoadoutCard briefingShotWrap">
-                <div class="briefingShotLabel" id="briefingShotLabel">--</div>
-                <img class="briefingShotCard" id="briefingShotCard" src="images/bullets/bullet_single.png" alt="" />
               </div>
             </div>
           </div>
@@ -8166,7 +8165,7 @@
         { label: "Submode:", value: subLabel },
         { label: "Difficulty:", value: String(cfg.difficulty || "normal").toUpperCase() },
         { label: "Targets:", value: (cfg.targetMode === "off" ? "Endless" : String(cfg.targetMode)) },
-        { label: "Timer:", value: (cfg.timerMode === "off" ? "Endless" : (cfg.timerMode + "s")) },
+        { label: "Timer:", value: (cfg.timerMode === "off" ? "Survival" : (cfg.timerMode + "s")) },
         { label: "Decoys:", value: String(cfg.decoys || 0) },
         { label: "Speed:", value: String(cfg.speed || 0) },
         { label: "Lives:", value: String(cfg.lives || 0) },
