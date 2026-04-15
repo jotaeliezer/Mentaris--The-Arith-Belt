@@ -148648,7 +148648,10 @@
     for (var i = 0; i < asteroids.length; i++) {
       var a = asteroids[i];
       if (a.waveId === wid) {
+        var hideDecoyLabel = !!(a.label != null && !isCurrentWaveCorrectAsteroid(a));
         markRetiredWaveAsteroid(a);
+        if (hideDecoyLabel)
+          a.decoyTextHidden = true;
       }
     }
   }
@@ -148981,7 +148984,13 @@
     introActive = true;
     state.running = false;
     state.paused = false;
-    player.hidden = true;
+    player.hidden = false;
+    countdownTarget.x = view.w * 0.5;
+    countdownTarget.y = view.h - 58;
+    player.x = countdownTarget.x;
+    player.y = view.h + 220;
+    player.vx = 0;
+    player.vy = 0;
     updateCursorVisibility();
     if (introTimer)
       clearTimeout(introTimer);
@@ -152310,7 +152319,11 @@
       return;
     }
     if (!state.running || state.paused || screenshotMode) {
-      if (countdownActive) {
+      if (introActive) {
+        var settleIntro = 1 - Math.exp(-5.2 * dtReal2);
+        player.x += (countdownTarget.x - player.x) * settleIntro;
+        player.y += (countdownTarget.y - player.y) * settleIntro;
+      } else if (countdownActive) {
         var settle = 1 - Math.exp(-6 * dtReal2);
         player.x += (countdownTarget.x - player.x) * settle;
         player.y += (countdownTarget.y - player.y) * settle;
@@ -153311,7 +153324,12 @@
       var a = asteroids[ai];
       if (a.retiredFadeT != null) {
         a.retiredFadeT += dtReal2;
-        if (a.retiredFadeT >= Math.max(0.01, a.retiredFadeDur || PULLDOWN_RETIRED_FADE_DURATION)) {
+        var rfd = Math.max(0.01, a.retiredFadeDur || PULLDOWN_RETIRED_FADE_DURATION);
+        if (a.retiredFadeT < rfd) {
+          var rProg = a.retiredFadeT / rfd;
+          a.y -= (12 + rProg * 72) * dtReal2;
+        }
+        if (a.retiredFadeT >= rfd) {
           asteroids.splice(ai, 1);
           continue;
         }
@@ -154398,9 +154416,6 @@
     drawSlowMoWave();
     drawLightningFlash();
     drawCameraFlash();
-    if (introActive && !state.over) {
-      return;
-    }
     ctx.save();
     ctx.translate(cam.x || 0, cam.y || 0);
     drawTutorialPortal();
@@ -156387,8 +156402,8 @@
     if (a.retiredFadeT != null) {
       var retiredFadeDur = Math.max(0.01, a.retiredFadeDur || PULLDOWN_RETIRED_FADE_DURATION);
       var retiredFadeP = clamp(a.retiredFadeT / retiredFadeDur, 0, 1);
-      shrinkScale *= Math.max(0.012, 1 - Math.pow(retiredFadeP, 1.28));
-      fadeAlpha *= 0.88 + 0.12 * (1 - retiredFadeP);
+      shrinkScale *= Math.max(25e-4, Math.pow(1 - retiredFadeP, 0.42));
+      fadeAlpha *= 0.35 + 0.65 * Math.pow(1 - retiredFadeP, 1.15);
     }
     if (a.effect === "fade" && a.effectDuration) {
       var effFrac = clamp(a.effectTimer / a.effectDuration, 0, 1);
@@ -156526,7 +156541,7 @@
       ctx.strokeRect(barX - 0.5, barY - 0.5, barW + 1, barH + 1);
       ctx.restore();
     }
-    if (a.label !== null) {
+    if (a.label !== null && !a.decoyTextHidden) {
       ctx.save();
       ctx.globalAlpha = fadeAlpha;
       var size = Math.max(10, Math.min(22, a.r * 0.7) * shrinkScale);

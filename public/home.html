@@ -474,6 +474,28 @@
       position:relative;
       z-index:1;
     }
+    .briefingCardHead{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:18px;
+      flex-wrap:wrap;
+    }
+    .briefingHeadMain{
+      flex:1 1 280px;
+      min-width:0;
+    }
+    .briefingHeadActions{
+      flex:0 0 auto;
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:10px;
+      margin-top:2px;
+    }
+    .briefingHeadActions .briefingStatusLaunch{
+      max-width:min(280px, 38vw);
+    }
     .briefingMainPanel{
       margin-top:12px;
       background: transparent;
@@ -513,7 +535,7 @@
     }
     .briefingLoadoutTopRow{
       display:grid;
-      grid-template-columns: auto auto minmax(140px, 1fr);
+      grid-template-columns: minmax(200px, 1.35fr) auto auto;
       gap:12px;
       align-items:start;
     }
@@ -720,8 +742,9 @@
       line-height:1.1;
     }
     .briefingHintBlock{
-      flex:1 1 52%;
-      min-width:min(100%, 420px);
+      flex:1 1 0;
+      min-width:0;
+      max-width:none;
     }
     .briefingHints{
       border: 2px solid rgba(255, 210, 120, 0.42);
@@ -835,6 +858,15 @@
     }
 
     @media (max-width: 900px){
+      .briefingCardHead{ flex-direction:column; align-items:stretch; }
+      .briefingHeadActions{
+        flex-direction:row;
+        flex-wrap:wrap;
+        align-items:center;
+        justify-content:space-between;
+        width:100%;
+      }
+      .briefingHeadActions .briefingStatusLaunch{ max-width:none; flex:1 1 auto; }
       .briefingLoadoutMatrix{ grid-template-columns: 1fr; }
       .briefingColShip{ flex-direction:row; justify-content:center; gap:16px; min-width:0; }
       .briefingLoadoutTopRow{
@@ -846,14 +878,8 @@
       .briefingFooter{ flex-wrap:wrap; }
       .briefingHintBlock{ width:100%; }
       .briefingStatusLaunch{ max-width:100%; justify-content:flex-start; text-align:left; }
-      .briefingTelemetryGrid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .briefingTelemetryCell:nth-child(2n+1){ border-left:none; }
     }
     @media (max-width: 640px){
-      .briefingTelemetryGrid{ grid-template-columns: 1fr 1fr; }
-      .briefingTelemetryCell{ border-left:none; border-top:1px solid rgba(255,255,255,.07); padding-top:12px; }
-      .briefingTelemetryCell:nth-child(1),
-      .briefingTelemetryCell:nth-child(2){ border-top:none; padding-top:8px; }
       .briefingColShip{ flex-direction:column; }
       .briefingShipCard{ width:96px; height:96px; }
       .briefingBeltCard, .briefingShotCard{ width:84px; height:84px; }
@@ -3733,14 +3759,21 @@
 
   <div id="briefingOverlay" class="overlay briefingOverlay briefing-normal">
     <div class="briefingCard">
-      <div class="cardHead" style="border:none; padding:0 0 4px;">
-        <div style="width:100%;">
+      <div class="cardHead briefingCardHead" style="border:none; padding:0 0 4px;">
+        <div class="briefingHeadMain">
           <h2 class="title">Mission Briefing</h2>
           <p class="subtitle">Review your loadout before launch.</p>
           <div class="briefingObjectiveHero">
             <span class="briefingObjectiveHeroEyebrow">Mission objective</span>
             <p class="briefingObjectiveHeroText" id="briefingTargeted">--</p>
           </div>
+        </div>
+        <div class="briefingHeadActions" aria-label="Launch controls">
+          <div class="briefingStatus briefingStatusLaunch" id="briefingStatus">
+            <span class="briefingSpinner" aria-hidden="true"></span>
+            <span id="briefingStatusText">Initializing launch sequence...</span>
+          </div>
+          <button type="button" id="btnBriefingSkip" class="btn briefingLaunchBtn">Launch Mission</button>
         </div>
       </div>
       <div class="panel briefingMainPanel">
@@ -3751,15 +3784,7 @@
           </div>
           <div class="briefingColLoadout">
             <div class="briefingLoadoutTopRow">
-              <div class="briefingLoadoutCard briefingBeltWrap">
-                <div class="briefingBeltLabel" id="briefingBelt">--</div>
-                <img class="briefingBeltCard" id="briefingBeltCard" src="images/backgrounds/sector_run_d.png" alt="" />
-              </div>
-              <div class="briefingLoadoutCard briefingShotWrap">
-                <div class="briefingShotLabel" id="briefingShotLabel">--</div>
-                <img class="briefingShotCard" id="briefingShotCard" src="images/bullets/bullet_single.png" alt="" />
-              </div>
-              <div class="briefingMissionMeta" aria-label="Mode and difficulty">
+              <div class="briefingMissionMeta" aria-label="Mode, difficulty, and flight parameters">
                 <div class="briefingMetaRow">
                   <span class="briefingMetaKey">Mode</span>
                   <span class="briefingMetaVal" id="briefingMode">—</span>
@@ -3776,25 +3801,28 @@
                   <span class="briefingMetaKey">Submode</span>
                   <span class="briefingMetaVal" id="briefingSubmode">—</span>
                 </div>
+                <div class="briefingMetaRow">
+                  <span class="briefingMetaKey">Lives</span>
+                  <span class="briefingMetaVal" id="briefingLives">—</span>
+                </div>
+                <div class="briefingMetaRow">
+                  <span class="briefingMetaKey">Strikes</span>
+                  <span class="briefingMetaVal" id="briefingStrikes">—</span>
+                </div>
+                <div class="briefingMetaRow">
+                  <span class="briefingMetaKey">Time limit</span>
+                  <span class="briefingMetaVal" id="briefingTimer">—</span>
+                </div>
+              </div>
+              <div class="briefingLoadoutCard briefingBeltWrap">
+                <div class="briefingBeltLabel" id="briefingBelt">--</div>
+                <img class="briefingBeltCard" id="briefingBeltCard" src="images/backgrounds/sector_run_d.png" alt="" />
+              </div>
+              <div class="briefingLoadoutCard briefingShotWrap">
+                <div class="briefingShotLabel" id="briefingShotLabel">--</div>
+                <img class="briefingShotCard" id="briefingShotCard" src="images/bullets/bullet_single.png" alt="" />
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-      <div class="briefingTelemetry" aria-label="Mission parameters">
-        <div class="briefingTelemetryHead">Flight parameters</div>
-        <div class="briefingTelemetryGrid">
-          <div class="briefingTelemetryCell">
-            <span class="bt-label">Lives</span>
-            <b id="briefingLives">--</b>
-          </div>
-          <div class="briefingTelemetryCell">
-            <span class="bt-label">Strikes</span>
-            <b id="briefingStrikes">--</b>
-          </div>
-          <div class="briefingTelemetryCell">
-            <span class="bt-label">Time limit</span>
-            <b id="briefingTimer">--</b>
           </div>
         </div>
       </div>
@@ -3808,13 +3836,6 @@
             <div class="briefingHintLabel">Command Directive</div>
             <div class="briefingHintText" id="briefingHintText">--</div>
           </div>
-        </div>
-        <div class="briefingLaunchBlock">
-          <div class="briefingStatus briefingStatusLaunch" id="briefingStatus">
-            <span class="briefingSpinner" aria-hidden="true"></span>
-            <span id="briefingStatusText">Initializing launch sequence...</span>
-          </div>
-          <button id="btnBriefingSkip" class="btn briefingLaunchBtn">Launch Mission</button>
         </div>
       </div>
     </div>
