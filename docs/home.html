@@ -5713,6 +5713,14 @@
         btn.addEventListener("click", function(e){
           e.preventDefault();
           e.stopPropagation();
+          var costClick = parseCost(el);
+          var mineralsClick = getMineralsTotal();
+          if(costClick > 0 && mineralsClick < costClick){
+            playMenuBeep();
+            showToast("NOT ENOUGH MINERALS");
+            return;
+          }
+          if(costClick <= 0) return;
           openPurchaseOverlay(el, type, id);
         });
         el.appendChild(btn);
@@ -5742,7 +5750,6 @@
         if(cost > 0){
           var btn = ensureBuyButton(option, "ship", id);
           btn.classList.remove("hidden");
-          btn.disabled = minerals < cost;
           btn.classList.toggle("disabled", minerals < cost);
         }else{
           var existing = option.querySelector(".buyButton");
@@ -5756,7 +5763,6 @@
         if(cost > 0){
           var btn = ensureBuyButton(option, "shot", id);
           btn.classList.remove("hidden");
-          btn.disabled = minerals < cost;
           btn.classList.toggle("disabled", minerals < cost);
         }else{
           var existing = option.querySelector(".buyButton");
@@ -5771,7 +5777,6 @@
           if(cost > 0){
             var btn = ensureBuyButton(option, "belt", id);
             btn.classList.remove("hidden");
-            btn.disabled = minerals < cost;
             btn.classList.toggle("disabled", minerals < cost);
           }else{
             var existing = option.querySelector(".buyButton");
@@ -6059,6 +6064,20 @@
       if(shipStatThrusters) shipStatThrusters.textContent = details.thrusters;
       updateShipCarousel(value);
     }
+    function focusShipSelection(value){
+      shipOptions.forEach(function(option){
+        option.classList.toggle('selected', option.dataset.ship === value);
+      });
+      var details = shipDetailsMap[value] || shipDetailsMap.mk7;
+      if(shipDetailsName) shipDetailsName.textContent = details.name;
+      if(shipDetailsStyle) shipDetailsStyle.textContent = details.style;
+      if(shipDetailsBody) shipDetailsBody.textContent = details.body;
+      if(shipStatHull) shipStatHull.textContent = details.flight;
+      if(shipStatWings) shipStatWings.textContent = details.wings;
+      if(shipStatGuns) shipStatGuns.textContent = details.special;
+      if(shipStatThrusters) shipStatThrusters.textContent = details.thrusters;
+      updateShipCarousel(value);
+    }
     function syncShotDetails(value){
       var details = shotDetailsMap[value] || shotDetailsMap.single;
       if(shotDetailsName) shotDetailsName.textContent = details.name;
@@ -6172,6 +6191,7 @@
     shipOptions.forEach(function(option){
       option.addEventListener("click", function(){
         if(shipCarouselDrag && shipCarouselDrag.shouldSuppressClick && shipCarouselDrag.shouldSuppressClick()) return;
+        if(option.getAttribute("data-locked") === "true") return;
         syncShipSelection(option.dataset.ship);
       });
     });

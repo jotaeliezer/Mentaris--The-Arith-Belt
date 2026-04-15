@@ -11576,6 +11576,75 @@ function updateGameOverFx(dt){
   }
 }
 
+/**
+ * Primary ammo as shell pips (left = next spent). Large magazines use stride-sized chunks per pip.
+ * @returns {number} pixel height of the pip block
+ */
+function drawPrimaryAmmoPips(ctx, leftX, topY, regionW, ammoCur, ammoStart, compact){
+  ammoCur = Math.max(0, ammoCur | 0);
+  ammoStart = Math.max(1, ammoStart | 0);
+  var maxPips = compact ? 44 : 96;
+  var stride = Math.max(1, Math.ceil(ammoStart / maxPips));
+  var chunks = [];
+  var rem = ammoStart;
+  while(rem > 0){
+    var take = Math.min(stride, rem);
+    chunks.push(take);
+    rem -= take;
+  }
+  var slotCount = chunks.length;
+  var bw = compact ? 2 : 3;
+  var bh = compact ? 5 : 8;
+  var gap = compact ? 2 : 3;
+  var rowGap = compact ? 1 : 2;
+  var perRow = Math.max(1, Math.floor((regionW + gap) / (bw + gap)));
+  var rows = Math.ceil(slotCount / perRow);
+  var maxRows = compact ? 2 : 4;
+  var guard = 0;
+  while(rows > maxRows && guard < 12){
+    guard += 1;
+    perRow = Math.ceil(perRow * 1.22);
+    rows = Math.ceil(slotCount / perRow);
+  }
+  guard = 0;
+  while(rows > maxRows && guard < 16){
+    guard += 1;
+    bw = Math.max(2, bw - 1);
+    bh = Math.max(4, bh - 1);
+    gap = Math.max(1, gap - 1);
+    perRow = Math.max(1, Math.floor((regionW + gap) / (bw + gap)));
+    rows = Math.ceil(slotCount / perRow);
+    if(bw <= 2 && bh <= 4) break;
+  }
+  var blockH = rows * bh + (rows > 0 ? (rows - 1) * rowGap : 0);
+  var warnFew = ammoCur <= Math.max(chunks[chunks.length - 1] || 1, Math.ceil(ammoStart * 0.08));
+  var cum = 0;
+  ctx.save();
+  for(var i = 0; i < slotCount; i++){
+    var row = (i / perRow) | 0;
+    var col = i % perRow;
+    var bx = Math.round(leftX + col * (bw + gap));
+    var by = Math.round(topY + row * (bh + rowGap));
+    cum += chunks[i];
+    var lit = ammoCur > (ammoStart - cum);
+    ctx.globalAlpha = lit ? 1 : 0.24;
+    ctx.fillStyle = lit ? (warnFew ? hudTheme.warnAmmo : hudTheme.accentCyanSoft) : hudTheme.textMuted;
+    ctx.beginPath();
+    var rr = Math.min(bw, bh) * 0.32;
+    if(typeof ctx.roundRect === "function"){
+      ctx.roundRect(bx, by, bw, bh, rr);
+    }else{
+      ctx.rect(bx, by, bw, bh);
+    }
+    ctx.fill();
+    ctx.strokeStyle = lit ? hudTheme.strokePickupIconStrong : hudTheme.strokeMuted;
+    ctx.lineWidth = lit ? 0.9 : 0.55;
+    ctx.stroke();
+  }
+  ctx.restore();
+  return blockH;
+}
+
 // ======= Drawing
 function draw(){
   var w = view.w;
@@ -11973,42 +12042,29 @@ function draw(){
       }
 
       if(pilotForAmmo && !pilotForAmmo.primaryAmmoUnlimited){
-        var ammoBarH = 6;
-        var ammoRowY = barY + (hudBars.length ? hudBars.length * (barH + barGap) + 4 : 4);
+        var ammoRowTop = barY + (hudBars.length ? hudBars.length * (barH + barGap) + 4 : 4);
         if(maxLives > 0 && strikeLimit <= 0){
           var lifeYAmmo = barY + hudBars.length * (barH + barGap) + 6;
-          ammoRowY = lifeYAmmo + 6 + 8;
+          ammoRowTop = lifeYAmmo + 6 + 8;
         }
         if(strikeLimit > 0){
-          var strikeYAmmo = (strikeLabelY != null) ? strikeLabelY : (barY + hudBars.length * (barH + barGap) + 6);
-          ammoRowY = strikeYAmmo + 6 + 8;
+          var strikeYAmmo2 = (strikeLabelY != null) ? strikeLabelY : (barY + hudBars.length * (barH + barGap) + 6);
+          ammoRowTop = strikeYAmmo2 + 6 + 8;
         }
         var ammoCur = pilotForAmmo.primaryAmmo | 0;
         var ammoStart = Math.max(1, pilotForAmmo.primaryAmmoStart | 0);
-        var ammoRatio = clamp(ammoCur / ammoStart, 0, 1);
-        var warnEmpty = ammoCur <= 0;
+        var ammoPipH = drawPrimaryAmmoPips(ctx, barX, ammoRowTop, barW, ammoCur, ammoStart, false);
         ctx.save();
         ctx.fillStyle = labelColor;
         ctx.font = labelStyle;
         ctx.textAlign = "right";
         ctx.textBaseline = "middle";
-        ctx.fillText("AMMO", barX - 8, ammoRowY + ammoBarH / 2);
-        ctx.fillStyle = hudTheme.barTrack;
-        ctx.strokeStyle = hudTheme.strokeMuted;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.roundRect(barX, ammoRowY, barW, ammoBarH, hudTheme.radiusPill);
-        ctx.fill();
-        ctx.stroke();
-        ctx.fillStyle = warnEmpty ? hudTheme.badAmmo : hudTheme.warnAmmo;
-        if(barW * ammoRatio > 0.5){
-          ctx.beginPath();
-          ctx.roundRect(barX, ammoRowY, barW * ammoRatio, ammoBarH, hudTheme.radiusPill);
-          ctx.fill();
-        }
-        ctx.fillStyle = labelColor;
+        ctx.fillText("AMMO", barX - 8, ammoRowTop + ammoPipH * 0.5);
+        ctx.fillStyle = hudTheme.textHudStrong;
+        ctx.font = hudTheme.fontLabelSm;
         ctx.textAlign = "left";
-        ctx.fillText(String(ammoCur), barX + barW + 8, ammoRowY + ammoBarH / 2);
+        ctx.textBaseline = "middle";
+        ctx.fillText(String(ammoCur), barX + barW + 6, ammoRowTop + ammoPipH * 0.5);
         ctx.restore();
       }
     }
@@ -12103,8 +12159,8 @@ function draw(){
     }
     function drawBottomRightAmmoReadout(pilotHud, rightEdge, bottomEdge){
       if(!pilotHud) return;
-      var panelW = 128;
-      var panelH = 30;
+      var panelW = 132;
+      var panelH = 38;
       var x0 = rightEdge - panelW;
       var y0 = bottomEdge - panelH;
       var mode = pilotHud.blasterMode || "single";
@@ -12122,7 +12178,7 @@ function draw(){
       ctx.font = "600 11px Oxanium, sans-serif";
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
-      ctx.fillText("AMMO · " + tag, x0 + 8, y0 + 5);
+      ctx.fillText("AMMO · " + tag, x0 + 8, y0 + 4);
       if(pilotHud.primaryAmmoUnlimited){
         ctx.font = "700 14px Oxanium, sans-serif";
         ctx.textAlign = "right";
@@ -12130,27 +12186,16 @@ function draw(){
         ctx.fillStyle = hudTheme.accentCyan;
         ctx.fillText("\u221e", x0 + panelW - 8, y0 + panelH - 5);
       }else{
-        var ammoCur = pilotHud.primaryAmmo | 0;
-        var ammoStart = Math.max(1, pilotHud.primaryAmmoStart | 0);
-        var ammoRatio = clamp(ammoCur / ammoStart, 0, 1);
-        var barY = y0 + 20;
-        var barW = panelW - 16;
-        var barH = 5;
-        ctx.fillStyle = hudTheme.surfaceDark;
-        ctx.beginPath();
-        ctx.roundRect(x0 + 8, barY, barW, barH, hudTheme.radiusPill);
-        ctx.fill();
-        ctx.fillStyle = ammoCur <= 0 ? hudTheme.badAmmo : hudTheme.warnAmmo;
-        if(barW * ammoRatio > 0.25){
-          ctx.beginPath();
-          ctx.roundRect(x0 + 8, barY, barW * ammoRatio, barH, hudTheme.radiusPill);
-          ctx.fill();
-        }
+        var ammoCurBr = pilotHud.primaryAmmo | 0;
+        var ammoStartBr = Math.max(1, pilotHud.primaryAmmoStart | 0);
+        var pipW = panelW - 16;
+        var pipTop = y0 + 19;
+        drawPrimaryAmmoPips(ctx, x0 + 8, pipTop, pipW, ammoCurBr, ammoStartBr, true);
         ctx.fillStyle = hudTheme.textHudStrong;
         ctx.font = "600 10px Oxanium, sans-serif";
         ctx.textAlign = "right";
         ctx.textBaseline = "bottom";
-        ctx.fillText(String(ammoCur) + "/" + String(ammoStart), x0 + panelW - 8, y0 + panelH - 4);
+        ctx.fillText(String(ammoCurBr) + "/" + String(ammoStartBr), x0 + panelW - 8, y0 + panelH - 3);
       }
       ctx.restore();
     }
