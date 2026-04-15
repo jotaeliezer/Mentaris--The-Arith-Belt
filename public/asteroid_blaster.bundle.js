@@ -150534,8 +150534,9 @@
     if (!trimmed)
       return;
     var stats = loadLifetimeStats();
-    if (!stats || !stats.highScores)
+    if (!stats)
       return;
+    stats.highScores = stats.highScores || [];
     var entryKey = "";
     for (var i = 0; i < stats.highScores.length; i++) {
       if (stats.highScores[i].id === state.lastSessionId) {
