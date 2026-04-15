@@ -7,4 +7,6 @@ dist/**
 *.msi
 *.log
 .env
+public/supabase_config.js
+docs/supabase_config.js
 /mentaris/

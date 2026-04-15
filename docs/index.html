@@ -42,11 +42,11 @@
     }
 
     .heroPanel{
-      background: linear-gradient(140deg, rgba(10,14,28,.85), rgba(6,8,22,.7));
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:28px;
+      background: var(--ui-gradient-card);
+      border:1px solid var(--ui-border-accent);
+      border-radius:var(--ui-radius-panel);
       padding:28px 32px;
-      box-shadow: 0 30px 80px rgba(0,0,0,.6);
+      box-shadow: var(--ui-shadow-card), var(--ui-inset-fine);
       backdrop-filter: blur(10px);
       position:relative;
       overflow:hidden;
@@ -103,8 +103,9 @@
       gap:8px;
       padding:6px 12px;
       border-radius:999px;
-      border:1px solid rgba(255,255,255,.18);
-      background: rgba(0,0,0,.25);
+      border:1px solid var(--ui-border-accent);
+      background: var(--ui-surface-tile-dim);
+      box-shadow: var(--ui-inset-tile-soft);
       letter-spacing:2px;
       font-size:11px;
       text-transform:uppercase;
@@ -361,11 +362,11 @@
     }
 
     .briefingOverlay{
-      --briefing-border: rgba(0, 210, 255, .26);
-      --briefing-glow: rgba(0, 195, 255, .2);
-      --briefing-accent: rgba(0, 215, 255, .92);
-      --briefing-surface: rgba(8, 12, 24, .82);
-      background: radial-gradient(1200px 620px at 50% 40%, rgba(0,229,255,.16), rgba(6,8,22,.98));
+      --briefing-border: var(--ui-border-accent);
+      --briefing-glow: var(--ui-glow);
+      --briefing-accent: var(--ui-accent-cyan);
+      --briefing-surface: var(--ui-surface-deep);
+      background: var(--ui-overlay-scrim);
       backdrop-filter: none;
     }
     .briefingOverlay.briefing-easy{
@@ -374,9 +375,9 @@
       --briefing-accent: rgba(120, 255, 170, .92);
     }
     .briefingOverlay.briefing-normal{
-      --briefing-border: rgba(0, 210, 255, .3);
-      --briefing-glow: rgba(0, 195, 255, .22);
-      --briefing-accent: rgba(110, 228, 255, .94);
+      --briefing-border: var(--ui-border-accent-strong);
+      --briefing-glow: var(--ui-glow);
+      --briefing-accent: var(--ui-accent-cyan-soft);
     }
     .briefingOverlay.briefing-hard{
       --briefing-border: rgba(255, 155, 80, .34);
@@ -395,10 +396,10 @@
     .briefingCard{
       width:min(920px, 94vw);
       border:1px solid var(--briefing-border);
-      border-radius:26px;
-      background: linear-gradient(160deg, rgba(12,16,32,.95), rgba(6,8,20,.9));
+      border-radius:var(--ui-radius-card);
+      background: var(--ui-gradient-card);
       padding:20px 22px 18px;
-      box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.03) inset;
+      box-shadow: var(--ui-shadow-card), var(--ui-inset-fine);
       position:relative;
       overflow:hidden;
     }
@@ -420,8 +421,8 @@
       100%{ transform: translateX(42%); opacity:0; }
     }
     @keyframes briefingReadyPulse{
-      0%, 100%{ box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.03) inset; }
-      50%{ box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05) inset, 0 0 26px var(--briefing-glow); }
+      0%, 100%{ box-shadow: var(--ui-shadow-card), var(--ui-inset-fine); }
+      50%{ box-shadow: var(--ui-shadow-card), inset 0 0 0 1px rgba(255,255,255,.05), 0 0 26px var(--briefing-glow); }
     }
     .briefingStatusRow{
       display:flex;
@@ -433,9 +434,9 @@
     .briefingObjectiveHero{
       margin-top:14px;
       padding:14px 16px 16px;
-      border-radius:16px;
-      background: linear-gradient(135deg, rgba(0,229,255,.12), rgba(8,14,28,.75) 55%, rgba(0,0,0,.35));
-      border:1px solid rgba(0,229,255,.35);
+      border-radius:var(--ui-radius-control);
+      background: var(--ui-gradient-hero);
+      border:1px solid var(--ui-border-accent-strong);
       box-shadow:
         0 0 0 1px rgba(0,0,0,.35) inset,
         0 12px 40px rgba(0,229,255,.12),
@@ -457,7 +458,7 @@
       font-size:9px;
       letter-spacing:2.6px;
       text-transform:uppercase;
-      color:rgba(255,221,120,.95);
+      color:var(--ui-eyebrow-warn);
       margin-bottom:8px;
       position:relative;
       z-index:1;
@@ -495,16 +496,16 @@
       align-items:center;
       gap:8px;
       padding:12px 12px 14px;
-      border-radius:16px;
-      background: rgba(8, 12, 24, .55);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.06);
+      border-radius:var(--ui-radius-control);
+      background: var(--ui-surface-tile);
+      box-shadow: var(--ui-inset-tile);
       min-width:128px;
     }
     .briefingAssetLabel{
       font-size:10px;
       letter-spacing:1.6px;
       text-transform:uppercase;
-      color:rgba(232,236,255,.88);
+      color:var(--ui-text-label-strong);
       text-align:center;
       max-width:140px;
       line-height:1.25;
@@ -520,9 +521,9 @@
       display:grid;
       gap:8px 12px;
       padding:12px 14px;
-      border-radius:14px;
-      background: linear-gradient(165deg, rgba(0,229,255,.06), rgba(6,10,20,.5));
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.07), 0 8px 24px rgba(0,0,0,.25);
+      border-radius:var(--ui-radius-tile);
+      background: var(--ui-gradient-meta);
+      box-shadow: var(--ui-inset-meta), var(--ui-shadow-meta);
       min-height:0;
     }
     .briefingMetaRow{
@@ -541,7 +542,7 @@
       font-size:8px;
       letter-spacing:1.6px;
       text-transform:uppercase;
-      color:rgba(232,236,255,.45);
+      color:var(--ui-text-label);
     }
     .briefingMetaVal{
       font-size:12px;
@@ -557,10 +558,10 @@
     }
     .briefingLoadoutCard{
       border: none;
-      border-radius:14px;
-      background: rgba(8, 12, 24, .5);
+      border-radius:var(--ui-radius-tile);
+      background: var(--ui-surface-tile-dim);
       padding:8px;
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,.05);
+      box-shadow: var(--ui-inset-tile-soft);
     }
     .briefingBeltCard{
       width:148px;
@@ -1823,7 +1824,7 @@
 
     #campaignOverlay.overlay,
     #campaignConfirmOverlay.overlay{
-      background: rgba(6,9,16,.96);
+      background: var(--ui-overlay-scrim);
       backdrop-filter: none;
     }
 
@@ -1862,10 +1863,10 @@
     #sandboxLaunchOverlay .sandboxLaunchForm input{
       width:100%;
       padding:10px 12px;
-      border-radius:10px;
-      border:1px solid rgba(255,255,255,.2);
-      background:rgba(0,0,0,.28);
-      color:#e8ecff;
+      border-radius:var(--ui-radius-pill);
+      border:1px solid var(--ui-border-accent);
+      background:var(--ui-surface-inset);
+      color:var(--text);
       font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
       font-size:13px;
     }
@@ -1958,10 +1959,10 @@
     .settingsAccessForm input{
       width:100%;
       padding:10px 12px;
-      border-radius:10px;
-      border:1px solid rgba(255,255,255,.2);
-      background:rgba(0,0,0,.28);
-      color:#e8ecff;
+      border-radius:var(--ui-radius-pill);
+      border:1px solid var(--ui-border-accent);
+      background:var(--ui-surface-inset);
+      color:var(--text);
       font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
       font-size:12px;
     }
@@ -3307,11 +3308,13 @@
             <li><span>Mousepad</span><b>B</b></li>
             <li><span>Restart</span><b>R</b></li>
             <li><span>Menu</span><b>M</b></li>
+            <li><span>Missile module</span><b>V</b> <span class="monoSmall" style="font-weight:400;">(when unlocked; overrides menu shot until toggled off)</span></li>
           </ul>
         </div>
         <div class="panel">
           <h3>Tips</h3>
           <p class="monoSmall" style="margin:0;">Use secondary powerups to control the field when the screen gets crowded.</p>
+          <p class="monoSmall" style="margin:0.6em 0 0;">Your pre-launch <b>shot type</b> is the default primary. Press <b>V</b> to arm the missile module (answer prompt) or return to the menu primary. Ammo shows at the bottom right during flight.</p>
         </div>
       </div>
     </div>
@@ -3442,7 +3445,7 @@
                 <div class="kbd">SECONDARY: <b>E</b></div>
                 <div class="kbd">SPECIAL: <b>Q</b></div>
                 <div class="kbd">DASH: <b>SHIFT</b></div>
-                <div class="kbd">PAUSE: <b>P</b> <b>|</b> MENU: <b>M</b></div>
+                <div class="kbd">PAUSE: <b>P</b> <b>|</b> MENU: <b>M</b> <b>|</b> MISSILE MODULE: <b>V</b></div>
               </div>
             <label class="toggleRow">
               <span>Auto-enable Mousepad (B) on mission start</span>
@@ -3685,6 +3688,15 @@
               </label>
               <button id="lbClearFilters" class="btn btnTiny" type="button" style="align-self:flex-end;">Clear Filters</button>
             </div>
+            <div class="filterRow" id="lbSourceRow" style="display:none;">
+              <label>Data
+                <select id="lbDataSource">
+                  <option value="local">This device</option>
+                  <option value="galactic">Galactic (cloud)</option>
+                </select>
+              </label>
+              <span class="monoSmall" id="lbGalacticHint" style="display:none;color:var(--muted);max-width:min(520px,90vw);">Cloud rows: Operation, Mode, and Difficulty filters apply; Submode and Timer do not.</span>
+            </div>
           </div>
           <div class="leaderboardsTableWrap">
             <div class="leaderboardsLoading" id="leaderboardsLoading" aria-live="polite">
@@ -3901,6 +3913,8 @@
   </div>
 
   <div id="toast"></div>
+  <script src="supabase_config.js"></script>
+  <script src="mentaris_supabase.bundle.js"></script>
   <script>
     function persistSessionConfig(key, data) {
       try { sessionStorage.setItem(key, JSON.stringify(data)); } catch (err) { console.warn("Persist failed", err); }
@@ -8657,8 +8671,10 @@
     }
 
     var lbRenderTimer = null;
+    var galacticLeaderboardCache = null;
     function renderHomeStats(){
       var tableBody = document.getElementById("homeLeaderboardsBody");
+      if(!tableBody) return;
       var filterOperation = document.getElementById("lbFilterOperation");
       var filterMode = document.getElementById("lbFilterMode");
       var filterSubmode = document.getElementById("lbFilterSubmode");
@@ -8671,7 +8687,6 @@
         var wrap = loadingEl.parentElement;
         if(wrap) wrap.classList.toggle("loading", Boolean(on));
       }
-      if(!tableBody) return;
       function getLetterRank(acc){
         if(acc >= 0.9) return "S";
         if(acc >= 0.8) return "A";
@@ -8729,6 +8744,56 @@
           submode = isAdd ? (sub + "x" + sub) : ("1x" + sub);
         }
         return { operation: operation, mode: mode, submode: submode };
+      }
+
+      function cloudRowToEntry(row){
+        var modeKey = row.question_mode || "classic";
+        var info = describeMode(modeKey);
+        return {
+          id: row.id,
+          name: row.player_name || "",
+          score: parseInt(row.score, 10) || 0,
+          level: 0,
+          rank: "",
+          operation: row.operation || info.operation,
+          modeLabel: info.mode,
+          submode: info.submode,
+          difficulty: String(row.difficulty || "").toUpperCase(),
+          timerMode: "Endless",
+          duration: 0,
+          date: row.created_at ? Date.parse(row.created_at) : 0,
+          _galactic: true
+        };
+      }
+
+      var lbSourceRow = document.getElementById("lbSourceRow");
+      var lbDataSource = document.getElementById("lbDataSource");
+      var lbGalacticHint = document.getElementById("lbGalacticHint");
+      var supabaseApi = window.MentarisSupabaseScores;
+      var supabaseReady = !!(supabaseApi && typeof supabaseApi.isSupabaseScoresConfigured === "function" && supabaseApi.isSupabaseScoresConfigured());
+      if(lbSourceRow) lbSourceRow.style.display = supabaseReady ? "" : "none";
+      if(lbGalacticHint) lbGalacticHint.style.display = (supabaseReady && lbDataSource && lbDataSource.value === "galactic") ? "" : "none";
+      if(lbDataSource && supabaseReady && !lbDataSource.dataset.boundGalactic){
+        lbDataSource.dataset.boundGalactic = "1";
+        lbDataSource.addEventListener("change", function(){
+          if(lbGalacticHint) lbGalacticHint.style.display = lbDataSource.value === "galactic" ? "" : "none";
+          if(lbDataSource.value === "galactic"){
+            setLoading(true);
+            supabaseApi.fetchLeaderboard(200).then(function(res){
+              setLoading(false);
+              if(res && res.success){
+                galacticLeaderboardCache = (res.data || []).map(cloudRowToEntry);
+              }else{
+                galacticLeaderboardCache = [];
+                console.warn("[galactic scores]", res && res.error);
+              }
+              renderHomeStats();
+            });
+            return;
+          }
+          galacticLeaderboardCache = null;
+          renderHomeStats();
+        });
       }
 
       function formatDurationLocal(sec){
@@ -8806,7 +8871,9 @@
       }
 
       var entries = [];
-      if(stats && Array.isArray(stats.allScores) && stats.allScores.length){
+      if(lbDataSource && lbDataSource.value === "galactic" && Array.isArray(galacticLeaderboardCache)){
+        entries = galacticLeaderboardCache.slice();
+      }else if(stats && Array.isArray(stats.allScores) && stats.allScores.length){
         entries = stats.allScores.slice();
       }else if(stats && Array.isArray(stats.highScores) && stats.highScores.length){
         entries = stats.highScores.slice();
@@ -8885,9 +8952,10 @@
         var timerVal = filterTimer ? filterTimer.value : "All";
         var filtered = entries.filter(function(e){
           if(opVal !== "All" && e.operation !== opVal) return false;
-          if(modeVal !== "All" && e.modeLabel !== modeVal) return false;
-          if(subVal !== "All" && e.submode !== subVal) return false;
           if(diffVal !== "All" && String(e.difficulty || "").toUpperCase() !== diffVal) return false;
+          if(modeVal !== "All" && e.modeLabel !== modeVal) return false;
+          if(e._galactic) return true;
+          if(subVal !== "All" && e.submode !== subVal) return false;
           if(timerVal !== "All" && normalizeTimer(e.timerMode) !== timerVal) return false;
           return true;
         });
@@ -8904,21 +8972,23 @@
         }
         for(var i=0;i<filtered.length;i++){
           var item = filtered[i];
-          var rank = item.rank || (item.accuracy != null ? getLetterRank(item.accuracy) : "");
-          rank = String(rank || "").trim().toUpperCase();
-          if(["S","A","B","C","D","E"].indexOf(rank) === -1){
-            rank = "E";
+          var rank = item._galactic ? "\u2014" : (item.rank || (item.accuracy != null ? getLetterRank(item.accuracy) : ""));
+          if(!item._galactic){
+            rank = String(rank || "").trim().toUpperCase();
+            if(["S","A","B","C","D","E"].indexOf(rank) === -1){
+              rank = "E";
+            }
           }
           var completed = item.date ? new Date(item.date).toLocaleString() : "?";
-          var duration = item.duration ? formatDurationLocal(item.duration) : (item.session_seconds ? formatDurationLocal(item.session_seconds) : "?");
-          var timerText = normalizeTimer(item.timerMode);
+          var duration = item._galactic ? "\u2014" : (item.duration ? formatDurationLocal(item.duration) : (item.session_seconds ? formatDurationLocal(item.session_seconds) : "?"));
+          var timerText = item._galactic ? "\u2014" : normalizeTimer(item.timerMode);
           var tr = document.createElement("tr");
-          tr.className = "lb-rank-grade lb-grade-" + rank.toLowerCase();
+          tr.className = item._galactic ? "lb-rank-grade lb-grade-e" : ("lb-rank-grade lb-grade-" + String(rank).toLowerCase());
           tr.innerHTML = '<td>#' + (i+1) + '</td>' +
             '<td>' + (item.name || '?') + '</td>' +
             '<td>' + (item.score || 0) + '</td>' +
             '<td>' + (rank || '?') + '</td>' +
-            '<td>' + (item.level || 0) + '</td>' +
+            '<td>' + (item._galactic ? "\u2014" : (item.level || 0)) + '</td>' +
             '<td>' + duration + '</td>' +
             '<td>' + timerText + '</td>' +
             '<td>' + completed + '</td>';

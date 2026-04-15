@@ -4,25 +4,38 @@ const esbuild = require("esbuild");
 
 const watch = process.argv.includes("--watch");
 
-const config = {
-  entryPoints: ["src/js/core/game.js"],
+const base = {
   bundle: true,
   sourcemap: true,
   minify: false,
-  outfile: "public/asteroid_blaster.bundle.js",
   target: "es2017",
   format: "iife"
 };
 
+const targets = [
+  Object.assign({ entryPoints: ["src/js/core/game.js"], outfile: "public/asteroid_blaster.bundle.js" }, base),
+  Object.assign({ entryPoints: ["src/js/entry/mentaris_supabase.js"], outfile: "public/mentaris_supabase.bundle.js" }, base)
+];
+
+async function runBuild(){
+  for(var i = 0; i < targets.length; i++){
+    await esbuild.build(targets[i]);
+  }
+}
+
 if(watch){
-  esbuild.context(config).then((ctx) => ctx.watch()).then(() => {
-    console.log("Watching for changes...");
-  }).catch((err) => {
+  Promise.all(targets.map(function(t){
+    return esbuild.context(t);
+  })).then(function(ctxs){
+    return Promise.all(ctxs.map(function(c){ return c.watch(); }));
+  }).then(function(){
+    console.log("Watching for changes (game + supabase)...");
+  }).catch(function(err){
     console.error(err);
     process.exit(1);
   });
-} else {
-  esbuild.build(config).catch((err) => {
+}else{
+  runBuild().catch(function(err){
     console.error(err);
     process.exit(1);
   });

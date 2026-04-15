@@ -3688,6 +3688,15 @@
               </label>
               <button id="lbClearFilters" class="btn btnTiny" type="button" style="align-self:flex-end;">Clear Filters</button>
             </div>
+            <div class="filterRow" id="lbSourceRow" style="display:none;">
+              <label>Data
+                <select id="lbDataSource">
+                  <option value="local">This device</option>
+                  <option value="galactic">Galactic (cloud)</option>
+                </select>
+              </label>
+              <span class="monoSmall" id="lbGalacticHint" style="display:none;color:var(--muted);max-width:min(520px,90vw);">Cloud rows: Operation, Mode, and Difficulty filters apply; Submode and Timer do not.</span>
+            </div>
           </div>
           <div class="leaderboardsTableWrap">
             <div class="leaderboardsLoading" id="leaderboardsLoading" aria-live="polite">
@@ -3904,6 +3913,8 @@
   </div>
 
   <div id="toast"></div>
+  <script src="supabase_config.js"></script>
+  <script src="mentaris_supabase.bundle.js"></script>
   <script>
     function persistSessionConfig(key, data) {
       try { sessionStorage.setItem(key, JSON.stringify(data)); } catch (err) { console.warn("Persist failed", err); }
@@ -8660,8 +8671,10 @@
     }
 
     var lbRenderTimer = null;
+    var galacticLeaderboardCache = null;
     function renderHomeStats(){
       var tableBody = document.getElementById("homeLeaderboardsBody");
+      if(!tableBody) return;
       var filterOperation = document.getElementById("lbFilterOperation");
       var filterMode = document.getElementById("lbFilterMode");
       var filterSubmode = document.getElementById("lbFilterSubmode");
@@ -8674,7 +8687,6 @@
         var wrap = loadingEl.parentElement;
         if(wrap) wrap.classList.toggle("loading", Boolean(on));
       }
-      if(!tableBody) return;
       function getLetterRank(acc){
         if(acc >= 0.9) return "S";
         if(acc >= 0.8) return "A";
@@ -8732,6 +8744,56 @@
           submode = isAdd ? (sub + "x" + sub) : ("1x" + sub);
         }
         return { operation: operation, mode: mode, submode: submode };
+      }
+
+      function cloudRowToEntry(row){
+        var modeKey = row.question_mode || "classic";
+        var info = describeMode(modeKey);
+        return {
+          id: row.id,
+          name: row.player_name || "",
+          score: parseInt(row.score, 10) || 0,
+          level: 0,
+          rank: "",
+          operation: row.operation || info.operation,
+          modeLabel: info.mode,
+          submode: info.submode,
+          difficulty: String(row.difficulty || "").toUpperCase(),
+          timerMode: "Endless",
+          duration: 0,
+          date: row.created_at ? Date.parse(row.created_at) : 0,
+          _galactic: true
+        };
+      }
+
+      var lbSourceRow = document.getElementById("lbSourceRow");
+      var lbDataSource = document.getElementById("lbDataSource");
+      var lbGalacticHint = document.getElementById("lbGalacticHint");
+      var supabaseApi = window.MentarisSupabaseScores;
+      var supabaseReady = !!(supabaseApi && typeof supabaseApi.isSupabaseScoresConfigured === "function" && supabaseApi.isSupabaseScoresConfigured());
+      if(lbSourceRow) lbSourceRow.style.display = supabaseReady ? "" : "none";
+      if(lbGalacticHint) lbGalacticHint.style.display = (supabaseReady && lbDataSource && lbDataSource.value === "galactic") ? "" : "none";
+      if(lbDataSource && supabaseReady && !lbDataSource.dataset.boundGalactic){
+        lbDataSource.dataset.boundGalactic = "1";
+        lbDataSource.addEventListener("change", function(){
+          if(lbGalacticHint) lbGalacticHint.style.display = lbDataSource.value === "galactic" ? "" : "none";
+          if(lbDataSource.value === "galactic"){
+            setLoading(true);
+            supabaseApi.fetchLeaderboard(200).then(function(res){
+              setLoading(false);
+              if(res && res.success){
+                galacticLeaderboardCache = (res.data || []).map(cloudRowToEntry);
+              }else{
+                galacticLeaderboardCache = [];
+                console.warn("[galactic scores]", res && res.error);
+              }
+              renderHomeStats();
+            });
+            return;
+          }
+          galacticLeaderboardCache = null;
+          renderHomeStats();
+        });
       }
 
       function formatDurationLocal(sec){
@@ -8809,7 +8871,9 @@
       }
 
       var entries = [];
-      if(stats && Array.isArray(stats.allScores) && stats.allScores.length){
+      if(lbDataSource && lbDataSource.value === "galactic" && Array.isArray(galacticLeaderboardCache)){
+        entries = galacticLeaderboardCache.slice();
+      }else if(stats && Array.isArray(stats.allScores) && stats.allScores.length){
         entries = stats.allScores.slice();
       }else if(stats && Array.isArray(stats.highScores) && stats.highScores.length){
         entries = stats.highScores.slice();
@@ -8888,9 +8952,10 @@
         var timerVal = filterTimer ? filterTimer.value : "All";
         var filtered = entries.filter(function(e){
           if(opVal !== "All" && e.operation !== opVal) return false;
-          if(modeVal !== "All" && e.modeLabel !== modeVal) return false;
-          if(subVal !== "All" && e.submode !== subVal) return false;
           if(diffVal !== "All" && String(e.difficulty || "").toUpperCase() !== diffVal) return false;
+          if(modeVal !== "All" && e.modeLabel !== modeVal) return false;
+          if(e._galactic) return true;
+          if(subVal !== "All" && e.submode !== subVal) return false;
           if(timerVal !== "All" && normalizeTimer(e.timerMode) !== timerVal) return false;
           return true;
         });
@@ -8907,21 +8972,23 @@
         }
         for(var i=0;i<filtered.length;i++){
           var item = filtered[i];
-          var rank = item.rank || (item.accuracy != null ? getLetterRank(item.accuracy) : "");
-          rank = String(rank || "").trim().toUpperCase();
-          if(["S","A","B","C","D","E"].indexOf(rank) === -1){
-            rank = "E";
+          var rank = item._galactic ? "\u2014" : (item.rank || (item.accuracy != null ? getLetterRank(item.accuracy) : ""));
+          if(!item._galactic){
+            rank = String(rank || "").trim().toUpperCase();
+            if(["S","A","B","C","D","E"].indexOf(rank) === -1){
+              rank = "E";
+            }
           }
           var completed = item.date ? new Date(item.date).toLocaleString() : "?";
-          var duration = item.duration ? formatDurationLocal(item.duration) : (item.session_seconds ? formatDurationLocal(item.session_seconds) : "?");
-          var timerText = normalizeTimer(item.timerMode);
+          var duration = item._galactic ? "\u2014" : (item.duration ? formatDurationLocal(item.duration) : (item.session_seconds ? formatDurationLocal(item.session_seconds) : "?"));
+          var timerText = item._galactic ? "\u2014" : normalizeTimer(item.timerMode);
           var tr = document.createElement("tr");
-          tr.className = "lb-rank-grade lb-grade-" + rank.toLowerCase();
+          tr.className = item._galactic ? "lb-rank-grade lb-grade-e" : ("lb-rank-grade lb-grade-" + String(rank).toLowerCase());
           tr.innerHTML = '<td>#' + (i+1) + '</td>' +
             '<td>' + (item.name || '?') + '</td>' +
             '<td>' + (item.score || 0) + '</td>' +
             '<td>' + (rank || '?') + '</td>' +
-            '<td>' + (item.level || 0) + '</td>' +
+            '<td>' + (item._galactic ? "\u2014" : (item.level || 0)) + '</td>' +
             '<td>' + duration + '</td>' +
             '<td>' + timerText + '</td>' +
             '<td>' + completed + '</td>';

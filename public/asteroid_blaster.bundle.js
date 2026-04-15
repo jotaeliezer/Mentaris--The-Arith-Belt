@@ -142625,6 +142625,113 @@
     return ".sandboxPanel{position:fixed;top:90px;left:16px;z-index:45;width:min(460px,calc(100vw - 32px));max-height:calc(100vh - 112px);overflow:auto;background:" + shell + ";border:1px solid " + border + ";border-radius:16px;padding:12px 14px;box-shadow:0 24px 60px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.04);}.sandboxPanel .sandboxHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}.sandboxPanel h4{margin:0;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.82);}.sandboxPanel .sandboxToggle{border:1px solid " + line + ";background:" + btn + ";color:#e8ecff;border-radius:10px;padding:4px 8px;font-size:10px;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;}.sandboxPanel.collapsed .sandboxBody{display:none;}.sandboxPanel .sandboxSectionTools{display:flex;gap:8px;margin-bottom:8px;}.sandboxPanel .sandboxSectionTools .sandboxToggle{flex:1;}.sandboxPanel .sandboxGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}.sandboxPanel .sandboxGroup{margin:0;border:1px solid " + border + ";background:" + group + ";border-radius:12px;padding:8px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);}.sandboxPanel .sandboxGroupHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}.sandboxPanel .sandboxGroupTitle{font-size:11px;letter-spacing:1.1px;text-transform:uppercase;color:rgba(232,236,255,.78);}.sandboxPanel .sandboxGroupToggle{border:1px solid " + line + ";background:" + btn + ";color:#e8ecff;border-radius:8px;padding:2px 6px;font-size:10px;cursor:pointer;}.sandboxPanel .sandboxGroup.collapsed .sandboxGroupBody{display:none;}.sandboxPanel .sandboxButtons{display:flex;flex-wrap:wrap;gap:6px;}.sandboxPanel .sandboxBtn{border:1px solid " + line + ";background:" + btn + ";color:#e8ecff;border-radius:10px;padding:6px 8px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;}.sandboxPanel .sandboxBtn.active{border-color:" + accent + ";box-shadow:0 0 0 1px rgba(0,229,255,.22) inset;}.sandboxPanel .sandboxBtn:hover{transform:translateY(-1px);border-color:" + accent + ";box-shadow:0 8px 18px rgba(0,0,0,.28);}.sandboxPanel .sandboxNote{font-size:11px;color:rgba(232,236,255,.55);margin:6px 0 4px;}@media (max-width: 960px){.sandboxPanel{top:78px;left:10px;width:min(420px,calc(100vw - 20px));max-height:calc(100vh - 96px);}.sandboxPanel .sandboxGrid{grid-template-columns:1fr;}}";
   }
 
+  // src/js/core/supabase_scores.js
+  var CONFIG_GLOBAL = "__MENTARIS_SUPABASE__";
+  var DEFAULT_TABLE = "scores";
+  var FETCH_TIMEOUT_MS = 12e3;
+  var MAX_NAME_LEN = 40;
+  var MAX_STR_FIELD = 64;
+  var MAX_SCORE = 2e9;
+  function readRuntimeConfig() {
+    var g = typeof globalThis !== "undefined" ? globalThis : {};
+    var cfg = g[CONFIG_GLOBAL];
+    if (!cfg || typeof cfg !== "object")
+      return null;
+    var url = String(cfg.url || cfg.supabaseUrl || "").trim().replace(/\/+$/, "");
+    var anonKey = String(cfg.anonKey || cfg.key || "").trim();
+    var table = String(cfg.table || DEFAULT_TABLE).trim() || DEFAULT_TABLE;
+    if (!url || !anonKey)
+      return null;
+    return { url, anonKey, table };
+  }
+  function isSupabaseScoresConfigured() {
+    return !!readRuntimeConfig();
+  }
+  function clampScore(n) {
+    var x = Math.floor(Number(n));
+    if (!Number.isFinite(x))
+      return 0;
+    return Math.max(0, Math.min(MAX_SCORE, x));
+  }
+  function sanitizeField(s, maxLen) {
+    return String(s == null ? "" : s).trim().slice(0, maxLen);
+  }
+  function supabaseRestHeaders(cfg, extra) {
+    var h = Object.assign({
+      apikey: cfg.anonKey,
+      Authorization: "Bearer " + cfg.anonKey,
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    }, extra || {});
+    return h;
+  }
+  async function readErrorBody(res) {
+    var text = "";
+    try {
+      text = await res.text();
+    } catch (e) {
+      return res.statusText || "Request failed";
+    }
+    if (!text)
+      return res.statusText || "HTTP " + res.status;
+    try {
+      var j = JSON.parse(text);
+      if (j && typeof j.message === "string")
+        return j.message;
+      if (Array.isArray(j) && j[0] && typeof j[0].message === "string")
+        return j[0].message;
+    } catch (e) {
+    }
+    return text.slice(0, 200);
+  }
+  function fetchWithTimeout(url, options, timeoutMs) {
+    var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    var ms = timeoutMs || FETCH_TIMEOUT_MS;
+    var t = setTimeout(function() {
+      if (ctrl)
+        try {
+          ctrl.abort();
+        } catch (e) {
+        }
+    }, ms);
+    var opts = Object.assign({}, options || {});
+    if (ctrl)
+      opts.signal = ctrl.signal;
+    return fetch(url, opts).finally(function() {
+      clearTimeout(t);
+    });
+  }
+  async function submitScore(playerName, score, ship, difficulty, questionMode, operation) {
+    var cfg = readRuntimeConfig();
+    if (!cfg)
+      return { success: false, error: "Supabase is not configured (set window.__MENTARIS_SUPABASE__)" };
+    var body = {
+      player_name: sanitizeField(playerName, MAX_NAME_LEN),
+      score: clampScore(score),
+      ship: sanitizeField(ship, MAX_STR_FIELD),
+      difficulty: sanitizeField(difficulty, MAX_STR_FIELD),
+      question_mode: sanitizeField(questionMode, MAX_STR_FIELD),
+      operation: sanitizeField(operation, MAX_STR_FIELD)
+    };
+    if (!body.player_name)
+      return { success: false, error: "Player name is required" };
+    var url = cfg.url + "/rest/v1/" + encodeURIComponent(cfg.table);
+    try {
+      var res = await fetchWithTimeout(url, {
+        method: "POST",
+        headers: supabaseRestHeaders(cfg, { Prefer: "return=minimal" }),
+        body: JSON.stringify(body)
+      }, FETCH_TIMEOUT_MS);
+      if (res.ok)
+        return { success: true, error: null };
+      var err = await readErrorBody(res);
+      return { success: false, error: err || "Insert failed" };
+    } catch (e) {
+      var msg = e && e.name === "AbortError" ? "Request timed out" : String(e && e.message || e || "Network error");
+      return { success: false, error: msg };
+    }
+  }
+
   // src/js/core/game.js
   var canvas = document.getElementById("canvas");
   var ctx = canvas.getContext("2d", { alpha: true });
@@ -150461,6 +150568,29 @@
     } catch (e) {
     }
     appendLeaderboardCsv({ name: trimmed, score: state.score });
+    if (isSupabaseScoresConfigured()) {
+      var shipTag = player && player.shipType ? String(player.shipType) : "";
+      if (!shipTag && typeof collectSessionSettings === "function") {
+        try {
+          shipTag = String((collectSessionSettings() || {}).ship || "");
+        } catch (e) {
+          shipTag = "";
+        }
+      }
+      var diffTag = String(state.difficulty || "normal");
+      var qMode = String(state.questionMode || "classic");
+      var opTag = "";
+      try {
+        opTag = String((describeQuestionMode(qMode) || {}).operation || "");
+      } catch (e) {
+        opTag = "";
+      }
+      submitScore(trimmed, state.score, shipTag || "unknown", diffTag, qMode, opTag || "unknown").then(function(res) {
+        if (!res.success && res.error) {
+          console.warn("[supabase scores]", res.error);
+        }
+      });
+    }
   }
   function findSecondarySlotIndexByType(type) {
     var slots = getSecondarySlots();

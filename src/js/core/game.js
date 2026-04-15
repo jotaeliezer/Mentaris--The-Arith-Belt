@@ -11,6 +11,7 @@ import { aliens, alienBullets, alienMines, alienConfig, alienTypes, resetAliens,
 import { computeSpawnInterval } from "./levels.js";
 import { PowerupManager } from "../entities/powerups.js";
 import { hudTheme, hudQuestionFontSize, getMissionBriefInjectedCss, getSandboxPanelInjectedCss } from "./hud_theme.js";
+import { submitScore as submitSupabaseScore, isSupabaseScoresConfigured } from "./supabase_scores.js";
 
 // ======= DOM
 var canvas = document.getElementById("canvas");
@@ -7880,6 +7881,29 @@ function saveScoreName(name){
   renderHighScores(stats, entryKey);
   try{ localStorage.setItem("mathsteroid.playerName", trimmed); }catch(e){}
   appendLeaderboardCsv({ name: trimmed, score: state.score });
+  if(isSupabaseScoresConfigured()){
+    var shipTag = (player && player.shipType) ? String(player.shipType) : "";
+    if(!shipTag && typeof collectSessionSettings === "function"){
+      try{
+        shipTag = String((collectSessionSettings() || {}).ship || "");
+      }catch(e){
+        shipTag = "";
+      }
+    }
+    var diffTag = String(state.difficulty || "normal");
+    var qMode = String(state.questionMode || "classic");
+    var opTag = "";
+    try{
+      opTag = String((describeQuestionMode(qMode) || {}).operation || "");
+    }catch(e){
+      opTag = "";
+    }
+    submitSupabaseScore(trimmed, state.score, shipTag || "unknown", diffTag, qMode, opTag || "unknown").then(function(res){
+      if(!res.success && res.error){
+        console.warn("[supabase scores]", res.error);
+      }
+    });
+  }
 }
 
 function findSecondarySlotIndexByType(type){
