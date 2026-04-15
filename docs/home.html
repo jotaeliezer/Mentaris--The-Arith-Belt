@@ -2481,13 +2481,225 @@
 
 
 
+    /* Home-only: borderless panels & buttons (depth from fills + soft elevation, no stroke frames). */
+    body.homeMenuPage .heroPanel,
+    body.homeMenuPage .card,
+    body.homeMenuPage .panel{
+      border: none !important;
+      box-shadow: 0 22px 52px rgba(0,0,0,.42) !important;
+    }
+    body.homeMenuPage .menuBadge{
+      border: none !important;
+      box-shadow: none !important;
+    }
+    body.homeMenuPage .row{
+      border-top: none !important;
+    }
+    body.homeMenuPage .list li{
+      border: none !important;
+      box-shadow: none !important;
+    }
+    body.homeMenuPage .kbd{
+      border: none !important;
+      box-shadow: none !important;
+    }
+    body.homeMenuPage .btn{
+      border: none !important;
+      box-shadow: 0 10px 26px rgba(0,0,0,.32);
+    }
+    body.homeMenuPage .btn::before{
+      display: none !important;
+      content: none !important;
+    }
+    body.homeMenuPage .btn:focus-visible{
+      outline: 2px solid rgba(0,229,255,.5);
+      outline-offset: 2px;
+    }
+    body.homeMenuPage .menuButtons .btn.primary{
+      border: none !important;
+      box-shadow: 0 14px 36px rgba(0,0,0,.4), 0 0 28px rgba(0,229,255,.14) !important;
+    }
+    body.homeMenuPage .menuButtons .btn.secondaryLabel{
+      border: none !important;
+      box-shadow: 0 10px 24px rgba(0,0,0,.34) !important;
+    }
+    body.homeMenuPage .btn-continue,
+    body.homeMenuPage .btn-back{
+      border: none !important;
+    }
+    body.homeMenuPage .menuButtons .btn:hover,
+    body.homeMenuPage .card .btn:hover{
+      box-shadow: 0 16px 34px rgba(0,0,0,.48) !important;
+    }
+    body.homeMenuPage .funnelOverlay .btn:hover,
+    body.homeMenuPage #campaignOverlay .btn:hover,
+    body.homeMenuPage #campaignConfirmOverlay .btn:hover,
+    body.homeMenuPage #briefingOverlay .btn:hover{
+      box-shadow: 0 14px 32px rgba(0,0,0,.48) !important;
+    }
+    body.homeMenuPage #briefingOverlay #btnBriefingSkip{
+      border: none !important;
+      box-shadow: 0 14px 34px rgba(20,90,52,.42) !important;
+    }
+    body.homeMenuPage #briefingOverlay #btnBriefingSkip:hover{
+      box-shadow: 0 18px 40px rgba(26,102,58,.48) !important;
+    }
+    body.homeMenuPage .choiceCard,
+    body.homeMenuPage .choiceCard:hover,
+    body.homeMenuPage .choiceCard:active{
+      border: none !important;
+      box-shadow: none !important;
+    }
+    body.homeMenuPage .choiceCard.selected{
+      background: rgba(0,229,255,.14) !important;
+      box-shadow: none !important;
+    }
+    body.homeMenuPage .beltChoice,
+    body.homeMenuPage .beltChoice.locked,
+    body.homeMenuPage .beltChoice.locked:hover{
+      border: none !important;
+      box-shadow: none !important;
+    }
+    body.homeMenuPage .beltLockTag,
+    body.homeMenuPage .buyButton,
+    body.homeMenuPage .buyButton.disabled,
+    body.homeMenuPage .buyButton:disabled{
+      border: none !important;
+      box-shadow: none !important;
+    }
+    body.homeMenuPage .beltChoice .buyButton:hover{
+      box-shadow: none !important;
+    }
+    body.homeMenuPage .purchasePreview,
+    body.homeMenuPage .purchaseRow{
+      border: none !important;
+      box-shadow: none !important;
+    }
+    body.homeMenuPage .campaignListItem,
+    body.homeMenuPage .campaignListItem:hover,
+    body.homeMenuPage .campaignListItem.selected,
+    body.homeMenuPage .campaignListItem.current,
+    body.homeMenuPage .campaignListItem.completed,
+    body.homeMenuPage .campaignListItem.locked,
+    body.homeMenuPage .campaignListItem.locked:hover{
+      border: none !important;
+      box-shadow: none !important;
+    }
+    body.homeMenuPage .campaignListItem:hover{
+      box-shadow: 0 12px 28px rgba(0,0,0,.38) !important;
+    }
+    body.homeMenuPage .campaignListItem.selected,
+    body.homeMenuPage .campaignListItem.current{
+      background: rgba(0,229,255,.1) !important;
+    }
+    body.homeMenuPage .campaignMapWrap{
+      border: none !important;
+      box-shadow: none !important;
+    }
+    body.homeMenuPage .campaignMapNodeDiscInner,
+    body.homeMenuPage #campaignMissionsView #campaignList .campaignMapNode.completed .campaignMapNodeDiscInner{
+      border: none !important;
+      box-shadow: inset 0 0 22px rgba(0,0,0,.55), 0 0 22px rgba(0,229,255,.28) !important;
+    }
+    body.homeMenuPage .campaignMapNodeArmorRing{
+      border: none !important;
+      box-shadow: 0 0 26px rgba(0,229,255,.42), inset 0 0 18px rgba(0,229,255,.12) !important;
+    }
+    body.homeMenuPage .shipCard,
+    body.homeMenuPage .shipOption.selected .shipCard,
+    body.homeMenuPage .shipOption.locked .shipCard{
+      border: none !important;
+      box-shadow: none !important;
+    }
+    body.homeMenuPage .shipOption.selected .shipCard{
+      box-shadow: 0 14px 36px rgba(0,0,0,.45) !important;
+    }
+    body.homeMenuPage .shipLockTag,
+    body.homeMenuPage .shipDetails,
+    body.homeMenuPage .shipDetailsStat{
+      border: none !important;
+      box-shadow: none !important;
+    }
+    body.homeMenuPage .shotTypeOption,
+    body.homeMenuPage .shotTypeOption:hover,
+    body.homeMenuPage .shotTypeOption.selected{
+      border: none !important;
+      box-shadow: none !important;
+    }
+    body.homeMenuPage .shotTypeOption.selected{
+      background: rgba(0,229,255,.12) !important;
+      box-shadow: 0 12px 30px rgba(0,0,0,.38) !important;
+    }
+    body.homeMenuPage .sandboxCodeReveal,
+    body.homeMenuPage .briefingTutorial{
+      border: none !important;
+      box-shadow: none !important;
+    }
+    body.homeMenuPage #sandboxLaunchOverlay .sandboxLaunchForm input,
+    body.homeMenuPage .settingsAccessForm input{
+      border: none !important;
+      box-shadow: none !important;
+    }
+    body.homeMenuPage input[type="number"],
+    body.homeMenuPage input[type="text"],
+    body.homeMenuPage input[type="email"],
+    body.homeMenuPage input[type="password"],
+    body.homeMenuPage input[type="search"],
+    body.homeMenuPage input[type="tel"],
+    body.homeMenuPage input[type="url"],
+    body.homeMenuPage select,
+    body.homeMenuPage textarea{
+      border: none !important;
+      box-shadow: none !important;
+    }
+    body.homeMenuPage #leaderboardsOverlay .leaderboardsTableWrap,
+    body.homeMenuPage #leaderboardsOverlay .leaderboardsFilters select{
+      border: none !important;
+      box-shadow: none !important;
+    }
+    body.homeMenuPage #leaderboardsOverlay .leaderboardsTable th,
+    body.homeMenuPage #leaderboardsOverlay .leaderboardsTable td{
+      border-bottom-color: rgba(255,255,255,.05) !important;
+    }
+    body.homeMenuPage #homeLeaderboardsBody tr.lb-rank-grade,
+    body.homeMenuPage #homeLeaderboardsBody tr.lb-grade-s,
+    body.homeMenuPage #homeLeaderboardsBody tr.lb-grade-a,
+    body.homeMenuPage #homeLeaderboardsBody tr.lb-grade-b,
+    body.homeMenuPage #homeLeaderboardsBody tr.lb-grade-c,
+    body.homeMenuPage #homeLeaderboardsBody tr.lb-grade-d,
+    body.homeMenuPage #homeLeaderboardsBody tr.lb-grade-e{
+      box-shadow: none !important;
+    }
+    body.homeMenuPage .catalogDetailOverlay .catalogDetailCard,
+    body.homeMenuPage .catalogDetailOverlay .catalogDetailIcon{
+      border: none !important;
+      box-shadow: 0 20px 50px rgba(0,0,0,.55) !important;
+    }
+    body.homeMenuPage .catalogItem.catalogIconOnly:hover,
+    body.homeMenuPage .catalogItem.catalogIconOnly:focus{
+      border: none !important;
+      box-shadow: 0 12px 28px rgba(0,0,0,.38) !important;
+    }
+    body.homeMenuPage .catalogItem.catalogIconOnly:focus{
+      outline: 2px solid rgba(0,229,255,.45);
+      outline-offset: 2px;
+    }
+    body.homeMenuPage .catalogFilterBtn.active{
+      border: none !important;
+      box-shadow: none !important;
+    }
+    body.homeMenuPage .catalogLockTag{
+      border: none !important;
+      box-shadow: none !important;
+    }
+
     @media (max-width: 980px){
       .menuShell{ grid-template-columns: 1fr; }
       .menuRight{ display:none; }
     }
   </style>
 </head>
-<body class="showLaunch">
+<body class="homeMenuPage showLaunch">
   <div class="starDrift" aria-hidden="true"></div>
   <div class="menuWrap noselect" id="menuWrap">
     <div class="menuShell">
