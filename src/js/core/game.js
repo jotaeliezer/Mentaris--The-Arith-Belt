@@ -5869,12 +5869,18 @@ function markAsteroidEffect(a, effect, duration){
   a.ghost = true;
 }
 
-function markRetiredWaveAsteroid(a){
+function markRetiredWaveAsteroid(a, labelOnlyFade){
   if(!a) return;
   a.waveId = -1;
   a.isCorrect = false;
   a.noDamage = true;
-  a.ghost = true;
+  if(labelOnlyFade){
+    a.retiredLabelOnly = true;
+    a.ghost = false;
+  }else{
+    a.retiredLabelOnly = false;
+    a.ghost = true;
+  }
   a.retiredFadeT = 0;
   a.retiredFadeDur = PULLDOWN_RETIRED_FADE_DURATION;
 }
@@ -6038,8 +6044,7 @@ function retireWave(wid){
     var a = asteroids[i];
     if(a.waveId === wid){
       var hideDecoyLabel = !!(a.label != null && !isCurrentWaveCorrectAsteroid(a));
-      markRetiredWaveAsteroid(a);
-      if(hideDecoyLabel) a.decoyTextHidden = true;
+      markRetiredWaveAsteroid(a, hideDecoyLabel);
     }
   }
 }
@@ -13948,7 +13953,7 @@ function drawAsteroid(a){
 
   if(a.label !== null && !a.decoyTextHidden){
     ctx.save();
-    ctx.globalAlpha = fadeAlpha;
+    ctx.globalAlpha = fadeAlpha * retiredLabelFadeMul;
     var size = Math.max(10, Math.min(22, a.r * 0.7) * shrinkScale);
     ctx.font = "700 " + size + "px Oxanium, sans-serif";
     ctx.textAlign = "center";
@@ -16183,8 +16188,11 @@ function runSelfTests(){
   assert(si >= 0.28 && si <= 0.78, "computeSpawnInterval clamped at extremes");
 
   asteroids.length = 0;
+  var savedWaveId = state.waveId;
+  state.waveId = 10;
   asteroids.push({waveId:10,isCorrect:true,label:54,ghost:false});
   retireWave(10);
+  state.waveId = savedWaveId;
   assert(asteroids.length === 1, "retireWave does not remove asteroids");
   assert(asteroids[0].waveId === -1 && asteroids[0].isCorrect === false, "retireWave clears target status");
   assert(asteroids[0].label === 54, "retireWave keeps label for continuity");
@@ -17224,11 +17232,6 @@ function boot(){
     // Start intro/countdown immediately to avoid one-frame boot artifacts.
     player.hidden = true;
     startIntroThenCountdown();
-    setTimeout(function(){
-      if(!state.running && !introActive && !countdownActive){
-        startIntroThenCountdown();
-      }
-    }, 1200);
   }
   if(params.get("test") === "1") runSelfTests();
 

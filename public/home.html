@@ -896,10 +896,10 @@
     .choiceCard{
       border:1px solid var(--line);
       border-radius:16px;
-      background: rgba(0,0,0,.28);
+      background-color: rgba(0,0,0,.28);
       padding:12px 14px;
       cursor:pointer;
-      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease, background .2s ease;
+      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
     }
     .choiceCard:hover{
       transform: translateY(-4px);
@@ -2529,7 +2529,14 @@
     body.homeMenuPage .btn-back{
       border: none !important;
     }
-    body.homeMenuPage .menuButtons .btn:hover,
+    body.homeMenuPage .menuButtons .btn:hover:not(:disabled){
+      box-shadow:
+        -34px 0 28px -16px rgba(0, 229, 255, 0.42),
+        34px 0 28px -16px rgba(255, 120, 55, 0.48),
+        -20px 0 48px -12px rgba(0, 200, 255, 0.2),
+        20px 0 48px -12px rgba(255, 85, 30, 0.26),
+        0 16px 34px rgba(0,0,0,.48) !important;
+    }
     body.homeMenuPage .card .btn:hover{
       box-shadow: 0 16px 34px rgba(0,0,0,.48) !important;
     }
@@ -2553,7 +2560,7 @@
       box-shadow: none !important;
     }
     body.homeMenuPage .choiceCard.selected{
-      background: rgba(0,229,255,.14) !important;
+      background-color: rgba(0,229,255,.14) !important;
       box-shadow: none !important;
     }
     body.homeMenuPage .beltChoice,
@@ -2714,6 +2721,7 @@
           <button id="btnLaunchHome" class="btn primary btnLaunch" type="button">Launch</button>
           <button id="btnCampaign" class="btn secondaryLabel menuExtra" type="button">Campaign <small>6 mission run</small></button>
           <button id="btnStartGame" class="btn secondaryLabel menuExtra" type="button">Single Mission <small>Custom setup</small></button>
+          <button id="btnSideOps" class="btn secondaryLabel menuExtra" type="button">Side Ops <small>Mini games (soon)</small></button>
           <button id="btnTutorial" class="btn secondaryLabel menuExtra" type="button">Tutorial <small>Guided tour</small></button>
           <button id="btnLeaderboards" class="btn secondaryLabel menuExtra" type="button">Leaderboards <small>Top runs</small></button>
           <button id="btnSettingsHome" class="btn secondaryLabel menuExtra" type="button">Settings <small>Audio levels</small></button>
@@ -6621,6 +6629,7 @@
       if(typeof scheduleCampaignMapDecorResize === "function") scheduleCampaignMapDecorResize();
     });
     var startBtn = document.getElementById("btnStartGame");
+    var btnSideOps = document.getElementById("btnSideOps");
     var btnLaunchHome = document.getElementById("btnLaunchHome");
     var btnCampaign = document.getElementById("btnCampaign");
     var btnTutorial = document.getElementById("btnTutorial");
@@ -6723,9 +6732,6 @@
     setSubmodeFromDifficulty(selectedDifficulty);
     if(saved.belt){
       selectedBelt = saved.belt;
-      if(beltChoices && beltChoices.length){
-        selectChoice(beltChoices, selectedBelt, "data-belt");
-      }
       if(beltInput) beltInput.value = selectedBelt;
     }
 
@@ -7526,6 +7532,12 @@
         setStep(0);
         if(menuWrap) menuWrap.classList.add("hidden");
         scheduleShipCarouselSync();
+      });
+    }
+    if (btnSideOps) {
+      btnSideOps.addEventListener("click", function(){
+        playMenuBeep();
+        showToast("SIDE OPS — COMING SOON");
       });
     }
     if (btnCloseControls && controlsOverlay) {
