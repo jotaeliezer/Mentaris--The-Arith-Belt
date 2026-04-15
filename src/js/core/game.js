@@ -975,6 +975,9 @@ var answerHitsSincePowerup = 0;
 var hiddenPowerupActive = false;
 var campaignAmmoRescueAcc = 0;
 var campaignAmmoRescueDone = false;
+var primaryAmmoDropAcc = 0;
+var PRIMARY_AMMO_LOW_THRESHOLD = 110;
+var PRIMARY_AMMO_DROP_INTERVAL_SEC = 7;
 var survivorTimer = 0;
 var survivorRewardReady = false;
 var cleanWaveStreak = 0;
@@ -3860,7 +3863,7 @@ function computePrimaryAmmoStart(){
   if(campaignActive || (state && state.campaignActive)){
     base = Math.round(base * 1.42);
   }
-  return base;
+  return Math.max(200, base);
 }
 
 function initPrimaryAmmoForPilot(pilot){
@@ -6338,6 +6341,7 @@ function resetSession(){
   hiddenPowerupActive = false;
   campaignAmmoRescueAcc = 0;
   campaignAmmoRescueDone = false;
+  primaryAmmoDropAcc = 0;
   resetSurvivorTimer();
   cleanWaveStreak = 0;
   waveHadWrongHit = false;
@@ -7257,8 +7261,9 @@ function dash(){
     var dashDx = player.x - tutorialDashMarkerX;
     var dashDy = player.y - tutorialDashMarkerY;
     if(Math.hypot(dashDx, dashDy) <= tutorialDashMarkerR * 0.78){
-      clearTutorialDashMarker();
-      if(tourGuide) tourGuide.notify("dash_marker");
+      if(tourGuide && tourGuide.notify("dash_marker")){
+        clearTutorialDashMarker();
+      }
     }
   }
   if(tourGuide) tourGuide.notify("dash");
@@ -9746,8 +9751,9 @@ function update(dt){
       var dxDashMark = player.x - tutorialDashMarkerX;
       var dyDashMark = player.y - tutorialDashMarkerY;
       if(Math.hypot(dxDashMark, dyDashMark) <= tutorialDashMarkerR * 0.78){
-        clearTutorialDashMarker();
-        if(tourGuide) tourGuide.notify("dash_marker");
+        if(tourGuide && tourGuide.notify("dash_marker")){
+          clearTutorialDashMarker();
+        }
       }
     }
   }
@@ -9838,6 +9844,19 @@ function update(dt){
       }
     }else if(paRescue > 0){
       campaignAmmoRescueAcc = 0;
+    }
+  }
+  if(state.running && !state.over && !state.paused && !tutorialActive && !sandboxMode && player && !pilotPrimaryAmmoUnlimited(player)){
+    var paLow = player.primaryAmmo | 0;
+    if(paLow < PRIMARY_AMMO_LOW_THRESHOLD){
+      primaryAmmoDropAcc += dtReal;
+      if(primaryAmmoDropAcc >= PRIMARY_AMMO_DROP_INTERVAL_SEC){
+        primaryAmmoDropAcc = 0;
+        var dropX = 48 + Math.random() * Math.max(40, view.w - 96);
+        spawnPowerup("ammo", "secondary", dropX, -36, { pop: true, popScale: 0.92 });
+      }
+    }else{
+      primaryAmmoDropAcc = 0;
     }
   }
 
@@ -12167,66 +12186,6 @@ function draw(){
 
     drawActivePickupHud(hudFade, rightX, cy, radius, w);
 
-    function blasterTagForHud(mode){
-      var m = String(mode || "single");
-      var map = {
-        single: "SGL",
-        laser: "LZR",
-        missile: "MSL",
-        fire: "FIR",
-        ice: "ICE",
-        electric: "ELC",
-        pierce: "BOL",
-        plasma: "PLM",
-        rail: "RAL"
-      };
-      return map[m] || m.slice(0, 3).toUpperCase();
-    }
-    function drawBottomRightAmmoReadout(pilotHud, rightEdge, bottomEdge){
-      if(!pilotHud) return;
-      var panelW = 132;
-      var panelH = 38;
-      var x0 = rightEdge - panelW;
-      var y0 = bottomEdge - panelH;
-      var mode = pilotHud.blasterMode || "single";
-      var tag = blasterTagForHud(mode);
-      ctx.save();
-      ctx.globalAlpha = hudFade;
-      ctx.fillStyle = hudTheme.surfacePanel;
-      ctx.strokeStyle = hudTheme.strokeSoft;
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.roundRect(x0, y0, panelW, panelH, hudTheme.radiusTile);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = hudTheme.textDim;
-      ctx.font = "600 11px Oxanium, sans-serif";
-      ctx.textAlign = "left";
-      ctx.textBaseline = "top";
-      ctx.fillText("AMMO · " + tag, x0 + 8, y0 + 4);
-      if(pilotHud.primaryAmmoUnlimited){
-        ctx.font = "700 14px Oxanium, sans-serif";
-        ctx.textAlign = "right";
-        ctx.textBaseline = "bottom";
-        ctx.fillStyle = hudTheme.accentCyan;
-        ctx.fillText("\u221e", x0 + panelW - 8, y0 + panelH - 5);
-      }else{
-        var ammoCurBr = pilotHud.primaryAmmo | 0;
-        var ammoStartBr = Math.max(1, pilotHud.primaryAmmoStart | 0);
-        var pipW = panelW - 16;
-        var pipTop = y0 + 19;
-        drawPrimaryAmmoPips(ctx, x0 + 8, pipTop, pipW, ammoCurBr, ammoStartBr, true);
-        ctx.fillStyle = hudTheme.textHudStrong;
-        ctx.font = "600 10px Oxanium, sans-serif";
-        ctx.textAlign = "right";
-        ctx.textBaseline = "bottom";
-        ctx.fillText(String(ammoCurBr) + "/" + String(ammoStartBr), x0 + panelW - 8, y0 + panelH - 3);
-      }
-      ctx.restore();
-    }
-    var ammoHudBottom = h - 12;
-    drawBottomRightAmmoReadout(player, w - 12, ammoHudBottom);
-
     ctx.restore();
     ctx.restore();
   }
@@ -13818,14 +13777,17 @@ function drawAsteroid(a){
   var drawX = a.x;
   var drawY = a.y;
   var fadeAlpha = 1;
+  var shrinkScale = 1;
   if(a.retiredFadeT != null){
     var retiredFadeDur = Math.max(0.01, a.retiredFadeDur || PULLDOWN_RETIRED_FADE_DURATION);
     var retiredFadeP = clamp(a.retiredFadeT / retiredFadeDur, 0, 1);
-    // Keep the asteroid readable at first, then let it dissolve after the pull-down speed has done its work.
-    fadeAlpha *= 1 - Math.pow(retiredFadeP, 1.85);
+    shrinkScale *= Math.max(0.012, 1 - Math.pow(retiredFadeP, 1.28));
+    fadeAlpha *= 0.88 + 0.12 * (1 - retiredFadeP);
   }
   if(a.effect === "fade" && a.effectDuration){
-    fadeAlpha = clamp(a.effectTimer / a.effectDuration, 0, 1);
+    var effFrac = clamp(a.effectTimer / a.effectDuration, 0, 1);
+    shrinkScale *= Math.max(0.012, effFrac);
+    fadeAlpha *= 0.72 + 0.28 * effFrac;
   }
   if(a.spawnFade != null){
     fadeAlpha *= clamp(a.spawnFade, 0, 1);
@@ -13842,6 +13804,7 @@ function drawAsteroid(a){
   ctx.save();
   ctx.translate(drawX, drawY);
   ctx.rotate(rot);
+  ctx.scale(shrinkScale, shrinkScale);
 
   if(a.spriteIndex == null || a.spriteIndex < 0 || a.spriteIndex >= asteroidSprites.length){
     a.spriteIndex = randi(0, asteroidSprites.length - 1);
@@ -13933,7 +13896,7 @@ function drawAsteroid(a){
     ctx.strokeStyle = "rgba(255,255,255,.18)";
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(drawX, drawY, a.r + 2, 0, Math.PI*2);
+    ctx.arc(drawX, drawY, (a.r + 2) * shrinkScale, 0, Math.PI*2);
     ctx.stroke();
     ctx.restore();
   }
@@ -13944,7 +13907,7 @@ function drawAsteroid(a){
     ctx.strokeStyle = hudTheme.accentLockRing;
     ctx.lineWidth = 2.2;
     ctx.beginPath();
-    ctx.arc(drawX, drawY, a.r + 8, 0, Math.PI*2);
+    ctx.arc(drawX, drawY, (a.r + 8) * shrinkScale, 0, Math.PI*2);
     ctx.stroke();
     ctx.restore();
   }
@@ -13970,7 +13933,7 @@ function drawAsteroid(a){
   if(a.label !== null){
     ctx.save();
     ctx.globalAlpha = fadeAlpha;
-    var size = Math.max(14, Math.min(22, a.r*0.7));
+    var size = Math.max(10, Math.min(22, a.r * 0.7) * shrinkScale);
     ctx.font = "700 " + size + "px Oxanium, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -16951,6 +16914,9 @@ function boot(){
         player: player,
         onStep: function(stepId){
           tutorialStepId = stepId;
+          if(stepId !== "dash_step" && tutorialDashMarkerActive){
+            clearTutorialDashMarker();
+          }
           if(stepId !== "correct" && stepId !== "correct_after_magnet" && stepId !== "ability_shot"){
             tutorialPendingCorrectNotify = false;
           }
@@ -17001,9 +16967,6 @@ function boot(){
             }
           }else if(tutorialDotsActive){
             stopTutorialDots();
-          }
-          if(stepId === "dash_step"){
-            startTutorialDashMarker();
           }
           if(stepId === "recovery_powerup"){
             tutorialRespawnActive = true;
@@ -17117,6 +17080,9 @@ function boot(){
             tutorialChoiceCursorReady = true;
             updateCursorVisibility();
           }
+          if(stepId === "dash_step"){
+            startTutorialDashMarker();
+          }
         },
         onConfirm: function(stepId){
           if(stepId === "minerals"){
@@ -17165,6 +17131,7 @@ function boot(){
         },
         onComplete: function(){
           try{ localStorage.setItem("mentaris.tutorial.complete", "1"); }catch(e){}
+          clearTutorialDashMarker();
           tutorialMovementChoiceResolved = false;
           tutorialChoiceCursorReady = false;
           tutorialPortalActive = false;
