@@ -6403,7 +6403,7 @@ function startIntroSequence(done){
   }, 1400);
 }
 
-function startCountdown(skipReset){
+function startCountdown(skipReset, opts){
   if(!countdownEl) return false;
   if(countdownEl.classList.contains("show")) return true;
   if(introActive) return false;
@@ -6457,8 +6457,10 @@ function startCountdown(skipReset){
   countdownActive = true;
   countdownTarget.x = view.w * 0.5;
   countdownTarget.y = view.h - 58;
-  player.x = countdownTarget.x;
-  player.y = view.h + 200;
+  if(!(opts && opts.skipShipReset)){
+    player.x = countdownTarget.x;
+    player.y = view.h + 200;
+  }
 
   bullets.length = 0;
   asteroids.length = 0;
@@ -6507,6 +6509,7 @@ function startCountdown(skipReset){
     missionBriefOnAccept = null;
     if(missionBriefOverlay) missionBriefOverlay.classList.remove("show");
     if(missionBriefShowing) setMissionBriefActive(false);
+    introHudHold = false;
     if(skipReset){
       resetSession();
       beginRun();
@@ -6564,7 +6567,7 @@ function startIntroThenCountdown(){
     }
     launchHoldTimer = setTimeout(function(){
       launchHoldTimer = 0;
-      startCountdown(true);
+      startCountdown(true, { skipShipReset: true });
     }, 220);
   });
   return true;
@@ -16383,6 +16386,8 @@ function applyQueryParams(){
     sessionAlienKey = "";
     sessionBossLabel = "";
     sessionBossRetreatMode = false;
+    // Home briefing already covered objectives; skip duplicate overlay that can leave HUD/ship state wrong.
+    missionBriefBypass = true;
   }else{
     campaignActive = false;
     campaignIndex = -1;

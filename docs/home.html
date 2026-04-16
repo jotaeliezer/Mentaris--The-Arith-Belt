@@ -2178,7 +2178,9 @@
     @keyframes menuBtnThrusterGlow{
       0%, 100%{
         box-shadow:
-          inset 0 1px 0 rgba(255,255,255,.16),
+          0 -18px 42px -12px rgba(90, 230, 255, 0.28),
+          inset 0 1px 0 rgba(255,255,255,.15),
+          var(--ui-inset-fine),
           -46px 0 40px -14px rgba(170, 245, 255, 0.42),
           46px 0 40px -14px rgba(120, 230, 255, 0.4),
           0 -22px 32px -12px rgba(190, 250, 255, 0.22),
@@ -2187,7 +2189,9 @@
       }
       50%{
         box-shadow:
+          0 -24px 52px -10px rgba(120, 245, 255, 0.38),
           inset 0 1px 0 rgba(255,255,255,.2),
+          var(--ui-inset-fine),
           -58px 0 52px -12px rgba(200, 252, 255, 0.58),
           58px 0 52px -12px rgba(140, 240, 255, 0.52),
           0 -28px 40px -10px rgba(210, 255, 255, 0.32),
@@ -2653,12 +2657,25 @@
       outline-offset: 2px;
     }
     body.homeMenuPage .menuButtons .btn.primary{
-      border: none !important;
-      box-shadow: 0 14px 36px rgba(0,0,0,.4), 0 0 28px rgba(0,229,255,.14) !important;
+      border: 1px solid rgba(0,229,255,.5) !important;
+      border-radius: 16px !important;
+      background: linear-gradient(90deg, rgba(0,229,255,.35), rgba(0,229,255,.15)) !important;
+      box-shadow:
+        0 -22px 48px -12px rgba(95, 235, 255, 0.32),
+        inset 0 1px 0 rgba(255,255,255,.16),
+        var(--ui-inset-fine),
+        0 14px 36px rgba(0,0,0,.4),
+        0 0 28px rgba(0,229,255,.14) !important;
     }
     body.homeMenuPage .menuButtons .btn.secondaryLabel{
       border: none !important;
-      box-shadow: 0 10px 24px rgba(0,0,0,.34) !important;
+      border-radius: 16px !important;
+      background: rgba(255,255,255,.06) !important;
+      box-shadow:
+        0 -18px 40px -14px rgba(80, 220, 255, 0.2),
+        inset 0 1px 0 rgba(255,255,255,.11),
+        var(--ui-inset-fine),
+        0 10px 24px rgba(0,0,0,.34) !important;
     }
     body.homeMenuPage .btn-continue,
     body.homeMenuPage .btn-back{
@@ -2697,13 +2714,22 @@
     body.homeMenuPage #operationChoices .choiceCard{
       border: none !important;
       background: rgba(255,255,255,.06) !important;
-      box-shadow: 0 10px 24px rgba(0,0,0,.34) !important;
+      box-shadow:
+        0 -14px 32px -12px rgba(75, 215, 255, 0.16),
+        inset 0 1px 0 rgba(255,255,255,.09),
+        var(--ui-inset-fine),
+        0 10px 24px rgba(0,0,0,.34) !important;
       transition: transform .18s ease, box-shadow .18s ease, border-color .2s ease, background-color .2s ease;
     }
     body.homeMenuPage #operationChoices .choiceCard:hover{
       transform: translateY(-4px);
       border-color: rgba(0,229,255,.35) !important;
-      box-shadow: 0 16px 34px rgba(0,0,0,.45), 0 0 18px rgba(0,229,255,.16) !important;
+      box-shadow:
+        0 -16px 36px -10px rgba(90, 230, 255, 0.22),
+        inset 0 1px 0 rgba(255,255,255,.12),
+        var(--ui-inset-fine),
+        0 16px 34px rgba(0,0,0,.45),
+        0 0 18px rgba(0,229,255,.16) !important;
     }
     body.homeMenuPage #operationChoices .choiceCard:active{
       transform: translateY(-1px);
@@ -2711,7 +2737,12 @@
     body.homeMenuPage #operationChoices .choiceCard.selected{
       border: 1px solid rgba(0,229,255,.5) !important;
       background: linear-gradient(90deg, rgba(0,229,255,.35), rgba(0,229,255,.15)) !important;
-      box-shadow: 0 14px 36px rgba(0,0,0,.4), 0 0 28px rgba(0,229,255,.14) !important;
+      box-shadow:
+        0 -20px 44px -12px rgba(100, 238, 255, 0.28),
+        inset 0 1px 0 rgba(255,255,255,.14),
+        var(--ui-inset-fine),
+        0 14px 36px rgba(0,0,0,.4),
+        0 0 28px rgba(0,229,255,.14) !important;
     }
     body.homeMenuPage .beltChoice,
     body.homeMenuPage .beltChoice.locked,
