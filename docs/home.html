@@ -532,7 +532,7 @@
     }
     .briefingLoadoutTopRow{
       display:grid;
-      grid-template-columns: minmax(200px, 1.35fr) auto auto;
+      grid-template-columns: auto auto minmax(200px, 1.35fr);
       gap:12px;
       align-items:start;
     }
@@ -542,8 +542,10 @@
       padding:12px 14px;
       border-radius:var(--ui-radius-tile);
       background: var(--ui-gradient-meta);
-      box-shadow: var(--ui-inset-meta), var(--ui-shadow-meta);
+      box-shadow:none;
       min-height:0;
+      justify-self:stretch;
+      width:100%;
     }
     .briefingMetaRow{
       display:grid;
@@ -610,7 +612,7 @@
       border: none;
       background: rgba(8,12,22,.55);
       object-fit: contain;
-      box-shadow: inset 0 0 28px rgba(0,0,0,.4), inset 0 0 0 1px rgba(255,255,255,.06);
+      box-shadow: inset 0 0 28px rgba(0,0,0,.4);
     }
     .briefingShotWrap{
       display:flex;
@@ -1435,10 +1437,24 @@
       min-height:220px;
       max-height:none;
       border-radius:16px;
-      overflow:auto;
-      scroll-padding:52px 10px 64px 10px;
+      overflow-x:auto;
+      overflow-y:hidden;
+      scroll-padding:24px 20px 24px 20px;
       border:1px solid rgba(255,255,255,.1);
       box-shadow: inset 0 0 0 1px rgba(0,229,255,.07), 0 16px 44px rgba(0,0,0,.5);
+      scrollbar-color: rgba(0,229,255,.45) rgba(0,0,0,.35);
+    }
+
+    .campaignMapWrap::-webkit-scrollbar{
+      height:10px;
+    }
+    .campaignMapWrap::-webkit-scrollbar-track{
+      background: rgba(0,0,0,.35);
+      border-radius: 8px;
+    }
+    .campaignMapWrap::-webkit-scrollbar-thumb{
+      background: linear-gradient(90deg, rgba(0,229,255,.35), rgba(120,240,255,.5));
+      border-radius: 8px;
     }
 
     .campaignMapStars{
@@ -1447,27 +1463,41 @@
       left:0;
       right:0;
       width:100%;
+      min-width:100%;
       min-height:100%;
       pointer-events:none;
       z-index:0;
-      background-color:#050810;
+      background-color:#070b18;
       background-image:
-        radial-gradient(1.2px 1.2px at 7% 14%, rgba(255,255,255,.9), transparent),
-        radial-gradient(1px 1px at 18% 72%, rgba(255,255,255,.65), transparent),
-        radial-gradient(1px 1px at 31% 28%, rgba(255,255,255,.55), transparent),
-        radial-gradient(1.2px 1.2px at 44% 86%, rgba(255,255,255,.75), transparent),
-        radial-gradient(1px 1px at 56% 12%, rgba(255,255,255,.5), transparent),
-        radial-gradient(1px 1px at 68% 48%, rgba(255,255,255,.7), transparent),
-        radial-gradient(1.2px 1.2px at 79% 22%, rgba(255,255,255,.85), transparent),
-        radial-gradient(1px 1px at 88% 68%, rgba(255,255,255,.6), transparent),
-        radial-gradient(1px 1px at 12% 42%, rgba(200,230,255,.5), transparent),
-        radial-gradient(1.2px 1.2px at 92% 38%, rgba(255,255,255,.55), transparent),
-        radial-gradient(1px 1px at 25% 8%, rgba(255,255,255,.45), transparent),
-        radial-gradient(1px 1px at 73% 92%, rgba(255,255,255,.5), transparent),
-        radial-gradient(1.2px 1.2px at 52% 58%, rgba(255,255,255,.4), transparent),
-        radial-gradient(1px 1px at 6% 88%, rgba(255,255,255,.35), transparent),
-        radial-gradient(1px 1px at 95% 8%, rgba(255,255,255,.4), transparent),
-        linear-gradient(165deg, rgba(8,14,32,.5), rgba(4,8,18,.88));
+        radial-gradient(1.1px 1.1px at 4% 11%, rgba(255,255,255,.95), transparent),
+        radial-gradient(1px 1px at 9% 34%, rgba(220,245,255,.85), transparent),
+        radial-gradient(1.2px 1.2px at 14% 58%, rgba(255,255,255,.75), transparent),
+        radial-gradient(1px 1px at 19% 19%, rgba(255,255,255,.55), transparent),
+        radial-gradient(1.1px 1.1px at 24% 82%, rgba(200,235,255,.8), transparent),
+        radial-gradient(1px 1px at 29% 44%, rgba(255,255,255,.65), transparent),
+        radial-gradient(1.2px 1.2px at 34% 12%, rgba(255,255,255,.5), transparent),
+        radial-gradient(1px 1px at 39% 71%, rgba(255,255,255,.72), transparent),
+        radial-gradient(1.1px 1.1px at 44% 28%, rgba(180,230,255,.7), transparent),
+        radial-gradient(1px 1px at 49% 91%, rgba(255,255,255,.45), transparent),
+        radial-gradient(1.2px 1.2px at 54% 38%, rgba(255,255,255,.78), transparent),
+        radial-gradient(1px 1px at 59% 7%, rgba(255,255,255,.52), transparent),
+        radial-gradient(1.1px 1.1px at 64% 63%, rgba(210,248,255,.68), transparent),
+        radial-gradient(1px 1px at 69% 22%, rgba(255,255,255,.58), transparent),
+        radial-gradient(1.2px 1.2px at 74% 48%, rgba(255,255,255,.82), transparent),
+        radial-gradient(1px 1px at 79% 88%, rgba(255,255,255,.48), transparent),
+        radial-gradient(1.1px 1.1px at 84% 16%, rgba(190,240,255,.75), transparent),
+        radial-gradient(1px 1px at 89% 54%, rgba(255,255,255,.62), transparent),
+        radial-gradient(1.2px 1.2px at 94% 72%, rgba(255,255,255,.55), transparent),
+        radial-gradient(1px 1px at 97% 31%, rgba(255,255,255,.5), transparent),
+        radial-gradient(1px 1px at 11% 76%, rgba(255,255,255,.42), transparent),
+        radial-gradient(1.1px 1.1px at 22% 6%, rgba(255,255,255,.38), transparent),
+        radial-gradient(1px 1px at 33% 94%, rgba(200,230,255,.5), transparent),
+        radial-gradient(1.2px 1.2px at 46% 51%, rgba(255,255,255,.4), transparent),
+        radial-gradient(1px 1px at 57% 18%, rgba(255,255,255,.46), transparent),
+        radial-gradient(1.1px 1.1px at 71% 41%, rgba(255,255,255,.52), transparent),
+        radial-gradient(1px 1px at 82% 8%, rgba(255,255,255,.36), transparent),
+        radial-gradient(1.2px 1.2px at 91% 61%, rgba(220,245,255,.44), transparent),
+        linear-gradient(165deg, rgba(10,18,38,.35), rgba(5,10,24,.62));
     }
 
     .campaignMapRoutes{
@@ -1725,6 +1755,71 @@
     #campaignMissionsView #campaignList .campaignMapNode.locked:hover{
       transform: translate(-50%, calc(-50% - var(--campaign-orbit-nudge)));
       filter: grayscale(0.35);
+    }
+
+    .campaignMapCommanderCueInline{
+      display:block;
+      align-self:center;
+      font-size:9px;
+      font-weight:800;
+      letter-spacing:0.14em;
+      line-height:1.4;
+      text-transform:uppercase;
+      color: rgba(210, 250, 255, 0.98);
+      text-shadow: 0 0 14px rgba(0,229,255,.65), 0 2px 12px rgba(0,0,0,.75);
+      margin-bottom:4px;
+      animation: campaignCommanderBob 2.75s ease-in-out infinite;
+    }
+
+    #campaignMissionsView #campaignList.campaignMapList--horizontal{
+      display:flex;
+      flex-direction:row;
+      flex-wrap:nowrap;
+      align-items:flex-start;
+      justify-content:flex-start;
+      gap:8px 32px;
+      padding:24px 28px 32px;
+      min-height:300px;
+      width:max-content;
+      min-width:100%;
+      box-sizing:border-box;
+    }
+
+    #campaignMissionsView #campaignList.campaignMapList--horizontal > li{
+      flex:0 0 auto;
+      width:158px;
+      max-width:158px;
+    }
+
+    #campaignMissionsView #campaignList.campaignMapList--horizontal .campaignMapNode{
+      position:relative;
+      left:auto !important;
+      top:auto !important;
+      transform:none;
+      width:100%;
+    }
+
+    #campaignMissionsView #campaignList.campaignMapList--horizontal .campaignMapNode.current:not(.locked){
+      transform:scale(1.06);
+      z-index:5;
+    }
+
+    #campaignMissionsView #campaignList.campaignMapList--horizontal .campaignMapNode.current:not(.locked):hover{
+      transform:scale(1.06) translateY(-6px);
+    }
+
+    #campaignMissionsView #campaignList.campaignMapList--horizontal .campaignMapNode:hover:not(.locked){
+      transform:translateY(-8px) scale(1.04);
+      z-index:4;
+      filter: drop-shadow(0 14px 26px rgba(0,229,255,.38));
+    }
+
+    #campaignMissionsView #campaignList.campaignMapList--horizontal .campaignMapNode.locked:hover{
+      transform:none;
+    }
+
+    #campaignMissionsView #campaignList.campaignMapList--horizontal .campaignMapNode.selected:not(.locked){
+      filter: drop-shadow(0 0 18px rgba(0,229,255,.5));
     }
 
     @media (max-width: 760px){
@@ -2057,6 +2152,27 @@
       0%, 55%{ transform: translateX(-140%); opacity:0; }
       70%{ opacity:1; }
       100%{ transform: translateX(140%); opacity:0; }
+    }
+
+    @keyframes menuBtnThrusterGlow{
+      0%, 100%{
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,.16),
+          -46px 0 40px -14px rgba(170, 245, 255, 0.42),
+          46px 0 40px -14px rgba(120, 230, 255, 0.4),
+          0 -22px 32px -12px rgba(190, 250, 255, 0.22),
+          0 26px 32px -12px rgba(100, 220, 255, 0.2),
+          0 16px 34px rgba(0,0,0,.48);
+      }
+      50%{
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,.2),
+          -58px 0 52px -12px rgba(200, 252, 255, 0.58),
+          58px 0 52px -12px rgba(140, 240, 255, 0.52),
+          0 -28px 40px -10px rgba(210, 255, 255, 0.32),
+          0 32px 40px -10px rgba(120, 235, 255, 0.28),
+          0 16px 34px rgba(0,0,0,.48);
+      }
     }
 
     @keyframes starDrift{
@@ -2517,23 +2633,29 @@
     }
     body.homeMenuPage .menuButtons .btn.primary{
       border: none !important;
-      box-shadow: 0 14px 36px rgba(0,0,0,.4), 0 0 28px rgba(0,229,255,.14) !important;
+      background:
+        linear-gradient(118deg, rgba(255,255,255,.22) 0%, rgba(255,255,255,.06) 26%, transparent 45%),
+        linear-gradient(90deg, rgba(0,229,255,.4), rgba(0,229,255,.16)) !important;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.18),
+        0 14px 36px rgba(0,0,0,.4),
+        0 0 28px rgba(0,229,255,.14) !important;
     }
     body.homeMenuPage .menuButtons .btn.secondaryLabel{
       border: none !important;
-      box-shadow: 0 10px 24px rgba(0,0,0,.34) !important;
+      background:
+        linear-gradient(118deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,.04) 28%, transparent 46%),
+        linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.05)) !important;
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.14),
+        0 10px 24px rgba(0,0,0,.34) !important;
     }
     body.homeMenuPage .btn-continue,
     body.homeMenuPage .btn-back{
       border: none !important;
     }
     body.homeMenuPage .menuButtons .btn:hover:not(:disabled){
-      box-shadow:
-        -34px 0 28px -16px rgba(0, 229, 255, 0.42),
-        34px 0 28px -16px rgba(255, 120, 55, 0.48),
-        -20px 0 48px -12px rgba(0, 200, 255, 0.2),
-        20px 0 48px -12px rgba(255, 85, 30, 0.26),
-        0 16px 34px rgba(0,0,0,.48) !important;
+      animation: menuBtnThrusterGlow 1.85s ease-in-out infinite;
     }
     body.homeMenuPage .card .btn:hover{
       box-shadow: 0 16px 34px rgba(0,0,0,.48) !important;
@@ -8196,11 +8318,14 @@
       var list = document.getElementById("campaignList");
       var svg = document.getElementById("campaignMapRoutes");
       if(!wrap || !list) return;
+      var wList = Math.max(list.scrollWidth, list.offsetWidth, wrap.clientWidth || 0);
       var h = Math.max(list.offsetHeight, wrap.scrollHeight, wrap.clientHeight || 0);
       var stars = wrap.querySelector(".campaignMapStars");
       if(stars){
         stars.style.minHeight = h + "px";
         stars.style.height = h + "px";
+        stars.style.minWidth = wList + "px";
+        stars.style.width = wList + "px";
       }
       if(svg){
         var wPx = Math.max(wrap.scrollWidth, wrap.clientWidth, 1);
@@ -8448,6 +8573,7 @@
 
     function renderCampaignList(){
       if(!campaignList) return;
+      campaignList.className = "list campaignMapList campaignMapList--horizontal";
       campaignList.innerHTML = "";
       var missions = getActiveCampaignMissions();
       var state = loadCampaignState(getActiveCampaignId());
@@ -8467,16 +8593,14 @@
         var lineMain = (i + 1) + ". " + (titleParts[0] || fullTitle);
         var lineBoss = titleParts.length > 1 ? titleParts[1] : "";
         var sprite = getCampaignMissionNodeSprite(cid, m, i);
-        var yPct = n <= 1 ? 50 : (82 - (i / (n - 1)) * 64);
-        var xPct = (i % 2 === 0) ? 20 : 80;
         li.className = "campaignListItem campaignMissionCard campaignMapNode"
           + (i % 2 === 0 ? " campaignMapNodePosL" : " campaignMapNodePosR")
           + (isDone ? " completed" : "")
           + (isCurrent ? " current" : "")
           + (isLocked ? " locked" : "");
         li.setAttribute("data-index", String(i));
-        li.style.left = xPct + "%";
-        li.style.top = yPct + "%";
+        li.style.left = "";
+        li.style.top = "";
         li.innerHTML = "<div class=\"campaignMapNodeBody\">"
           + "<div class=\"campaignMapNodeGlow\"></div>"
           + "<div class=\"campaignMapNodeDiscInner\"><img class=\"campaignMapNodeImg\" src=\"" + sprite + "\" alt=\"\" />"
@@ -8484,12 +8608,12 @@
           + "</div>"
           + "</div>"
           + "<div class=\"campaignMapNodeMeta\">"
+          + (isCurrent ? "<span class=\"campaignMapCommanderCueInline\" aria-hidden=\"true\">COMMANDER SOLVER</span>" : "")
           + "<span class=\"campaignMapNodeNum\">Mission " + (i + 1) + "</span>"
           + "<span class=\"campaignMapNodeTitle\">" + lineMain + "</span>"
           + (lineBoss ? "<span class=\"campaignMapNodeBoss\">" + lineBoss + "</span>" : "")
           + "<span class=\"campaignMapNodeWin\">" + winLine + "</span>"
           + "</div>"
-          + ((isCurrent && !isDone) ? "<span class=\"campaignMapCommanderCue\" aria-hidden=\"true\">COMMANDER SOLVER</span>" : "")
           + "<span class=\"campaignStatus\">" + statusSymbol + "</span>";
         li.addEventListener("click", function(){
           var idx = parseInt(this.getAttribute("data-index"), 10);
@@ -8502,11 +8626,7 @@
         campaignList.appendChild(li);
       }
       ensureCampaignMapScrollSync();
-      if(n <= 1){
-        campaignList.style.minHeight = "";
-      }else{
-        campaignList.style.minHeight = Math.max(520, n * 108 + 200) + "px";
-      }
+      campaignList.style.minHeight = "300px";
       syncCampaignMapDecorSize();
       requestAnimationFrame(function(){
         syncCampaignMapDecorSize();
