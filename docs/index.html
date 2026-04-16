@@ -1757,18 +1757,39 @@
       filter: grayscale(0.35);
     }
 
+    .campaignMapCommanderBlock{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:5px;
+      margin-bottom:6px;
+      width:100%;
+      animation: campaignCommanderBob 2.75s ease-in-out infinite;
+    }
+    .campaignMapCommanderImg{
+      width:54px;
+      height:54px;
+      object-fit:contain;
+      border-radius:50%;
+      border:1px solid rgba(0,229,255,.42);
+      background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.14), rgba(6,10,22,.92) 58%);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.06),
+        0 0 18px rgba(0,229,255,.28),
+        0 8px 20px rgba(0,0,0,.45);
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,.5));
+    }
     .campaignMapCommanderCueInline{
       display:block;
       align-self:center;
-      font-size:9px;
+      font-size:8px;
       font-weight:800;
       letter-spacing:0.14em;
-      line-height:1.4;
+      line-height:1.35;
       text-transform:uppercase;
       color: rgba(210, 250, 255, 0.98);
       text-shadow: 0 0 14px rgba(0,229,255,.65), 0 2px 12px rgba(0,0,0,.75);
-      margin-bottom:4px;
-      animation: campaignCommanderBob 2.75s ease-in-out infinite;
+      margin-bottom:0;
     }
 
     #campaignMissionsView #campaignList.campaignMapList--horizontal{
@@ -2633,22 +2654,11 @@
     }
     body.homeMenuPage .menuButtons .btn.primary{
       border: none !important;
-      background:
-        linear-gradient(118deg, rgba(255,255,255,.22) 0%, rgba(255,255,255,.06) 26%, transparent 45%),
-        linear-gradient(90deg, rgba(0,229,255,.4), rgba(0,229,255,.16)) !important;
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.18),
-        0 14px 36px rgba(0,0,0,.4),
-        0 0 28px rgba(0,229,255,.14) !important;
+      box-shadow: 0 14px 36px rgba(0,0,0,.4), 0 0 28px rgba(0,229,255,.14) !important;
     }
     body.homeMenuPage .menuButtons .btn.secondaryLabel{
       border: none !important;
-      background:
-        linear-gradient(118deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,.04) 28%, transparent 46%),
-        linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.05)) !important;
-      box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.14),
-        0 10px 24px rgba(0,0,0,.34) !important;
+      box-shadow: 0 10px 24px rgba(0,0,0,.34) !important;
     }
     body.homeMenuPage .btn-continue,
     body.homeMenuPage .btn-back{
@@ -2682,6 +2692,26 @@
     body.homeMenuPage .choiceCard.selected{
       background-color: rgba(0,229,255,.14) !important;
       box-shadow: none !important;
+    }
+    /* Single-mission funnel: operation tiles match main menu button depth (not the flat choiceCard strip). */
+    body.homeMenuPage #operationChoices .choiceCard{
+      border: none !important;
+      background: rgba(255,255,255,.06) !important;
+      box-shadow: 0 10px 24px rgba(0,0,0,.34) !important;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .2s ease, background-color .2s ease;
+    }
+    body.homeMenuPage #operationChoices .choiceCard:hover{
+      transform: translateY(-4px);
+      border-color: rgba(0,229,255,.35) !important;
+      box-shadow: 0 16px 34px rgba(0,0,0,.45), 0 0 18px rgba(0,229,255,.16) !important;
+    }
+    body.homeMenuPage #operationChoices .choiceCard:active{
+      transform: translateY(-1px);
+    }
+    body.homeMenuPage #operationChoices .choiceCard.selected{
+      border: 1px solid rgba(0,229,255,.5) !important;
+      background: linear-gradient(90deg, rgba(0,229,255,.35), rgba(0,229,255,.15)) !important;
+      box-shadow: 0 14px 36px rgba(0,0,0,.4), 0 0 28px rgba(0,229,255,.14) !important;
     }
     body.homeMenuPage .beltChoice,
     body.homeMenuPage .beltChoice.locked,
@@ -8608,7 +8638,10 @@
           + "</div>"
           + "</div>"
           + "<div class=\"campaignMapNodeMeta\">"
-          + (isCurrent ? "<span class=\"campaignMapCommanderCueInline\" aria-hidden=\"true\">COMMANDER SOLVER</span>" : "")
+          + (isCurrent ? "<div class=\"campaignMapCommanderBlock\" aria-hidden=\"true\">"
+          + "<img class=\"campaignMapCommanderImg\" src=\"images/characters/commander1.png\" width=\"54\" height=\"54\" alt=\"\" />"
+          + "<span class=\"campaignMapCommanderCueInline\">COMMANDER SOLVER</span>"
+          + "</div>" : "")
           + "<span class=\"campaignMapNodeNum\">Mission " + (i + 1) + "</span>"
           + "<span class=\"campaignMapNodeTitle\">" + lineMain + "</span>"
           + (lineBoss ? "<span class=\"campaignMapNodeBoss\">" + lineBoss + "</span>" : "")
