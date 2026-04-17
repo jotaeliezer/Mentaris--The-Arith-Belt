@@ -1685,6 +1685,26 @@
       line-height:1.38;
     }
 
+    .campaignMapNodeBest{
+      display:block;
+      margin-top:4px;
+      font-size:10px;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+      color: rgba(255,221,0,.78);
+      text-shadow: 0 0 10px rgba(255,221,0,.18);
+    }
+
+    #campaignMissionsView #campaignList .campaignMapNode.locked .campaignMapNodeBest{
+      color: rgba(180,200,225,.45);
+      text-shadow: none;
+    }
+
+    #campaignMissionsView #campaignList .campaignMapNode.completed .campaignMapNodeBest{
+      color: rgba(255,232,120,.95);
+      text-shadow: 0 0 12px rgba(255,221,0,.32);
+    }
+
     .campaignMapNodeDiscInner .campaignMapNodeArmorRing{
       position:absolute;
       inset:0;
@@ -4876,12 +4896,20 @@
       var safe = (state && typeof state === "object") ? state : {};
       var completed = Array.isArray(safe.completed) ? safe.completed.slice(0, missionCount) : [];
       while(completed.length < missionCount) completed.push(false);
+      var bestScores = Array.isArray(safe.bestScores) ? safe.bestScores.slice(0, missionCount) : [];
+      while(bestScores.length < missionCount) bestScores.push(0);
+      for(var bsi=0; bsi<bestScores.length; bsi++){
+        var bsv = Number(bestScores[bsi]);
+        bestScores[bsi] = Number.isFinite(bsv) && bsv > 0 ? Math.floor(bsv) : 0;
+      }
       var index = Number.isFinite(safe.index) ? safe.index : 0;
       index = Math.max(0, Math.min(index, missionCount));
       return {
         index: index,
         failures: safe.failures || 0,
         completed: completed,
+        bestScores: bestScores,
+        mineralsEarned: Number.isFinite(safe.mineralsEarned) ? safe.mineralsEarned : 0,
         active: !!safe.active,
         failed: !!safe.failed
       };
@@ -4952,6 +4980,8 @@
         index: 0,
         failures: 0,
         completed: new Array(set.missions.length).fill(false),
+        bestScores: new Array(set.missions.length).fill(0),
+        mineralsEarned: 0,
         active: false,
         failed: false
       };
@@ -6868,6 +6898,7 @@
     var pendingConfig = null;
     var pendingCampaign = null;
     var pendingEraseProfileId = null;
+    var selectedCampaignMissionIndex = 0;
     var campaignShipSelect = false;
     var launchPending = false;
     var tutorialPending = false;
@@ -7862,15 +7893,21 @@
     }
     if (btnCampaignContinue) {
       btnCampaignContinue.addEventListener("click", function(){
+        if(btnCampaignContinue.disabled) return;
         playMenuBeep();
         var activeId = getActiveCampaignId();
         var missions = getActiveCampaignMissions();
         var maxFailures = getCampaignMaxFailures();
         var state = loadCampaignState(activeId);
-        if(state.failed || state.failures >= maxFailures) return;
-        var idx = state.index || 0;
-        if(idx >= missions.length) return;
-        startCampaignMission(idx, activeId);
+        var sel = selectedCampaignMissionIndex;
+        if(sel < 0 || sel >= missions.length) return;
+        var isCleared = !!(state.completed && state.completed[sel]);
+        var isCurrent = sel === (state.index || 0);
+        if(!isCleared){
+          if(state.failed || state.failures >= maxFailures) return;
+          if(!isCurrent) return;
+        }
+        startCampaignMission(sel, activeId, { replay: isCleared });
         if(campaignOverlay) campaignOverlay.classList.remove("show");
         setCampaignOverlayBodyOpen(false);
         if(menuWrap) menuWrap.classList.remove("hidden");
@@ -8640,6 +8677,10 @@
         var lineMain = (i + 1) + ". " + (titleParts[0] || fullTitle);
         var lineBoss = titleParts.length > 1 ? titleParts[1] : "";
         var sprite = getCampaignMissionNodeSprite(cid, m, i);
+        var bestScore = (state.bestScores && state.bestScores[i]) || 0;
+        var bestLine = bestScore > 0
+          ? ("Best: " + bestScore.toLocaleString())
+          : (isLocked ? "Best: --" : "Best: 0");
         li.className = "campaignListItem campaignMissionCard campaignMapNode"
           + (i % 2 === 0 ? " campaignMapNodePosL" : " campaignMapNodePosR")
           + (isDone ? " completed" : "")
@@ -8663,15 +8704,18 @@
           + "<span class=\"campaignMapNodeTitle\">" + lineMain + "</span>"
           + (lineBoss ? "<span class=\"campaignMapNodeBoss\">" + lineBoss + "</span>" : "")
           + "<span class=\"campaignMapNodeWin\">" + winLine + "</span>"
+          + "<span class=\"campaignMapNodeBest\">" + bestLine + "</span>"
           + "</div>"
           + "<span class=\"campaignStatus\">" + statusSymbol + "</span>";
         li.addEventListener("click", function(){
           var idx = parseInt(this.getAttribute("data-index"), 10);
+          selectedCampaignMissionIndex = idx;
           renderCampaignDetails(idx);
           var items = campaignList.querySelectorAll(".campaignListItem");
           for(var k=0; k<items.length; k++){
             items[k].classList.toggle("selected", items[k] === this);
           }
+          updateCampaignActionButton();
         });
         campaignList.appendChild(li);
       }
@@ -8687,42 +8731,75 @@
         });
       });
       var startIndex = (state.index || 0);
+      if(startIndex >= n) startIndex = Math.max(0, n - 1);
+      selectedCampaignMissionIndex = startIndex;
       renderCampaignDetails(startIndex);
       var items = campaignList.querySelectorAll(".campaignListItem");
       for(var k=0; k<items.length; k++){
         var idx = parseInt(items[k].getAttribute("data-index"), 10);
         items[k].classList.toggle("selected", idx === startIndex);
       }
+      updateCampaignActionButton();
     }
 
     function updateCampaignStatus(){
-      if(!campaignStatusText) return;
+      if(campaignStatusText){
+        var campaign = getActiveCampaign();
+        var missions = getActiveCampaignMissions();
+        var maxFailures = getCampaignMaxFailures();
+        var state = loadCampaignState(campaign.id);
+        if(state.failed || state.failures >= maxFailures){
+          campaignStatusText.textContent = campaign.name + " failed. Reset to try again.";
+        }else{
+          var idx = state.index || 0;
+          var remaining = maxFailures - (state.failures || 0);
+          if(idx >= missions.length){
+            campaignStatusText.textContent = campaign.name + " complete. Re-deploy missions to chase higher scores.";
+          }else{
+            campaignStatusText.textContent = campaign.name + " - Mission " + (idx + 1) + " of " + missions.length + " - Failures left: " + remaining;
+          }
+        }
+      }
+      updateCampaignActionButton();
+    }
+
+    function updateCampaignActionButton(){
+      if(btnCampaignStart) btnCampaignStart.style.display = "none";
+      if(!btnCampaignContinue) return;
       var campaign = getActiveCampaign();
       var missions = getActiveCampaignMissions();
       var maxFailures = getCampaignMaxFailures();
       var state = loadCampaignState(campaign.id);
-      var hasProgress = (state.index || 0) > 0 || (state.completed || []).some(function(v){ return v; });
-      if(state.failed || state.failures >= maxFailures){
-        campaignStatusText.textContent = campaign.name + " failed. Reset to try again.";
-        if(btnCampaignStart) btnCampaignStart.disabled = true;
-        if(btnCampaignContinue) btnCampaignContinue.style.display = "none";
+      var sel = selectedCampaignMissionIndex;
+      if(sel < 0 || sel >= missions.length){
+        btnCampaignContinue.style.display = "none";
         return;
       }
-      var idx = state.index || 0;
-      var remaining = maxFailures - (state.failures || 0);
-      if(idx >= missions.length){
-        campaignStatusText.textContent = campaign.name + " complete. Great flying.";
-        if(btnCampaignStart) btnCampaignStart.disabled = true;
-        if(btnCampaignContinue) btnCampaignContinue.style.display = "none";
-        return;
+      var isCleared = !!(state.completed && state.completed[sel]);
+      var currentIdx = state.index || 0;
+      var isCurrent = sel === currentIdx;
+      var campaignFailed = !!(state.failed || state.failures >= maxFailures);
+      btnCampaignContinue.style.display = "inline-flex";
+      if(isCleared){
+        btnCampaignContinue.textContent = "Re-Deploy Mission";
+        btnCampaignContinue.title = "Replay this mission for a higher score (no minerals earned).";
+        btnCampaignContinue.disabled = false;
+        btnCampaignContinue.setAttribute("data-mode", "redeploy");
+      }else if(isCurrent && !campaignFailed){
+        btnCampaignContinue.textContent = "Continue";
+        btnCampaignContinue.title = "Launch the next mission in the campaign.";
+        btnCampaignContinue.disabled = false;
+        btnCampaignContinue.setAttribute("data-mode", "continue");
+      }else{
+        btnCampaignContinue.textContent = campaignFailed ? "Campaign Failed" : "Locked";
+        btnCampaignContinue.title = campaignFailed ? "Reset the campaign to try again." : "Clear earlier missions to unlock this one.";
+        btnCampaignContinue.disabled = true;
+        btnCampaignContinue.setAttribute("data-mode", "locked");
       }
-      campaignStatusText.textContent = campaign.name + " - Mission " + (idx + 1) + " of " + missions.length + " - Failures left: " + remaining;
-      if(btnCampaignStart) btnCampaignStart.disabled = false;
-      if(btnCampaignContinue) btnCampaignContinue.style.display = hasProgress ? "inline-flex" : "none";
     }
 
-    function openCampaignShipSelect(index, config, campaignId){
-      pendingCampaign = { index: index, id: campaignId || getActiveCampaignId(), profileId: getActiveProfileId() };
+    function openCampaignShipSelect(index, config, campaignId, replay){
+      pendingCampaign = { index: index, id: campaignId || getActiveCampaignId(), profileId: getActiveProfileId(), replay: !!replay };
       pendingConfig = config;
       campaignShipSelect = true;
       if(menuWrap) menuWrap.classList.add("hidden");
@@ -8731,20 +8808,21 @@
       scheduleShipCarouselSync();
     }
 
-    function startCampaignMission(index, campaignId){
+    function startCampaignMission(index, campaignId, opts){
       var activeId = campaignId || getActiveCampaignId();
       var missions = getCampaignSet(activeId).missions || [];
       var m = missions[index];
       if(!m) return;
+      var replay = !!(opts && opts.replay);
       campaignShipSelect = false;
       var config = Object.assign({}, defaults, m.config);
       config.belt = getCampaignMissionBeltKey(activeId, index, missions.length);
       if(config.ship){
-        pendingCampaign = { index: index, id: activeId, profileId: getActiveProfileId() };
+        pendingCampaign = { index: index, id: activeId, profileId: getActiveProfileId(), replay: replay };
         pendingConfig = config;
         showBriefing(config);
       }else{
-        openCampaignShipSelect(index, config, activeId);
+        openCampaignShipSelect(index, config, activeId, replay);
       }
     }
 
@@ -9027,7 +9105,9 @@
         var state = loadCampaignState(activeId);
         state.active = true;
         state.failed = false;
-        state.index = pendingCampaign.index;
+        if(!pendingCampaign.replay){
+          state.index = pendingCampaign.index;
+        }
         saveCampaignState(state, activeId, profileId);
         var missionList = getCampaignSet(activeId).missions || [];
         var mission = missionList[pendingCampaign.index] || null;
@@ -9041,6 +9121,9 @@
         params.set("campaignIndex", String(pendingCampaign.index));
         params.set("campaignId", activeId);
         params.set("campaignProfile", profileId);
+        if(pendingCampaign.replay){
+          params.set("campaignReplay", "1");
+        }
       }
       setTimeout(function(){
         window.location.href = "asteroid_blaster.html?" + params.toString();

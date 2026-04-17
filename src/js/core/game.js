@@ -805,6 +805,7 @@ var introTimer = 0;
 var introHudHold = false;
 var campaignActive = false;
 var campaignIndex = -1;
+var campaignReplay = false;
 var campaignData = null;
 var campaignId = "";
 var campaignProfileKey = "mentaris.campaign.profile.active";
@@ -3635,6 +3636,7 @@ function saveMinerals(){
 function awardMinerals(amount){
   var amt = Math.max(0, Math.round(amount || 0));
   if(amt <= 0) return;
+  if(campaignReplay || (state && state.campaignReplay)) return;
   mineralsTotal = (mineralsTotal || 0) + amt;
   state.mineralsEarned = (state.mineralsEarned || 0) + amt;
   saveMinerals();
@@ -9018,10 +9020,13 @@ function endGame(reason){
   state.lastSessionId = sessionId;
   var campaignResult = { active:false, success:false, failures:0, failed:false, hasNext:false, last:false, name:"", pilot:"", minerals:0 };
   if(campaignActive){
-    var cState = loadCampaignState() || { index:0, failures:0, completed:[], active:true, failed:false };
+    var cState = loadCampaignState() || { index:0, failures:0, completed:[], bestScores:[], active:true, failed:false };
     var cData = loadCampaignData() || { missions:[], maxFailures: campaignMaxFailures };
     if(cData.maxFailures) campaignMaxFailures = cData.maxFailures;
-    if(reason === "destroyed"){
+    var success = reason !== "destroyed";
+    if(campaignReplay){
+      // Re-deploy: don't change failure or progression, only update best score on success.
+    }else if(reason === "destroyed"){
       cState.failures = (cState.failures || 0) + 1;
       if(cState.failures >= campaignMaxFailures){
         cState.failed = true;
@@ -9034,20 +9039,33 @@ function endGame(reason){
       cState.active = true;
       cState.failed = false;
     }
-    var earned = Number(state.mineralsEarned || 0);
-    if(!Number.isFinite(earned)) earned = 0;
-    cState.mineralsEarned = Number.isFinite(cState.mineralsEarned) ? cState.mineralsEarned : 0;
-    cState.mineralsEarned += earned;
+    if(success){
+      cState.bestScores = Array.isArray(cState.bestScores) ? cState.bestScores : [];
+      while(cState.bestScores.length <= campaignIndex) cState.bestScores.push(0);
+      var prevBest = Number(cState.bestScores[campaignIndex]) || 0;
+      var thisScore = Number(state.score) || 0;
+      if(thisScore > prevBest){
+        cState.bestScores[campaignIndex] = Math.floor(thisScore);
+      }
+    }
+    if(!campaignReplay){
+      var earned = Number(state.mineralsEarned || 0);
+      if(!Number.isFinite(earned)) earned = 0;
+      cState.mineralsEarned = Number.isFinite(cState.mineralsEarned) ? cState.mineralsEarned : 0;
+      cState.mineralsEarned += earned;
+    }
     saveCampaignState(cState);
     campaignResult.active = true;
-    campaignResult.success = reason !== "destroyed";
+    campaignResult.success = success;
     campaignResult.failures = cState.failures || 0;
     campaignResult.failed = !!cState.failed;
     campaignResult.last = (campaignIndex + 1) >= ((cData.missions && cData.missions.length) || 0);
-    campaignResult.hasNext = campaignResult.success && !campaignResult.failed && !campaignResult.last;
+    campaignResult.hasNext = !campaignReplay && campaignResult.success && !campaignResult.failed && !campaignResult.last;
     campaignResult.name = (cData && cData.name) ? cData.name : "Campaign";
     campaignResult.pilot = getActiveProfileName();
     campaignResult.minerals = cState.mineralsEarned || 0;
+    campaignResult.replay = campaignReplay;
+    campaignResult.bestScore = (cState.bestScores && Number(cState.bestScores[campaignIndex])) || 0;
   }
 
   var endReasonText = "";
@@ -16368,8 +16386,11 @@ function applyQueryParams(){
     campaignActive = true;
     campaignIndex = parseInt(params.get("campaignIndex"), 10);
     if(Number.isNaN(campaignIndex)) campaignIndex = 0;
+    var replayParam = params.get("campaignReplay");
+    campaignReplay = (replayParam === "1" || replayParam === "true");
     state.campaignActive = true;
     state.campaignIndex = campaignIndex;
+    state.campaignReplay = campaignReplay;
     var data = loadCampaignData();
     if(data && data.maxFailures) campaignMaxFailures = data.maxFailures;
     var parsedAlienKey = normalizeCampaignAlienKey(params.get("campaignAlienKey"));
@@ -16396,8 +16417,10 @@ function applyQueryParams(){
   }else{
     campaignActive = false;
     campaignIndex = -1;
+    campaignReplay = false;
     state.campaignActive = false;
     state.campaignIndex = -1;
+    state.campaignReplay = false;
     campaignAlienKey = "";
     campaignBossLabel = "";
     sessionAlienKey = parsedSessionAlienKey;
