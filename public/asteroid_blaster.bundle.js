@@ -156407,11 +156407,16 @@
     var drawY = a.y;
     var fadeAlpha = 1;
     var shrinkScale = 1;
+    var retiredLabelFadeMul = 1;
     if (a.retiredFadeT != null) {
       var retiredFadeDur = Math.max(0.01, a.retiredFadeDur || PULLDOWN_RETIRED_FADE_DURATION);
       var retiredFadeP = clamp(a.retiredFadeT / retiredFadeDur, 0, 1);
-      shrinkScale *= Math.max(25e-4, Math.pow(1 - retiredFadeP, 0.42));
-      fadeAlpha *= 0.35 + 0.65 * Math.pow(1 - retiredFadeP, 1.15);
+      if (a.retiredLabelOnly) {
+        retiredLabelFadeMul = Math.pow(1 - retiredFadeP, 1.15);
+      } else {
+        shrinkScale *= Math.max(25e-4, Math.pow(1 - retiredFadeP, 0.42));
+        fadeAlpha *= 0.35 + 0.65 * Math.pow(1 - retiredFadeP, 1.15);
+      }
     }
     if (a.effect === "fade" && a.effectDuration) {
       var effFrac = clamp(a.effectTimer / a.effectDuration, 0, 1);
