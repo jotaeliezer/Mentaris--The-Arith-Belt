@@ -4392,6 +4392,30 @@
     </div>
   </div>
 
+  <div id="campaignRedeployOverlay" class="overlay">
+    <div class="card" style="max-width:520px;">
+      <div class="cardHead">
+        <div>
+          <h2 class="title">Re-Deploy Mission?</h2>
+          <p class="subtitle" id="campaignRedeploySubtitle">This mission is already cleared.</p>
+        </div>
+        <button id="btnCampaignRedeployCancel" class="btn">Cancel</button>
+      </div>
+      <div class="cardBody" style="grid-template-columns: 1fr;">
+        <div class="panel">
+          <p class="monoSmall" style="margin:0;">
+            No minerals will be collected for this mission because it was already cleared.
+            You can replay it to chase a higher score. Your campaign progress will not be affected.
+          </p>
+          <p class="monoSmall" id="campaignRedeployBest" style="margin:10px 0 0; color:#a7f5ff;">Best Score: 0</p>
+        </div>
+      </div>
+      <div class="row">
+        <button id="btnCampaignRedeployConfirm" class="btn" style="border-color: rgba(0,229,255,.35); background: rgba(0,229,255,.12);">Re-Deploy</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast"></div>
   <script src="supabase_config.js"></script>
   <script src="mentaris_supabase.bundle.js"></script>
@@ -6891,6 +6915,11 @@
     var campaignConfirmOverlay = document.getElementById("campaignConfirmOverlay");
     var btnCampaignConfirmStart = document.getElementById("btnCampaignConfirmStart");
     var btnCampaignConfirmCancel = document.getElementById("btnCampaignConfirmCancel");
+    var campaignRedeployOverlay = document.getElementById("campaignRedeployOverlay");
+    var btnCampaignRedeployConfirm = document.getElementById("btnCampaignRedeployConfirm");
+    var btnCampaignRedeployCancel = document.getElementById("btnCampaignRedeployCancel");
+    var campaignRedeployBestEl = document.getElementById("campaignRedeployBest");
+    var campaignRedeploySubtitleEl = document.getElementById("campaignRedeploySubtitle");
     var btnCampaignConfirmContinue = document.getElementById("btnCampaignConfirmContinue");
     var btnCampaignBack = document.getElementById("btnCampaignBack");
     var campaignProfilesView = document.getElementById("campaignProfilesView");
@@ -7952,11 +7981,55 @@
         if(!isCleared){
           if(state.failed || state.failures >= maxFailures) return;
           if(!isCurrent) return;
+          startCampaignMission(sel, activeId, { replay: false });
+          if(campaignOverlay) campaignOverlay.classList.remove("show");
+          setCampaignOverlayBodyOpen(false);
+          if(menuWrap) menuWrap.classList.remove("hidden");
+          return;
         }
-        startCampaignMission(sel, activeId, { replay: isCleared });
+        openCampaignRedeployConfirm(sel);
+      });
+    }
+    function openCampaignRedeployConfirm(sel){
+      if(!campaignRedeployOverlay) return;
+      var activeId = getActiveCampaignId();
+      var missions = getActiveCampaignMissions();
+      var state = loadCampaignState(activeId);
+      var m = missions[sel];
+      var title = m ? getCampaignMissionDisplayTitle(activeId, m, sel) : ("Mission " + (sel + 1));
+      if(campaignRedeploySubtitleEl){
+        campaignRedeploySubtitleEl.textContent = "Mission " + (sel + 1) + ": " + title + " (already cleared)";
+      }
+      var best = (state.bestScores && Number(state.bestScores[sel])) || 0;
+      if(campaignRedeployBestEl){
+        campaignRedeployBestEl.textContent = "Best Score: " + (best > 0 ? best.toLocaleString() : "--");
+      }
+      campaignRedeployOverlay._pendingIndex = sel;
+      campaignRedeployOverlay._pendingId = activeId;
+      campaignRedeployOverlay.classList.add("show");
+    }
+    if (btnCampaignRedeployConfirm && campaignRedeployOverlay) {
+      btnCampaignRedeployConfirm.addEventListener("click", function(){
+        playMenuBeep();
+        var sel = campaignRedeployOverlay._pendingIndex;
+        var activeId = campaignRedeployOverlay._pendingId || getActiveCampaignId();
+        campaignRedeployOverlay.classList.remove("show");
+        if(sel == null) return;
+        startCampaignMission(sel, activeId, { replay: true });
         if(campaignOverlay) campaignOverlay.classList.remove("show");
         setCampaignOverlayBodyOpen(false);
         if(menuWrap) menuWrap.classList.remove("hidden");
+      });
+    }
+    if (btnCampaignRedeployCancel && campaignRedeployOverlay) {
+      btnCampaignRedeployCancel.addEventListener("click", function(){
+        playMenuBeep();
+        campaignRedeployOverlay.classList.remove("show");
+      });
+    }
+    if (campaignRedeployOverlay) {
+      campaignRedeployOverlay.addEventListener("click", function(e){
+        if (e.target === campaignRedeployOverlay) campaignRedeployOverlay.classList.remove("show");
       });
     }
     if (btnCampaignOpenMissions) {
@@ -8376,16 +8449,18 @@
         startX = e.clientX;
         startScroll = wrap.scrollLeft;
         maxDelta = 0;
-        wrap.classList.add("is-dragging");
       });
       wrap.addEventListener("pointermove", function(e){
         if(!dragging || e.pointerId !== pointerId) return;
         var dx = e.clientX - startX;
         if(Math.abs(dx) > maxDelta) maxDelta = Math.abs(dx);
         if(maxDelta > DRAG_THRESHOLD){
+          if(!wrap.classList.contains("is-dragging")){
+            wrap.classList.add("is-dragging");
+          }
           try{ wrap.setPointerCapture(pointerId); }catch(_){ }
+          wrap.scrollLeft = startScroll - dx;
         }
-        wrap.scrollLeft = startScroll - dx;
       });
       function endDrag(e){
         if(!dragging) return;
@@ -8711,6 +8786,8 @@
       var clearedHere = !!(cState.completed && cState.completed[index]);
       var objRow = { label: "Objective:", value: clearedHere ? "Cleared" : describeWin(cfg) };
       if(clearedHere) objRow.valueClass = "campaignDetailsCleared";
+      var bestHere = (cState.bestScores && Number(cState.bestScores[index])) || 0;
+      var bestRow = { label: "Best Score:", value: bestHere > 0 ? bestHere.toLocaleString() : "--" };
       var detailRows = [
         { label: "Mission:", value: getCampaignMissionDisplayTitle(getActiveCampaignId(), m, index) },
         { label: "Operation:", value: (isRational ? "Rationals" : (isSquare ? "Squares" : (isAdd ? "Addition" : "Multiplication"))) },
@@ -8724,7 +8801,8 @@
         { label: "Lives:", value: String(cfg.lives || 0) },
         { label: "Strikes:", value: String(cfg.strikes || 0) },
         { label: "Ship:", value: (cfg.ship ? (shipNameMap[cfg.ship] || cfg.ship.toUpperCase()) : "Player Choice") },
-        objRow
+        objRow,
+        bestRow
       ];
       typeCampaignDetailsRows(detailRows);
     }
@@ -8799,10 +8877,10 @@
         var lineMain = (i + 1) + ". " + (titleParts[0] || fullTitle);
         var lineBoss = titleParts.length > 1 ? titleParts[1] : "";
         var sprite = getCampaignMissionNodeSprite(cid, m, i);
-        var bestScore = (state.bestScores && state.bestScores[i]) || 0;
+        var bestScore = (state.bestScores && Number(state.bestScores[i])) || 0;
         var bestLine = bestScore > 0
           ? ("Best: " + bestScore.toLocaleString())
-          : (isLocked ? "Best: --" : "Best: 0");
+          : "Best: --";
         li.className = "campaignListItem campaignMissionCard campaignMapNode"
           + (i % 2 === 0 ? " campaignMapNodePosL" : " campaignMapNodePosR")
           + (isDone ? " completed" : "")
