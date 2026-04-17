@@ -13806,10 +13806,10 @@ function drawAsteroid(a){
   if(a.retiredFadeT != null){
     var retiredFadeDur = Math.max(0.01, a.retiredFadeDur || PULLDOWN_RETIRED_FADE_DURATION);
     var retiredFadeP = clamp(a.retiredFadeT / retiredFadeDur, 0, 1);
+    shrinkScale *= Math.max(0.0025, Math.pow(1 - retiredFadeP, 0.42));
     if(a.retiredLabelOnly){
       retiredLabelFadeMul = Math.pow(1 - retiredFadeP, 1.15);
     }else{
-      shrinkScale *= Math.max(0.0025, Math.pow(1 - retiredFadeP, 0.42));
       fadeAlpha *= 0.35 + 0.65 * Math.pow(1 - retiredFadeP, 1.15);
     }
   }
