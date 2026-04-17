@@ -141147,7 +141147,11 @@
     emp: "powerup_EMP",
     lock: "powerup_targetlock",
     scope: "powerup_scope",
-    autofire: "powerup_machinegun"
+    autofire: "powerup_machinegun",
+    ammo: "powerup_ammo",
+    speedup: "rare_speedboost",
+    invincibility: "rare_invincibility",
+    pushaway: "rare_pushaway"
   };
   var BULLET_KEYS = {
     single: "bullet_single",
@@ -141226,6 +141230,8 @@
         if (BACKGROUND_KEYS.indexOf(srcKey) !== -1)
           return "images/backgrounds/" + srcKey + ".png";
         if (srcKey.indexOf("powerup_") === 0)
+          return "images/powerups/" + srcKey + ".png";
+        if (srcKey.indexOf("rare_") === 0)
           return "images/powerups/" + srcKey + ".png";
         if (srcKey.indexOf("shot_") === 0)
           return "images/shots/" + srcKey + ".png";
@@ -143872,9 +143878,9 @@
     ammo: { img: new Image(), ready: false, src: "images/powerups/powerup_ammo.png" },
     machinegun: { img: new Image(), ready: false, src: "images/powerups/powerup_machinegun.png" },
     autofire: { img: new Image(), ready: false, src: "images/powerups/powerup_machinegun.png" },
-    speedup: { img: new Image(), ready: false, src: "images/powerups/powerup_timedelay.png" },
-    invincibility: { img: new Image(), ready: false, src: "images/powerups/powerup_shield.png" },
-    pushaway: { img: new Image(), ready: false, src: "images/powerups/powerup_magnet.png" }
+    speedup: { img: new Image(), ready: false, src: "images/powerups/rare_speedboost.png" },
+    invincibility: { img: new Image(), ready: false, src: "images/powerups/rare_invincibility.png" },
+    pushaway: { img: new Image(), ready: false, src: "images/powerups/rare_pushaway.png" }
   };
   Object.keys(powerupIcons).forEach(function(key) {
     var icon = powerupIcons[key];
@@ -148170,10 +148176,15 @@
       popScale: opts && typeof opts.popScale === "number" ? opts.popScale : 0.7
     });
   }
+  var RARE_SECONDARY_POWERUPS = ["speedup", "invincibility", "pushaway"];
+  var RARE_SECONDARY_DROP_CHANCE = 0.05;
   function pickSecondaryPowerupTypeForRandomDrop(stampedeActive) {
-    var pool = ["time", "time", "emp", "emp", "magnet", "lock", "repair", "autofire", "scope", "ammo", "ammo", "speedup", "invincibility", "pushaway"];
+    if (Math.random() < RARE_SECONDARY_DROP_CHANCE) {
+      return RARE_SECONDARY_POWERUPS[Math.floor(Math.random() * RARE_SECONDARY_POWERUPS.length)];
+    }
+    var pool = ["time", "time", "emp", "emp", "magnet", "lock", "repair", "autofire", "scope", "ammo", "ammo"];
     if (stampedeActive) {
-      pool = ["emp", "emp", "autofire", "autofire", "time", "magnet", "lock", "repair", "scope", "ammo", "speedup", "invincibility", "pushaway", "emp", "autofire"];
+      pool = ["emp", "emp", "autofire", "autofire", "time", "magnet", "lock", "repair", "scope", "ammo", "emp", "autofire"];
     }
     return pool[Math.floor(Math.random() * pool.length)];
   }
@@ -148217,9 +148228,12 @@
       return { type: sType, group: "secondary" };
     }
     function pickSecondaryType() {
-      var pool = ["time", "time", "emp", "emp", "magnet", "lock", "repair", "autofire", "scope", "ammo", "ammo", "speedup", "invincibility", "pushaway"];
+      if (Math.random() < RARE_SECONDARY_DROP_CHANCE) {
+        return RARE_SECONDARY_POWERUPS[Math.floor(Math.random() * RARE_SECONDARY_POWERUPS.length)];
+      }
+      var pool = ["time", "time", "emp", "emp", "magnet", "lock", "repair", "autofire", "scope", "ammo", "ammo"];
       if (stampedeActive) {
-        pool = ["emp", "emp", "autofire", "autofire", "time", "magnet", "lock", "repair", "scope", "ammo", "speedup", "invincibility", "pushaway", "emp", "autofire"];
+        pool = ["emp", "emp", "autofire", "autofire", "time", "magnet", "lock", "repair", "scope", "ammo", "emp", "autofire"];
       }
       return pool[Math.floor(Math.random() * pool.length)];
     }

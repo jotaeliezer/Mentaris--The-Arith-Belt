@@ -13,7 +13,11 @@ var POWERUP_KEYS = {
   emp: "powerup_EMP",
   lock: "powerup_targetlock",
   scope: "powerup_scope",
-  autofire: "powerup_machinegun"
+  autofire: "powerup_machinegun",
+  ammo: "powerup_ammo",
+  speedup: "rare_speedboost",
+  invincibility: "rare_invincibility",
+  pushaway: "rare_pushaway"
 };
 var BULLET_KEYS = {
   single: "bullet_single",
@@ -94,6 +98,7 @@ export function createPhaserRenderer(opts){
       if(srcKey === "ets_surface") return "images/backgrounds/et's_surface.jpg";
       if(BACKGROUND_KEYS.indexOf(srcKey) !== -1) return "images/backgrounds/" + srcKey + ".png";
       if(srcKey.indexOf("powerup_") === 0) return "images/powerups/" + srcKey + ".png";
+      if(srcKey.indexOf("rare_") === 0) return "images/powerups/" + srcKey + ".png";
       if(srcKey.indexOf("shot_") === 0) return "images/shots/" + srcKey + ".png";
       if(srcKey.indexOf("bullet_") === 0) return "images/bullets/" + srcKey + ".png";
       return "images/" + srcKey + ".png";
