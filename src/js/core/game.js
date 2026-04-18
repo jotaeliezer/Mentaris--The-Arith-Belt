@@ -9048,15 +9048,24 @@ function endGame(reason){
       cState.active = true;
       cState.failed = false;
     }
-    if(success){
-      cState.bestScores = Array.isArray(cState.bestScores) ? cState.bestScores : [];
-      while(cState.bestScores.length <= campaignIndex) cState.bestScores.push(0);
-      var prevBest = Number(cState.bestScores[campaignIndex]) || 0;
-      var thisScore = Number(state.score) || 0;
-      if(thisScore > prevBest){
-        cState.bestScores[campaignIndex] = Math.floor(thisScore);
-      }
+    cState.bestScores = Array.isArray(cState.bestScores) ? cState.bestScores : [];
+    while(cState.bestScores.length <= campaignIndex) cState.bestScores.push(0);
+    var prevBest = Number(cState.bestScores[campaignIndex]) || 0;
+    var thisScore = Number(state.score) || 0;
+    if(thisScore > prevBest){
+      cState.bestScores[campaignIndex] = Math.floor(thisScore);
     }
+    try{
+      console.log("[campaign] bestScore update", {
+        campaignIndex: campaignIndex,
+        campaignReplay: campaignReplay,
+        reason: reason,
+        success: success,
+        thisScore: thisScore,
+        prevBest: prevBest,
+        newBest: cState.bestScores[campaignIndex]
+      });
+    }catch(_){ }
     if(!campaignReplay){
       var earned = Number(state.mineralsEarned || 0);
       if(!Number.isFinite(earned)) earned = 0;

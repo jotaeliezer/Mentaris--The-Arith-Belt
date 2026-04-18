@@ -14,7 +14,8 @@ const base = {
 
 const targets = [
   Object.assign({ entryPoints: ["src/js/core/game.js"], outfile: "public/asteroid_blaster.bundle.js" }, base),
-  Object.assign({ entryPoints: ["src/js/entry/mentaris_supabase.js"], outfile: "public/mentaris_supabase.bundle.js" }, base)
+  Object.assign({ entryPoints: ["src/js/entry/mentaris_supabase.js"], outfile: "public/mentaris_supabase.bundle.js" }, base),
+  Object.assign({ entryPoints: ["src/js/entry/side_ops.js"], outfile: "public/side_ops.bundle.js" }, base)
 ];
 
 async function runBuild(){

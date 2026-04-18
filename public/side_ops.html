@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mentaris: Side Ops — Mini Games</title>
+  <link rel="icon" type="image/png" href="images/misc/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="asteroid_blaster.css?v=2026-04-17-sideops-1" />
+  <style>
+    body{ overflow:auto; }
+
+    .sideOpsWrap{
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:24px;
+      position:relative;
+      z-index:2;
+    }
+
+    .sideOpsShell{
+      width:min(1120px, 100%);
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
+
+    .sideOpsTopBar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px 20px;
+      border:1px solid var(--ui-border-accent);
+      border-radius:var(--ui-radius-card);
+      background: var(--ui-gradient-card);
+      box-shadow: var(--ui-shadow-card), var(--ui-inset-fine);
+    }
+
+    .sideOpsBadge{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:6px 12px;
+      border-radius:999px;
+      border:1px solid var(--ui-border-accent);
+      background: var(--ui-surface-tile-dim);
+      letter-spacing:2px;
+      font-size:11px;
+      text-transform:uppercase;
+      color:var(--ui-accent-cyan-soft);
+    }
+
+    .sideOpsTitle{
+      margin:0;
+      text-transform:uppercase;
+      font-size:clamp(20px, 2.4vw, 28px);
+      letter-spacing:3px;
+      color:var(--ui-text-bright);
+      text-shadow: 0 0 18px rgba(0,229,255,.25);
+    }
+
+    .sideOpsCrumb{
+      font-size:11px;
+      letter-spacing:2px;
+      color:var(--muted);
+      text-transform:uppercase;
+      min-height:14px;
+    }
+
+    .sideOpsStage{
+      width:100%;
+      min-height:400px;
+      border:1px solid var(--ui-border-accent);
+      border-radius:var(--ui-radius-card);
+      background: var(--ui-gradient-card);
+      box-shadow: var(--ui-shadow-card), var(--ui-inset-fine);
+      padding:24px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .sideOpsHudBar{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      padding:10px 14px;
+      border:1px solid var(--ui-border-accent);
+      border-radius:var(--ui-radius-tile);
+      background: var(--ui-surface-tile);
+      margin-bottom:16px;
+    }
+    .sideOpsHudBar[hidden]{ display:none !important; }
+
+    .sideOpsHudChip{
+      display:inline-flex;
+      align-items:baseline;
+      gap:6px;
+      padding:4px 10px;
+      border-radius:999px;
+      background: rgba(8,12,24,.55);
+      border:1px solid rgba(255,255,255,.06);
+      font-size:12px;
+      letter-spacing:1px;
+      text-transform:uppercase;
+    }
+    .sideOpsHudChip .label{ color:var(--ui-text-label); font-size:10px; }
+    .sideOpsHudChip .value{ color:var(--ui-text-bright); font-weight:700; font-size:14px; letter-spacing:.5px; }
+    .sideOpsHudChip.accent .value{ color: var(--ui-accent-cyan); }
+    .sideOpsHudChip.warn .value{ color: var(--warn); }
+    .sideOpsHudChip.bad .value{ color: var(--bad); }
+    .sideOpsHudChip.good .value{ color: var(--good); }
+
+    .sideOpsHudSpacer{ flex:1 1 auto; }
+
+    .sideOpsHubGrid{
+      display:grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap:18px;
+    }
+
+    .sideOpsTile{
+      cursor:pointer;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      padding:22px;
+      border:1px solid var(--ui-border-accent);
+      border-radius:var(--ui-radius-panel);
+      background: var(--ui-gradient-meta);
+      box-shadow: var(--ui-shadow-meta), var(--ui-inset-tile);
+      color: var(--text);
+      text-align:left;
+      font-family: inherit;
+      position:relative;
+      overflow:hidden;
+      transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
+    .sideOpsTile:hover{
+      transform: translateY(-3px);
+      border-color: var(--ui-border-accent-strong);
+      box-shadow: 0 18px 40px rgba(0,0,0,.5), 0 0 18px var(--ui-glow);
+    }
+    .sideOpsTile::before{
+      content:"";
+      position:absolute;
+      inset:-40% -20% auto -20%;
+      height:55%;
+      background: radial-gradient(circle at 50% 45%, rgba(0,229,255,.15), rgba(0,0,0,0) 70%);
+      opacity:.7;
+      pointer-events:none;
+    }
+    .sideOpsTile .tag{
+      font-size:10px;
+      letter-spacing:2px;
+      text-transform:uppercase;
+      color: var(--ui-accent-cyan-soft);
+    }
+    .sideOpsTile .name{
+      margin:0;
+      font-size:22px;
+      letter-spacing:1.5px;
+      text-transform:uppercase;
+      color: var(--ui-text-bright);
+    }
+    .sideOpsTile .blurb{
+      margin:0;
+      font-size:13px;
+      line-height:1.5;
+      color: var(--muted);
+    }
+
+    .sideOpsConfig{
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+    }
+    .sideOpsConfigHeader{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .sideOpsConfigHeader .kicker{
+      font-size:11px;
+      letter-spacing:2px;
+      text-transform:uppercase;
+      color: var(--ui-accent-cyan-soft);
+    }
+    .sideOpsConfigHeader h2{
+      margin:0;
+      font-size:clamp(22px, 3vw, 32px);
+      letter-spacing:2px;
+      text-transform:uppercase;
+    }
+    .sideOpsConfigHeader p{
+      margin:0;
+      color: var(--muted);
+      max-width:60ch;
+    }
+
+    .sideOpsFields{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap:14px;
+    }
+
+    .sideOpsField{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      padding:12px 14px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:var(--ui-radius-tile);
+      background: var(--ui-surface-tile-dim);
+    }
+    .sideOpsField > label{
+      font-size:10px;
+      letter-spacing:2px;
+      text-transform:uppercase;
+      color: var(--ui-text-label);
+    }
+    .sideOpsField input[type="number"],
+    .sideOpsField select,
+    .sideOpsField input[type="text"]{
+      background: rgba(0,0,0,.35);
+      color: var(--text);
+      border:1px solid rgba(255,255,255,.1);
+      border-radius:8px;
+      padding:8px 10px;
+      font: inherit;
+      letter-spacing:.5px;
+    }
+    .sideOpsField input[type="number"]:focus,
+    .sideOpsField select:focus,
+    .sideOpsField input[type="text"]:focus{
+      outline:none;
+      border-color: var(--ui-border-accent-strong);
+      box-shadow: 0 0 0 2px rgba(0,229,255,.18);
+    }
+    .sideOpsField .hint{
+      font-size:11px;
+      color: var(--muted);
+    }
+
+    .sideOpsToggleRow{
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+    }
+    .sideOpsToggle{
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.1);
+      background: rgba(8,12,24,.5);
+      color: var(--text);
+      font: inherit;
+      font-size:12px;
+      letter-spacing:1px;
+      text-transform:uppercase;
+      cursor:pointer;
+      transition: border-color .15s ease, background .15s ease;
+    }
+    .sideOpsToggle:hover{ border-color: var(--ui-border-accent); }
+    .sideOpsToggle.on{
+      border-color: var(--ui-border-accent-strong);
+      background: rgba(0,229,255,.14);
+      color: var(--ui-accent-cyan-soft);
+    }
+
+    .sideOpsActions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .sideOpsActions .btn{ min-width:120px; }
+    .sideOpsActions .btn.primary{
+      border-color: var(--ui-border-accent-strong);
+      background: rgba(0,229,255,.14);
+      color: var(--ui-accent-cyan-soft);
+    }
+    .sideOpsActions .btn.primary:hover{
+      background: rgba(0,229,255,.22);
+    }
+
+    .sideOpsGame{
+      display:block;
+      position:relative;
+      min-height:320px;
+    }
+
+    .sideOpsGame[hidden]{ display:none !important; }
+
+    .sideOpsResults{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: rgba(6,9,16,.88);
+      backdrop-filter: blur(6px);
+      padding:24px;
+      opacity:0;
+      visibility:hidden;
+      transition: opacity .2s ease, visibility .2s ease;
+      border-radius:var(--ui-radius-card);
+      z-index:20;
+    }
+    .sideOpsResults.show{ opacity:1; visibility:visible; }
+    .sideOpsResultsCard{
+      width:min(520px, 100%);
+      padding:26px 28px;
+      border:1px solid var(--ui-border-accent);
+      border-radius:var(--ui-radius-card);
+      background: var(--ui-gradient-card);
+      box-shadow: var(--ui-shadow-card), var(--ui-inset-fine);
+    }
+    .sideOpsResultsCard .kicker{
+      font-size:11px;
+      letter-spacing:3px;
+      text-transform:uppercase;
+      color: var(--ui-accent-cyan-soft);
+    }
+    .sideOpsResultsCard h2{
+      margin:4px 0 14px;
+      letter-spacing:2px;
+      text-transform:uppercase;
+    }
+    .sideOpsResultsStats{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap:10px;
+      margin-bottom:18px;
+    }
+    .sideOpsResultsStat{
+      padding:10px 12px;
+      border-radius:var(--ui-radius-tile);
+      background: var(--ui-surface-tile);
+      border:1px solid rgba(255,255,255,.06);
+    }
+    .sideOpsResultsStat .label{
+      font-size:10px;
+      letter-spacing:2px;
+      text-transform:uppercase;
+      color: var(--ui-text-label);
+    }
+    .sideOpsResultsStat .value{
+      font-size:22px;
+      font-weight:700;
+      color: var(--ui-text-bright);
+    }
+    .sideOpsResultsCard .row{
+      display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;
+    }
+
+    .sideOpsPause{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: rgba(6,9,16,.75);
+      backdrop-filter: blur(4px);
+      border-radius:var(--ui-radius-card);
+      opacity:0;
+      visibility:hidden;
+      transition: opacity .18s ease, visibility .18s ease;
+      z-index:18;
+    }
+    .sideOpsPause.show{ opacity:1; visibility:visible; }
+    .sideOpsPauseCard{
+      padding:24px 28px;
+      border:1px solid var(--ui-border-accent);
+      border-radius:var(--ui-radius-card);
+      background: var(--ui-gradient-card);
+      box-shadow: var(--ui-shadow-card);
+      text-align:center;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      align-items:center;
+      min-width:260px;
+    }
+    .sideOpsPauseCard h3{
+      margin:0;
+      letter-spacing:4px;
+      text-transform:uppercase;
+    }
+    .sideOpsPauseCard .row{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+
+    .sideOpsMsg{
+      padding:40px 24px;
+      text-align:center;
+      color: var(--muted);
+      letter-spacing:1px;
+    }
+
+    @media (max-width: 720px){
+      .sideOpsStage{ padding:16px; }
+      .sideOpsWrap{ padding:12px; }
+      .sideOpsTopBar{ padding:12px 14px; flex-wrap:wrap; }
+    }
+
+    /* ---- Entrance & interaction animations ---------------------------- */
+    @keyframes sideOpsFadeUp{
+      from{ opacity:0; transform: translateY(16px); }
+      to  { opacity:1; transform: translateY(0); }
+    }
+    @keyframes sideOpsFadeIn{
+      from{ opacity:0; }
+      to  { opacity:1; }
+    }
+    @keyframes sideOpsPop{
+      0%  { transform: scale(.92); opacity:0; }
+      60% { transform: scale(1.04); opacity:1; }
+      100%{ transform: scale(1); opacity:1; }
+    }
+    @keyframes sideOpsShake{
+      0%,100%{ transform: translateX(0); }
+      20%,60%{ transform: translateX(-6px); }
+      40%,80%{ transform: translateX(6px); }
+    }
+    @keyframes sideOpsGlowPulse{
+      0%,100%{ box-shadow: 0 0 0 rgba(0,229,255,0); }
+      50%    { box-shadow: 0 0 22px rgba(0,229,255,.35); }
+    }
+    @keyframes sideOpsMatchBurst{
+      0%  { transform: scale(1); box-shadow: 0 0 0 rgba(193,216,47,0); }
+      40% { transform: scale(1.08); box-shadow: 0 0 28px rgba(193,216,47,.55); }
+      100%{ transform: scale(1); box-shadow: 0 0 18px rgba(193,216,47,.28); }
+    }
+    @keyframes sideOpsFlipIn{
+      0%  { transform: rotateY(180deg) scale(.9); opacity:.2; }
+      60% { transform: rotateY(10deg)  scale(1.04); opacity:1; }
+      100%{ transform: rotateY(0deg)   scale(1); opacity:1; }
+    }
+    @keyframes sideOpsStreakFlash{
+      0%  { text-shadow: 0 0 0 rgba(193,216,47,0); transform: scale(1); }
+      40% { text-shadow: 0 0 18px rgba(193,216,47,.8); transform: scale(1.2); }
+      100%{ text-shadow: 0 0 0 rgba(193,216,47,0); transform: scale(1); }
+    }
+    @keyframes sideOpsPromptShift{
+      from{ opacity:0; transform: translateY(6px) scale(.98); }
+      to  { opacity:1; transform: translateY(0) scale(1); }
+    }
+    @keyframes sideOpsResultSweep{
+      0%  { transform: translateY(18px) scale(.96); opacity:0; }
+      100%{ transform: translateY(0) scale(1); opacity:1; }
+    }
+    @keyframes sideOpsBgRotate{
+      from{ rotate: 0deg; }
+      to  { rotate: 360deg; }
+    }
+
+    .sideOpsTopBar{
+      animation: sideOpsFadeUp .5s ease both;
+    }
+    .sideOpsStage{
+      animation: sideOpsFadeUp .55s .05s ease both;
+    }
+    .sideOpsHubGrid{
+      animation: sideOpsFadeIn .4s ease both;
+    }
+    .sideOpsTile{
+      animation: sideOpsFadeUp .55s ease both;
+    }
+    .sideOpsTile:nth-child(1){ animation-delay: .05s; }
+    .sideOpsTile:nth-child(2){ animation-delay: .12s; }
+    .sideOpsTile:nth-child(3){ animation-delay: .19s; }
+    .sideOpsTile:nth-child(4){ animation-delay: .26s; }
+    .sideOpsTile:nth-child(5){ animation-delay: .33s; }
+    .sideOpsTile:nth-child(6){ animation-delay: .40s; }
+
+    .sideOpsTile .tag,
+    .sideOpsTile .name,
+    .sideOpsTile .blurb{
+      position:relative;
+      z-index:1;
+    }
+
+    .sideOpsConfig{ animation: sideOpsFadeUp .4s ease both; }
+    .sideOpsConfigHeader{ animation: sideOpsFadeUp .45s ease both; }
+    .sideOpsFields > *{ animation: sideOpsFadeUp .5s ease both; }
+    .sideOpsFields > *:nth-child(1){ animation-delay: .04s; }
+    .sideOpsFields > *:nth-child(2){ animation-delay: .08s; }
+    .sideOpsFields > *:nth-child(3){ animation-delay: .12s; }
+    .sideOpsFields > *:nth-child(4){ animation-delay: .16s; }
+    .sideOpsFields > *:nth-child(5){ animation-delay: .20s; }
+    .sideOpsFields > *:nth-child(6){ animation-delay: .24s; }
+
+    .sideOpsHudBar{ animation: sideOpsFadeUp .4s ease both; }
+
+    .sideOpsResults.show .sideOpsResultsCard{
+      animation: sideOpsResultSweep .45s ease both;
+    }
+
+    /* Memory card animations */
+    .memoryCard{
+      perspective: 600px;
+      transform-style: preserve-3d;
+    }
+    .memoryCard.revealed{
+      animation: sideOpsFlipIn .32s ease;
+    }
+    .memoryCard.matched{
+      animation: sideOpsMatchBurst .5s ease;
+    }
+    .memoryCard.miss{
+      animation: sideOpsShake .38s ease;
+    }
+
+    /* Grid master prompt pulse */
+    .gridMasterPrompt{
+      animation: sideOpsPromptShift .24s ease;
+    }
+    .gridMasterPrompt.correct{
+      color: var(--good) !important;
+      text-shadow: 0 0 22px rgba(193,216,47,.55) !important;
+    }
+    .gridMasterPrompt.wrong{
+      color: var(--bad) !important;
+      text-shadow: 0 0 22px rgba(255,77,109,.55) !important;
+      animation: sideOpsShake .3s ease;
+    }
+    .gridMasterStreak.flash{
+      animation: sideOpsStreakFlash .5s ease;
+    }
+
+    /* Memory pair count pop */
+    .sideOpsHudChip.justMatched .value{
+      animation: sideOpsPop .35s ease;
+    }
+
+    /* Configure toggle buttons ride the theme */
+    .sideOpsToggle{
+      position:relative;
+      overflow:hidden;
+    }
+    .sideOpsToggle.on::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: linear-gradient(120deg, transparent 40%, rgba(255,255,255,.14) 50%, transparent 60%);
+      transform: translateX(-100%);
+      animation: buttonSweep 1.6s ease-in-out infinite;
+    }
+
+    /* Ship picker in config */
+    .shipPicker{
+      display:grid;
+      grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+      gap:8px;
+      max-height: 260px;
+      overflow:auto;
+      padding:4px;
+    }
+    .shipPickCard{
+      position:relative;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:6px;
+      padding:10px 8px;
+      border:1px solid rgba(255,255,255,.1);
+      border-radius: var(--ui-radius-tile);
+      background: var(--ui-surface-tile-dim);
+      cursor:pointer;
+      font: inherit;
+      color: var(--text);
+      transition: border-color .15s ease, background .15s ease, transform .15s ease;
+    }
+    .shipPickCard:hover{
+      border-color: var(--ui-border-accent);
+      transform: translateY(-2px);
+    }
+    .shipPickCard.selected{
+      border-color: var(--ui-border-accent-strong);
+      background: rgba(0,229,255,.14);
+      box-shadow: 0 0 18px rgba(0,229,255,.25);
+    }
+    .shipPickCard.locked{
+      opacity:.35;
+      cursor:not-allowed;
+    }
+    .shipPickCard .shipThumb{
+      width: 72px;
+      height: 72px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 10px rgba(0,229,255,.25));
+    }
+    .shipPickCard .shipName{
+      font-size: 10px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--ui-text-label-strong);
+      text-align:center;
+    }
+    .shipPickCard .lockIcon{
+      position:absolute;
+      top:4px;
+      right:4px;
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--warn);
+    }
+  </style>
+</head>
+<body>
+  <div class="sideOpsWrap">
+    <div class="sideOpsShell">
+      <div class="sideOpsTopBar">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <span class="sideOpsBadge">SIDE OPS</span>
+          <h1 class="sideOpsTitle">Mini Games</h1>
+        </div>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span id="sideOpsCrumb" class="sideOpsCrumb">Pick a mission</span>
+          <a class="btn" href="home.html">Home</a>
+        </div>
+      </div>
+
+      <div id="sideOpsStage" class="sideOpsStage">
+        <div id="sideOpsRoot"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="side_ops.bundle.js"></script>
+</body>
+</html>
