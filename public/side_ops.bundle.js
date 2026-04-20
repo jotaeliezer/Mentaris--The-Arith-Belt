@@ -1329,7 +1329,7 @@
           return;
         api.exit({
           kicker: newBest ? "NEW BEST" : "RUN OVER",
-          title: "Neon Snake",
+          title: "Collections",
           rows: [
             { label: "Score", value: state.score },
             { label: "Streak", value: state.streak },
@@ -1720,10 +1720,10 @@
   }
   var descriptor5 = {
     id: "neon_snake",
-    title: "Neon Snake",
+    title: "Collections",
     tagline: "Arcade \u2022 Ship vs Asteroids",
     blurb: "Pilot your ship, collect the correct asteroid, and grow the tail. Wrong answers or self-bites end the run.",
-    brief: "Three numbered asteroids drift each round \u2014 only one matches the answer. Eaten asteroids chain to the ship's tail like a snake. Speed scales with streak. Powerups occasionally drop (freeze, slow, shield, score bomb, shrink).",
+    brief: "Three numbered asteroids drift each round \u2014 only one matches the answer. Collected asteroids chain to the ship's tail. Speed scales with streak. Powerups occasionally drop (freeze, slow, shield, score bomb, shrink).",
     configSchema: [
       {
         type: "ship",
@@ -1785,20 +1785,54 @@
   };
 
   // src/js/side_ops/registry.js
-  var GAMES = [
+  var CATEGORIES = [
+    {
+      id: "memory_belts",
+      title: "Memory Belts",
+      tagline: "Memory \u2022 Matching drills",
+      blurb: "Card-matching belts for squares, roots, and decimals. Flip, match, clear.",
+      games: [
+        descriptor,
+        descriptor2,
+        descriptor3
+      ]
+    },
+    {
+      id: "grid_master_panel",
+      title: descriptor4.title,
+      tagline: descriptor4.tagline,
+      blurb: descriptor4.blurb,
+      game: descriptor4
+    },
+    {
+      id: "collections_panel",
+      title: descriptor5.title,
+      tagline: descriptor5.tagline,
+      blurb: descriptor5.blurb,
+      game: descriptor5
+    }
+  ];
+  var ALL_GAMES = [
     descriptor,
     descriptor2,
     descriptor3,
     descriptor4,
     descriptor5
   ];
-  function listGames() {
-    return GAMES.slice();
+  function listCategories() {
+    return CATEGORIES.slice();
+  }
+  function getCategory(id) {
+    for (var i = 0; i < CATEGORIES.length; i++) {
+      if (CATEGORIES[i].id === id)
+        return CATEGORIES[i];
+    }
+    return null;
   }
   function getGame(id) {
-    for (var i = 0; i < GAMES.length; i++) {
-      if (GAMES[i].id === id)
-        return GAMES[i];
+    for (var i = 0; i < ALL_GAMES.length; i++) {
+      if (ALL_GAMES[i].id === id)
+        return ALL_GAMES[i];
     }
     return null;
   }
@@ -1930,9 +1964,50 @@
     teardownActive();
     clear(rootEl);
     setCrumb("Pick a mission");
-    const games = listGames();
+    const cats = listCategories();
     const grid = el2("div", { class: "sideOpsHubGrid" });
-    games.forEach((g) => {
+    cats.forEach((cat) => {
+      const isGroup = Array.isArray(cat.games);
+      const extra = isGroup ? el2("span", { class: "sideOpsTileBadge" }, [cat.games.length + " variants"]) : null;
+      const tile = el2("button", {
+        class: "sideOpsTile",
+        type: "button",
+        onclick: () => {
+          SFX.select();
+          if (isGroup)
+            showGroup(cat.id);
+          else
+            showConfig(cat.game.id);
+        }
+      }, [
+        el2("span", { class: "tag" }, [cat.tagline || "Mini Game"]),
+        el2("h3", { class: "name" }, [cat.title]),
+        el2("p", { class: "blurb" }, [cat.blurb || ""]),
+        extra
+      ]);
+      grid.appendChild(tile);
+    });
+    const wrap = el2("div", { class: "sideOpsHub" }, [
+      el2("div", { class: "sideOpsConfigHeader", style: "margin-bottom:14px;" }, [
+        el2("span", { class: "kicker" }, ["SIDE OPS // MINI GAMES"]),
+        el2("h2", {}, ["Pick an operation"]),
+        el2("p", {}, ["Short, focused math drills. Each panel has its own mechanic. Timer and stats report back after every run."])
+      ]),
+      grid
+    ]);
+    rootEl.appendChild(wrap);
+  }
+  function showGroup(catId) {
+    const cat = getCategory(catId);
+    if (!cat || !Array.isArray(cat.games)) {
+      showHub();
+      return;
+    }
+    teardownActive();
+    clear(rootEl);
+    setCrumb(cat.title + " \u2014 pick a belt");
+    const grid = el2("div", { class: "sideOpsHubGrid" });
+    cat.games.forEach((g) => {
       const tile = el2("button", {
         class: "sideOpsTile",
         type: "button",
@@ -1947,15 +2022,33 @@
       ]);
       grid.appendChild(tile);
     });
+    const back = el2("button", {
+      class: "btn",
+      type: "button",
+      onclick: () => {
+        SFX.click();
+        showHub();
+      }
+    }, ["Back"]);
     const wrap = el2("div", { class: "sideOpsHub" }, [
       el2("div", { class: "sideOpsConfigHeader", style: "margin-bottom:14px;" }, [
-        el2("span", { class: "kicker" }, ["SIDE OPS // MINI GAMES"]),
-        el2("h2", {}, ["Pick an operation"]),
-        el2("p", {}, ["Short, focused math drills. Each op has its own mechanic. Timer and stats report back after every run."])
+        el2("span", { class: "kicker" }, ["SIDE OPS // " + cat.title.toUpperCase()]),
+        el2("h2", {}, [cat.title]),
+        el2("p", {}, [cat.blurb || ""])
       ]),
-      grid
+      grid,
+      el2("div", { class: "sideOpsActions", style: "margin-top:16px; justify-content:flex-start;" }, [back])
     ]);
     rootEl.appendChild(wrap);
+  }
+  function findParentGroup(gameId) {
+    const cats = listCategories();
+    for (let i = 0; i < cats.length; i++) {
+      const c = cats[i];
+      if (Array.isArray(c.games) && c.games.some((g) => g.id === gameId))
+        return c;
+    }
+    return null;
   }
   function showConfig(gameId) {
     const game = getGame(gameId);
@@ -1988,12 +2081,16 @@
         showPlay(game, Object.assign({}, values));
       }
     }, ["Launch"]);
+    const parentGroup = findParentGroup(gameId);
     const back = el2("button", {
       class: "btn",
       type: "button",
       onclick: () => {
         SFX.click();
-        showHub();
+        if (parentGroup)
+          showGroup(parentGroup.id);
+        else
+          showHub();
       }
     }, ["Back"]);
     const wrap = el2("div", { class: "sideOpsConfig" }, [
@@ -2217,8 +2314,12 @@
     }
   }
   function exitToHub() {
+    const parent = activeGameId ? findParentGroup(activeGameId) : null;
     teardownActive();
-    showHub();
+    if (parent)
+      showGroup(parent.id);
+    else
+      showHub();
   }
   function teardownActive() {
     if (activeTeardown) {

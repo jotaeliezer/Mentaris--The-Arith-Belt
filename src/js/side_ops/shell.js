@@ -6,7 +6,7 @@
  * `mount(container, config, api)` function and returns a teardown function.
  */
 
-import { listGames, getGame } from "./registry.js";
+import { listCategories, getCategory, getGame } from "./registry.js";
 
 // ---------------------------------------------------------------------------
 // Tiny WebAudio helper — synthwave beeps. Best-effort; never throws.
@@ -136,17 +136,62 @@ function onGlobalKey(e){
 }
 
 // ---------------------------------------------------------------------------
-// Hub view
+// Hub view (top-level panels)
 // ---------------------------------------------------------------------------
 function showHub(){
   teardownActive();
   clear(rootEl);
   setCrumb("Pick a mission");
 
-  const games = listGames();
+  const cats = listCategories();
   const grid = el("div", { class: "sideOpsHubGrid" });
 
-  games.forEach((g) => {
+  cats.forEach((cat) => {
+    const isGroup = Array.isArray(cat.games);
+    const extra = isGroup
+      ? el("span", { class: "sideOpsTileBadge" }, [cat.games.length + " variants"])
+      : null;
+    const tile = el("button", {
+      class: "sideOpsTile",
+      type: "button",
+      onclick: () => {
+        SFX.select();
+        if(isGroup) showGroup(cat.id);
+        else showConfig(cat.game.id);
+      }
+    }, [
+      el("span", { class: "tag" }, [cat.tagline || "Mini Game"]),
+      el("h3", { class: "name" }, [cat.title]),
+      el("p", { class: "blurb" }, [cat.blurb || ""]),
+      extra
+    ]);
+    grid.appendChild(tile);
+  });
+
+  const wrap = el("div", { class: "sideOpsHub" }, [
+    el("div", { class: "sideOpsConfigHeader", style: "margin-bottom:14px;" }, [
+      el("span", { class: "kicker" }, ["SIDE OPS // MINI GAMES"]),
+      el("h2", {}, ["Pick an operation"]),
+      el("p", {}, ["Short, focused math drills. Each panel has its own mechanic. Timer and stats report back after every run."])
+    ]),
+    grid
+  ]);
+
+  rootEl.appendChild(wrap);
+}
+
+// ---------------------------------------------------------------------------
+// Group sub-hub (e.g. Memory Belts -> pick a matching variant)
+// ---------------------------------------------------------------------------
+function showGroup(catId){
+  const cat = getCategory(catId);
+  if(!cat || !Array.isArray(cat.games)){ showHub(); return; }
+  teardownActive();
+  clear(rootEl);
+  setCrumb(cat.title + " \u2014 pick a belt");
+
+  const grid = el("div", { class: "sideOpsHubGrid" });
+  cat.games.forEach((g) => {
     const tile = el("button", {
       class: "sideOpsTile",
       type: "button",
@@ -159,13 +204,20 @@ function showHub(){
     grid.appendChild(tile);
   });
 
+  const back = el("button", {
+    class: "btn",
+    type: "button",
+    onclick: () => { SFX.click(); showHub(); }
+  }, ["Back"]);
+
   const wrap = el("div", { class: "sideOpsHub" }, [
     el("div", { class: "sideOpsConfigHeader", style: "margin-bottom:14px;" }, [
-      el("span", { class: "kicker" }, ["SIDE OPS // MINI GAMES"]),
-      el("h2", {}, ["Pick an operation"]),
-      el("p", {}, ["Short, focused math drills. Each op has its own mechanic. Timer and stats report back after every run."])
+      el("span", { class: "kicker" }, ["SIDE OPS // " + cat.title.toUpperCase()]),
+      el("h2", {}, [cat.title]),
+      el("p", {}, [cat.blurb || ""])
     ]),
-    grid
+    grid,
+    el("div", { class: "sideOpsActions", style: "margin-top:16px; justify-content:flex-start;" }, [back])
   ]);
 
   rootEl.appendChild(wrap);
@@ -174,6 +226,15 @@ function showHub(){
 // ---------------------------------------------------------------------------
 // Config view
 // ---------------------------------------------------------------------------
+function findParentGroup(gameId){
+  const cats = listCategories();
+  for(let i = 0; i < cats.length; i++){
+    const c = cats[i];
+    if(Array.isArray(c.games) && c.games.some((g) => g.id === gameId)) return c;
+  }
+  return null;
+}
+
 function showConfig(gameId){
   const game = getGame(gameId);
   if(!game){ showHub(); return; }
@@ -200,10 +261,15 @@ function showConfig(gameId){
       showPlay(game, Object.assign({}, values));
     }
   }, ["Launch"]);
+  const parentGroup = findParentGroup(gameId);
   const back = el("button", {
     class: "btn",
     type: "button",
-    onclick: () => { SFX.click(); showHub(); }
+    onclick: () => {
+      SFX.click();
+      if(parentGroup) showGroup(parentGroup.id);
+      else showHub();
+    }
   }, ["Back"]);
 
   const wrap = el("div", { class: "sideOpsConfig" }, [
@@ -424,8 +490,10 @@ function showPlay(game, config){
 }
 
 function exitToHub(){
+  const parent = activeGameId ? findParentGroup(activeGameId) : null;
   teardownActive();
-  showHub();
+  if(parent) showGroup(parent.id);
+  else showHub();
 }
 
 function teardownActive(){

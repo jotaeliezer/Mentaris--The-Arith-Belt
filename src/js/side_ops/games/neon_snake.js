@@ -375,7 +375,7 @@ function mount(container, config, api){
       if(state.destroyed) return;
       api.exit({
         kicker: newBest ? "NEW BEST" : "RUN OVER",
-        title: "Neon Snake",
+        title: "Collections",
         rows: [
           { label: "Score", value: state.score },
           { label: "Streak", value: state.streak },
@@ -800,10 +800,10 @@ function mount(container, config, api){
 
 export const descriptor = {
   id: "neon_snake",
-  title: "Neon Snake",
+  title: "Collections",
   tagline: "Arcade \u2022 Ship vs Asteroids",
   blurb: "Pilot your ship, collect the correct asteroid, and grow the tail. Wrong answers or self-bites end the run.",
-  brief: "Three numbered asteroids drift each round \u2014 only one matches the answer. Eaten asteroids chain to the ship's tail like a snake. Speed scales with streak. Powerups occasionally drop (freeze, slow, shield, score bomb, shrink).",
+  brief: "Three numbered asteroids drift each round \u2014 only one matches the answer. Collected asteroids chain to the ship's tail. Speed scales with streak. Powerups occasionally drop (freeze, slow, shield, score bomb, shrink).",
   configSchema: [
     {
       type: "ship", id: "ship", label: "Ship", default: "classic",
