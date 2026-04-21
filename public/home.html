@@ -4216,8 +4216,8 @@
             <div class="filterRow" id="lbSourceRow" style="display:none;">
               <label>Data
                 <select id="lbDataSource">
+                  <option value="galactic" selected>Galactic (cloud)</option>
                   <option value="local">This device</option>
-                  <option value="galactic">Galactic (cloud)</option>
                 </select>
               </label>
               <span class="monoSmall" id="lbGalacticHint" style="display:none;color:var(--muted);max-width:min(520px,90vw);">Cloud rows: Operation, Mode, and Difficulty filters apply; Submode and Timer do not.</span>
@@ -9522,28 +9522,42 @@
       var supabaseApi = window.MentarisSupabaseScores;
       var supabaseReady = !!(supabaseApi && typeof supabaseApi.isSupabaseScoresConfigured === "function" && supabaseApi.isSupabaseScoresConfigured());
       if(lbSourceRow) lbSourceRow.style.display = supabaseReady ? "" : "none";
+      if(lbDataSource && supabaseReady && !lbDataSource.dataset.defaultedGalactic){
+        lbDataSource.dataset.defaultedGalactic = "1";
+        lbDataSource.value = "galactic";
+      }
       if(lbGalacticHint) lbGalacticHint.style.display = (supabaseReady && lbDataSource && lbDataSource.value === "galactic") ? "" : "none";
+
+      function loadGalacticLeaderboard(){
+        if(!supabaseReady || !supabaseApi) return;
+        setLoading(true);
+        supabaseApi.fetchLeaderboard(200).then(function(res){
+          setLoading(false);
+          if(res && res.success){
+            galacticLeaderboardCache = (res.data || []).map(cloudRowToEntry);
+          }else{
+            galacticLeaderboardCache = [];
+            console.warn("[galactic scores]", res && res.error);
+          }
+          renderHomeStats();
+        });
+      }
+
       if(lbDataSource && supabaseReady && !lbDataSource.dataset.boundGalactic){
         lbDataSource.dataset.boundGalactic = "1";
         lbDataSource.addEventListener("change", function(){
           if(lbGalacticHint) lbGalacticHint.style.display = lbDataSource.value === "galactic" ? "" : "none";
           if(lbDataSource.value === "galactic"){
-            setLoading(true);
-            supabaseApi.fetchLeaderboard(200).then(function(res){
-              setLoading(false);
-              if(res && res.success){
-                galacticLeaderboardCache = (res.data || []).map(cloudRowToEntry);
-              }else{
-                galacticLeaderboardCache = [];
-                console.warn("[galactic scores]", res && res.error);
-              }
-              renderHomeStats();
-            });
+            loadGalacticLeaderboard();
             return;
           }
           galacticLeaderboardCache = null;
           renderHomeStats();
         });
+      }
+
+      if(supabaseReady && lbDataSource && lbDataSource.value === "galactic" && galacticLeaderboardCache === null){
+        loadGalacticLeaderboard();
       }
 
       function formatDurationLocal(sec){

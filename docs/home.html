@@ -2202,37 +2202,43 @@
 
     .shipFloat{
       position:absolute;
-      width:min(220px, 28vw);
+      left: var(--sx, 0%);
+      top:  var(--sy, 0%);
+      width:  var(--sz, 140px);
+      height: var(--sz, 140px);
       opacity:0;
-      filter: drop-shadow(0 0 18px rgba(0,229,255,.18)) drop-shadow(0 18px 50px rgba(0,0,0,.45));
-      animation: shipDrift 22s ease-in-out infinite, shipFade 10s ease-in-out infinite, shipSpin 38s linear infinite;
+      filter: drop-shadow(0 0 14px rgba(0,229,255,.18)) drop-shadow(0 18px 48px rgba(0,0,0,.5));
       object-fit: contain;
       pointer-events:none;
       user-select:none;
+      will-change: transform, opacity;
+      animation:
+        homeAstDrift var(--dur, 28s) ease-in-out infinite,
+        homeAstSpin  var(--spin, 42s) linear infinite,
+        homeAstFade  var(--fade, 22s) ease-in-out infinite;
+      animation-delay: var(--d1, 0s), var(--d2, 0s), var(--d3, 0s);
     }
 
-    .shipFloat--a{ left:6%; top:18%; animation-delay: 0s, 0s; }
-    .shipFloat--b{ right:10%; top:12%; animation-delay: -3s, -2s; }
-    .shipFloat--c{ left:68%; top:55%; animation-delay: -6s, -4s; width:min(200px, 24vw); }
-    .shipFloat--d{ left:14%; top:64%; animation-delay: -9s, -6s; width:min(190px, 22vw); }
-
-    @keyframes shipDrift{
-      0%{ transform: translate3d(0,0,0) rotate(-3deg); }
-      50%{ transform: translate3d(18px,-14px,0) rotate(4deg); }
-      100%{ transform: translate3d(0,0,0) rotate(-3deg); }
+    @keyframes homeAstDrift{
+      0%  { transform: translate3d(0,0,0); }
+      50% { transform: translate3d(var(--dx, 20px), var(--dy, -14px), 0); }
+      100%{ transform: translate3d(0,0,0); }
     }
 
-    @keyframes shipFade{
-      0%,10%{ opacity:0; }
-      25%,60%{ opacity:.24; }
-      80%{ opacity:.05; }
-      100%{ opacity:0; }
+    @keyframes homeAstSpin{
+      0%  { rotate: 0deg; }
+      100%{ rotate: var(--rotTarget, 360deg); }
     }
 
-    @keyframes shipSpin{
-      0%{ transform: translate3d(0,0,0) rotate(0deg); }
-      50%{ transform: translate3d(0,0,0) rotate(7deg); }
-      100%{ transform: translate3d(0,0,0) rotate(0deg); }
+    @keyframes homeAstFade{
+      0%, 6%  { opacity: 0; }
+      22%     { opacity: var(--peakOpacity, .26); }
+      70%     { opacity: var(--peakOpacity, .26); }
+      92%,100%{ opacity: 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .shipFloat{ animation: none; opacity: .12; }
     }
 
     @keyframes buttonSweep{
@@ -2954,7 +2960,7 @@
           <button id="btnLaunchHome" class="btn primary btnLaunch" type="button">Launch</button>
           <button id="btnCampaign" class="btn secondaryLabel menuExtra" type="button">Campaign <small>6 mission run</small></button>
           <button id="btnStartGame" class="btn secondaryLabel menuExtra" type="button">Single Mission <small>Custom setup</small></button>
-          <button id="btnSideOps" class="btn secondaryLabel menuExtra" type="button">Side Ops <small>Mini games (soon)</small></button>
+          <button id="btnSideOps" class="btn secondaryLabel menuExtra" type="button">Side Ops <small>Mini games</small></button>
           <button id="btnTutorial" class="btn secondaryLabel menuExtra" type="button">Tutorial <small>Guided tour</small></button>
           <button id="btnLeaderboards" class="btn secondaryLabel menuExtra" type="button">Leaderboards <small>Top runs</small></button>
           <button id="btnSettingsHome" class="btn secondaryLabel menuExtra" type="button">Settings <small>Audio levels</small></button>
@@ -2966,12 +2972,46 @@
     </div>
   </div>
 
-  <div class="shipFloaters" aria-hidden="true">
-    <img class="shipFloat shipFloat--a" src="images/asteroids/asteroid1.png" alt="" />
-    <img class="shipFloat shipFloat--b" src="images/asteroids/asteroid2.png" alt="" />
-    <img class="shipFloat shipFloat--c" src="images/asteroids/asteroid3.png" alt="" />
-    <img class="shipFloat shipFloat--d" src="images/asteroids/asteroid2.png" alt="" />
-  </div>
+  <div class="shipFloaters" id="homeShipFloaters" aria-hidden="true"></div>
+  <script>
+    (function(){
+      var host = document.getElementById("homeShipFloaters");
+      if(!host) return;
+      var srcs = [
+        "images/asteroids/asteroid1.png",
+        "images/asteroids/asteroid2.png",
+        "images/asteroids/asteroid3.png",
+        "images/asteroids/asteroid4.png",
+        "images/asteroids/asteroid6.png"
+      ];
+      function rand(lo, hi){ return lo + Math.random() * (hi - lo); }
+      function pick(a){ return a[Math.floor(Math.random() * a.length)]; }
+      var count = 14;
+      for(var i = 0; i < count; i++){
+        var img = document.createElement("img");
+        img.className = "shipFloat";
+        img.src = pick(srcs);
+        img.alt = "";
+        img.loading = "lazy";
+        img.decoding = "async";
+        var size = Math.round(rand(56, 200));
+        img.style.setProperty("--sx", rand(-4, 100).toFixed(1) + "%");
+        img.style.setProperty("--sy", rand(-4, 100).toFixed(1) + "%");
+        img.style.setProperty("--sz", size + "px");
+        img.style.setProperty("--dx", Math.round(rand(-120, 120)) + "px");
+        img.style.setProperty("--dy", Math.round(rand(-80, 80)) + "px");
+        img.style.setProperty("--dur",  rand(22, 44).toFixed(1) + "s");
+        img.style.setProperty("--spin", rand(22, 60).toFixed(1) + "s");
+        img.style.setProperty("--fade", rand(18, 30).toFixed(1) + "s");
+        img.style.setProperty("--d1", (-rand(0, 30)).toFixed(1) + "s");
+        img.style.setProperty("--d2", (-rand(0, 30)).toFixed(1) + "s");
+        img.style.setProperty("--d3", (-rand(0, 30)).toFixed(1) + "s");
+        img.style.setProperty("--rotTarget", (Math.random() > .5 ? 360 : -360) + "deg");
+        img.style.setProperty("--peakOpacity", rand(0.14, 0.32).toFixed(2));
+        host.appendChild(img);
+      }
+    })();
+  </script>
 
   <footer class="siteFooter">© 2025 Mentaris: The Arith Belt. All rights reserved.</footer>
 
@@ -4176,8 +4216,8 @@
             <div class="filterRow" id="lbSourceRow" style="display:none;">
               <label>Data
                 <select id="lbDataSource">
+                  <option value="galactic" selected>Galactic (cloud)</option>
                   <option value="local">This device</option>
-                  <option value="galactic">Galactic (cloud)</option>
                 </select>
               </label>
               <span class="monoSmall" id="lbGalacticHint" style="display:none;color:var(--muted);max-width:min(520px,90vw);">Cloud rows: Operation, Mode, and Difficulty filters apply; Submode and Timer do not.</span>
@@ -7810,7 +7850,7 @@
     if (btnSideOps) {
       btnSideOps.addEventListener("click", function(){
         playMenuBeep();
-        showToast("SIDE OPS — COMING SOON");
+        window.location.href = "side_ops.html";
       });
     }
     if (btnCloseControls && controlsOverlay) {
@@ -9482,28 +9522,42 @@
       var supabaseApi = window.MentarisSupabaseScores;
       var supabaseReady = !!(supabaseApi && typeof supabaseApi.isSupabaseScoresConfigured === "function" && supabaseApi.isSupabaseScoresConfigured());
       if(lbSourceRow) lbSourceRow.style.display = supabaseReady ? "" : "none";
+      if(lbDataSource && supabaseReady && !lbDataSource.dataset.defaultedGalactic){
+        lbDataSource.dataset.defaultedGalactic = "1";
+        lbDataSource.value = "galactic";
+      }
       if(lbGalacticHint) lbGalacticHint.style.display = (supabaseReady && lbDataSource && lbDataSource.value === "galactic") ? "" : "none";
+
+      function loadGalacticLeaderboard(){
+        if(!supabaseReady || !supabaseApi) return;
+        setLoading(true);
+        supabaseApi.fetchLeaderboard(200).then(function(res){
+          setLoading(false);
+          if(res && res.success){
+            galacticLeaderboardCache = (res.data || []).map(cloudRowToEntry);
+          }else{
+            galacticLeaderboardCache = [];
+            console.warn("[galactic scores]", res && res.error);
+          }
+          renderHomeStats();
+        });
+      }
+
       if(lbDataSource && supabaseReady && !lbDataSource.dataset.boundGalactic){
         lbDataSource.dataset.boundGalactic = "1";
         lbDataSource.addEventListener("change", function(){
           if(lbGalacticHint) lbGalacticHint.style.display = lbDataSource.value === "galactic" ? "" : "none";
           if(lbDataSource.value === "galactic"){
-            setLoading(true);
-            supabaseApi.fetchLeaderboard(200).then(function(res){
-              setLoading(false);
-              if(res && res.success){
-                galacticLeaderboardCache = (res.data || []).map(cloudRowToEntry);
-              }else{
-                galacticLeaderboardCache = [];
-                console.warn("[galactic scores]", res && res.error);
-              }
-              renderHomeStats();
-            });
+            loadGalacticLeaderboard();
             return;
           }
           galacticLeaderboardCache = null;
           renderHomeStats();
         });
+      }
+
+      if(supabaseReady && lbDataSource && lbDataSource.value === "galactic" && galacticLeaderboardCache === null){
+        loadGalacticLeaderboard();
       }
 
       function formatDurationLocal(sec){
