@@ -2313,6 +2313,66 @@ input[type="checkbox"]{ transform: translateY(1px); }
   }
 }
 
+/* ── Mission report: borderless panels & stat pills (post-session, cleaner read) ── */
+#overlayEnd .endSequence .panel{
+  border: none;
+  box-shadow: none;
+  background: rgba(6, 10, 20, 0.55);
+}
+#overlayEnd .endScoresPanel.panel{
+  border: none;
+  box-shadow: none;
+  background: rgba(6, 10, 20, 0.45);
+}
+#endStageEngagement .endMineralsSummary{
+  border: none !important;
+  box-shadow: none !important;
+}
+#endStageEngagement .endMineralsIconWrap{
+  border: none !important;
+  background: rgba(0, 229, 255, 0.08);
+}
+#endStageEngagement .engagementSideHint{
+  border: none !important;
+  box-shadow: none !important;
+  background: rgba(0, 0, 0, 0.22);
+}
+#endStageEngagement #statsListSecondary .endStatsMiniTile{
+  border: none !important;
+  box-shadow: none !important;
+  background: rgba(255, 255, 255, 0.04);
+}
+#endStageEngagement #statsListSecondary .endStatsMiniIcon{
+  border: none !important;
+  background: rgba(255, 255, 255, 0.07);
+}
+#endStageEngagement .tile-collected .endStatsMiniIcon,
+#endStageEngagement .tile-used .endStatsMiniIcon,
+#endStageEngagement .tile-missed .endStatsMiniIcon,
+#endStageEngagement .tile-maneuver .endStatsMiniIcon{
+  border: none !important;
+}
+#endStageEngagement .tile-collected,
+#endStageEngagement .tile-used,
+#endStageEngagement .tile-missed,
+#endStageEngagement .tile-maneuver{
+  border: none !important;
+}
+#endStageEngagement .puStatsTable{
+  border: none !important;
+  background: transparent;
+}
+#endStageEngagement .puStatsRow{
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+#endStageEngagement #statsListSecondary .engagementSectionTitle{
+  border-bottom: none;
+}
+.endScoreRowCurrent{
+  box-shadow: none !important;
+  background: rgba(120, 220, 255, 0.12) !important;
+}
+
 /* ── Engagement tile entrance animation ── */
 @keyframes engageTileIn{
   from{ opacity:0; transform: translateY(10px) scale(0.97); }

@@ -1,131 +1,117 @@
 # Roadmap: Mentaris — The Arith Belt
 
-## Current State (as of March 2026)
-- 13 ships, 6 backgrounds, 24 question modes, 4 operations, 10 power-ups, 8 alien sprites
-- Local-only leaderboard (CSV, never synced), no server, no analytics
-- Sandbox mode (URL-param only, hidden from main UI)
-- Local split-screen multiplayer (sandbox only, not surfaced to players)
-- No campaign, no progression beyond session score/streak
+## Current state (April 2026)
+
+**Shipped / in the live build**
+- Core arcade: ships, backgrounds, question modes, operations, power-ups, aliens, Phaser renderer option
+- **Galactic leaderboard** — Supabase-backed scores (POST on session end, GET top runs); home menu Leaderboards with filters, **sortable columns**, default **Galactic (cloud)** vs optional **This device**; configured via `supabase_config.js` / Vercel env at build time
+- **Campaign** — mission chain, progress in `localStorage`, Commander Solver presentation, horizontal mission map with drag-scroll and auto-center, re-deploy cleared missions (no minerals), per-mission **best score** persistence (including replays)
+- **Home & menus** — ship intro fixes, decoy asteroid retire animation (label fade + shrink / drift), home button styling, single-mission vs home menu styling separation
+- **Rare power-ups** — dedicated art and lower drop rate (speed boost, invincibility, push away)
+- Sandbox / master-code flow (per earlier milestones); local split-screen still sandbox-oriented
+
+**Still local-only**
+- Side Ops mode assets exist; **no cloud leaderboard for Side Ops yet**
+- No online multiplayer; controls are fixed presets (no full **customize controls** UI beyond existing settings)
 
 ---
 
-## Tier 1 — Polish & Quick Wins (days each)
+## Completed (reference)
 
-### 1.1 Bug Fixes
+| Area | Notes |
+|------|--------|
+| Cloud leaderboard + RLS | Anon key + `scores` table; client reads/writes via REST |
+| Campaign progression & UI | Map, re-deploy, best scores, minerals rules |
+| Leaderboard UX | Default to galactic; sortable table headers |
+| Mission report polish | Borderless panels / pills on post-session engagement stats |
+
+---
+
+## Tier 1 — Polish & quick wins
+
+### 1.1 Bug fixes & small UI
 - [ ] HP bar pulsing carry-over between sessions → remove `hud-danger` class on game reset
 - [ ] Objective overlay text too long → shorten to 2-line bullets
 - [ ] Mission briefing Launch button resizing with hint text → fix layout
 
-### 1.2 Mission Briefing UI Overhaul
-- [ ] Fix "LAUNCH MISSION" button — fixed height, never wraps regardless of hint length
-- [ ] Commander hint box: fixed height + overflow ellipsis, no layout impact
-- [ ] "OBJECTIVE:" chip at top currently shows blank — populate it
-- [x] Personal best chip near the mode stepper
+### 1.2 Mission briefing
+- [ ] "OBJECTIVE:" chip population where still blank
+- [x] Personal best chip near mode stepper (where implemented)
 
-### 1.3 Remove / Retire Sandbox
-- [x] Sandbox always on menu; master code prompt on launch (code revealed once when all campaigns cleared); Settings → Access for optional verify
-- [ ] Move sandbox to hidden `?dev=1` URL param — optional extra gate for web builds
-- [ ] Extract local co-op toggle to a proper "CO-OP" option on the main menu before removing sandbox
+### 1.3 Sandbox / dev
+- [ ] Optional `?dev=1` extra gate for web builds
+- [ ] Surface local co-op as a first-class **CO-OP** menu path before retiring sandbox-only entry
 
-### 1.4 HUD & In-Game Polish
-- [x] Wide mode HUD spans correctly
-- [x] Background zoom fixed to width-fit
-- [x] Engagement page whitespace reduced
-- [x] Operation color coding on prompt chip
-- [x] Live accuracy tracker chip in HUD
-- [ ] Add subtle vignette/scanline overlay on canvas for synthwave feel
-- [x] Streak milestone toast
+### 1.4 HUD & in-game
+- [x] Wide HUD, background zoom, engagement layout, operation colors, accuracy chip, streak toast
+- [ ] Optional vignette / scanline overlay on canvas
 
-### 1.5 More Backgrounds
-- [ ] Add new background pairs (normal + `b` variant) in `public/images/backgrounds/`
-- [ ] Suggested themes: Ice Belt, Lava Trench, Deep Void, Cyber Grid
-- [ ] Target: 10 total environments (currently 6)
-
-### 1.6 More Ships
-- [ ] Each ship needs: portrait PNG, game sprite PNG, config entry
-- [ ] Target: 20 ships (currently 13)
-- [ ] Add 1–2 ships with unique passive traits (wider spread, faster reload, bonus armor)
+### 1.5 Content
+- [ ] More background pairs (e.g. Ice Belt, Lava Trench, Deep Void) — target ~10 environments
+- [ ] More ships with portraits + config — target ~20; 1–2 with unique passives
 
 ---
 
-## Tier 2 — Content Depth (weeks each)
+## Tier 2 — Content & features (weeks)
 
-### 2.1 Campaign / Mission Progression
-- [ ] Structured mission chain: 10–15 missions with fixed settings and narrative briefings
-- [ ] Each mission unlocks the next (saved in localStorage)
-- [ ] Commander dialogue per mission (text-only, uses existing portrait)
-- [ ] Mission rewards: unlock ships, backgrounds, or cosmetic trails
-- [ ] Campaign map screen (node graph or linear path)
+### 2.1 Campaign depth
+- [x] Core campaign map, missions, unlocks, Commander flow *(ongoing narrative/balance)*
+- [ ] More mission variety, rewards (cosmetics, trails), stronger narrative beats
 
-### 2.2 Alien Behavior Diversity
-- [ ] All aliens are currently "scout" type — add distinct behaviors:
-  - **Sniper** — long range, slow, high HP
-  - **Rusher** — fast, low HP, dives straight at ship
-  - **Shielder** — absorbs 1 player shot, then vulnerable
-  - **Bomber** — drops area-denial blasts
-- [ ] Wire alien type to sprite so specific sprites always behave a certain way
+### 2.2 Aliens
+- [ ] Distinct behaviors (sniper, rusher, shielder, bomber) wired to sprites
 
-### 2.3 Achievements / Badges
-- [ ] 20–30 achievements stored in localStorage (e.g. "10 streak", "no misses", "collect all power-ups")
-- [ ] Achievement toast on unlock (short animated banner)
-- [ ] Achievement gallery in home screen or end-game screen
-- [ ] Achievements can gate cosmetic unlocks (ship skins, trails)
+### 2.3 Achievements
+- [ ] localStorage achievements, toasts, gallery, cosmetic gates
 
-### 2.4 More Question Modes
-- [ ] **Mixed operations** — randomly cycles mul/add each question
-- [ ] **Speed round** — timer per question (5s max), score multiplier per ms remaining
-- [ ] **Boss only mode** — skip waves, boss encounters back-to-back
+### 2.4 Question modes
+- [ ] Mixed operations, speed rounds, boss-only streaks
 
-### 2.5 Ship Traits / Loadout
-- [ ] Each ship gets a passive trait shown on its card in mission briefing
-  - Hull Bonus, Speed Bonus, Wider Shot, Starting Armor, etc.
-- [ ] Light balancing pass so no ship is dominant
+### 2.5 Ship traits
+- [ ] Passives on ship cards + balance pass
+
+### 2.6 Side Ops
+- [ ] **Side Ops cloud leaderboard** — extend Supabase schema or table (mode id, score, pilot) and mirror main menu patterns (filters + sort)
+- [ ] Parity for “Galactic vs this device” where applicable
 
 ---
 
-## Tier 3 — Backend & Social (multi-week, requires server)
+## Tier 3 — Backend & social (multi-week)
 
-### 3.1 Online Leaderboard
-- **Stack:** Supabase (free tier) — Postgres + REST API, no server to maintain
-- **Data:** POST score on session end (name, score, mode, operation, difficulty, timestamp, ship)
-- **Read:** GET top-N scores, filtered by mode/operation
-- **UI:** "GALACTIC RANKS" screen accessible from home
-- **Privacy:** name only, no account required
-- **Effort:** ~3–5 days
+### 3.1 Galactic leaderboard — **done (iterate)**
+- [x] Supabase `scores` + client submit/fetch
+- [ ] Optional: server-side validation edge function, rate limits, anti-cheat heuristics
 
-### 3.2 Admin Dashboard (owner only)
-- **Stack:** Separate HTML page, password-gated
-- **Data source:** Same Supabase table as leaderboard
-- **Shows:** Sessions per day, most played modes/ships, score distribution, top players
-- **Effort:** ~1 week
+### 3.2 Admin dashboard
+- [ ] Password-gated page: volume, modes, ships, score distribution
 
-### 3.3 Lobby Multiplayer (Online Co-op)
-- **Stack:** WebSocket server (Node.js + ws) or Supabase Realtime
-- **Mode:** Co-op only (2 pilots, shared or split arena)
-- **Flow:** Player 1 creates room → 4-digit code → Player 2 joins → host launches → synced session
-- **Recommendation:** Build 3.1 first — proves backend before committing to real-time infra
-- **Effort:** 4–8 weeks
+### 3.3 Multiplayer (**new roadmap focus**)
+- [ ] **Online multiplayer** — start with **co-op** (shared arena or split objectives); room codes or short join ids
+- [ ] Stack: WebSockets (Node/`ws`) or Supabase Realtime; sync authoritative game state or input replication
+- [ ] Milestone: lobby + ready + launch; then latency-hardening
+- [ ] Competitive PvP only after co-op is stable (latency / fairness)
 
-### 3.4 Player Accounts (post-3.1)
-- Email or Google login via Supabase Auth
-- Persistent stats across devices
-- Profile page from home screen
+### 3.4 Accounts (after leaderboard bedded in)
+- [ ] Supabase Auth (email / OAuth), cross-device stats, profile screen
+
+### 3.5 Controls (**new**)
+- [ ] **Customize controls** — remapping UI for keyboard/gamepad/touch; persist per profile; show conflicts and defaults
 
 ---
 
-## Suggested Sequence
+## Suggested sequence
 
-| Phase | Items | Goal |
-|---|---|---|
-| Now | 1.1 bugs, 1.2 briefing UI | Solid public-facing release |
-| Next 2 weeks | 1.4–1.6 polish, backgrounds, ships | More content, more replayability |
-| Month 2 | 2.1 campaign, 2.3 achievements | Depth + return visits |
-| Month 3 | 3.1 leaderboard, 3.2 dashboard | Backend foundation |
-| Month 4+ | 2.2 alien types, 3.3 multiplayer | Major features |
+| Phase | Focus |
+|-------|--------|
+| Now | Side Ops leaderboard sketch + control remap spec; small briefing/HUD bugs |
+| Next | Side Ops Supabase + home UI; admin dashboard if needed for ops |
+| Then | Multiplayer prototype (co-op lobby + one mission) |
+| Later | Auth, competitive modes, deep alien AI |
 
 ---
 
-## What NOT to Build (yet)
-- Mobile app — canvas rendering needs touch redesign first
-- Account system before leaderboard — over-engineered without data to justify it
-- Competitive multiplayer — lag compensation is hard; co-op first
+## What not to build (yet)
+
+- Native mobile app before touch/control pass
+- Full competitive ranked PvP before co-op multiplayer proof-of-concept
+- Heavy anti-cheat before basic rate limits and sanity checks

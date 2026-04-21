@@ -2909,6 +2909,23 @@
     body.homeMenuPage #leaderboardsOverlay .leaderboardsTable td{
       border-bottom-color: rgba(255,255,255,.05) !important;
     }
+    body.homeMenuPage #leaderboardsOverlay .leaderboardsTable th.lb-th-sortable{
+      cursor:pointer;
+      user-select:none;
+      white-space:nowrap;
+      transition: color .15s ease;
+    }
+    body.homeMenuPage #leaderboardsOverlay .leaderboardsTable th.lb-th-sortable:hover{
+      color:var(--accent, #7ee8ff);
+    }
+    body.homeMenuPage #leaderboardsOverlay .leaderboardsTable th.lb-sorted-asc::after,
+    body.homeMenuPage #leaderboardsOverlay .leaderboardsTable th.lb-sorted-desc::after{
+      font-size:.78em;
+      opacity:.75;
+      margin-left:4px;
+    }
+    body.homeMenuPage #leaderboardsOverlay .leaderboardsTable th.lb-sorted-asc::after{ content:"\2191"; }
+    body.homeMenuPage #leaderboardsOverlay .leaderboardsTable th.lb-sorted-desc::after{ content:"\2193"; }
     body.homeMenuPage #homeLeaderboardsBody tr.lb-rank-grade,
     body.homeMenuPage #homeLeaderboardsBody tr.lb-grade-s,
     body.homeMenuPage #homeLeaderboardsBody tr.lb-grade-a,
@@ -4231,14 +4248,14 @@
             <table class="leaderboardsTable">
               <thead>
                 <tr>
-                  <th>Position</th>
-                  <th>Pilot</th>
-                  <th>Score</th>
-                  <th>Rank</th>
-                  <th>Level</th>
-                  <th>Duration</th>
-                  <th>Timer</th>
-                  <th>Completed</th>
+                  <th scope="col">#</th>
+                  <th scope="col" class="lb-th-sortable" data-lb-sort="pilot" title="Sort by pilot name" tabindex="0" role="columnheader">Pilot</th>
+                  <th scope="col" class="lb-th-sortable" data-lb-sort="score" title="Sort by score" tabindex="0" role="columnheader">Score</th>
+                  <th scope="col" class="lb-th-sortable" data-lb-sort="rank" title="Sort by letter rank" tabindex="0" role="columnheader">Rank</th>
+                  <th scope="col" class="lb-th-sortable" data-lb-sort="level" title="Sort by level" tabindex="0" role="columnheader">Level</th>
+                  <th scope="col" class="lb-th-sortable" data-lb-sort="duration" title="Sort by session duration" tabindex="0" role="columnheader">Duration</th>
+                  <th scope="col" class="lb-th-sortable" data-lb-sort="timer" title="Sort by timer mode" tabindex="0" role="columnheader">Timer</th>
+                  <th scope="col" class="lb-th-sortable" data-lb-sort="completed" title="Sort by date completed" tabindex="0" role="columnheader">Completed</th>
                 </tr>
               </thead>
               <tbody id="homeLeaderboardsBody"></tbody>
@@ -9422,6 +9439,11 @@
 
     var lbRenderTimer = null;
     var galacticLeaderboardCache = null;
+    var leaderboardsSortState = { key: "score", dir: "desc" };
+    function lbDefaultSortDir(key){
+      if(key === "pilot" || key === "rank") return "asc";
+      return "desc";
+    }
     function renderHomeStats(){
       var tableBody = document.getElementById("homeLeaderboardsBody");
       if(!tableBody) return;
@@ -9514,6 +9536,73 @@
           date: row.created_at ? Date.parse(row.created_at) : 0,
           _galactic: true
         };
+      }
+
+      function normalizeRankLetter(item){
+        if(item._galactic) return "\u2014";
+        var rank = item.rank || (item.accuracy != null ? getLetterRank(item.accuracy) : "");
+        rank = String(rank || "").trim().toUpperCase();
+        if(["S","A","B","C","D","E"].indexOf(rank) === -1) rank = "E";
+        return rank;
+      }
+      function durationSecondsForSort(item){
+        if(item._galactic) return -1;
+        var d = item.duration;
+        if(d == null && item.session_seconds != null) d = item.session_seconds;
+        var n = parseInt(d, 10);
+        return Number.isFinite(n) ? n : 0;
+      }
+      function timerSecondsForSort(item){
+        var t = normalizeTimer(item.timerMode);
+        if(t === "Endless") return -1;
+        var n = parseInt(String(t).replace(/s$/i, ""), 10);
+        return Number.isFinite(n) ? n : 0;
+      }
+      function compareLeaderboardEntries(a, b){
+        var k = leaderboardsSortState.key;
+        var inv = leaderboardsSortState.dir === "asc" ? 1 : -1;
+        var cmp = 0;
+        if(k === "pilot"){
+          cmp = String(a.name || "").localeCompare(String(b.name || ""), undefined, { sensitivity: "base" });
+        }else if(k === "score"){
+          cmp = (parseInt(a.score, 10) || 0) - (parseInt(b.score, 10) || 0);
+        }else if(k === "rank"){
+          var order = { "S": 0, "A": 1, "B": 2, "C": 3, "D": 4, "E": 5, "\u2014": 6 };
+          var ra = normalizeRankLetter(a);
+          var rb = normalizeRankLetter(b);
+          cmp = (order[ra] != null ? order[ra] : 6) - (order[rb] != null ? order[rb] : 6);
+        }else if(k === "level"){
+          cmp = (parseInt(a.level, 10) || 0) - (parseInt(b.level, 10) || 0);
+        }else if(k === "duration"){
+          cmp = durationSecondsForSort(a) - durationSecondsForSort(b);
+        }else if(k === "timer"){
+          cmp = timerSecondsForSort(a) - timerSecondsForSort(b);
+        }else if(k === "completed"){
+          cmp = (a.date || 0) - (b.date || 0);
+        }else{
+          cmp = (parseInt(a.score, 10) || 0) - (parseInt(b.score, 10) || 0);
+        }
+        if(cmp !== 0) return inv * cmp;
+        var tieScore = (parseInt(b.score, 10) || 0) - (parseInt(a.score, 10) || 0);
+        if(tieScore !== 0) return tieScore;
+        return (b.date || 0) - (a.date || 0);
+      }
+      function updateLeaderboardSortHeaders(){
+        var table = tableBody && tableBody.closest("table");
+        var thead = table && table.querySelector("thead");
+        if(!thead) return;
+        var heads = thead.querySelectorAll("th[data-lb-sort]");
+        for(var hi = 0; hi < heads.length; hi++){
+          var th = heads[hi];
+          var sk = th.getAttribute("data-lb-sort");
+          th.classList.remove("lb-sorted-asc", "lb-sorted-desc");
+          if(sk === leaderboardsSortState.key){
+            th.classList.add(leaderboardsSortState.dir === "asc" ? "lb-sorted-asc" : "lb-sorted-desc");
+            th.setAttribute("aria-sort", leaderboardsSortState.dir === "asc" ? "ascending" : "descending");
+          }else{
+            th.removeAttribute("aria-sort");
+          }
+        }
       }
 
       var lbSourceRow = document.getElementById("lbSourceRow");
@@ -9723,10 +9812,8 @@
           if(timerVal !== "All" && normalizeTimer(e.timerMode) !== timerVal) return false;
           return true;
         });
-        filtered.sort(function(a,b){
-          if(b.score !== a.score) return b.score - a.score;
-          return (b.date || 0) - (a.date || 0);
-        });
+        filtered.sort(compareLeaderboardEntries);
+        updateLeaderboardSortHeaders();
         tableBody.innerHTML = "";
         if(!filtered.length){
           var empty = document.createElement("tr");
@@ -9760,6 +9847,39 @@
         }
       }
 
+      tableBody.__lbApplySort = function(){ applyFilters(false); };
+      if(!tableBody.dataset.lbSortInit){
+        tableBody.dataset.lbSortInit = "1";
+        var lbTable = tableBody.closest("table");
+        var lbThead = lbTable && lbTable.querySelector("thead");
+        if(lbThead){
+          function applySortFromHeader(th){
+            if(!th) return;
+            var key = th.getAttribute("data-lb-sort");
+            if(!key) return;
+            if(leaderboardsSortState.key === key){
+              leaderboardsSortState.dir = leaderboardsSortState.dir === "desc" ? "asc" : "desc";
+            }else{
+              leaderboardsSortState.key = key;
+              leaderboardsSortState.dir = lbDefaultSortDir(key);
+            }
+            if(tableBody.__lbApplySort) tableBody.__lbApplySort();
+          }
+          lbThead.addEventListener("click", function(ev){
+            var th = ev.target && ev.target.closest("th[data-lb-sort]");
+            if(!th) return;
+            applySortFromHeader(th);
+          });
+          lbThead.addEventListener("keydown", function(ev){
+            if(ev.key !== "Enter" && ev.key !== " ") return;
+            var th = ev.target && ev.target.closest("th[data-lb-sort]");
+            if(!th || th !== ev.target) return;
+            ev.preventDefault();
+            applySortFromHeader(th);
+          });
+        }
+      }
+
       [filterOperation, filterMode, filterSubmode, filterDifficulty, filterTimer].forEach(function(sel){
         if(!sel) return;
         if(sel.dataset.bound) return;
@@ -9773,6 +9893,8 @@
           if(filterSubmode) filterSubmode.value = "All";
           if(filterDifficulty) filterDifficulty.value = "All";
           if(filterTimer) filterTimer.value = "All";
+          leaderboardsSortState.key = "score";
+          leaderboardsSortState.dir = "desc";
           applyFilters(true);
         });
         clearFiltersBtn.dataset.bound = "true";
