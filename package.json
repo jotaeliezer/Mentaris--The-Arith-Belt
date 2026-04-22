@@ -9,6 +9,8 @@
     "build": "node scripts/write_supabase_config.js && node scripts/build.js",
     "docs": "node scripts/write_supabase_config.js && node scripts/publish_docs.js",
     "watch": "node scripts/write_supabase_config.js && node scripts/build.js --watch",
+    "dev:workspace": "node scripts/init_dev_workspace.js",
+    "dev:serve": "npx --yes serve dev/public -l 4173",
     "electron": "electron .",
     "dist": "npm run build && electron-builder"
   },

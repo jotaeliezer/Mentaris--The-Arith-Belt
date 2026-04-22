@@ -10,3 +10,6 @@ dist/**
 public/supabase_config.js
 docs/supabase_config.js
 /mentaris/
+
+# Local dev mirror (multiplayer experiments; run npm run dev:workspace)
+dev/
