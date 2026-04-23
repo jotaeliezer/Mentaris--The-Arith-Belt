@@ -8,6 +8,11 @@ set "REPO=%CD%"
 echo.
 echo === Mentaris local dev: build, sync dev\public, server, watch ===
 echo.
+echo Before continuing: CLOSE any previous "Mentaris dev server" and "Mentaris watch" windows,
+echo and close browser tabs on http://localhost:4173  (they lock public\*.bundle.js on Windows^).
+echo If build says "user-mapped section" or "cannot perform on a file" -- those were still open.
+echo.
+pause
 
 set SYNC_DEV_WORKSPACE=1
 call npm run build

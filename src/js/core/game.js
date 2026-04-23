@@ -781,6 +781,8 @@ var END_STAGE_FADE_MS = 220;
 // ======= State / Entities
 var state = createState();
 var player = createPlayer();
+var numpadMovementMode = false;
+var competitivePilName = "";
 player.spinManeuver = { active:false, phase:0, x0:0, y0:0, x1:0, y1:0, x2:0, y2:0 };
 var pilot2 = null;
 var pilot2Hud = null;
@@ -2084,6 +2086,32 @@ window.addEventListener("keydown", function(e){
   var k = (e.key || "").toLowerCase();
   var code = e.code || "";
   var keyNorm = normalizeKeyEvent(e);
+  var skipKeyAdd = false;
+  if(numpadMovementMode){
+    if(code === "Numpad4"){
+      keys.add("arrowleft");
+      e.preventDefault();
+      skipKeyAdd = true;
+    }else if(code === "Numpad6"){
+      keys.add("arrowright");
+      e.preventDefault();
+      skipKeyAdd = true;
+    }else if(code === "Numpad8"){
+      keys.add("arrowup");
+      e.preventDefault();
+      skipKeyAdd = true;
+    }else if(code === "Numpad5"){
+      keys.add("arrowdown");
+      e.preventDefault();
+      skipKeyAdd = true;
+    }
+  }
+  if(numpadMovementMode && !skipKeyAdd){
+    if(k === "w" || k === "a" || k === "s" || k === "d" || k === "arrowup" || k === "arrowdown" || k === "arrowleft" || k === "arrowright"){
+      e.preventDefault();
+      return;
+    }
+  }
   var prevent = ["arrowleft","arrowright","arrowup","arrowdown","a","d","w","s","p","m","b","v","1","2","3","0"];
   if(keyBindings.shoot){
     prevent.push(keyBindings.shoot);
@@ -2097,7 +2125,7 @@ window.addEventListener("keydown", function(e){
   }
   if(prevent.indexOf(k) !== -1 || prevent.indexOf(keyNorm) !== -1 || code === "Digit1" || code === "Digit2" || code === "Digit3" || code === "Numpad1" || code === "Numpad2" || code === "Numpad3") e.preventDefault();
 
-  keys.add(keyNorm);
+  if(!skipKeyAdd) keys.add(keyNorm);
   if(!audioPrimed){
     unlockSfx(state);
     audioPrimed = true;
@@ -2125,7 +2153,7 @@ window.addEventListener("keydown", function(e){
       fire();
     }
   }
-  if((k === "w" || k === "arrowup") && !e.repeat && state.running && !state.paused && !state.over){
+  if((k === "w" || k === "arrowup" || (numpadMovementMode && code === "Numpad8")) && !e.repeat && state.running && !state.paused && !state.over){
     playSfx(state, "ship_advance");
   }
   if(keyNorm === keyBindings.secondary && !e.repeat){
@@ -2166,6 +2194,20 @@ window.addEventListener("keydown", function(e){
 
 window.addEventListener("keyup", function(e){
   if(isTextInput(document.activeElement)) return;
+  var k = (e.key || "").toLowerCase();
+  var code = e.code || "";
+  if(numpadMovementMode){
+    if(code === "Numpad4"){ keys.delete("arrowleft"); e.preventDefault(); return; }
+    if(code === "Numpad6"){ keys.delete("arrowright"); e.preventDefault(); return; }
+    if(code === "Numpad8"){ keys.delete("arrowup"); e.preventDefault(); return; }
+    if(code === "Numpad5"){ keys.delete("arrowdown"); e.preventDefault(); return; }
+  }
+  if(numpadMovementMode){
+    if(k === "w" || k === "a" || k === "s" || k === "d" || k === "arrowup" || k === "arrowdown" || k === "arrowleft" || k === "arrowright"){
+      e.preventDefault();
+      return;
+    }
+  }
   var keyNorm = normalizeKeyEvent(e);
   keys.delete(keyNorm);
   if(keyNorm === keyBindings.special && isStampedeMode()){
@@ -11776,6 +11818,27 @@ function draw(){
   }
 
   ctx.clearRect(0,0,w,h);
+  if(competitivePilName){
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.font = "600 13px system-ui, Segoe UI, Roboto, sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    var tag = competitivePilName;
+    var tw = ctx.measureText(tag).width;
+    var padX = 10;
+    var padY = 8;
+    var boxW = tw + 18;
+    var boxH = 26;
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.fillRect(padX, padY, boxW, boxH);
+    ctx.strokeStyle = "rgba(0, 229, 255, 0.28)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(padX + 0.5, padY + 0.5, boxW - 1, boxH - 1);
+    ctx.fillStyle = (competitivePilName && competitivePilName.indexOf("Beta") >= 0) ? "#ffccbb" : "#bfefff";
+    ctx.fillText(tag, padX + 9, padY + 5);
+    ctx.restore();
+  }
   if(!phaserActive && !tutorialActive){
     if(backgroundSprites[backgroundIndex] && backgroundReady[backgroundIndex]){
       var bgImg = backgroundSprites[backgroundIndex];
@@ -16453,6 +16516,12 @@ function applyQueryParams(){
   state.sessionAlienIdentityActive = !!(!campaignActive && sessionAlienKey && isSessionConfigNonEndless(cfg.targetMode, cfg.timerMode));
   state.alienBossRetreatMode = !!(state.sessionAlienIdentityActive && sessionBossRetreatMode);
   setAlienSessionSpriteKey(getActiveAlienIdentityKey());
+
+  numpadMovementMode = (params.get("numpadMovement") === "1" || params.get("numpadMovement") === "true");
+  var cpPil = (params.get("competitivePil") || "").toLowerCase();
+  if(cpPil === "alpha") competitivePilName = "Pilot Alpha";
+  else if(cpPil === "beta") competitivePilName = "Pilot Beta";
+  else competitivePilName = "";
 }
 
 function syncSandboxAlienWaveButton(){

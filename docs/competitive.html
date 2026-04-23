@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mentaris — Competitive (Pilot Alpha &amp; Pilot Beta)</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: #050812; color: #e8f0ff; font-family: system-ui, Segoe UI, Roboto, sans-serif; }
+    .page {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .banner {
+      flex: 0 0 auto;
+      padding: 10px 16px 8px;
+      background: linear-gradient(180deg, #0a1024, #050812);
+      border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+    }
+    .banner h1 { margin: 0; font-size: 15px; letter-spacing: 0.1em; text-transform: uppercase; }
+    .banner p { margin: 6px 0 0; font-size: 12px; line-height: 1.4; color: #9aa4c0; max-width: 72ch; }
+    .row {
+      flex: 1 1 auto;
+      display: flex;
+      min-height: 0;
+    }
+    .pane {
+      flex: 1 1 50%;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      border: 0 solid rgba(0, 229, 255, 0.12);
+    }
+    .pane:first-child { border-right-width: 1px; }
+    .label {
+      flex: 0 0 auto;
+      padding: 6px 10px;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    .pane.alpha .label { color: #9cf0ff; background: rgba(0, 229, 255, 0.08); }
+    .pane.beta .label { color: #ffbbaa; background: rgba(255, 120, 100, 0.1); }
+    .pane iframe {
+      flex: 1 1 auto;
+      width: 100%;
+      border: 0;
+      min-height: 320px;
+      background: #000;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="banner">
+      <h1>Competitive — two full arenas</h1>
+      <p>
+        <b>Pilot Alpha</b> (left): your usual controls (WASD / arrows, mouse, etc.).
+        <b>Pilot Beta</b> (right): <b>Numpad 8 / 4 / 5 / 6</b> = up / left / down / right. Click the right game once so it has keyboard focus, then use the numpad. Each side is a full session (same engine as single-player).
+      </p>
+    </div>
+    <div class="row">
+      <div class="pane alpha">
+        <div class="label">Pilot Alpha</div>
+        <iframe
+          id="competitiveFrameAlpha"
+          title="Pilot Alpha"
+          src="asteroid_blaster.html?competitivePil=alpha&competitiveEmbed=1"
+        ></iframe>
+      </div>
+      <div class="pane beta">
+        <div class="label">Pilot Beta (click here, then numpad 8·4·5·6)</div>
+        <iframe
+          id="competitiveFrameBeta"
+          title="Pilot Beta"
+          src="asteroid_blaster.html?competitivePil=beta&competitiveEmbed=1&numpadMovement=1"
+        ></iframe>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function(){
+      var beta = document.getElementById("competitiveFrameBeta");
+      if(!beta) return;
+      beta.addEventListener("load", function(){
+        try{ beta.contentWindow && beta.contentWindow.focus(); }catch(e){}
+      });
+    })();
+  </script>
+</body>
+</html>
