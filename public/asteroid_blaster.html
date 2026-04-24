@@ -11,6 +11,23 @@
   <link rel="stylesheet" href="asteroid_blaster.css?v=2026-01-27-1" />
 </head>
 <body>
+  <script>
+  (function(){
+    try{
+      var s = (location.search || "").replace(/^\?/, "");
+      if(s.length) return;
+      var raw = sessionStorage.getItem("mentaris.launchQuery");
+      if(!raw) return;
+      var meta = JSON.parse(raw);
+      if(!meta || !meta.q || (Date.now() - (meta.t || 0)) > 120000){
+        try{ sessionStorage.removeItem("mentaris.launchQuery"); }catch(e){}
+        return;
+      }
+      try{ sessionStorage.removeItem("mentaris.launchQuery"); }catch(e){}
+      location.replace("asteroid_blaster.html?" + String(meta.q).replace(/^\?/, ""));
+    }catch(e){}
+  })();
+  </script>
   <div id="wrap" class="noselect">
     <input type="hidden" id="shotType" name="shotType" value="single" />
     <div id="gameShell">

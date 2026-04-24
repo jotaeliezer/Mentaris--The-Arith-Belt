@@ -17340,6 +17340,10 @@ function boot(){
   if(!autoStart && (params.has("aMin") || params.has("bMin") || params.has("questionMode") || params.has("ship"))){
     autoStart = true;
   }
+  // competitive.html embeds iframes with competitiveEmbed=1 but no aMin/ship/autostart; must still run a session
+  if(!autoStart && (params.get("competitiveEmbed") === "1" || params.get("competitiveEmbed") === "true")){
+    autoStart = true;
+  }
   if(overlayMenu){
     overlayMenu.classList.remove("show");
     if(!tutorialActive && !autoStart){

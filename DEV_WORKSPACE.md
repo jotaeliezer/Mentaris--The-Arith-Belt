@@ -25,7 +25,7 @@ Or run the same script from the repo: **`scripts\Start_Dev_Game.bat`**.
 
 ## Competitive (Pilot Alpha + Pilot Beta)
 
-- Open **http://localhost:4173/competitive.html** (or from home: **Multiplayer** → **Competitive** → **Open competitive (two full arenas)**).
+- Open **http://localhost:4173/competitive.html** (or from home: **Multiplayer** → **Competitive** → **Open competitive (two full arenas)**). Each iframe loads the game with **`autoStart=1`** so a real run starts (not the settings-only pause state).
 - Two iframes = two **full** single-player–style sessions. **Pilot Alpha** (left): normal keyboard/mouse. **Pilot Beta** (right): **Numpad 8 = up, 4 = left, 5 = down, 6 = right** (click the right pane so it has focus).
 
 ## Supabase

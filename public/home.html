@@ -7564,6 +7564,13 @@
       try{ return localStorage.getItem(tutorialKey) === "1"; }catch(e){}
       return false;
     }
+    function stashMentarisLaunchQuery(qs){
+      try{
+        var q = String(qs || "").replace(/^\?/, "");
+        if(!q) return;
+        sessionStorage.setItem("mentaris.launchQuery", JSON.stringify({t: Date.now(), q: q}));
+      }catch(e){}
+    }
 
     function applyMenuState(){
       if(!menuWrap) return;
@@ -9119,7 +9126,9 @@
           belt: "dusk"
         });
         setTimeout(function(){
-          window.location.href = "asteroid_blaster.html?" + params.toString();
+          var qs = params.toString();
+          stashMentarisLaunchQuery(qs);
+          window.location.href = "asteroid_blaster.html?" + qs;
         }, 700);
       }catch(err){
         console.error(err);
@@ -9155,7 +9164,9 @@
         difficulty: "normal",
         sound: "1"
       });
-      window.location.href = "asteroid_blaster.html?" + params.toString();
+      var sandQs = params.toString();
+      stashMentarisLaunchQuery(sandQs);
+      window.location.href = "asteroid_blaster.html?" + sandQs;
     }
 
     function showBriefing(config){
@@ -9391,7 +9402,9 @@
         }
       }
       setTimeout(function(){
-        window.location.href = "asteroid_blaster.html?" + params.toString();
+        var launchQs = params.toString();
+        stashMentarisLaunchQuery(launchQs);
+        window.location.href = "asteroid_blaster.html?" + launchQs;
       }, 1000);
     }
 
