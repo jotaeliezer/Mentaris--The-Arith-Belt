@@ -28,7 +28,8 @@ start "Mentaris dev server" /D "%REPO%" cmd /k "npx --yes serve dev\public -l 41
 
 timeout /t 2 /nobreak >nul
 start "" "http://localhost:4173/home.html"
-start "" "http://localhost:4173/asteroid_blaster.html"
+REM Bare asteroid_blaster.html (no query) = pause menu / settings only — same as production. Optional second tab: quick smoke with auto-start (matches Launch adding autoStart=1).
+start "" "http://localhost:4173/asteroid_blaster.html?autoStart=1"
 start "" "http://localhost:4173/side_ops.html"
 
 echo.
@@ -37,7 +38,7 @@ start "Mentaris watch" /D "%REPO%" cmd /k "set SYNC_DEV_WORKSPACE=1&& npm run wa
 
 echo.
 echo   Home:     http://localhost:4173/home.html
-echo   Game:     http://localhost:4173/asteroid_blaster.html
+echo   Game:     http://localhost:4173/asteroid_blaster.html?autoStart=1
 echo   Side Ops: http://localhost:4173/side_ops.html
 echo.
 echo Close the "dev server" and "watch" windows when done.

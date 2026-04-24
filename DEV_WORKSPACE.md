@@ -12,7 +12,7 @@ After you have run **`npm run dev:workspace`** at least once (or any command tha
 
    - Run **`npm run build`** (with **`SYNC_DEV_WORKSPACE=1`** so `dev/public` stays in sync after the build).
    - Start the static server on **port 4173** serving **`dev/public`** (entire game).
-   - Open **home**, **asteroid_blaster**, and **side_ops** in the browser.
+   - Open **home**, **asteroid_blaster** (with `autoStart=1` so the session actually runs), and **side_ops** in the browser.
    - Start **`npm run watch`** in another window; every time esbuild rebuilds, **`dev/public`** is refreshed automatically so you can reload to see JS changes.
 
 Or run the same script from the repo: **`scripts\Start_Dev_Game.bat`**.
@@ -34,6 +34,7 @@ If `dev/public/supabase_config.js` is missing, the sync copies from `supabase_co
 
 ## Notes
 
+- **Entry flow (same as GitHub / production):** use **`/home.html`** and **Launch** (or tutorial). That navigates to `asteroid_blaster.html?...` with **`autoStart=1`** and the chosen config. Opening **`/asteroid_blaster.html` with no query string** is intentionally a **settings / pause** state: the ship appears, no wave starts, until you use **Resume** or load with `autoStart=1` (as the batch file’s second tab now does for a quick smoke test).
 - **`SYNC_DEV_WORKSPACE=1`** is set by the batch file and by `npm run watch` when using the dev launcher; it runs [`scripts/init_dev_workspace.js`](scripts/init_dev_workspace.js) after each bundle rebuild so **`dev/public`** matches **`public/`** plus the patched `home.html`.
 - Edits to **`src/js`** go through watch → `public/*.bundle.js` → auto-sync → **`dev/public`**. Reload the browser (hard refresh if needed).
 - Edits to **`public/*.html`** (except the dev-only patch) need a manual **`npm run dev:workspace`** or trigger a rebuild that copies assets—`init_dev_workspace` always re-copies all of `public/` over `dev/public`.
