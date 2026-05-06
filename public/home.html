@@ -2962,6 +2962,30 @@
       .menuShell{ grid-template-columns: 1fr; }
       .menuRight{ display:none; }
     }
+
+    /* ── Achievements gallery ── */
+    .achievementsGrid{
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 10px;
+      max-height: 60vh;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .achievementCard{
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .achievementCard.unlocked{
+      border-color: rgba(255,215,0,.35);
+      background: rgba(255,215,0,.05);
+    }
+    .achievementCard.locked{ opacity: 0.38; }
+    .achievementCardLabel{ font-weight: 700; font-size: 13px; color: var(--text); }
+    .achievementCardDesc{ font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+    .achievementCardDate{ font-size: 10px; color: rgba(255,215,0,.7); margin-top: 6px; letter-spacing: .8px; }
   </style>
 </head>
 <body class="homeMenuPage showLaunch">
@@ -2979,6 +3003,7 @@
           <button id="btnStartGame" class="btn secondaryLabel menuExtra" type="button">Single Mission <small>Custom setup</small></button>
           <button id="btnSideOps" class="btn secondaryLabel menuExtra" type="button">Side Ops <small>Mini games</small></button>
           <button id="btnTutorial" class="btn secondaryLabel menuExtra" type="button">Tutorial <small>Guided tour</small></button>
+          <button id="btnAchievements" class="btn secondaryLabel menuExtra" type="button">Achievements <small>Badges earned</small></button>
           <button id="btnLeaderboards" class="btn secondaryLabel menuExtra" type="button">Leaderboards <small>Top runs</small></button>
           <button id="btnSettingsHome" class="btn secondaryLabel menuExtra" type="button">Settings <small>Audio levels</small></button>
           <a id="btnExitHome" class="btn secondaryLabel menuExtra" href="../../atmc.html">Exit <small>Return to hub</small></a>
@@ -4428,6 +4453,23 @@
     </div>
   </div>
 
+  <div id="achievementsOverlay" class="overlay">
+    <div class="card" style="max-width:720px;">
+      <div class="cardHead">
+        <div>
+          <h2 class="title">Achievements</h2>
+          <p class="subtitle" id="achievementsProgress">0 / 21 unlocked</p>
+        </div>
+        <button id="btnCloseAchievements" class="btn">Close</button>
+      </div>
+      <div class="cardBody" style="grid-template-columns:1fr;">
+        <div class="panel">
+          <div class="achievementsGrid" id="achievementsGrid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="campaignConfirmOverlay" class="overlay">
     <div class="card" style="max-width:520px;">
       <div class="cardHead">
@@ -4544,48 +4586,56 @@
             id: "m1",
             title: "Sector 1: Calibration",
             desc: "Digit hunt warm-up.",
+            hint: "SCAN EACH ASTEROID FOR THE CORRECT DIGIT — LET THE DECOYS DRIFT PAST.",
             config: { ship: "spire", questionMode: "digits2", difficulty: "easy", targetMode: "q7", timerMode: "off", decoys: 2, speed: 0.6, lives: 15, strikes: 10, aMin: 2, aMax: 9, bMin: 2, bMax: 9 }
           },
           {
             id: "m2",
             title: "Sector 2: Drift Line",
             desc: "Faster digit hunt.",
+            hint: "ADDITION DIGITS: WORK OUT THE SUM, THEN HUNT DOWN ITS MATCHING DIGIT AMONG THE DEBRIS.",
             config: { ship: "classic", questionMode: "add_digits2", difficulty: "easy", targetMode: "q10", timerMode: "off", decoys: 3, speed: 0.7, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 9 }
           },
           {
             id: "m3",
             title: "Sector 3: Classic Sweep",
             desc: "Classic answers under time.",
+            hint: "SPEED MATTERS. CALCULATE AND FIRE ON THE CORRECT FULL ANSWER BEFORE TIME RUNS OUT.",
             config: { ship: "am2", questionMode: "classic2", difficulty: "easy", targetMode: "off", timerMode: "75", decoys: 3, decoyFunction: "units_bias", speed: 0.7, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
           },
           {
             id: "m3s",
             title: "Sector 3B: Stampede",
             desc: "Shoot wrong asteroids, absorb the correct.",
+            hint: "SHOOT EVERY WRONG ANSWER. THE CORRECT ASTEROID ABSORBS INTO YOUR HULL — DO NOT FIRE ON IT.",
             config: { ship: "spire", questionMode: "stampede2", difficulty: "easy", targetMode: "off", timerMode: "60", decoys: 3, decoyFunction: "units_bias", speed: 0.85, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
           },
           {
             id: "m3x",
             title: "Sector X: Alien Swarm",
             desc: "Survive the swarm and solve alien math.",
+            hint: "ALIEN WAVE INBOUND. DESTROY THE SWARM, THEN ANSWER THE BOSS QUESTION TO CLEAR THE SECTOR.",
             config: { ship: "spire", questionMode: "classic2", difficulty: "easy", targetMode: "off", timerMode: "60", decoys: 0, speed: 0.75, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 12, alienSwarm: true }
           },
           {
             id: "m4",
             title: "Sector 4: Signal Storm",
             desc: "Addition digit hunt.",
+            hint: "LARGE NUMBER ADDITION. COMPUTE THE SUM, THEN SHOOT ONLY THE ASTEROID SHOWING ITS CORRECT DIGIT.",
             config: { questionMode: "add_digits2", difficulty: "normal", targetMode: "q10", timerMode: "off", decoys: 3, speed: 0.75, lives: 15, strikes: 10, aMin: 10, aMax: 99, bMin: 10, bMax: 99 }
           },
           {
             id: "m5",
             title: "Sector 5: Deep Cluster",
             desc: "Square memorization.",
+            hint: "PERFECT SQUARES. THE PROMPT IS A FACTOR — SHOOT THE ASTEROID SHOWING ITS SQUARE.",
             config: { questionMode: "square_shoot", difficulty: "normal", targetMode: "off", timerMode: "90", decoys: 3, decoyFunction: "structured", speed: 0.8, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
           },
           {
             id: "m6",
             title: "Sector 6: Root Relay",
             desc: "Square root precision.",
+            hint: "SQUARE ROOTS. THE PROMPT IS THE SQUARE — FIND AND SHOOT ITS ROOT BEFORE IT DRIFTS PAST.",
             config: { questionMode: "square_root", difficulty: "normal", targetMode: "off", timerMode: "90", decoys: 3, decoyFunction: "structured", speed: 0.8, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
           }
         ]
@@ -4600,48 +4650,56 @@
             id: "r1",
             title: "Rift 1: Vector Burn",
             desc: "Rapid digit hunt.",
+            hint: "DIGIT HUNT AT RIFT PACE. STAY PRECISE — DECOYS ARE TIGHTER NOW.",
             config: { ship: "spire", questionMode: "digits2", difficulty: "normal", targetMode: "q10", timerMode: "off", decoys: 3, speed: 0.8, lives: 15, strikes: 10, aMin: 2, aMax: 9, bMin: 2, bMax: 9 }
           },
           {
             id: "r2",
             title: "Rift 2: Split Signal",
             desc: "Dense addition fields.",
+            hint: "DENSE ADDITION FIELDS. LOCK ONTO THE CORRECT SUM DIGIT AND FIRE FAST.",
             config: { ship: "classic", questionMode: "add_digits2", difficulty: "normal", targetMode: "q12", timerMode: "off", decoys: 3, speed: 0.85, lives: 15, strikes: 10, aMin: 5, aMax: 15, bMin: 5, bMax: 15 }
           },
           {
             id: "r3",
             title: "Rift 3: Phase Lock",
             desc: "Classic answers under pressure.",
+            hint: "CLASSIC ANSWERS UNDER PRESSURE. CALCULATE QUICKLY AND SHOOT THE FULL PRODUCT.",
             config: { ship: "am2", questionMode: "classic2", difficulty: "normal", targetMode: "off", timerMode: "90", decoys: 3, decoyFunction: "units_bias", speed: 0.9, lives: 15, strikes: 10, aMin: 3, aMax: 12, bMin: 3, bMax: 12 }
           },
           {
             id: "r3s",
             title: "Rift 3B: Stampede Run",
             desc: "Stampede flow at rift speed.",
+            hint: "STAMPEDE FLOW. SHOOT EVERY WRONG ASTEROID — LET THE CORRECT ONE REACH YOU.",
             config: { ship: "classic", questionMode: "stampede2", difficulty: "normal", targetMode: "off", timerMode: "75", decoys: 3, decoyFunction: "units_bias", speed: 0.95, lives: 15, strikes: 10, aMin: 3, aMax: 12, bMin: 3, bMax: 12 }
           },
           {
             id: "r3x",
             title: "Rift X: Alien Swarm",
             desc: "Alien strike wave at rift pace.",
+            hint: "ALIEN STRIKE WAVE. CLEAR THE SWARM FIRST, THEN SOLVE THE BOSS EQUATION.",
             config: { ship: "classic", questionMode: "classic2", difficulty: "normal", targetMode: "off", timerMode: "70", decoys: 0, speed: 0.9, lives: 15, strikes: 10, aMin: 3, aMax: 15, bMin: 3, bMax: 15, alienSwarm: true }
           },
           {
             id: "r4",
             title: "Rift 4: Echo Surge",
             desc: "Addition classics at speed.",
+            hint: "ADDITION CLASSICS. FIND THE FULL SUM AND FIRE — NO DIGIT SHORTCUTS HERE.",
             config: { questionMode: "add_classic2", difficulty: "normal", targetMode: "off", timerMode: "90", decoys: 3, decoyFunction: "units_bias", speed: 0.95, lives: 15, strikes: 10, aMin: 10, aMax: 99, bMin: 10, bMax: 99 }
           },
           {
             id: "r5",
             title: "Rift 5: Prism Array",
             desc: "Squares at high tempo.",
+            hint: "HIGH-TEMPO SQUARES. RECALL YOUR PERFECT SQUARES INSTANTLY — HESITATION COSTS HEALTH.",
             config: { questionMode: "square_shoot", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "structured", speed: 0.95, lives: 15, strikes: 10, aMin: 4, aMax: 15, bMin: 4, bMax: 15 }
           },
           {
             id: "r6",
             title: "Rift 6: Root Spiral",
             desc: "Roots with tight margins.",
+            hint: "ROOT PRECISION AT SPEED. THE SQUARE IS ON SCREEN — SHOOT ITS EXACT ROOT.",
             config: { questionMode: "square_root", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "structured", speed: 0.95, lives: 15, strikes: 10, aMin: 4, aMax: 15, bMin: 4, bMax: 15 }
           }
         ]
@@ -4656,42 +4714,49 @@
             id: "v1",
             title: "Void 1: Singularity Drift",
             desc: "High-speed digit hunt.",
+            hint: "THREE-DIGIT HUNT AT HIGH SPEED. TRACK THE CORRECT DIGIT CAREFULLY — DECOYS ARE DENSE.",
             config: { ship: "spire", questionMode: "digits3", difficulty: "hard", targetMode: "q12", timerMode: "off", decoys: 4, speed: 0.95, lives: 15, strikes: 10, aMin: 3, aMax: 12, bMin: 3, bMax: 12 }
           },
           {
             id: "v2",
             title: "Void 2: Ion Wake",
             desc: "Addition under pressure.",
+            hint: "LARGE SUMS. CALCULATE THE THREE-DIGIT SUM AND SHOOT ITS MATCHING DIGIT UNDER PRESSURE.",
             config: { ship: "classic", questionMode: "add_digits3", difficulty: "hard", targetMode: "q12", timerMode: "off", decoys: 4, speed: 1.0, lives: 15, strikes: 10, aMin: 8, aMax: 18, bMin: 8, bMax: 18 }
           },
           {
             id: "v3",
             title: "Void 3: Razor Current",
             desc: "Classic answers at max pace.",
+            hint: "CLASSIC THREE-DIGIT ANSWERS AT VOID PACE. EVERY SECOND COUNTS — CALCULATE AND FIRE.",
             config: { ship: "am2", questionMode: "classic3", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "units_bias", speed: 1.05, lives: 15, strikes: 10, aMin: 4, aMax: 15, bMin: 4, bMax: 15 }
           },
           {
             id: "v3x",
             title: "Void X: Alien Swarm",
             desc: "Endure the swarm under void pressure.",
+            hint: "VOID ALIEN SWARM. SURVIVE THE ASSAULT AND DESTROY THE BOSS UNDER MAXIMUM PRESSURE.",
             config: { ship: "am2", questionMode: "classic2", difficulty: "hard", targetMode: "off", timerMode: "75", decoys: 0, speed: 1.0, lives: 15, strikes: 10, aMin: 4, aMax: 18, bMin: 4, bMax: 18, alienSwarm: true }
           },
           {
             id: "v4",
             title: "Void 4: Nova Cipher",
             desc: "Addition classics at speed.",
+            hint: "THREE-DIGIT ADDITION CLASSICS. LOCK THE FULL SUM AND FIRE — NO ROOM FOR ERROR.",
             config: { questionMode: "add_classic3", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "units_bias", speed: 1.05, lives: 15, strikes: 10, aMin: 20, aMax: 99, bMin: 20, bMax: 99 }
           },
           {
             id: "v5",
             title: "Void 5: Prism Collapse",
             desc: "Squares at extreme tempo.",
+            hint: "EXTREME SQUARE TEMPO. KNOW YOUR SQUARES UP TO 20 — REACT FASTER THAN THE DRIFT.",
             config: { questionMode: "square_shoot", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 5, decoyFunction: "structured", speed: 1.1, lives: 15, strikes: 10, aMin: 6, aMax: 20, bMin: 6, bMax: 20 }
           },
           {
             id: "v6",
             title: "Void 6: Root Singe",
             desc: "Roots with no slack.",
+            hint: "ROOT PRECISION WITH NO SLACK. IDENTIFY THE ROOT THE MOMENT IT APPEARS.",
             config: { questionMode: "square_root", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 5, decoyFunction: "structured", speed: 1.1, lives: 15, strikes: 10, aMin: 6, aMax: 20, bMin: 6, bMax: 20 }
           }
         ]
@@ -4706,54 +4771,63 @@
             id: "n1",
             title: "Nebula 1: Rift Calibration",
             desc: "Three-digit target hunt in heavy lanes.",
+            hint: "THREE-DIGIT TARGET HUNT IN HEAVY LANES. PICK THE CORRECT DIGIT FAST AND STAY ACCURATE.",
             config: { questionMode: "digits3", difficulty: "hard", targetMode: "q12", timerMode: "off", decoys: 4, speed: 0.98, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "n2",
             title: "Nebula 2: Ion Sumline",
             desc: "Addition digit targeting under pressure.",
+            hint: "LARGE ADDITION FIELDS. COMPUTE THE SUM MENTALLY AND ISOLATE ITS DIGIT UNDER PRESSURE.",
             config: { questionMode: "add_digits3", difficulty: "hard", targetMode: "q12", timerMode: "off", decoys: 4, speed: 1.00, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "n3",
             title: "Nebula 3: Pulse Corridor",
             desc: "Classic answers in a short hard timer.",
+            hint: "CLASSIC ANSWERS IN A SHORT WINDOW. AIM FOR THE FULL PRODUCT EVERY TIME — NO SECOND CHANCES.",
             config: { questionMode: "classic3", difficulty: "hard", targetMode: "off", timerMode: "75", decoys: 4, decoyFunction: "units_bias", speed: 1.02, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "n4",
             title: "Nebula 4: Stampede Relay",
             desc: "Stampede lane control at hard pace.",
+            hint: "HARD STAMPEDE. SHOOT EVERY WRONG ANSWER AND LET THE CORRECT ONE PASS THROUGH.",
             config: { questionMode: "stampede3", difficulty: "hard", targetMode: "off", timerMode: "75", decoys: 4, decoyFunction: "units_bias", speed: 1.04, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "n5",
             title: "Nebula 5: Echo Cascade",
             desc: "Addition classic routing through dense fields.",
+            hint: "DENSE ADDITION ROUTING. CALCULATE FAST AND TARGET THE EXACT SUM — DECOYS WILL CLUSTER.",
             config: { questionMode: "add_classic3", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "units_bias", speed: 1.05, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "n6",
             title: "Nebula 6: Prism Forge",
             desc: "Square shots with structured decoys.",
+            hint: "STRUCTURED SQUARE LANES. RECALL PERFECT SQUARES UP TO 20 — FIRE ON THE MATCHING RESULT.",
             config: { questionMode: "square_shoot", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "structured", speed: 1.06, lives: 15, strikes: 10, aMin: 6, aMax: 20, bMin: 6, bMax: 20 }
           },
           {
             id: "n7",
             title: "Nebula 7: Root Tension",
             desc: "Square-root precision in hard lanes.",
+            hint: "SQUARE-ROOT PRECISION. THE SQUARE IS SHOWN — SHOOT ITS EXACT ROOT WITHOUT HESITATION.",
             config: { questionMode: "square_root", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "structured", speed: 1.08, lives: 15, strikes: 10, aMin: 6, aMax: 20, bMin: 6, bMax: 20 }
           },
           {
             id: "n8",
             title: "Nebula 8: Decimal Rift",
             desc: "Rational decimal targeting at high speed.",
+            hint: "DECIMAL TARGETING. A FRACTION IS SHOWN — IDENTIFY AND SHOOT ITS DECIMAL EQUIVALENT.",
             config: { questionMode: "rational_dec", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, speed: 1.08, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "n9",
             title: "Nebula 9: Command Break",
             desc: "Final target lock before boss command.",
+            hint: "FINAL TARGET LOCK. HIT ALL 14 QUESTIONS WITHOUT LOSING STRIKES — THIS IS A COMMAND GAUNTLET.",
             config: { questionMode: "classic3", difficulty: "hard", targetMode: "q14", timerMode: "off", decoys: 5, decoyFunction: "units_bias", speed: 1.10, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           }
         ]
@@ -4768,54 +4842,63 @@
             id: "a1",
             title: "Apex 1: Vector Gate",
             desc: "Expert three-digit target sweep.",
+            hint: "EXPERT DIGIT SWEEP. MAXIMUM DENSITY — IDENTIFY THE CORRECT DIGIT UNDER FULL PRESSURE.",
             config: { questionMode: "digits3", difficulty: "hard", targetMode: "q14", timerMode: "off", decoys: 5, speed: 1.08, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "a2",
             title: "Apex 2: Sum Breach",
             desc: "Fast addition target pressure.",
+            hint: "FAST ADDITION TARGETS. SOLVE LARGE SUMS AND CHASE DOWN EACH CORRECT DIGIT.",
             config: { questionMode: "add_digits3", difficulty: "hard", targetMode: "q14", timerMode: "off", decoys: 5, speed: 1.10, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "a3",
             title: "Apex 3: Burnline",
             desc: "Classic answers with little clock slack.",
+            hint: "BURNLINE GAUNTLET. ANSWER CLASSIC PRODUCTS BEFORE THE CLOCK RUNS OUT — NO SLACK.",
             config: { questionMode: "classic3", difficulty: "hard", targetMode: "off", timerMode: "70", decoys: 5, decoyFunction: "units_bias", speed: 1.12, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "a4",
             title: "Apex 4: Stampede Lock",
             desc: "Stampede routing at expert tempo.",
+            hint: "EXPERT STAMPEDE. DESTROY EVERY WRONG ASTEROID — ONLY THE CORRECT ONE PASSES THROUGH.",
             config: { questionMode: "stampede3", difficulty: "hard", targetMode: "off", timerMode: "70", decoys: 5, decoyFunction: "units_bias", speed: 1.14, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "a5",
             title: "Apex 5: Arc Overflow",
             desc: "Addition classic under dense decoys.",
+            hint: "DENSE ADDITION CLASSICS. FULL SUMS UNDER HEAVY DECOY PRESSURE — CALCULATE AND FIRE.",
             config: { questionMode: "add_classic3", difficulty: "hard", targetMode: "off", timerMode: "85", decoys: 5, decoyFunction: "units_bias", speed: 1.15, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "a6",
             title: "Apex 6: Square Barrage",
             desc: "Structured square lanes at expert pace.",
+            hint: "EXPERT SQUARE BARRAGE. KNOW YOUR SQUARES AND LOCK ON WITHOUT HESITATION.",
             config: { questionMode: "square_shoot", difficulty: "hard", targetMode: "off", timerMode: "85", decoys: 5, decoyFunction: "structured", speed: 1.16, lives: 15, strikes: 10, aMin: 6, aMax: 20, bMin: 6, bMax: 20 }
           },
           {
             id: "a7",
             title: "Apex 7: Root Pressure",
             desc: "Root targeting with minimal margin.",
+            hint: "ROOT TARGETING WITH MINIMAL MARGIN. ONE MISTAKE COSTS DEARLY — STAY PRECISE.",
             config: { questionMode: "square_root", difficulty: "hard", targetMode: "off", timerMode: "85", decoys: 5, decoyFunction: "structured", speed: 1.18, lives: 15, strikes: 10, aMin: 6, aMax: 20, bMin: 6, bMax: 20 }
           },
           {
             id: "a8",
             title: "Apex 8: Fraction Rift",
             desc: "Rational fraction precision at endgame speed.",
+            hint: "FRACTION PRECISION. A DECIMAL IS SHOWN — FIND AND SHOOT THE CORRECT FRACTION FORM.",
             config: { questionMode: "rational_frac", difficulty: "hard", targetMode: "off", timerMode: "85", decoys: 5, speed: 1.18, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "a9",
             title: "Apex 9: Final Vector",
             desc: "Final target gauntlet into boss command.",
+            hint: "FINAL VECTOR GAUNTLET. 16 QUESTIONS STAND BETWEEN YOU AND THE BOSS. CLEAR THEM ALL.",
             config: { questionMode: "classic3", difficulty: "hard", targetMode: "q16", timerMode: "off", decoys: 6, decoyFunction: "units_bias", speed: 1.20, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           }
         ]
@@ -6998,6 +7081,11 @@
     var btnControls = document.getElementById("btnControls");
     var btnHowToPlay = document.getElementById("btnHowToPlay");
     var btnLeaderboards = document.getElementById("btnLeaderboards");
+    var btnAchievements = document.getElementById("btnAchievements");
+    var achievementsOverlay = document.getElementById("achievementsOverlay");
+    var btnCloseAchievements = document.getElementById("btnCloseAchievements");
+    var achievementsGrid = document.getElementById("achievementsGrid");
+    var achievementsProgress = document.getElementById("achievementsProgress");
     var btnCloseFunnel = document.getElementById("btnCloseFunnel");
     var btnCloseControls = document.getElementById("btnCloseControls");
     var btnCloseLeaderboards = document.getElementById("btnCloseLeaderboards");
@@ -7734,6 +7822,77 @@
         }
       });
     }
+    // ── Achievements gallery ──────────────────────────────────────────────────
+    var ACHIEVEMENTS_HOME_LIST = [
+      { id:"first_session",    label:"First Launch",    desc:"Complete your first session." },
+      { id:"streak_5",         label:"On a Roll",       desc:"Reach a 5-hit streak in a session." },
+      { id:"streak_10",        label:"Hot Streak",      desc:"Reach a 10-hit streak in a session." },
+      { id:"streak_25",        label:"Inferno",         desc:"Reach a 25-hit streak in a session." },
+      { id:"no_misses",        label:"Clean Run",       desc:"Finish a session with zero missed answers." },
+      { id:"perfect_acc",      label:"Perfect",         desc:"100% accuracy with 10 or more correct answers." },
+      { id:"score_5k",         label:"Five Thousand",   desc:"Score 5,000 points in one session." },
+      { id:"score_25k",        label:"High Commander",  desc:"Score 25,000 points in one session." },
+      { id:"score_100k",       label:"Legend",          desc:"Score 100,000 points in one session." },
+      { id:"level_10",         label:"Ace Pilot",       desc:"Reach level 10 in one session." },
+      { id:"no_damage",        label:"Ghost Run",       desc:"Complete a session without losing a single HP." },
+      { id:"ten_sessions",     label:"Veteran",         desc:"Play 10 sessions total." },
+      { id:"fifty_sessions",   label:"Elite Pilot",     desc:"Play 50 sessions total." },
+      { id:"three_ships",      label:"Fleet Commander", desc:"Play with 3 different ships." },
+      { id:"alien_5",          label:"Alien Hunter",    desc:"Eliminate 5 aliens in one session." },
+      { id:"alien_boss",       label:"Boss Slayer",     desc:"Eliminate an alien boss." },
+      { id:"all_powerups",     label:"Full Arsenal",    desc:"Collect every power-up type in one session." },
+      { id:"brutal_win",       label:"Brutal Pilot",    desc:"Complete a session on Brutal difficulty." },
+      { id:"score_1k_brutal",  label:"Brutal Ace",      desc:"Score 1,000+ on Brutal difficulty." },
+      { id:"campaign_m1",      label:"First Sector",    desc:"Complete the first campaign mission." },
+      { id:"campaign_complete",label:"Sector Champion", desc:"Complete all missions in a campaign." }
+    ];
+
+    function renderAchievements() {
+      if (!achievementsGrid) return;
+      var raw = null;
+      try { raw = JSON.parse(localStorage.getItem("mentaris.achievements") || "null"); } catch(e) {}
+      var unlocked = (raw && raw.unlocked) ? raw.unlocked : {};
+      var total = ACHIEVEMENTS_HOME_LIST.length;
+      var count = 0;
+      ACHIEVEMENTS_HOME_LIST.forEach(function(a) { if (unlocked[a.id]) count++; });
+      if (achievementsProgress) achievementsProgress.textContent = count + " / " + total + " unlocked";
+      achievementsGrid.innerHTML = "";
+      ACHIEVEMENTS_HOME_LIST.forEach(function(a) {
+        var data = unlocked[a.id];
+        var card = document.createElement("div");
+        card.className = "achievementCard " + (data ? "unlocked" : "locked");
+        var dateStr = "";
+        if (data && data.unlockedAt) {
+          try { dateStr = new Date(data.unlockedAt).toLocaleDateString(undefined, { year:"numeric", month:"short", day:"numeric" }); } catch(e) {}
+        }
+        card.innerHTML =
+          '<div class="achievementCardLabel">' + (data ? "★ " : "") + a.label + '</div>' +
+          '<div class="achievementCardDesc">' + a.desc + '</div>' +
+          (dateStr ? '<div class="achievementCardDate">' + dateStr + '</div>' : "");
+        achievementsGrid.appendChild(card);
+      });
+    }
+
+    if (btnAchievements && achievementsOverlay) {
+      btnAchievements.addEventListener("click", function() {
+        playMenuBeep();
+        renderAchievements();
+        achievementsOverlay.classList.add("show");
+      });
+    }
+    if (btnCloseAchievements && achievementsOverlay) {
+      btnCloseAchievements.addEventListener("click", function() {
+        playMenuBeep();
+        achievementsOverlay.classList.remove("show");
+      });
+    }
+    if (achievementsOverlay) {
+      achievementsOverlay.addEventListener("click", function(e) {
+        if (e.target === achievementsOverlay) achievementsOverlay.classList.remove("show");
+      });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     if (btnSettingsHome && settingsOverlay) {
       btnSettingsHome.addEventListener("click", function(){
         playMenuBeep();
@@ -9318,6 +9477,17 @@
         }
       }
       startHintCycle();
+
+      // Campaign mission-specific hint override
+      if (pendingCampaign) {
+        var _mcs = getCampaignSet(pendingCampaign.id);
+        var _mm = _mcs && _mcs.missions && _mcs.missions[pendingCampaign.index];
+        if (_mm && _mm.hint) {
+          if (briefingHintTimer) clearInterval(briefingHintTimer);
+          if (briefingHintTypeTimer) clearInterval(briefingHintTypeTimer);
+          typeHint(_mm.hint);
+        }
+      }
 
       briefingTimerId = setTimeout(function(){
         briefingReady = true;

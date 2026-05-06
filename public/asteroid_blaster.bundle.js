@@ -141715,6 +141715,15 @@
       score: 1200,
       radius: 26,
       behavior: "bomber"
+    },
+    shielder: {
+      id: "shielder",
+      name: "Shielder",
+      hp: 2,
+      speed: 55,
+      score: 1100,
+      radius: 26,
+      behavior: "shielder"
     }
   };
   var spawnTimer = alienConfig.spawnCooldown;
@@ -141944,6 +141953,8 @@
       ingressStartY: y,
       ingressTargetY,
       noEscape: behForSpawn === "sniper" || behForSpawn === "rusher" || !!options.isBoss,
+      shieldActive: behForSpawn === "shielder" && !options.isBoss,
+      _shieldBreakFlash: 0,
       sniperCharge: 0,
       bomberDropT: 0,
       bossPatternIdx: 0
@@ -141960,6 +141971,8 @@
         a.spriteIndex = 7;
       else if (typeId === "bomber")
         a.spriteIndex = 5;
+      else if (typeId === "shielder")
+        a.spriteIndex = Math.random() < 0.5 ? 2 : 6;
     }
     if (a.isBoss) {
       a.fireCooldown = 0.95;
@@ -141989,6 +142002,8 @@
           typePick = "rusher";
         else if (rPick < 0.54)
           typePick = "bomber";
+        else if (rPick < 0.68)
+          typePick = "shielder";
       }
       var spawned = spawnAlien(typePick, q.question, q.answer, view2);
       if (state2 && state2.alienSwarm && spawned) {
@@ -142164,6 +142179,59 @@
           a.x = a.r + 10;
         if (a.x > view2.w - a.r - 10)
           a.x = view2.w - a.r - 10;
+        if (a.life >= alienConfig.escapeSeconds) {
+          aliens.splice(i, 1);
+          escaped += 1;
+        }
+        continue;
+      }
+      if (behavior === "shielder") {
+        a.strafeTimer -= dt;
+        if (a.strafeTimer <= 0) {
+          a.strafeTimer = 0.9 + Math.random() * 1.4;
+          a.strafeTarget = randi(50, Math.max(90, view2.w - 50));
+        }
+        var chaseS = (a.strafeTarget - a.x) * 0.55;
+        var wobS = Math.sin(a.t * 0.8 + a.uid) * 28;
+        a.vx = (chaseS + wobS) * 0.52;
+        a.vy = a.speed * 0.28 + Math.sin(a.t * 0.6 + a.uid) * 5;
+        a.x += a.vx * dt;
+        a.y += a.vy * dt;
+        if (a.x < a.r + 10)
+          a.x = a.r + 10;
+        if (a.x > view2.w - a.r - 10)
+          a.x = view2.w - a.r - 10;
+        if (!a.escapeActive && a.y >= view2.h * 0.7) {
+          a.escapeActive = true;
+          a.escapeSequence = true;
+          a.escapePhase = "loop";
+          a.escapeTimer = 0;
+          a.escapeLoopDuration = 1.1;
+          a.escapeHoldDuration = 0.35;
+          a.escapeRadius = 22;
+          a.escapeAngle = 0;
+          a.escapeCenterX = a.x;
+          a.escapeCenterY = a.y;
+          a.escapeExitVy = 85;
+          a.escapeExitVx = Math.random() < 0.5 ? -30 : 30;
+        }
+        if (a._shieldBreakFlash > 0) {
+          a._shieldBreakFlash = Math.max(0, a._shieldBreakFlash - dt);
+        }
+        if (!a.shieldActive) {
+          if (a.fireCooldown > 0)
+            a.fireCooldown -= dt;
+          if (a.fireCooldown <= 0 && player2) {
+            if (!(a.x + a.r < 0 || a.x - a.r > view2.w)) {
+              var dxSh = player2.x - a.x;
+              var dySh = player2.y - a.y;
+              var dSh = Math.max(1, Math.hypot(dxSh, dySh));
+              playSfx(state2, "alien_shooting");
+              spawnAlienBullet(a.x, a.y, dxSh / dSh * 300, dySh / dSh * 300, 4, 2.8);
+            }
+            a.fireCooldown = 2 + Math.random() * 1.2;
+          }
+        }
         if (a.life >= alienConfig.escapeSeconds) {
           aliens.splice(i, 1);
           escaped += 1;
@@ -142408,6 +142476,31 @@
       ctx2.lineWidth = 1;
       ctx2.strokeRect(barX - 0.5, barY - 0.5, barW + 1, barH + 1);
       ctx2.restore();
+      if (a.shieldActive && !a.dying) {
+        ctx2.save();
+        ctx2.globalAlpha = (0.45 + 0.15 * Math.sin((a.t || 0) * 3.5)) * flashAlpha;
+        ctx2.strokeStyle = "rgba(120,200,255,.9)";
+        ctx2.lineWidth = 2.5;
+        ctx2.shadowColor = "rgba(100,180,255,.7)";
+        ctx2.shadowBlur = 10;
+        ctx2.beginPath();
+        ctx2.arc(a.x + shakeX, a.y + shakeY, a.r * 1.65, 0, Math.PI * 2);
+        ctx2.stroke();
+        ctx2.restore();
+      }
+      if ((a._shieldBreakFlash || 0) > 0 && !a.dying) {
+        var sfProgress = 1 - a._shieldBreakFlash / 0.35;
+        var sfAlpha = Math.max(0, 0.9 - sfProgress * 0.9);
+        var sfRadius = a.r * (1.65 + sfProgress * 0.9);
+        ctx2.save();
+        ctx2.globalAlpha = sfAlpha;
+        ctx2.strokeStyle = "rgba(180,230,255,1)";
+        ctx2.lineWidth = 3 - sfProgress * 2;
+        ctx2.beginPath();
+        ctx2.arc(a.x + shakeX, a.y + shakeY, sfRadius, 0, Math.PI * 2);
+        ctx2.stroke();
+        ctx2.restore();
+      }
       if (a.showDigitTimer > 0 && a.swarmDigit != null) {
         ctx2.save();
         ctx2.globalAlpha = 0.95;
@@ -142486,6 +142579,170 @@
     var streakBoost = Math.min(0.12, state2.ddSpeedBonus * 0.55);
     var interval = base - levelBoost - streakBoost;
     return clamp(interval, isStampede ? 0.28 : 0.42, isStampede ? 0.75 : 0.95);
+  }
+
+  // src/js/core/achievements.js
+  var STORAGE_KEY = "mentaris.achievements";
+  var ACHIEVEMENTS = [
+    // Session-based
+    { id: "first_session", label: "First Launch", desc: "Complete your first session." },
+    { id: "streak_5", label: "On a Roll", desc: "Reach a 5-hit streak in a session." },
+    { id: "streak_10", label: "Hot Streak", desc: "Reach a 10-hit streak in a session." },
+    { id: "streak_25", label: "Inferno", desc: "Reach a 25-hit streak in a session." },
+    { id: "no_misses", label: "Clean Run", desc: "Finish a session with zero missed answers." },
+    { id: "perfect_acc", label: "Perfect", desc: "100% accuracy with 10 or more correct answers." },
+    { id: "score_5k", label: "Five Thousand", desc: "Score 5,000 points in one session." },
+    { id: "score_25k", label: "High Commander", desc: "Score 25,000 points in one session." },
+    { id: "score_100k", label: "Legend", desc: "Score 100,000 points in one session." },
+    { id: "level_10", label: "Ace Pilot", desc: "Reach level 10 in one session." },
+    { id: "no_damage", label: "Ghost Run", desc: "Complete a session without losing a single HP." },
+    // Lifetime
+    { id: "ten_sessions", label: "Veteran", desc: "Play 10 sessions total." },
+    { id: "fifty_sessions", label: "Elite Pilot", desc: "Play 50 sessions total." },
+    { id: "three_ships", label: "Fleet Commander", desc: "Play with 3 different ships." },
+    // Combat
+    { id: "alien_5", label: "Alien Hunter", desc: "Eliminate 5 aliens in one session." },
+    { id: "alien_boss", label: "Boss Slayer", desc: "Eliminate an alien boss." },
+    { id: "all_powerups", label: "Full Arsenal", desc: "Collect every power-up type in one session." },
+    // Difficulty
+    { id: "brutal_win", label: "Brutal Pilot", desc: "Complete a session on Brutal difficulty." },
+    { id: "score_1k_brutal", label: "Brutal Ace", desc: "Score 1,000+ on Brutal difficulty." },
+    // Campaign
+    { id: "campaign_m1", label: "First Sector", desc: "Complete the first campaign mission." },
+    { id: "campaign_complete", label: "Sector Champion", desc: "Complete all missions in a campaign." }
+  ];
+  function loadAchievements() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw)
+        return { version: 1, unlocked: {}, shipsPlayed: [] };
+      var p = JSON.parse(raw);
+      if (!p || typeof p !== "object")
+        return { version: 1, unlocked: {}, shipsPlayed: [] };
+      if (!p.unlocked)
+        p.unlocked = {};
+      if (!Array.isArray(p.shipsPlayed))
+        p.shipsPlayed = [];
+      return p;
+    } catch (e) {
+      return { version: 1, unlocked: {}, shipsPlayed: [] };
+    }
+  }
+  function saveAchievements(data) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+    }
+  }
+  function checkAchievements(session, state2, lifetime) {
+    var data = loadAchievements();
+    var now = Date.now();
+    var newlyUnlocked = [];
+    function unlock(id) {
+      if (data.unlocked[id])
+        return;
+      data.unlocked[id] = { unlockedAt: now };
+      var def = ACHIEVEMENTS.find(function(a) {
+        return a.id === id;
+      });
+      if (def)
+        newlyUnlocked.push(def);
+    }
+    var ship = state2 && state2.ship ? String(state2.ship) : "";
+    if (ship && data.shipsPlayed.indexOf(ship) === -1) {
+      data.shipsPlayed.push(ship);
+    }
+    unlock("first_session");
+    var bestStreak2 = session.bestStreak || 0;
+    if (bestStreak2 >= 5)
+      unlock("streak_5");
+    if (bestStreak2 >= 10)
+      unlock("streak_10");
+    if (bestStreak2 >= 25)
+      unlock("streak_25");
+    var missed = session.missed || 0;
+    var correct = session.correct || 0;
+    var accuracy = typeof session.accuracy === "number" ? session.accuracy : 0;
+    if (missed === 0 && correct >= 5)
+      unlock("no_misses");
+    if (correct >= 10 && accuracy >= 1)
+      unlock("perfect_acc");
+    var score = session.score || 0;
+    if (score >= 5e3)
+      unlock("score_5k");
+    if (score >= 25e3)
+      unlock("score_25k");
+    if (score >= 1e5)
+      unlock("score_100k");
+    var level = state2 && state2.level ? state2.level : session.level || 0;
+    if (level >= 10)
+      unlock("level_10");
+    var livesStart = state2 && typeof state2.livesStart === "number" ? state2.livesStart : -1;
+    var livesEnd = state2 && typeof state2.lives === "number" ? state2.lives : -1;
+    if (livesStart >= 0 && livesEnd >= 0 && livesStart - livesEnd === 0 && correct >= 5) {
+      unlock("no_damage");
+    }
+    var totalSessions = lifetime && lifetime.sessions ? lifetime.sessions : 0;
+    if (totalSessions >= 10)
+      unlock("ten_sessions");
+    if (totalSessions >= 50)
+      unlock("fifty_sessions");
+    if (data.shipsPlayed.length >= 3)
+      unlock("three_ships");
+    var totalAliens = 0;
+    if (state2 && state2.aliensShotByType) {
+      Object.keys(state2.aliensShotByType).forEach(function(k) {
+        totalAliens += state2.aliensShotByType[k] || 0;
+      });
+    }
+    if (totalAliens >= 5)
+      unlock("alien_5");
+    if (state2 && state2.alienBossBonusAwarded)
+      unlock("alien_boss");
+    var powerupTypes = state2 && state2.powerupsUsedByType ? Object.keys(state2.powerupsUsedByType).length : 0;
+    if (powerupTypes >= 7)
+      unlock("all_powerups");
+    var diff = state2 && state2.difficulty ? state2.difficulty : session.difficulty || "";
+    if (diff === "brutal" && correct > 0)
+      unlock("brutal_win");
+    if (diff === "brutal" && score >= 1e3)
+      unlock("score_1k_brutal");
+    saveAchievements(data);
+    return newlyUnlocked;
+  }
+  function checkCampaignAchievements(missionIndex, isComplete) {
+    var data = loadAchievements();
+    var now = Date.now();
+    var newlyUnlocked = [];
+    function unlock(id) {
+      if (data.unlocked[id])
+        return;
+      data.unlocked[id] = { unlockedAt: now };
+      var def = ACHIEVEMENTS.find(function(a) {
+        return a.id === id;
+      });
+      if (def)
+        newlyUnlocked.push(def);
+    }
+    if (missionIndex === 0)
+      unlock("campaign_m1");
+    if (isComplete)
+      unlock("campaign_complete");
+    saveAchievements(data);
+    return newlyUnlocked;
+  }
+  function unlockAndReturn(id) {
+    var data = loadAchievements();
+    if (data.unlocked[id])
+      return null;
+    var def = ACHIEVEMENTS.find(function(a) {
+      return a.id === id;
+    });
+    if (!def)
+      return null;
+    data.unlocked[id] = { unlockedAt: Date.now() };
+    saveAchievements(data);
+    return def;
   }
 
   // src/js/entities/powerups.js
@@ -146087,6 +146344,56 @@
         }, 2e3);
       }
     }, typeMs);
+  }
+  var _achToastEl = null;
+  var _achToastLabelEl = null;
+  var _achToastDescEl = null;
+  var _achToastQueue = [];
+  var _achToastActive = false;
+  function _getAchToastEls() {
+    if (!_achToastEl)
+      _achToastEl = document.getElementById("achievementToast");
+    if (!_achToastLabelEl)
+      _achToastLabelEl = document.getElementById("achievementToastLabel");
+    if (!_achToastDescEl)
+      _achToastDescEl = document.getElementById("achievementToastDesc");
+  }
+  function _drainAchievementToastQueue() {
+    if (!_achToastQueue.length) {
+      _achToastActive = false;
+      return;
+    }
+    _achToastActive = true;
+    var def = _achToastQueue.shift();
+    _getAchToastEls();
+    if (!_achToastEl) {
+      _drainAchievementToastQueue();
+      return;
+    }
+    if (_achToastLabelEl)
+      _achToastLabelEl.textContent = def.label;
+    if (_achToastDescEl)
+      _achToastDescEl.textContent = def.desc;
+    _achToastEl.classList.add("show");
+    setTimeout(function() {
+      if (_achToastEl)
+        _achToastEl.classList.remove("show");
+      setTimeout(_drainAchievementToastQueue, 450);
+    }, 3200);
+  }
+  function enqueueAchievementToast(def) {
+    _achToastQueue.push(def);
+    if (!_achToastActive)
+      _drainAchievementToastQueue();
+  }
+  function scheduleAchievementToasts(list) {
+    for (var _ai = 0; _ai < list.length; _ai++) {
+      (function(def, idx) {
+        setTimeout(function() {
+          enqueueAchievementToast(def);
+        }, idx * 1300);
+      })(list[_ai], _ai);
+    }
   }
   function showLevelUpBanner(level) {
     if (!levelUpBanner || !levelUpBannerText)
@@ -151762,6 +152069,12 @@
     };
     var lifetime = updateLifetimeStats(session);
     state.lastSessionId = sessionId;
+    try {
+      var _newAch = checkAchievements(session, state, lifetime);
+      if (_newAch && _newAch.length)
+        scheduleAchievementToasts(_newAch);
+    } catch (_ae) {
+    }
     var campaignResult = { active: false, success: false, failures: 0, failed: false, hasNext: false, last: false, name: "", pilot: "", minerals: 0 };
     if (campaignActive) {
       var cState = loadCampaignState() || { index: 0, failures: 0, completed: [], bestScores: [], active: true, failed: false };
@@ -151822,6 +152135,17 @@
       campaignResult.minerals = cState.mineralsEarned || 0;
       campaignResult.replay = campaignReplay;
       campaignResult.bestScore = cState.bestScores && Number(cState.bestScores[campaignIndex]) || 0;
+      if (campaignResult.success && !campaignReplay) {
+        try {
+          var _campAch = checkCampaignAchievements(
+            campaignIndex,
+            campaignResult.last && !campaignResult.failed
+          );
+          if (_campAch && _campAch.length)
+            scheduleAchievementToasts(_campAch);
+        } catch (_ce) {
+        }
+      }
     }
     var endReasonText = "";
     if (reason === "destroyed") {
@@ -153926,6 +154250,14 @@
             if (divisorCorrect) {
               if (divisorNew) {
                 bestStreak = Math.max(bestStreak, state.streak + 1);
+                (function(_bs) {
+                  var _sid = _bs === 5 ? "streak_5" : _bs === 10 ? "streak_10" : _bs === 25 ? "streak_25" : null;
+                  if (_sid) {
+                    var _sa = unlockAndReturn(_sid);
+                    if (_sa)
+                      enqueueAchievementToast(_sa);
+                  }
+                })(bestStreak);
                 handleDivisorCorrectHit(hitAst);
                 stopHits = true;
               } else {
@@ -153967,6 +154299,14 @@
               state.correctAsteroidId = 0;
               retireWave(wid);
               bestStreak = Math.max(bestStreak, state.streak + 1);
+              (function(_bs) {
+                var _sid = _bs === 5 ? "streak_5" : _bs === 10 ? "streak_10" : _bs === 25 ? "streak_25" : null;
+                if (_sid) {
+                  var _sa = unlockAndReturn(_sid);
+                  if (_sa)
+                    enqueueAchievementToast(_sa);
+                }
+              })(bestStreak);
               onCorrectHit(hitAst);
               stopHits = true;
               clearedWaveId = wid;
@@ -154044,6 +154384,11 @@
           playSfx(state, "alien_hit");
           al.hitShake = 0.75;
           al.stunTimer = Math.max(al.stunTimer || 0, 0.4);
+          if (al.shieldActive) {
+            al.shieldActive = false;
+            al._shieldBreakFlash = 0.35;
+            continue;
+          }
           al.hitsTaken += 1;
           if (tryResolveAlienKillAfterAccumulatedHits(al, ai3)) {
             break;

@@ -9,6 +9,7 @@ import { createBackground } from "../render/background.js";
 import { createPhaserRenderer } from "../render/phaser_renderer.js";
 import { aliens, alienBullets, alienMines, alienConfig, alienTypes, resetAliens, setAlienUnlocked, setAlienSessionSpriteKey, spawnAlien, updateAliens, updateAlienBullets, updateAlienMines, drawAliens, drawAlienBullets, drawAlienMines, getAlienSpriteSrcFor } from "../entities/aliens.js";
 import { computeSpawnInterval } from "./levels.js";
+import { checkAchievements, checkCampaignAchievements, unlockAndReturn } from "./achievements.js";
 import { PowerupManager } from "../entities/powerups.js";
 import { hudTheme, hudQuestionFontSize, getMissionBriefInjectedCss, getSandboxPanelInjectedCss } from "./hud_theme.js";
 import { submitScore as submitSupabaseScore, isSupabaseScoresConfigured } from "./supabase_scores.js";
@@ -3418,6 +3419,48 @@ function showToast(msg, tone){
     }
   }, typeMs);
 }
+
+// -------- Achievement toast queue --------
+var _achToastEl = null;
+var _achToastLabelEl = null;
+var _achToastDescEl = null;
+var _achToastQueue = [];
+var _achToastActive = false;
+
+function _getAchToastEls() {
+  if (!_achToastEl) _achToastEl = document.getElementById("achievementToast");
+  if (!_achToastLabelEl) _achToastLabelEl = document.getElementById("achievementToastLabel");
+  if (!_achToastDescEl) _achToastDescEl = document.getElementById("achievementToastDesc");
+}
+
+function _drainAchievementToastQueue() {
+  if (!_achToastQueue.length) { _achToastActive = false; return; }
+  _achToastActive = true;
+  var def = _achToastQueue.shift();
+  _getAchToastEls();
+  if (!_achToastEl) { _drainAchievementToastQueue(); return; }
+  if (_achToastLabelEl) _achToastLabelEl.textContent = def.label;
+  if (_achToastDescEl)  _achToastDescEl.textContent  = def.desc;
+  _achToastEl.classList.add("show");
+  setTimeout(function() {
+    if (_achToastEl) _achToastEl.classList.remove("show");
+    setTimeout(_drainAchievementToastQueue, 450);
+  }, 3200);
+}
+
+function enqueueAchievementToast(def) {
+  _achToastQueue.push(def);
+  if (!_achToastActive) _drainAchievementToastQueue();
+}
+
+function scheduleAchievementToasts(list) {
+  for (var _ai = 0; _ai < list.length; _ai++) {
+    (function(def, idx) {
+      setTimeout(function() { enqueueAchievementToast(def); }, idx * 1300);
+    })(list[_ai], _ai);
+  }
+}
+// -----------------------------------------
 
 function showLevelUpBanner(level){
   if(!levelUpBanner || !levelUpBannerText) return;
@@ -9069,6 +9112,13 @@ function endGame(reason){
   };
   var lifetime = updateLifetimeStats(session);
   state.lastSessionId = sessionId;
+
+  // Achievement check (session-based)
+  try {
+    var _newAch = checkAchievements(session, state, lifetime);
+    if (_newAch && _newAch.length) scheduleAchievementToasts(_newAch);
+  } catch(_ae) {}
+
   var campaignResult = { active:false, success:false, failures:0, failed:false, hasNext:false, last:false, name:"", pilot:"", minerals:0 };
   if(campaignActive){
     var cState = loadCampaignState() || { index:0, failures:0, completed:[], bestScores:[], active:true, failed:false };
@@ -9126,6 +9176,17 @@ function endGame(reason){
     campaignResult.minerals = cState.mineralsEarned || 0;
     campaignResult.replay = campaignReplay;
     campaignResult.bestScore = (cState.bestScores && Number(cState.bestScores[campaignIndex])) || 0;
+
+    // Achievement check (campaign-based)
+    if(campaignResult.success && !campaignReplay){
+      try {
+        var _campAch = checkCampaignAchievements(
+          campaignIndex,
+          campaignResult.last && !campaignResult.failed
+        );
+        if(_campAch && _campAch.length) scheduleAchievementToasts(_campAch);
+      } catch(_ce) {}
+    }
   }
 
   var endReasonText = "";
@@ -11243,6 +11304,8 @@ function update(dt){
           if(divisorCorrect){
             if(divisorNew){
               bestStreak = Math.max(bestStreak, state.streak + 1);
+              // Mid-session streak achievements
+              (function(_bs){ var _sid=_bs===5?"streak_5":_bs===10?"streak_10":_bs===25?"streak_25":null; if(_sid){ var _sa=unlockAndReturn(_sid); if(_sa) enqueueAchievementToast(_sa); } })(bestStreak);
               handleDivisorCorrectHit(hitAst);
               stopHits = true;
             }else{
@@ -11284,6 +11347,8 @@ function update(dt){
             state.correctAsteroidId = 0;
             retireWave(wid);
             bestStreak = Math.max(bestStreak, state.streak + 1);
+            // Mid-session streak achievements
+            (function(_bs){ var _sid=_bs===5?"streak_5":_bs===10?"streak_10":_bs===25?"streak_25":null; if(_sid){ var _sa=unlockAndReturn(_sid); if(_sa) enqueueAchievementToast(_sa); } })(bestStreak);
             onCorrectHit(hitAst);
             stopHits = true;
             clearedWaveId = wid;
@@ -11360,6 +11425,12 @@ function update(dt){
       playSfx(state, "alien_hit");
       al.hitShake = 0.75;
       al.stunTimer = Math.max(al.stunTimer || 0, 0.4);
+      // Shielder: first bullet hit breaks shield instead of dealing HP damage
+      if(al.shieldActive){
+        al.shieldActive = false;
+        al._shieldBreakFlash = 0.35;
+        continue;
+      }
       al.hitsTaken += 1;
       if(tryResolveAlienKillAfterAccumulatedHits(al, ai3)){
         break;

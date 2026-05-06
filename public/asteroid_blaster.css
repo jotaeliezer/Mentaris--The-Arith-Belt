@@ -2631,6 +2631,47 @@ input[type="checkbox"]{ transform: translateY(1px); }
 }
 #toast.show{ display:block; }
 
+/* Achievement toast */
+.achievementToast{
+  position:fixed;
+  bottom:72px;
+  right:24px;
+  z-index:9100;
+  background:rgba(8,12,24,.94);
+  border:1px solid rgba(255,215,0,.38);
+  border-radius:14px;
+  padding:12px 18px;
+  max-width:280px;
+  box-shadow:0 8px 32px rgba(0,0,0,.55), 0 0 18px rgba(255,215,0,.1);
+  transform:translateX(130%);
+  transition:transform .4s cubic-bezier(.22,1,.36,1);
+  font-family:Oxanium,sans-serif;
+  pointer-events:none;
+}
+.achievementToast.show{
+  transform:translateX(0);
+}
+.achievementToastBadge{
+  font-size:9px;
+  letter-spacing:2.5px;
+  text-transform:uppercase;
+  color:rgba(255,215,0,.88);
+  margin-bottom:5px;
+  font-weight:700;
+}
+.achievementToastLabel{
+  font-size:15px;
+  font-weight:700;
+  color:#e8ecff;
+  letter-spacing:.3px;
+}
+.achievementToastDesc{
+  font-size:11px;
+  color:rgba(232,236,255,.6);
+  margin-top:3px;
+  line-height:1.4;
+}
+
 .countdown{
   position:absolute;
   inset:0;

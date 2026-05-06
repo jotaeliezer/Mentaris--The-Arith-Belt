@@ -50,6 +50,15 @@ export var alienTypes = {
     score: 1200,
     radius: 26,
     behavior: "bomber"
+  },
+  shielder: {
+    id: "shielder",
+    name: "Shielder",
+    hp: 2,
+    speed: 55,
+    score: 1100,
+    radius: 26,
+    behavior: "shielder"
   }
 };
 
@@ -292,6 +301,8 @@ export function spawnAlien(typeId, question, answer, view, opts){
     ingressStartY: y,
     ingressTargetY: ingressTargetY,
     noEscape: behForSpawn === "sniper" || behForSpawn === "rusher" || !!options.isBoss,
+    shieldActive: behForSpawn === "shielder" && !options.isBoss,
+    _shieldBreakFlash: 0,
     sniperCharge: 0,
     bomberDropT: 0,
     bossPatternIdx: 0
@@ -305,6 +316,7 @@ export function spawnAlien(typeId, question, answer, view, opts){
     if(typeId === "sniper") a.spriteIndex = 3;
     else if(typeId === "rusher") a.spriteIndex = 7;
     else if(typeId === "bomber") a.spriteIndex = 5;
+    else if(typeId === "shielder") a.spriteIndex = (Math.random() < 0.5) ? 2 : 6; // golem or robot
   }
   if(a.isBoss){
     a.fireCooldown = 0.95;
@@ -333,6 +345,7 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
       if(rPick < 0.2) typePick = "sniper";
       else if(rPick < 0.38) typePick = "rusher";
       else if(rPick < 0.54) typePick = "bomber";
+      else if(rPick < 0.68) typePick = "shielder";
     }
     var spawned = spawnAlien(typePick, q.question, q.answer, view);
     if(state && state.alienSwarm && spawned){
@@ -501,6 +514,60 @@ export function updateAliens(dt, state, player, view, questionFn, asteroids){
       }
       if(a.x < a.r + 10) a.x = a.r + 10;
       if(a.x > view.w - a.r - 10) a.x = view.w - a.r - 10;
+      if(a.life >= alienConfig.escapeSeconds){
+        aliens.splice(i, 1);
+        escaped += 1;
+      }
+      continue;
+    }
+    if(behavior === "shielder"){
+      // Slower scout-like strafe
+      a.strafeTimer -= dt;
+      if(a.strafeTimer <= 0){
+        a.strafeTimer = 0.9 + Math.random() * 1.4;
+        a.strafeTarget = randi(50, Math.max(90, view.w - 50));
+      }
+      var chaseS = (a.strafeTarget - a.x) * 0.55;
+      var wobS = Math.sin(a.t * 0.8 + a.uid) * 28;
+      a.vx = (chaseS + wobS) * 0.52;
+      a.vy = (a.speed * 0.28) + Math.sin(a.t * 0.6 + a.uid) * 5;
+      a.x += a.vx * dt;
+      a.y += a.vy * dt;
+      if(a.x < a.r + 10) a.x = a.r + 10;
+      if(a.x > view.w - a.r - 10) a.x = view.w - a.r - 10;
+      // Escape sequence at 70% screen height (inherits scout logic)
+      if(!a.escapeActive && a.y >= view.h * 0.7){
+        a.escapeActive = true;
+        a.escapeSequence = true;
+        a.escapePhase = "loop";
+        a.escapeTimer = 0;
+        a.escapeLoopDuration = 1.1;
+        a.escapeHoldDuration = 0.35;
+        a.escapeRadius = 22;
+        a.escapeAngle = 0;
+        a.escapeCenterX = a.x;
+        a.escapeCenterY = a.y;
+        a.escapeExitVy = 85;
+        a.escapeExitVx = (Math.random() < 0.5 ? -30 : 30);
+      }
+      // Decay shield break flash
+      if(a._shieldBreakFlash > 0){
+        a._shieldBreakFlash = Math.max(0, a._shieldBreakFlash - dt);
+      }
+      // Fire only when shield is down
+      if(!a.shieldActive){
+        if(a.fireCooldown > 0) a.fireCooldown -= dt;
+        if(a.fireCooldown <= 0 && player){
+          if(!(a.x + a.r < 0 || a.x - a.r > view.w)){
+            var dxSh = player.x - a.x;
+            var dySh = player.y - a.y;
+            var dSh = Math.max(1, Math.hypot(dxSh, dySh));
+            playSfx(state, "alien_shooting");
+            spawnAlienBullet(a.x, a.y, (dxSh / dSh) * 300, (dySh / dSh) * 300, 4, 2.8);
+          }
+          a.fireCooldown = 2.0 + Math.random() * 1.2;
+        }
+      }
       if(a.life >= alienConfig.escapeSeconds){
         aliens.splice(i, 1);
         escaped += 1;
@@ -757,6 +824,34 @@ export function drawAliens(ctx, player){
     ctx.lineWidth = 1;
     ctx.strokeRect(barX - 0.5, barY - 0.5, barW + 1, barH + 1);
     ctx.restore();
+
+    // Shield ring (shielder type)
+    if(a.shieldActive && !a.dying){
+      ctx.save();
+      ctx.globalAlpha = (0.45 + 0.15 * Math.sin((a.t || 0) * 3.5)) * flashAlpha;
+      ctx.strokeStyle = "rgba(120,200,255,.9)";
+      ctx.lineWidth = 2.5;
+      ctx.shadowColor = "rgba(100,180,255,.7)";
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(a.x + shakeX, a.y + shakeY, a.r * 1.65, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+    // Shield break flash ring
+    if((a._shieldBreakFlash || 0) > 0 && !a.dying){
+      var sfProgress = 1 - (a._shieldBreakFlash / 0.35);
+      var sfAlpha = Math.max(0, 0.9 - sfProgress * 0.9);
+      var sfRadius = a.r * (1.65 + sfProgress * 0.9);
+      ctx.save();
+      ctx.globalAlpha = sfAlpha;
+      ctx.strokeStyle = "rgba(180,230,255,1)";
+      ctx.lineWidth = 3 - sfProgress * 2;
+      ctx.beginPath();
+      ctx.arc(a.x + shakeX, a.y + shakeY, sfRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
 
     if(a.showDigitTimer > 0 && a.swarmDigit != null){
       ctx.save();
