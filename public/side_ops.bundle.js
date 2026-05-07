@@ -1813,6 +1813,8 @@
     { value: "apextiburoniv", label: "Apex Tiburon IV", icon: "images/ships/Apex%20Tiburon%20IV.png" }
   ];
   var ALIEN_SRC = "images/aliens/alien_ET.png";
+  var CLAW_OPEN_SRC = "images/bullets/claw_open.png";
+  var CLAW_CLOSED_SRC = "images/bullets/claw_closed.png";
   function loadImage2(src) {
     const img = new Image();
     img.decoding = "async";
@@ -1832,6 +1834,9 @@
       x -= max;
     return x;
   }
+  function hypo(ax, ay, bx, by) {
+    return Math.sqrt((ax - bx) ** 2 + (ay - by) ** 2);
+  }
   function mountGame(container, config, api) {
     const opsEnabled = new Set(config.ops || ["add", "sub", "mul", "div"]);
     const includeSquares = !!config.squares;
@@ -1850,6 +1855,8 @@
     const shipImg = loadImage2(shipMeta.icon);
     const asteroidImgs = ASTEROID_SRCS2.map(loadImage2);
     const alienImg = loadImage2(ALIEN_SRC);
+    const clawOpenImg = loadImage2(CLAW_OPEN_SRC);
+    const clawClosedImg = loadImage2(CLAW_CLOSED_SRC);
     const best = parseInt(localStorage.getItem(BEST_KEY2) || "0", 10) || 0;
     api.hud.setChips([
       { id: "score", label: "Score", value: "0", variant: "accent" },
@@ -1898,14 +1905,21 @@
     const H = canvas.height;
     const footer = document.createElement("div");
     footer.style.cssText = "margin-top:12px; text-align:center; color: var(--muted); font-size:12px; letter-spacing:2px; text-transform:uppercase;";
-    footer.textContent = "\u2190 \u2192 rotate \u2022 \u2191 thrust (or WASD) \u2014 collide with the matching number";
+    footer.textContent = "\u2190 \u2192 rotate \u2022 \u2191 thrust \u2022 Space shoot \u2022 Hold X iron claw \u2022 Wrong rocks bump-only \u2022 Esc/P pause";
     container.appendChild(footer);
     const SHIP_R = 20;
     const AST_R = 38;
-    const THRUST = 560;
+    const THRUST = 520;
     const TURN_SPEED = 3.1;
-    const FRICTION_POW = 0.986;
-    const MAX_SPEED = 420;
+    const FRICTION_POW = 0.926;
+    const MAX_SPEED = 340;
+    const WRONG_KNOCK = 190;
+    const CLAW_HOLD_SEC = 0.35;
+    const CLAW_RANGE = 185;
+    const CLAW_EXTEND_SPEED = 720;
+    const CLAW_RETRACT_SPEED = 220;
+    const BULLET_SPEED = 640;
+    const FIRE_COOLDOWN_MS = 260;
     const MARGIN_OFF = 80;
     let nextAlienSpawn = 0;
     const state = {
@@ -1931,8 +1945,246 @@
       best,
       keys: {},
       stunUntil: 0,
-      cooldownUntil: 0
+      bounceCooldownUntil: 0,
+      clawActive: false,
+      clawPhase: "",
+      clawReach: 0,
+      clawTarget: (
+        /** @type{null | { x:number,y:number,value:number,astIdx:number,rot:number,rotSpeed:number,grabbedByClaw?:boolean,clawResolved?:boolean }}*/
+        null
+      ),
+      clawHold: 0,
+      clawOpenTimer: 0,
+      clawShake: 0,
+      clawPromptAlpha: 0,
+      bullets: [],
+      sparks: [],
+      lastFireMs: 0,
+      invulnerableUntil: 0
     };
+    function getCorrectRock() {
+      for (let i = 0; i < state.asteroids.length; i++) {
+        const a = state.asteroids[i];
+        if (a.value === state.answer && !a.clawResolved)
+          return a;
+      }
+      return null;
+    }
+    function spawnExplosion(xx, yy) {
+      for (let i = 0; i < 20; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const sp = 80 + Math.random() * 160;
+        state.sparks.push({
+          x: xx,
+          y: yy,
+          vx: Math.cos(ang) * sp,
+          vy: Math.sin(ang) * sp,
+          ttl: 0.42 + Math.random() * 0.2,
+          color: Math.random() > 0.45 ? "#ff79c6" : "#ffb86b"
+        });
+      }
+      for (let i = 0; i < 8; i++) {
+        state.sparks.push({
+          x: xx,
+          y: yy,
+          vx: (Math.random() - 0.5) * 420,
+          vy: (Math.random() - 0.5) * 420,
+          ttl: 0.18,
+          color: "#ffffff"
+        });
+      }
+    }
+    function tryFireBullet() {
+      if (state.phase !== "running" || state.paused)
+        return;
+      const nowMs = performance.now();
+      if (state.clawActive)
+        return;
+      if (nowMs - state.lastFireMs < FIRE_COOLDOWN_MS)
+        return;
+      state.lastFireMs = nowMs;
+      const bx = state.ship.x + Math.sin(state.ship.heading) * (SHIP_R + 10);
+      const by = state.ship.y - Math.cos(state.ship.heading) * (SHIP_R + 10);
+      state.bullets.push({
+        x: bx,
+        y: by,
+        vx: Math.sin(state.ship.heading) * BULLET_SPEED,
+        vy: -Math.cos(state.ship.heading) * BULLET_SPEED,
+        born: nowMs,
+        maxMs: 720
+      });
+      api.sfx.click();
+    }
+    function advanceCorrectRound(nowMs) {
+      state.score += 60 + state.streak * 15;
+      state.streak++;
+      api.sfx.success();
+      api.hud.flashStat("streak");
+      state.question = makeQuestion(opsEnabled, includeSquares, includeRoots, sStart, sEnd);
+      state.answer = state.question.answer;
+      qBar.textContent = state.question.text;
+      layAsteroids(state.answer);
+      state.ship.vx *= 0.55;
+      state.ship.vy *= 0.55;
+      if (state.aliens.length > 2)
+        state.aliens.splice(0, state.aliens.length - 2);
+      state.bounceCooldownUntil = nowMs + 350;
+      resetClaw();
+      syncHud();
+    }
+    function bounceWrongRock(a, nowMs) {
+      if (nowMs < state.bounceCooldownUntil)
+        return;
+      const dx = state.ship.x - a.x;
+      const dy = state.ship.y - a.y;
+      const d = Math.sqrt(dx * dx + dy * dy) || 1;
+      const nx = dx / d;
+      const ny = dy / d;
+      state.ship.vx += nx * WRONG_KNOCK;
+      state.ship.vy += ny * WRONG_KNOCK;
+      state.bounceCooldownUntil = nowMs + 420;
+      state.stunUntil = nowMs + 160;
+      api.sfx.tick();
+    }
+    function resetClaw() {
+      state.clawActive = false;
+      state.clawPhase = "";
+      state.clawReach = 0;
+      state.clawTarget = null;
+      state.clawHold = 0;
+      state.clawOpenTimer = 0;
+      state.clawShake = 0;
+      state.clawPromptAlpha = 0;
+    }
+    function getClawTargetInRange() {
+      const t = getCorrectRock();
+      if (!t || t.grabbedByClaw || t.clawResolved)
+        return null;
+      const dist = hypo(state.ship.x, state.ship.y, t.x, t.y);
+      if (dist > CLAW_RANGE)
+        return null;
+      return { asteroid: t, dist };
+    }
+    function startClawGrab(target) {
+      if (!target || state.clawActive || target.clawResolved)
+        return;
+      state.clawActive = true;
+      state.clawPhase = "extend";
+      state.clawReach = 0;
+      state.clawTarget = target;
+      state.clawOpenTimer = 0;
+      state.clawShake = 0;
+      state.clawHold = 0;
+      target.grabbedByClaw = true;
+    }
+    function completeClawGrab(target, nowMs) {
+      if (target)
+        target.clawResolved = true;
+      resetClaw();
+      advanceCorrectRound(nowMs);
+      spawnExplosion(state.ship.x, state.ship.y);
+      api.hud.flashStat("score");
+    }
+    function updateClaw(dtSec, nowMs) {
+      if (state.phase !== "running" || state.paused)
+        return;
+      const candidate = getClawTargetInRange();
+      if (!state.clawActive) {
+        if (candidate) {
+          state.clawPromptAlpha = Math.min(1, state.clawPromptAlpha + dtSec * 3.2);
+          if (state.keys.KeyX) {
+            state.clawHold += dtSec;
+            if (state.clawHold >= CLAW_HOLD_SEC) {
+              startClawGrab(candidate.asteroid);
+            }
+          } else
+            state.clawHold = 0;
+        } else {
+          state.clawPromptAlpha = Math.max(0, state.clawPromptAlpha - dtSec * 4);
+          state.clawHold = 0;
+        }
+        return;
+      }
+      const target = state.clawTarget;
+      if (!target || target.clawResolved) {
+        resetClaw();
+        return;
+      }
+      const shipX = state.ship.x;
+      const shipY = state.ship.y - 5;
+      const dx = target.x - shipX;
+      const dy = target.y - shipY;
+      const dist = Math.max(1, Math.hypot(dx, dy));
+      if (state.clawPhase === "extend") {
+        state.clawReach = Math.min(dist, state.clawReach + CLAW_EXTEND_SPEED * dtSec);
+        if (state.clawReach >= dist - 8) {
+          state.clawPhase = "open";
+          state.clawOpenTimer = 0.12;
+          api.sfx.tick();
+        }
+      } else if (state.clawPhase === "open") {
+        state.clawReach = dist + 6;
+        state.clawOpenTimer -= dtSec;
+        if (state.clawOpenTimer <= 0) {
+          state.clawPhase = "retract";
+        }
+      } else if (state.clawPhase === "retract") {
+        const tdx = shipX - target.x;
+        const tdy = shipY - target.y;
+        const tdist = Math.max(1, Math.hypot(tdx, tdy));
+        const step = Math.min(tdist, CLAW_RETRACT_SPEED * dtSec);
+        const nx = tdx / tdist;
+        const ny = tdy / tdist;
+        target.x += nx * step;
+        target.y += ny * step;
+        state.clawReach = tdist;
+        state.clawShake = Math.min(1.35, state.clawShake + dtSec * 3);
+        if (state.clawShake > 0) {
+          const jig = state.clawShake * 2.2;
+          target.x += (Math.random() - 0.5) * jig;
+          target.y += (Math.random() - 0.5) * jig;
+        }
+        if (tdist <= 18) {
+          completeClawGrab(target, nowMs);
+        }
+      }
+    }
+    function updateBullets(dtSec, nowMs) {
+      for (let bi = state.bullets.length - 1; bi >= 0; bi--) {
+        const b = state.bullets[bi];
+        b.x += b.vx * dtSec;
+        b.y += b.vy * dtSec;
+        if (nowMs - b.born > b.maxMs || b.x < -50 || b.x > W + 50 || b.y < -50 || b.y > H + 50) {
+          state.bullets.splice(bi, 1);
+          continue;
+        }
+        let hit = false;
+        for (let ai = state.aliens.length - 1; ai >= 0; ai--) {
+          const al = state.aliens[ai];
+          if (distSq(al.x, al.y, b.x, b.y) <= 28 * 28) {
+            spawnExplosion(al.x, al.y);
+            api.sfx.success();
+            state.aliens.splice(ai, 1);
+            hit = true;
+            break;
+          }
+        }
+        if (hit)
+          state.bullets.splice(bi, 1);
+      }
+    }
+    function updateSparks(dtSec) {
+      for (let i = state.sparks.length - 1; i >= 0; i--) {
+        const s = state.sparks[i];
+        s.ttl -= dtSec;
+        s.x += s.vx * dtSec;
+        s.y += s.vy * dtSec;
+        s.vx *= Math.pow(0.9, dtSec * 60);
+        s.vy *= Math.pow(0.9, dtSec * 60);
+        if (s.ttl <= 0)
+          state.sparks.splice(i, 1);
+      }
+    }
     function syncHud() {
       api.hud.setStat("score", String(state.score));
       api.hud.setStat("lives", String(state.lives), "warn");
@@ -1982,6 +2234,9 @@
         al.x = wrap(al.x, W);
         al.y = wrap(al.y, H);
       }
+      updateBullets(dtSec, now);
+      updateSparks(dtSec);
+      updateClaw(dtSec, now);
     }
     function trySpawnAlien(ts) {
       if (state.aliens.length >= maxAliens)
@@ -2085,12 +2340,18 @@
       state.ship.vx = 0;
       state.ship.vy = 0;
       state.aliens = [];
+      state.bullets = [];
+      state.sparks = [];
+      resetClaw();
+      state.bounceCooldownUntil = 0;
+      state.invulnerableUntil = 0;
+      state.lastFireMs = 0;
       nextAlienSpawn = performance.now() + 800;
       state.question = makeQuestion(opsEnabled, includeSquares, includeRoots, sStart, sEnd);
       state.answer = state.question.answer;
       qBar.textContent = state.question.text;
       layAsteroids(state.answer);
-      state.cooldownUntil = performance.now() + 400;
+      state.bounceCooldownUntil = performance.now() + 400;
       syncHud();
     }
     function handleGameOver(reason) {
@@ -2119,59 +2380,41 @@
         });
       }, 650);
     }
-    function onHitAsteroid(ast) {
-      const now = performance.now();
-      if (now < state.cooldownUntil)
+    function collideWorld(nowMs) {
+      if (state.clawActive)
         return;
-      if (ast.value === state.answer) {
-        state.score += 60 + state.streak * 15;
-        state.streak++;
-        api.sfx.success();
-        api.hud.flashStat("streak");
-        state.question = makeQuestion(opsEnabled, includeSquares, includeRoots, sStart, sEnd);
-        state.answer = state.question.answer;
-        qBar.textContent = state.question.text;
-        layAsteroids(state.answer);
-        state.cooldownUntil = now + 350;
-        state.ship.vx *= 0.55;
-        state.ship.vy *= 0.55;
-        if (state.aliens.length > 2)
-          state.aliens.splice(0, state.aliens.length - 2);
-      } else {
-        state.lives--;
-        state.streak = 0;
-        api.sfx.error();
-        api.hud.flashStat("lives");
-        state.stunUntil = now + 850;
-        state.ship.vx *= 0.15;
-        state.ship.vy *= 0.15;
-        state.cooldownUntil = now + 550;
-        if (state.lives <= 0)
-          handleGameOver("Wrong asteroid");
-      }
-      syncHud();
-    }
-    function collide() {
-      const now = performance.now();
-      if (now < state.cooldownUntil)
-        return;
-      for (let i = 0; i < state.asteroids.length; i++) {
-        const a = state.asteroids[i];
-        if (distSq(a.x, a.y, state.ship.x, state.ship.y) <= (AST_R + SHIP_R) ** 2) {
-          onHitAsteroid(a);
-          return;
-        }
-      }
       for (let i = 0; i < state.aliens.length; i++) {
         const al = state.aliens[i];
         if (distSq(al.x, al.y, state.ship.x, state.ship.y) <= (SHIP_R + 26) ** 2) {
-          state.stunUntil = now + 500;
-          const dx = state.ship.x - al.x;
-          const dy = state.ship.y - al.y;
-          const d = Math.sqrt(dx * dx + dy * dy) || 1;
-          state.ship.vx += dx / d * 280;
-          state.ship.vy += dy / d * 280;
-          api.sfx.tick();
+          if (nowMs >= state.invulnerableUntil) {
+            state.lives--;
+            state.streak = 0;
+            state.invulnerableUntil = nowMs + 1350;
+            api.sfx.error();
+            api.hud.flashStat("lives");
+            const dx = state.ship.x - al.x;
+            const dy = state.ship.y - al.y;
+            const d = Math.sqrt(dx * dx + dy * dy) || 1;
+            state.ship.vx += dx / d * 320;
+            state.ship.vy += dy / d * 320;
+            state.stunUntil = nowMs + 280;
+            if (state.lives <= 0) {
+              handleGameOver("Alien hull strike");
+            }
+            syncHud();
+          }
+          break;
+        }
+      }
+      for (let i = 0; i < state.asteroids.length; i++) {
+        const a = state.asteroids[i];
+        if (a.value === state.answer)
+          continue;
+        if (a.grabbedByClaw)
+          continue;
+        if (distSq(a.x, a.y, state.ship.x, state.ship.y) <= (AST_R + SHIP_R) ** 2) {
+          bounceWrongRock(a, nowMs);
+          break;
         }
       }
     }
@@ -2235,6 +2478,92 @@
         ctx.fillText(String(p.value), cx, cy + 1);
       });
     }
+    function drawSparks() {
+      state.sparks.forEach((s) => {
+        const a = Math.max(0, Math.min(1, s.ttl / 0.5));
+        ctx.globalAlpha = Math.min(1, a);
+        ctx.fillStyle = s.color || "#ff79c6";
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, 2.2 + (1 - a) * 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      });
+    }
+    function drawBullets() {
+      state.bullets.forEach((b) => {
+        ctx.save();
+        ctx.fillStyle = "rgba(0,229,255,.92)";
+        ctx.shadowColor = "rgba(0,229,255,.65)";
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+    }
+    function drawClaw() {
+      if (!state.clawActive || !state.clawTarget)
+        return;
+      const target = state.clawTarget;
+      const shipX = state.ship.x;
+      const shipY = state.ship.y - 5;
+      const dx = target.x - shipX;
+      const dy = target.y - shipY;
+      const dist = Math.max(1, Math.hypot(dx, dy));
+      const dirX = dx / dist;
+      const dirY = dy / dist;
+      const reach = Math.min(dist, Math.max(0, state.clawReach || 0));
+      let endX = shipX + dirX * reach;
+      let endY = shipY + dirY * reach;
+      if (state.clawPhase === "retract" && state.clawShake) {
+        const wobble = state.clawShake * 1.6;
+        endX += (Math.random() - 0.5) * wobble;
+        endY += (Math.random() - 0.5) * wobble;
+      }
+      ctx.save();
+      ctx.strokeStyle = "rgba(140,200,220,0.55)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(shipX, shipY);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+      const imgObj = state.clawPhase === "open" ? clawOpenImg : clawClosedImg;
+      if (imgObj.complete && imgObj.naturalWidth) {
+        const ang = Math.atan2(dirY, dirX) + Math.PI / 2;
+        const natW = imgObj.naturalWidth || 64;
+        const natH = imgObj.naturalHeight || 64;
+        const size = Math.min(58, Math.max(natW, natH));
+        const drawW = natW / Math.max(1, Math.max(natW, natH)) * size;
+        const drawH = natH / Math.max(1, Math.max(natW, natH)) * size;
+        ctx.translate(endX, endY);
+        ctx.rotate(ang);
+        ctx.drawImage(imgObj, -drawW / 2, -drawH / 2, drawW, drawH);
+      } else {
+        ctx.fillStyle = "#9dd6ff";
+        ctx.translate(endX, endY);
+        ctx.fillRect(-10, -10, 20, 20);
+      }
+      ctx.restore();
+    }
+    function drawClawPrompt() {
+      if (state.clawActive || state.phase !== "running")
+        return;
+      if (state.clawPromptAlpha <= 0.02)
+        return;
+      const candidate = getClawTargetInRange();
+      if (!candidate)
+        return;
+      ctx.save();
+      ctx.globalAlpha = state.clawPromptAlpha;
+      ctx.fillStyle = "#e6fbff";
+      ctx.font = "bold 15px Oxanium, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.shadowColor = "rgba(0,229,255,.6)";
+      ctx.shadowBlur = 8;
+      ctx.fillText("HOLD X \u2014 IRON CLAW", state.ship.x, state.ship.y - 58);
+      ctx.restore();
+    }
     function drawAliens() {
       const r = 30;
       state.aliens.forEach((al) => {
@@ -2258,8 +2587,12 @@
     function draw() {
       ctx.clearRect(0, 0, W, H);
       drawField();
+      drawClaw();
       drawAliens();
+      drawBullets();
       drawShip(state.ship.x, state.ship.y, SHIP_R * 2.3);
+      drawSparks();
+      drawClawPrompt();
       if (state.phase === "idle") {
         ctx.fillStyle = "rgba(6,9,22,0.55)";
         ctx.fillRect(0, 0, W, H);
@@ -2269,7 +2602,7 @@
         ctx.fillText("PRESS START", W / 2, H / 2 - 12);
         ctx.font = "16px Oxanium, sans-serif";
         ctx.fillStyle = "rgba(226,232,255,0.7)";
-        ctx.fillText("Thrust drifts \u2014 use rotation + momentum. Wrong rock costs a life.", W / 2, H / 2 + 20);
+        ctx.fillText("Iron claw: hold X near the answer rock. SPACE shoots aliens. Wrong rocks bump-only.", W / 2, H / 2 + 20);
       } else if (state.phase === "over") {
         ctx.fillStyle = "rgba(6,9,22,0.72)";
         ctx.fillRect(0, 0, W, H);
@@ -2291,6 +2624,15 @@
         ctx.fillStyle = "rgba(100,149,237,0.12)";
         ctx.fillRect(0, 0, W, H);
       }
+      if (state.phase === "running" && now < state.invulnerableUntil) {
+        ctx.save();
+        ctx.strokeStyle = "rgba(0,229,255,0.35)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(state.ship.x, state.ship.y, SHIP_R + 16, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
     }
     function loop(ts) {
       if (state.destroyed)
@@ -2302,7 +2644,7 @@
       if (state.phase === "running" && !state.paused) {
         physicsStep(dt);
         trySpawnAlien(ts);
-        collide();
+        collideWorld(ts);
       }
       draw();
     }
@@ -2311,8 +2653,9 @@
         return;
       state.keys[e.code] = true;
       if (e.code === "Space") {
-        state.paused = !state.paused;
-        state.lastTime = performance.now();
+        if (state.phase === "running") {
+          tryFireBullet();
+        }
         e.preventDefault();
         return;
       }
@@ -2362,8 +2705,8 @@
     id: "claim_field",
     title: "Claim Field",
     tagline: "Arcade \u2022 Drift & scan",
-    blurb: "Rotate and thrust through inertia, find the answer among static rocks, dodge pursuing aliens.",
-    brief: "Thrust builds velocity along your nose (drift). Left/Right only spin the ship. Numbered asteroids fill the arena; touch the answer to score. Wrong pick costs a life. Aliens creep in from the edges homing on you.",
+    blurb: "Drift toward the answer, hold X for the iron claw (Stampede-style). Space pops aliens. Wrong rocks only bump you.",
+    brief: "Lower inertia than before: rotation + thrust, friction bleeds speed. Only the correct asteroid is collected via extended claw grab when you hold X in range. Wrong rocks knock you back. Aliens hunt the ship; Space fires one-shot kills with a burst. Esc / P pauses (Side Ops overlay).",
     configSchema: [
       {
         type: "ship",
