@@ -2963,6 +2963,40 @@
       .menuRight{ display:none; }
     }
 
+    /* ── Grade level ── */
+    .gradeGrid{
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(88px,1fr));
+      gap:8px; margin:14px 0;
+    }
+    .gradeCard{
+      background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+      border-radius:10px; padding:14px 8px; text-align:center; cursor:pointer;
+      transition:border-color .15s,background .15s; user-select:none;
+    }
+    .gradeCard.selected{ border-color:rgba(0,229,255,.55); background:rgba(0,229,255,.09); }
+    .gradeCard:hover:not(.selected){ border-color:rgba(0,229,255,.28); }
+    .gradeCardLabel{ font-weight:700; font-size:15px; color:var(--text); }
+    .gradeCardSub{ font-size:10px; color:var(--muted); margin-top:3px; }
+    .gradeNote{
+      border:1px solid rgba(255,255,255,.07); border-radius:10px;
+      padding:12px 14px; font-size:12px; color:var(--muted);
+      min-height:46px; background:rgba(255,255,255,.025);
+    }
+    #activeGradeChip{
+      font-size:10px; letter-spacing:1.5px; text-transform:uppercase;
+      color:rgba(0,229,255,.7); margin-top:4px; min-height:14px;
+    }
+    .campaignGradeMatch{
+      position:absolute; top:-6px; right:-6px;
+      background:rgba(0,229,255,.18); border:1px solid rgba(0,229,255,.45);
+      border-radius:5px; font-size:9px; letter-spacing:1px;
+      color:rgba(0,229,255,.9); padding:1px 5px; pointer-events:none;
+      text-transform:uppercase; white-space:nowrap;
+    }
+    .sliderRow{ display:flex; align-items:center; gap:10px; margin-top:4px; }
+    .sliderRow input[type=range]{ flex:1; accent-color:rgba(0,229,255,.85); cursor:pointer; }
+    .sliderLabel{ font-size:12px; color:var(--muted); min-width:90px; text-align:right; font-variant-numeric:tabular-nums; }
+
     /* ── Achievements gallery ── */
     .achievementsGrid{
       display: grid;
@@ -3001,6 +3035,7 @@
           <button id="btnLaunchHome" class="btn primary btnLaunch" type="button">Launch</button>
           <button id="btnCampaign" class="btn secondaryLabel menuExtra" type="button">Campaign <small>6 mission run</small></button>
           <button id="btnStartGame" class="btn secondaryLabel menuExtra" type="button">Single Mission <small>Custom setup</small></button>
+          <div id="activeGradeChip"></div>
           <button id="btnSideOps" class="btn secondaryLabel menuExtra" type="button">Side Ops <small>Mini games</small></button>
           <button id="btnTutorial" class="btn secondaryLabel menuExtra" type="button">Tutorial <small>Guided tour</small></button>
           <button id="btnAchievements" class="btn secondaryLabel menuExtra" type="button">Achievements <small>Badges earned</small></button>
@@ -3229,14 +3264,12 @@
 
                 <label>
                   ASTEROID SPEED
-                  <select id="speed" name="speed">
-                  <option value="0.5">SLOW</option>
-                  <option value="0.7" selected>NORMAL</option>
-                  <option value="0.85">FAST</option>
-                  <option value="1.0">INSANE</option>
-                </select>
+                  <div class="sliderRow">
+                    <input type="range" id="speedSlider" name="speed" min="0.5" max="1.2" step="0.05" value="0.9">
+                    <span id="speedSliderLabel" class="sliderLabel">0.90×</span>
+                  </div>
                   <span class="helpText">How fast asteroids drift toward you.</span>
-              </label>
+                </label>
 
                 <label>
                   LIVES
@@ -3272,15 +3305,13 @@
                 </label>
 
                 <label>
-                  TARGETED ASTEROIDS
-                  <select id="targetMode" name="targetMode">
-                    <option value="off">OFF (ENDLESS)</option>
-                    <option value="q7">7 TARGETS</option>
-                    <option value="q10">10 TARGETS</option>
-                    <option value="q15" selected>15 TARGETS</option>
-                    <option value="q20">20 TARGETS</option>
-                  </select>
-                  <span class="helpText">End the run after a fixed number of correct hits.</span>
+                  NUMBER OF QUESTIONS
+                  <div class="sliderRow">
+                    <input type="range" id="questionsSlider" min="0" max="20" step="1" value="10">
+                    <span id="questionsSliderLabel" class="sliderLabel">10 questions</span>
+                  </div>
+                  <input type="hidden" name="targetMode" id="targetModeHidden" value="q10">
+                  <span class="helpText">How many correct answers end the session. Set to 0 for endless.</span>
                 </label>
 
                 <label>
@@ -3939,6 +3970,7 @@
             <button type="button" class="btn settingsTabBtn" data-settings-tab="display">DISPLAY</button>
             <button type="button" class="btn settingsTabBtn" data-settings-tab="controls">CONTROLS</button>
             <button type="button" class="btn settingsTabBtn" data-settings-tab="catalogs">CATALOGS</button>
+            <button type="button" class="btn settingsTabBtn" data-settings-tab="grade">GRADE</button>
           </div>
         </div>
         <div class="settingsPanels">
@@ -4114,6 +4146,15 @@
                 </div>
               </div>
             </div>
+            </div>
+          </div>
+          <div class="panel settingsPanel" data-settings-panel="grade">
+            <h3 class="panelTitle" style="margin:0 0 6px;">Grade Level</h3>
+            <p class="monoSmall" style="margin:0 0 4px;">Select your grade to pre-fill Single Mission with the right number ranges, difficulty, and pace. You can still adjust everything manually after.</p>
+            <div class="gradeGrid" id="gradeGrid"></div>
+            <div class="gradeNote" id="gradeNote">Select a grade above to see what changes.</div>
+            <div class="row" style="margin-top:14px;">
+              <button id="btnClearGrade" class="btn" style="font-size:11px;">Clear Grade Setting</button>
             </div>
           </div>
         </div>
@@ -4561,6 +4602,18 @@
       belt: "dusk",
       alienSwarm: false,
     };
+
+    var STUDENT_GRADE_KEY = "mentaris.studentGrade";
+    var GRADE_PRESETS = {
+      "4":   { label:"Grade 4",   ages:"Ages 9–10",  desc:"Multiplication facts up to 10×10 and basic addition. Easy pace with generous lives.",              aMin:1,  aMax:10, bMin:1,  bMax:10, difficulty:"easy",   decoys:2, speed:0.65, lives:12, targetMode:"q10" },
+      "5":   { label:"Grade 5",   ages:"Ages 10–11", desc:"Times tables up to 12×12 with all four operations introduced. Same easy pace.",                    aMin:1,  aMax:12, bMin:1,  bMax:12, difficulty:"easy",   decoys:2, speed:0.65, lives:10, targetMode:"q10" },
+      "6":   { label:"Grade 6",   ages:"Ages 11–12", desc:"Full operation fluency with standard ranges. Normal difficulty, same comfortable speed.",           aMin:2,  aMax:12, bMin:2,  bMax:12, difficulty:"normal", decoys:3, speed:0.65, lives:10, targetMode:"q10" },
+      "7":   { label:"Grade 7",   ages:"Ages 12–13", desc:"Extended number ranges, all operations. Speed steps up slightly.",                                  aMin:2,  aMax:15, bMin:2,  bMax:15, difficulty:"normal", decoys:3, speed:0.70, lives:8,  targetMode:"q10" },
+      "8":   { label:"Grade 8",   ages:"Ages 13–14", desc:"Wider ranges, squares and roots eligible. Steady normal challenge.",                                aMin:3,  aMax:15, bMin:3,  bMax:15, difficulty:"normal", decoys:3, speed:0.70, lives:8,  targetMode:"q10" },
+      "9":   { label:"Grade 9",   ages:"Ages 14–15", desc:"Larger operands up to 18. Normal difficulty — push to Hard manually if you want more pressure.",    aMin:4,  aMax:18, bMin:4,  bMax:15, difficulty:"normal", decoys:3, speed:0.70, lives:6,  targetMode:"q10" },
+      "10+": { label:"Grade 10+", ages:"Ages 15+",   desc:"Widest number ranges with a slight speed increase. Normal difficulty — push to Hard if you want.",  aMin:6,  aMax:20, bMin:6,  bMax:20, difficulty:"normal", decoys:4, speed:0.75, lives:5,  targetMode:"q10" }
+    };
+    var GRADE_ORDER = ["4","5","6","7","8","9","10+"];
 
     var campaignProfileKey = "mentaris.campaign.profile.active";
     var campaignProfilesKey = "mentaris.campaign.profiles";
@@ -7904,6 +7957,119 @@
         if(sfxCatalogPanelHome) sfxCatalogPanelHome.classList.remove("open");
       });
     }
+    // ── Grade Level ───────────────────────────────────────────────────────────
+    var gradeGridEl = document.getElementById("gradeGrid");
+    var gradeNoteEl = document.getElementById("gradeNote");
+    var activeGradeChipEl = document.getElementById("activeGradeChip");
+    var btnClearGrade = document.getElementById("btnClearGrade");
+    var speedSliderEl = document.getElementById("speedSlider");
+    var speedSliderLabelEl = document.getElementById("speedSliderLabel");
+    var questionsSliderEl = document.getElementById("questionsSlider");
+    var questionsSliderLabelEl = document.getElementById("questionsSliderLabel");
+    var targetModeHiddenEl = document.getElementById("targetModeHidden");
+
+    function getActiveGrade(){ try{ return localStorage.getItem(STUDENT_GRADE_KEY)||""; }catch(e){ return ""; } }
+
+    function syncSpeedSlider(val){
+      if(speedSliderEl) speedSliderEl.value = val;
+      if(speedSliderLabelEl) speedSliderLabelEl.textContent = parseFloat(val).toFixed(2)+"×";
+    }
+    function syncQuestionsSlider(targetMode){
+      var n = (!targetMode || targetMode === "off") ? 0 : parseInt(targetMode.replace("q",""), 10) || 0;
+      if(questionsSliderEl) questionsSliderEl.value = n;
+      if(questionsSliderLabelEl) questionsSliderLabelEl.textContent = n === 0 ? "Endless" : n+" questions";
+      if(targetModeHiddenEl) targetModeHiddenEl.value = n === 0 ? "off" : "q"+n;
+    }
+
+    if(speedSliderEl){
+      speedSliderEl.addEventListener("input", function(){
+        if(speedSliderLabelEl) speedSliderLabelEl.textContent = parseFloat(this.value).toFixed(2)+"×";
+      });
+    }
+    if(questionsSliderEl){
+      questionsSliderEl.addEventListener("input", function(){
+        var n = parseInt(this.value, 10);
+        if(questionsSliderLabelEl) questionsSliderLabelEl.textContent = n === 0 ? "Endless" : n+" questions";
+        if(targetModeHiddenEl) targetModeHiddenEl.value = n === 0 ? "off" : "q"+n;
+      });
+    }
+
+    function applyGradePreset(grade){
+      var gp = GRADE_PRESETS[grade]; if(!gp) return;
+      try{ localStorage.setItem(STUDENT_GRADE_KEY, grade); }catch(e){}
+      var keys = ["aMin","aMax","bMin","bMax","decoys","speed","lives","difficulty","targetMode"];
+      keys.forEach(function(k){ defaults[k] = gp[k]; });
+      var form = document.getElementById("homeMenu");
+      if(form){
+        ["aMin","aMax","bMin","bMax","decoys","lives"].forEach(function(k){
+          var el = form.elements[k]; if(el) el.value = gp[k];
+        });
+      }
+      syncSpeedSlider(gp.speed);
+      syncQuestionsSlider(gp.targetMode);
+      selectedDifficulty = gp.difficulty;
+      document.querySelectorAll("#difficultyChoices .choiceCard").forEach(function(c){
+        c.classList.toggle("selected", c.getAttribute("data-diff") === gp.difficulty);
+      });
+      updateActiveGradeChipEl();
+    }
+
+    function updateActiveGradeChipEl(){
+      var g = getActiveGrade();
+      if(activeGradeChipEl) activeGradeChipEl.textContent = g ? ("GRADE "+g+" ACTIVE") : "";
+    }
+
+    function renderGradeGrid(){
+      if(!gradeGridEl) return;
+      var current = getActiveGrade();
+      gradeGridEl.innerHTML = "";
+      GRADE_ORDER.forEach(function(g){
+        var gp = GRADE_PRESETS[g];
+        var card = document.createElement("div");
+        card.className = "gradeCard"+(g===current?" selected":"");
+        card.innerHTML = '<div class="gradeCardLabel">'+gp.label+'</div>'
+          +'<div class="gradeCardSub">'+gp.ages+'</div>';
+        card.addEventListener("click", function(){
+          playMenuBeep();
+          applyGradePreset(g);
+          renderGradeGrid();
+          if(gradeNoteEl) gradeNoteEl.textContent = gp.desc;
+        });
+        gradeGridEl.appendChild(card);
+      });
+      var g = getActiveGrade();
+      if(gradeNoteEl && g && GRADE_PRESETS[g]) gradeNoteEl.textContent = GRADE_PRESETS[g].desc;
+    }
+
+    if(btnClearGrade){
+      btnClearGrade.addEventListener("click", function(){
+        playMenuBeep();
+        try{ localStorage.removeItem(STUDENT_GRADE_KEY); }catch(e){}
+        defaults.aMin=2; defaults.aMax=12; defaults.bMin=2; defaults.bMax=12;
+        defaults.decoys=3; defaults.lives=10; defaults.difficulty="normal"; defaults.targetMode="q15";
+        defaults.speed=0.9;
+        syncSpeedSlider(0.9);
+        syncQuestionsSlider("q15");
+        selectedDifficulty = "normal";
+        document.querySelectorAll("#difficultyChoices .choiceCard").forEach(function(c){
+          c.classList.toggle("selected", c.getAttribute("data-diff") === "normal");
+        });
+        updateActiveGradeChipEl();
+        renderGradeGrid();
+        if(gradeNoteEl) gradeNoteEl.textContent = "Grade setting cleared. Manual settings will be used.";
+      });
+    }
+
+    // On startup: init sliders and apply saved grade if any
+    (function(){
+      syncSpeedSlider(defaults.speed);
+      syncQuestionsSlider(defaults.targetMode);
+      var savedGrade = getActiveGrade();
+      if(savedGrade && GRADE_PRESETS[savedGrade]) applyGradePreset(savedGrade);
+      updateActiveGradeChipEl();
+    })();
+    // ─────────────────────────────────────────────────────────────────────────
+
     if(settingsTabButtonsHome && settingsTabButtonsHome.length){
       settingsTabButtonsHome.forEach(function(btn){
         btn.addEventListener("click", function(){
@@ -7911,6 +8077,7 @@
           var tabId = btn.getAttribute("data-settings-tab") || "audio";
           setSettingsTabHome(tabId);
           if(tabId === "catalogs"){ renderHomeCatalogs(); }
+          if(tabId === "grade"){ renderGradeGrid(); }
         });
       });
     }
@@ -9130,6 +9297,18 @@
           + "<span class=\"campaignMapNodeBest\">" + bestLine + "</span>"
           + "</div>"
           + "<span class=\"campaignStatus\">" + statusSymbol + "</span>";
+        // Grade-match badge
+        (function(){
+          var _g = getActiveGrade && getActiveGrade();
+          var _gp = _g && GRADE_PRESETS && GRADE_PRESETS[_g];
+          if(_gp && m.config && m.config.difficulty === _gp.difficulty){
+            var badge = document.createElement("div");
+            badge.className = "campaignGradeMatch";
+            badge.textContent = "★ Grade match";
+            li.style.position = "relative";
+            li.appendChild(badge);
+          }
+        })();
         li.addEventListener("click", function(){
           var wrapEl = document.getElementById("campaignMapWrap");
           if(wrapEl && Date.now() < (wrapEl._suppressClickUntil || 0)) return;
