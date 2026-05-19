@@ -1849,7 +1849,7 @@
     const initialLives = clamp(parseInt(config.lives, 10) || 3, 1, 9);
     const alienSpawnMs = clamp(parseInt(config.alienSpawnMs, 10) || 3200, 1200, 12e3);
     const maxAliens = clamp(parseInt(config.maxAliens, 10) || 5, 1, 12);
-    const alienSpeed = clamp(parseInt(config.alienSpeed, 10) || 62, 20, 200);
+    const alienSpeed = clamp(parseInt(config.alienSpeed, 10) || 28, 8, 200);
     const shipId = config.ship || "classic";
     const shipMeta = SHIP_CATALOG2.find((s) => s.value === shipId) || SHIP_CATALOG2[0];
     const shipImg = loadImage2(shipMeta.icon);
@@ -1905,13 +1905,13 @@
     const H = canvas.height;
     const footer = document.createElement("div");
     footer.style.cssText = "margin-top:12px; text-align:center; color: var(--muted); font-size:12px; letter-spacing:2px; text-transform:uppercase;";
-    footer.textContent = "\u2190 \u2192 rotate \u2022 \u2191 thrust \u2022 Space shoot \u2022 Hold X iron claw \u2022 Wrong rocks bump-only \u2022 Esc/P pause";
+    footer.textContent = "\u2190 \u2192 rotate \u2022 \u2191 thrust \u2022 Space shoot \u2022 Hold E iron claw \u2022 Wrong rocks bump-only \u2022 Esc/P pause";
     container.appendChild(footer);
     const SHIP_R = 20;
     const AST_R = 38;
     const THRUST = 520;
     const TURN_SPEED = 3.1;
-    const FRICTION_POW = 0.926;
+    const FRICTION_POW = 0.988;
     const MAX_SPEED = 340;
     const WRONG_KNOCK = 190;
     const CLAW_HOLD_SEC = 0.35;
@@ -2092,7 +2092,7 @@
       if (!state.clawActive) {
         if (candidate) {
           state.clawPromptAlpha = Math.min(1, state.clawPromptAlpha + dtSec * 3.2);
-          if (state.keys.KeyX) {
+          if (state.keys.KeyE) {
             state.clawHold += dtSec;
             if (state.clawHold >= CLAW_HOLD_SEC) {
               startClawGrab(candidate.asteroid);
@@ -2561,7 +2561,7 @@
       ctx.textBaseline = "bottom";
       ctx.shadowColor = "rgba(0,229,255,.6)";
       ctx.shadowBlur = 8;
-      ctx.fillText("HOLD X \u2014 IRON CLAW", state.ship.x, state.ship.y - 58);
+      ctx.fillText("HOLD E \u2014 IRON CLAW", state.ship.x, state.ship.y - 58);
       ctx.restore();
     }
     function drawAliens() {
@@ -2602,7 +2602,7 @@
         ctx.fillText("PRESS START", W / 2, H / 2 - 12);
         ctx.font = "16px Oxanium, sans-serif";
         ctx.fillStyle = "rgba(226,232,255,0.7)";
-        ctx.fillText("Iron claw: hold X near the answer rock. SPACE shoots aliens. Wrong rocks bump-only.", W / 2, H / 2 + 20);
+        ctx.fillText("Iron claw: hold E near the answer rock. SPACE shoots aliens. Wrong rocks bump-only.", W / 2, H / 2 + 20);
       } else if (state.phase === "over") {
         ctx.fillStyle = "rgba(6,9,22,0.72)";
         ctx.fillRect(0, 0, W, H);
@@ -2705,8 +2705,8 @@
     id: "claim_field",
     title: "Claim Field",
     tagline: "Arcade \u2022 Drift & scan",
-    blurb: "Drift toward the answer, hold X for the iron claw (Stampede-style). Space pops aliens. Wrong rocks only bump you.",
-    brief: "Lower inertia than before: rotation + thrust, friction bleeds speed. Only the correct asteroid is collected via extended claw grab when you hold X in range. Wrong rocks knock you back. Aliens hunt the ship; Space fires one-shot kills with a burst. Esc / P pauses (Side Ops overlay).",
+    blurb: "Drift toward the answer, hold E for the iron claw (Stampede-style). Space pops aliens. Wrong rocks only bump you.",
+    brief: "Rotation + thrust, friction bleeds speed. Only the correct asteroid is collected via extended claw grab when you hold E in range. Wrong rocks knock you back. Aliens hunt the ship; Space fires one-shot kills with a burst. Esc / P pauses (Side Ops overlay).",
     configSchema: [
       {
         type: "ship",
@@ -2757,7 +2757,7 @@
       { type: "number", id: "lives", label: "Lives", default: 3, min: 1, max: 9 },
       { type: "number", id: "alienSpawnMs", label: "Alien spawn interval (ms)", default: 3200, min: 1200, max: 12e3 },
       { type: "number", id: "maxAliens", label: "Max aliens", default: 5, min: 1, max: 12 },
-      { type: "number", id: "alienSpeed", label: "Alien chase speed", default: 62, min: 20, max: 200 }
+      { type: "number", id: "alienSpeed", label: "Alien chase speed", default: 28, min: 8, max: 200 }
     ],
     mount(container, config, api) {
       const cfg = {
