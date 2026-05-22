@@ -8636,23 +8636,39 @@ function showEndPlacementLeaderboard(revealPlacementLine){
   }
 }
 
-function queuePlacementLeaderboardReveal(reveal, attemptsLeft){
+function queuePlacementLeaderboardReveal(reveal, attemptsLeft, _skipRaf){
   var info = reveal || {};
-  var tries = (typeof attemptsLeft === "number") ? attemptsLeft : 12;
+  var tries = (typeof attemptsLeft === "number") ? attemptsLeft : 40;
   if(!info.found || !info.currentRow){
+    return;
+  }
+  // On the very first call, defer by one rAF so the browser can finish layout
+  // after the display:none → visible transition before we read offsetHeight.
+  if(!_skipRaf){
+    requestAnimationFrame(function(){
+      queuePlacementLeaderboardReveal(info, tries, true);
+    });
     return;
   }
   var wrap = endScoresTableWrap;
   var row = info.currentRow;
   var placementVisible = !!(endStagePlacement && endStagePlacement.classList.contains("isActive"));
-  var ready = !!(wrap && row && placementVisible && wrap.clientHeight > 0 && row.offsetHeight > 0);
+  // Drop the wrap.clientHeight guard — it can be 0 mid-transition even when
+  // the element is already display:block.  row.offsetHeight is sufficient.
+  var ready = !!(wrap && row && placementVisible && row.offsetHeight > 0);
   if(!ready){
     if(tries <= 0){
+      // Last-ditch: scroll anyway — offsetTop may still be valid
+      if(wrap && row){ animateEndScoresScrollToRow(row, wrap, 850, function(){
+        row.classList.add("endScoreRowPop");
+        var t = setTimeout(function(){ row.classList.remove("endScoreRowPop"); }, 700);
+        endSequenceTimers.push(t);
+      }); }
       return;
     }
     var retryTimer = setTimeout(function(){
-      queuePlacementLeaderboardReveal(info, tries - 1);
-    }, 40);
+      queuePlacementLeaderboardReveal(info, tries - 1, true);
+    }, 50);
     endSequenceTimers.push(retryTimer);
     return;
   }
@@ -17143,7 +17159,8 @@ function boot(){
             tutorialMovementPreference = null;
             tutorialMovementChoiceResolved = false;
             tutorialPlatformChoiceResolved = false;
-            tutorialChoiceCursorReady = false;
+            // Show cursor immediately — don't wait for onStepReady typing animation
+            tutorialChoiceCursorReady = true;
             setTouchDockHidden(false);
             updateCursorVisibility();
           }else if(stepId === "move_arrows"){
@@ -17175,11 +17192,13 @@ function boot(){
             startTutorialDots("touch", "move_touch");
           }else if(stepId === "movement_preference"){
             tutorialMovementChoiceResolved = false;
-            tutorialChoiceCursorReady = false;
             if(tutorialPlatform === "tablet"){
               tourGuide.jumpTo("fire_once");
               return false;
             }
+            // Show cursor immediately so choices are clickable from the first frame
+            tutorialChoiceCursorReady = true;
+            updateCursorVisibility();
           }else if(tutorialDotsActive){
             stopTutorialDots();
           }

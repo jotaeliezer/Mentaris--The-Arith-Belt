@@ -4,31 +4,49 @@ var STORAGE_KEY = "mentaris.achievements";
 
 export var ACHIEVEMENTS = [
   // Session-based
-  { id: "first_session",     label: "First Launch",    desc: "Complete your first session." },
-  { id: "streak_5",          label: "On a Roll",       desc: "Reach a 5-hit streak in a session." },
-  { id: "streak_10",         label: "Hot Streak",      desc: "Reach a 10-hit streak in a session." },
-  { id: "streak_25",         label: "Inferno",         desc: "Reach a 25-hit streak in a session." },
-  { id: "no_misses",         label: "Clean Run",       desc: "Finish a session with zero missed answers." },
-  { id: "perfect_acc",       label: "Perfect",         desc: "100% accuracy with 10 or more correct answers." },
-  { id: "score_5k",          label: "Five Thousand",   desc: "Score 5,000 points in one session." },
-  { id: "score_25k",         label: "High Commander",  desc: "Score 25,000 points in one session." },
-  { id: "score_100k",        label: "Legend",          desc: "Score 100,000 points in one session." },
-  { id: "level_10",          label: "Ace Pilot",       desc: "Reach level 10 in one session." },
-  { id: "no_damage",         label: "Ghost Run",       desc: "Complete a session without losing a single HP." },
+  { id: "first_session",     label: "First Launch",      desc: "Complete your first session." },
+  { id: "streak_5",          label: "On a Roll",         desc: "Reach a 5-hit streak in a session." },
+  { id: "streak_10",         label: "Hot Streak",        desc: "Reach a 10-hit streak in a session." },
+  { id: "streak_25",         label: "Inferno",           desc: "Reach a 25-hit streak in a session." },
+  { id: "streak_50",         label: "Unstoppable",       desc: "Reach a 50-hit streak in a session." },
+  { id: "no_misses",         label: "Clean Run",         desc: "Finish a session with zero missed answers." },
+  { id: "perfect_acc",       label: "Perfect",           desc: "100% accuracy with 10 or more correct answers." },
+  { id: "score_1k",          label: "First Thousand",    desc: "Score 1,000 points in one session." },
+  { id: "score_5k",          label: "Five Thousand",     desc: "Score 5,000 points in one session." },
+  { id: "score_25k",         label: "High Commander",    desc: "Score 25,000 points in one session." },
+  { id: "score_50k",         label: "Space Admiral",     desc: "Score 50,000 points in one session." },
+  { id: "score_100k",        label: "Legend",            desc: "Score 100,000 points in one session." },
+  { id: "level_5",           label: "Squadron Leader",   desc: "Reach level 5 in one session." },
+  { id: "level_10",          label: "Ace Pilot",         desc: "Reach level 10 in one session." },
+  { id: "level_20",          label: "Elite Commander",   desc: "Reach level 20 in one session." },
+  { id: "no_damage",         label: "Ghost Run",         desc: "Complete a session without losing a single HP." },
+  { id: "no_damage_hard",    label: "Phantom",           desc: "Complete a Hard or Brutal session without losing HP." },
+  { id: "speed_5",           label: "Quick Draw",        desc: "Answer 5 questions correctly in under 3 seconds each." },
   // Lifetime
-  { id: "ten_sessions",      label: "Veteran",         desc: "Play 10 sessions total." },
-  { id: "fifty_sessions",    label: "Elite Pilot",     desc: "Play 50 sessions total." },
-  { id: "three_ships",       label: "Fleet Commander", desc: "Play with 3 different ships." },
+  { id: "five_sessions",     label: "Getting Started",   desc: "Play 5 sessions total." },
+  { id: "ten_sessions",      label: "Veteran",           desc: "Play 10 sessions total." },
+  { id: "twenty_five_sessions", label: "Dedicated",      desc: "Play 25 sessions total." },
+  { id: "fifty_sessions",    label: "Elite Pilot",       desc: "Play 50 sessions total." },
+  { id: "hundred_sessions",  label: "Legend Pilot",      desc: "Play 100 sessions total." },
+  { id: "three_ships",       label: "Fleet Commander",   desc: "Play with 3 different ships." },
+  { id: "five_ships",        label: "Admiral",           desc: "Play with 5 different ships." },
   // Combat
-  { id: "alien_5",           label: "Alien Hunter",    desc: "Eliminate 5 aliens in one session." },
-  { id: "alien_boss",        label: "Boss Slayer",     desc: "Eliminate an alien boss." },
-  { id: "all_powerups",      label: "Full Arsenal",    desc: "Collect every power-up type in one session." },
+  { id: "alien_5",           label: "Alien Hunter",      desc: "Eliminate 5 aliens in one session." },
+  { id: "alien_20",          label: "Exterminator",      desc: "Eliminate 20 aliens in one session." },
+  { id: "alien_50",          label: "Annihilator",       desc: "Eliminate 50 aliens across all sessions." },
+  { id: "alien_boss",        label: "Boss Slayer",       desc: "Eliminate an alien boss." },
+  { id: "alien_boss_3",      label: "Boss Hunter",       desc: "Eliminate 3 alien bosses total." },
+  { id: "all_powerups",      label: "Full Arsenal",      desc: "Collect every power-up type in one session." },
+  { id: "powerup_10",        label: "Power Hungry",      desc: "Collect 10 power-ups in one session." },
   // Difficulty
-  { id: "brutal_win",        label: "Brutal Pilot",    desc: "Complete a session on Brutal difficulty." },
-  { id: "score_1k_brutal",   label: "Brutal Ace",      desc: "Score 1,000+ on Brutal difficulty." },
+  { id: "brutal_win",        label: "Brutal Pilot",      desc: "Complete a session on Brutal difficulty." },
+  { id: "score_1k_brutal",   label: "Brutal Ace",        desc: "Score 1,000+ on Brutal difficulty." },
+  { id: "score_10k_brutal",  label: "Brutal Legend",     desc: "Score 10,000+ on Brutal difficulty." },
+  { id: "hard_win",          label: "Hard-Boiled",       desc: "Complete a session on Hard difficulty." },
   // Campaign
-  { id: "campaign_m1",       label: "First Sector",    desc: "Complete the first campaign mission." },
-  { id: "campaign_complete", label: "Sector Champion", desc: "Complete all missions in a campaign." },
+  { id: "campaign_m1",       label: "First Sector",      desc: "Complete the first campaign mission." },
+  { id: "campaign_complete", label: "Sector Champion",   desc: "Complete all missions in a campaign." },
+  { id: "campaign_no_fail",  label: "Flawless Campaign", desc: "Complete a campaign without failing any mission." },
 ];
 
 export function loadAchievements() {
@@ -74,6 +92,7 @@ export function checkAchievements(session, state, lifetime) {
   if (bestStreak >= 5)  unlock("streak_5");
   if (bestStreak >= 10) unlock("streak_10");
   if (bestStreak >= 25) unlock("streak_25");
+  if (bestStreak >= 50) unlock("streak_50");
 
   var missed  = session.missed  || 0;
   var correct = session.correct || 0;
@@ -82,12 +101,16 @@ export function checkAchievements(session, state, lifetime) {
   if (correct >= 10 && accuracy >= 1.0) unlock("perfect_acc");
 
   var score = session.score || 0;
+  if (score >= 1000)   unlock("score_1k");
   if (score >= 5000)   unlock("score_5k");
   if (score >= 25000)  unlock("score_25k");
+  if (score >= 50000)  unlock("score_50k");
   if (score >= 100000) unlock("score_100k");
 
   var level = (state && state.level) ? state.level : (session.level || 0);
+  if (level >= 5)  unlock("level_5");
   if (level >= 10) unlock("level_10");
+  if (level >= 20) unlock("level_20");
 
   var livesStart = (state && typeof state.livesStart === "number") ? state.livesStart : -1;
   var livesEnd   = (state && typeof state.lives === "number")      ? state.lives     : -1;
@@ -95,11 +118,26 @@ export function checkAchievements(session, state, lifetime) {
     unlock("no_damage");
   }
 
+  // Difficulty
+  var diff = (state && state.difficulty) ? state.difficulty : (session.difficulty || "");
+  if (livesStart >= 0 && livesEnd >= 0 && (livesStart - livesEnd) === 0 && correct >= 5 &&
+      (diff === "hard" || diff === "brutal")) {
+    unlock("no_damage_hard");
+  }
+
+  // Quick answers (fast_answer count tracked as session.fastAnswers)
+  var fastAnswers = session.fastAnswers || 0;
+  if (fastAnswers >= 5) unlock("speed_5");
+
   // Lifetime
   var totalSessions = (lifetime && lifetime.sessions) ? lifetime.sessions : 0;
-  if (totalSessions >= 10) unlock("ten_sessions");
-  if (totalSessions >= 50) unlock("fifty_sessions");
+  if (totalSessions >= 5)   unlock("five_sessions");
+  if (totalSessions >= 10)  unlock("ten_sessions");
+  if (totalSessions >= 25)  unlock("twenty_five_sessions");
+  if (totalSessions >= 50)  unlock("fifty_sessions");
+  if (totalSessions >= 100) unlock("hundred_sessions");
   if (data.shipsPlayed.length >= 3) unlock("three_ships");
+  if (data.shipsPlayed.length >= 5) unlock("five_ships");
 
   // Combat
   var totalAliens = 0;
@@ -108,22 +146,41 @@ export function checkAchievements(session, state, lifetime) {
       totalAliens += (state.aliensShotByType[k] || 0);
     });
   }
-  if (totalAliens >= 5) unlock("alien_5");
+  if (totalAliens >= 5)  unlock("alien_5");
+  if (totalAliens >= 20) unlock("alien_20");
+
+  // Lifetime alien kills (tracked in lifetime stats)
+  var lifetimeAliens = (lifetime && lifetime.totalAliens) ? lifetime.totalAliens : 0;
+  if (lifetimeAliens >= 50) unlock("alien_50");
+
   if (state && state.alienBossBonusAwarded) unlock("alien_boss");
+
+  // Lifetime boss kills
+  var lifetimeBossKills = (lifetime && lifetime.bossKills) ? lifetime.bossKills : 0;
+  if (lifetimeBossKills >= 3) unlock("alien_boss_3");
 
   var powerupTypes = (state && state.powerupsUsedByType) ? Object.keys(state.powerupsUsedByType).length : 0;
   if (powerupTypes >= 7) unlock("all_powerups");
 
+  var powerupsTotal = 0;
+  if (state && state.powerupsUsedByType) {
+    Object.keys(state.powerupsUsedByType).forEach(function(k) {
+      powerupsTotal += (state.powerupsUsedByType[k] || 0);
+    });
+  }
+  if (powerupsTotal >= 10) unlock("powerup_10");
+
   // Difficulty
-  var diff = (state && state.difficulty) ? state.difficulty : (session.difficulty || "");
   if (diff === "brutal" && correct > 0) unlock("brutal_win");
-  if (diff === "brutal" && score >= 1000) unlock("score_1k_brutal");
+  if (diff === "brutal" && score >= 1000)  unlock("score_1k_brutal");
+  if (diff === "brutal" && score >= 10000) unlock("score_10k_brutal");
+  if (diff === "hard"   && correct > 0) unlock("hard_win");
 
   saveAchievements(data);
   return newlyUnlocked;
 }
 
-export function checkCampaignAchievements(missionIndex, isComplete) {
+export function checkCampaignAchievements(missionIndex, isComplete, noFailRun) {
   var data = loadAchievements();
   var now = Date.now();
   var newlyUnlocked = [];
@@ -137,6 +194,7 @@ export function checkCampaignAchievements(missionIndex, isComplete) {
 
   if (missionIndex === 0) unlock("campaign_m1");
   if (isComplete) unlock("campaign_complete");
+  if (isComplete && noFailRun) unlock("campaign_no_fail");
 
   saveAchievements(data);
   return newlyUnlocked;

@@ -2053,6 +2053,9 @@
     #sandboxRevealOverlay.overlay{
       z-index: 52;
     }
+    #gradePromptOverlay.overlay{
+      z-index: 60;
+    }
 
     #roadmapOverlay .card,
     #aboutOverlay .card,
@@ -4499,13 +4502,32 @@
       <div class="cardHead">
         <div>
           <h2 class="title">Achievements</h2>
-          <p class="subtitle" id="achievementsProgress">0 / 21 unlocked</p>
+          <p class="subtitle" id="achievementsProgress">0 / 39 unlocked</p>
         </div>
         <button id="btnCloseAchievements" class="btn">Close</button>
       </div>
       <div class="cardBody" style="grid-template-columns:1fr;">
         <div class="panel">
           <div class="achievementsGrid" id="achievementsGrid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grade Prompt Overlay — shown when user clicks Campaign/Single Mission with no grade set -->
+  <div id="gradePromptOverlay" class="overlay">
+    <div class="card" style="max-width:640px;">
+      <div class="cardHead">
+        <div>
+          <h2 class="title">Select Your Grade</h2>
+          <p class="subtitle">Pick your grade so the game matches your level — you can change this anytime in Settings.</p>
+        </div>
+        <button id="btnSkipGradePrompt" class="btn">Skip</button>
+      </div>
+      <div class="cardBody" style="grid-template-columns:1fr;">
+        <div class="panel">
+          <div class="gradeGrid" id="gradePromptGrid"></div>
+          <div class="gradeNote" id="gradePromptNote">Select a grade above to continue.</div>
         </div>
       </div>
     </div>
@@ -7877,27 +7899,50 @@
     }
     // ── Achievements gallery ──────────────────────────────────────────────────
     var ACHIEVEMENTS_HOME_LIST = [
-      { id:"first_session",    label:"First Launch",    desc:"Complete your first session." },
-      { id:"streak_5",         label:"On a Roll",       desc:"Reach a 5-hit streak in a session." },
-      { id:"streak_10",        label:"Hot Streak",      desc:"Reach a 10-hit streak in a session." },
-      { id:"streak_25",        label:"Inferno",         desc:"Reach a 25-hit streak in a session." },
-      { id:"no_misses",        label:"Clean Run",       desc:"Finish a session with zero missed answers." },
-      { id:"perfect_acc",      label:"Perfect",         desc:"100% accuracy with 10 or more correct answers." },
-      { id:"score_5k",         label:"Five Thousand",   desc:"Score 5,000 points in one session." },
-      { id:"score_25k",        label:"High Commander",  desc:"Score 25,000 points in one session." },
-      { id:"score_100k",       label:"Legend",          desc:"Score 100,000 points in one session." },
-      { id:"level_10",         label:"Ace Pilot",       desc:"Reach level 10 in one session." },
-      { id:"no_damage",        label:"Ghost Run",       desc:"Complete a session without losing a single HP." },
-      { id:"ten_sessions",     label:"Veteran",         desc:"Play 10 sessions total." },
-      { id:"fifty_sessions",   label:"Elite Pilot",     desc:"Play 50 sessions total." },
-      { id:"three_ships",      label:"Fleet Commander", desc:"Play with 3 different ships." },
-      { id:"alien_5",          label:"Alien Hunter",    desc:"Eliminate 5 aliens in one session." },
-      { id:"alien_boss",       label:"Boss Slayer",     desc:"Eliminate an alien boss." },
-      { id:"all_powerups",     label:"Full Arsenal",    desc:"Collect every power-up type in one session." },
-      { id:"brutal_win",       label:"Brutal Pilot",    desc:"Complete a session on Brutal difficulty." },
-      { id:"score_1k_brutal",  label:"Brutal Ace",      desc:"Score 1,000+ on Brutal difficulty." },
-      { id:"campaign_m1",      label:"First Sector",    desc:"Complete the first campaign mission." },
-      { id:"campaign_complete",label:"Sector Champion", desc:"Complete all missions in a campaign." }
+      // Session
+      { id:"first_session",        label:"First Launch",       desc:"Complete your first session." },
+      { id:"streak_5",             label:"On a Roll",          desc:"Reach a 5-hit streak in a session." },
+      { id:"streak_10",            label:"Hot Streak",         desc:"Reach a 10-hit streak in a session." },
+      { id:"streak_25",            label:"Inferno",            desc:"Reach a 25-hit streak in a session." },
+      { id:"streak_50",            label:"Unstoppable",        desc:"Reach a 50-hit streak in a session." },
+      { id:"no_misses",            label:"Clean Run",          desc:"Finish a session with zero missed answers." },
+      { id:"perfect_acc",          label:"Perfect",            desc:"100% accuracy with 10 or more correct answers." },
+      { id:"score_1k",             label:"First Thousand",     desc:"Score 1,000 points in one session." },
+      { id:"score_5k",             label:"Five Thousand",      desc:"Score 5,000 points in one session." },
+      { id:"score_25k",            label:"High Commander",     desc:"Score 25,000 points in one session." },
+      { id:"score_50k",            label:"Space Admiral",      desc:"Score 50,000 points in one session." },
+      { id:"score_100k",           label:"Legend",             desc:"Score 100,000 points in one session." },
+      { id:"level_5",              label:"Squadron Leader",    desc:"Reach level 5 in one session." },
+      { id:"level_10",             label:"Ace Pilot",          desc:"Reach level 10 in one session." },
+      { id:"level_20",             label:"Elite Commander",    desc:"Reach level 20 in one session." },
+      { id:"no_damage",            label:"Ghost Run",          desc:"Complete a session without losing a single HP." },
+      { id:"no_damage_hard",       label:"Phantom",            desc:"Complete a Hard or Brutal session without losing HP." },
+      { id:"speed_5",              label:"Quick Draw",         desc:"Answer 5 questions correctly in under 3 seconds each." },
+      // Lifetime
+      { id:"five_sessions",        label:"Getting Started",    desc:"Play 5 sessions total." },
+      { id:"ten_sessions",         label:"Veteran",            desc:"Play 10 sessions total." },
+      { id:"twenty_five_sessions", label:"Dedicated",          desc:"Play 25 sessions total." },
+      { id:"fifty_sessions",       label:"Elite Pilot",        desc:"Play 50 sessions total." },
+      { id:"hundred_sessions",     label:"Legend Pilot",       desc:"Play 100 sessions total." },
+      { id:"three_ships",          label:"Fleet Commander",    desc:"Play with 3 different ships." },
+      { id:"five_ships",           label:"Admiral",            desc:"Play with 5 different ships." },
+      // Combat
+      { id:"alien_5",              label:"Alien Hunter",       desc:"Eliminate 5 aliens in one session." },
+      { id:"alien_20",             label:"Exterminator",       desc:"Eliminate 20 aliens in one session." },
+      { id:"alien_50",             label:"Annihilator",        desc:"Eliminate 50 aliens across all sessions." },
+      { id:"alien_boss",           label:"Boss Slayer",        desc:"Eliminate an alien boss." },
+      { id:"alien_boss_3",         label:"Boss Hunter",        desc:"Eliminate 3 alien bosses total." },
+      { id:"all_powerups",         label:"Full Arsenal",       desc:"Collect every power-up type in one session." },
+      { id:"powerup_10",           label:"Power Hungry",       desc:"Collect 10 power-ups in one session." },
+      // Difficulty
+      { id:"hard_win",             label:"Hard-Boiled",        desc:"Complete a session on Hard difficulty." },
+      { id:"brutal_win",           label:"Brutal Pilot",       desc:"Complete a session on Brutal difficulty." },
+      { id:"score_1k_brutal",      label:"Brutal Ace",         desc:"Score 1,000+ on Brutal difficulty." },
+      { id:"score_10k_brutal",     label:"Brutal Legend",      desc:"Score 10,000+ on Brutal difficulty." },
+      // Campaign
+      { id:"campaign_m1",          label:"First Sector",       desc:"Complete the first campaign mission." },
+      { id:"campaign_complete",    label:"Sector Champion",    desc:"Complete all missions in a campaign." },
+      { id:"campaign_no_fail",     label:"Flawless Campaign",  desc:"Complete a campaign without failing any mission." }
     ];
 
     function renderAchievements() {
@@ -8068,6 +8113,98 @@
       if(savedGrade && GRADE_PRESETS[savedGrade]) applyGradePreset(savedGrade);
       updateActiveGradeChipEl();
     })();
+    // ── Grade Prompt Overlay ───────────────────────────────────────────────
+    var gradePromptOverlay = document.getElementById("gradePromptOverlay");
+    var gradePromptGridEl  = document.getElementById("gradePromptGrid");
+    var gradePromptNoteEl  = document.getElementById("gradePromptNote");
+    var btnSkipGradePrompt = document.getElementById("btnSkipGradePrompt");
+    var _gradePendingAction = null; // "campaign" | "singleMission"
+
+    function renderGradePromptGrid(){
+      if(!gradePromptGridEl) return;
+      gradePromptGridEl.innerHTML = "";
+      GRADE_ORDER.forEach(function(g){
+        var gp = GRADE_PRESETS[g];
+        var card = document.createElement("div");
+        card.className = "gradeCard";
+        card.innerHTML = '<div class="gradeCardLabel">'+gp.label+'</div>'
+          +'<div class="gradeCardSub">'+gp.ages+'</div>';
+        card.addEventListener("click", function(){
+          playMenuBeep();
+          applyGradePreset(g);
+          renderGradeGrid(); // also sync the settings grid
+          if(gradePromptNoteEl) gradePromptNoteEl.textContent = gp.desc;
+          // Brief visual confirmation then dispatch the pending action
+          setTimeout(function(){
+            if(gradePromptOverlay) gradePromptOverlay.classList.remove("show");
+            if(_gradePendingAction === "campaign"){
+              if(btnCampaign && campaignOverlay){
+                ensureCampaignData();
+                renderCampaignProfiles();
+                showCampaignProfilesView();
+                campaignOverlay.classList.add("show");
+                setCampaignOverlayBodyOpen(true);
+                if(menuWrap) menuWrap.classList.add("hidden");
+              }
+            } else if(_gradePendingAction === "singleMission"){
+              if(funnelOverlay){
+                campaignShipSelect = false;
+                funnelOverlay.classList.add("show");
+                setStep(0);
+                if(menuWrap) menuWrap.classList.add("hidden");
+                scheduleShipCarouselSync();
+              }
+            }
+            _gradePendingAction = null;
+          }, 320);
+        });
+        gradePromptGridEl.appendChild(card);
+      });
+      if(gradePromptNoteEl) gradePromptNoteEl.textContent = "Select a grade above to continue.";
+    }
+
+    function maybeShowGradePrompt(action){
+      if(getActiveGrade()) return false; // grade already set, no prompt needed
+      _gradePendingAction = action;
+      renderGradePromptGrid();
+      if(gradePromptOverlay) gradePromptOverlay.classList.add("show");
+      return true; // prompt was shown, caller should not proceed
+    }
+
+    if(btnSkipGradePrompt && gradePromptOverlay){
+      btnSkipGradePrompt.addEventListener("click", function(){
+        playMenuBeep();
+        gradePromptOverlay.classList.remove("show");
+        var act = _gradePendingAction;
+        _gradePendingAction = null;
+        if(act === "campaign"){
+          if(btnCampaign && campaignOverlay){
+            ensureCampaignData();
+            renderCampaignProfiles();
+            showCampaignProfilesView();
+            campaignOverlay.classList.add("show");
+            setCampaignOverlayBodyOpen(true);
+            if(menuWrap) menuWrap.classList.add("hidden");
+          }
+        } else if(act === "singleMission"){
+          if(funnelOverlay){
+            campaignShipSelect = false;
+            funnelOverlay.classList.add("show");
+            setStep(0);
+            if(menuWrap) menuWrap.classList.add("hidden");
+            scheduleShipCarouselSync();
+          }
+        }
+      });
+    }
+    if(gradePromptOverlay){
+      gradePromptOverlay.addEventListener("click", function(e){
+        if(e.target === gradePromptOverlay){
+          gradePromptOverlay.classList.remove("show");
+          _gradePendingAction = null;
+        }
+      });
+    }
     // ─────────────────────────────────────────────────────────────────────────
 
     if(settingsTabButtonsHome && settingsTabButtonsHome.length){
@@ -8118,6 +8255,7 @@
     if (btnCampaign && campaignOverlay) {
       btnCampaign.addEventListener("click", function(){
         playMenuBeep();
+        if(maybeShowGradePrompt("campaign")) return;
         ensureCampaignData();
         renderCampaignProfiles();
         showCampaignProfilesView();
@@ -8190,6 +8328,7 @@
     if (startBtn && funnelOverlay) {
       startBtn.addEventListener("click", function(){
         playMenuBeep();
+        if(maybeShowGradePrompt("singleMission")) return;
         campaignShipSelect = false;
         funnelOverlay.classList.add("show");
         setStep(0);
