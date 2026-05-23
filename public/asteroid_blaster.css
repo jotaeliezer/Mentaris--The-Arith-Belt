@@ -12,7 +12,7 @@
   --mag:#af006f;
   --radius:18px;
   --shadow:0 18px 60px rgba(0,0,0,.55);
-  --solo-shell-width:1120px;
+  --solo-shell-width:960px;
   --split-shell-gap:56px;
 
   /* Shared UI theme (mission briefing reference) */
@@ -150,8 +150,8 @@ body::before{
 
 #gameShell{
   position:relative;
-  width:min(1120px, 100%);
-  max-width:1120px;
+  width:min(960px, 100%);
+  max-width:960px;
   height:100%;
   border:1px solid var(--line);
   border-radius:var(--radius);
@@ -394,7 +394,7 @@ body.touchControlsOn #controlDock{
   letter-spacing:.4px;
 }
 
-@media (max-width: 1200px){
+@media (max-width: 1040px){
   #controlDock{ display:none; }
   #gameShell{ max-width:100%; }
 }
@@ -2840,8 +2840,8 @@ input[type="checkbox"]{ transform: translateY(1px); }
 }
 
 .wideGameplay #gameShell{
-  width:min(1280px, 100%);
-  max-width:1280px;
+  width:min(1120px, 100%);
+  max-width:1120px;
 }
 
 .wideGameplay #hud{
