@@ -783,10 +783,10 @@
     }
     .briefingLaunchBtn{
       white-space:nowrap;
-      min-width:140px;
-      padding:10px 16px;
-      font-size:12px;
-      letter-spacing:1.2px;
+      min-width:180px;
+      padding:14px 24px;
+      font-size:14px;
+      letter-spacing:1.6px;
     }
     .briefingFooter{
       display:flex;
@@ -2985,6 +2985,14 @@
       padding:12px 14px; font-size:12px; color:var(--muted);
       min-height:46px; background:rgba(255,255,255,.025);
     }
+    .shipMineralChip{
+      display:inline-flex; align-items:center; gap:6px;
+      background:rgba(28,220,120,.1); border:1px solid rgba(28,220,120,.35);
+      border-radius:20px; padding:4px 10px 4px 6px;
+      font-size:12px; letter-spacing:1px; font-weight:600;
+      color:rgba(28,220,120,.95); user-select:none;
+    }
+    .shipMineralChip img{ width:16px; height:16px; object-fit:contain; }
     #activeGradeChip{
       font-size:10px; letter-spacing:1.5px; text-transform:uppercase;
       color:rgba(0,229,255,.7); margin-top:4px; min-height:14px;
@@ -3383,7 +3391,13 @@
         </div>
           <div class="step" data-step="5">
             <div class="panel" id="shipPanel">
-              <h3>Ship Frame</h3>
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+                <h3 style="margin:0;">Ship Frame</h3>
+                <span class="shipMineralChip" id="shipPanelMineralChip">
+                  <img src="images/asteroids/mineral.png" alt="Minerals" />
+                  <span id="shipPanelMineralCount">0</span>
+                </span>
+              </div>
               <input type="hidden" id="shotType" name="shotType" value="single" />
               <div class="shipChooser">
               <div class="shipColumn">
@@ -4502,7 +4516,7 @@
       <div class="cardHead">
         <div>
           <h2 class="title">Achievements</h2>
-          <p class="subtitle" id="achievementsProgress">0 / 39 unlocked</p>
+          <p class="subtitle" id="achievementsProgress">0 / 67 unlocked</p>
         </div>
         <button id="btnCloseAchievements" class="btn">Close</button>
       </div>
@@ -6481,7 +6495,14 @@
       }
       return String(id || "").toUpperCase();
     }
+    var shipPanelMineralCountEl = document.getElementById("shipPanelMineralCount");
+    function syncShipPanelMinerals(){
+      var m = getMineralsTotal();
+      if(shipPanelMineralCountEl) shipPanelMineralCountEl.textContent = m.toLocaleString();
+    }
+
     function refreshBuyButtons(){
+      syncShipPanelMinerals();
       var minerals = getMineralsTotal();
       shipOptions.forEach(function(option){
         if(option.getAttribute("data-locked") !== "true") return;
@@ -6570,14 +6591,99 @@
       }
       minerals = setMineralsTotal(minerals - cost);
       if(purchaseMinerals) purchaseMinerals.textContent = String(minerals);
-      markUnlocked(pendingPurchase.type, pendingPurchase.id);
-      if(pendingPurchase.type === "ship") unlockShipOption(pendingPurchase.el);
-      if(pendingPurchase.type === "shot") unlockShotOption(pendingPurchase.el);
-      if(pendingPurchase.type === "belt") unlockBeltOption(pendingPurchase.el);
+      var pType = pendingPurchase.type;
+      var pId   = pendingPurchase.id;
+      markUnlocked(pType, pId);
+      if(pType === "ship") unlockShipOption(pendingPurchase.el);
+      if(pType === "shot") unlockShotOption(pendingPurchase.el);
+      if(pType === "belt") unlockBeltOption(pendingPurchase.el);
       showToast("UNLOCKED");
       closePurchaseOverlay();
       refreshBuyButtons();
+      checkAndGrantPurchaseAchievements(pType, pId);
     }
+
+    // ── Purchase Achievements ─────────────────────────────────────────────
+    var LOCKED_SHIPS  = ["mk7","fizard","ember","azure","bu2x","mantas","cyan","veloz","verde9","whiteflame8","datsawze","apextiburoniv"];
+    var LOCKED_BELTS  = ["aurora","rift","vega","void","surface"];
+    var LOCKED_SHOTS  = ["fire","ice","electric","pierce","plasma","rail","missile"];
+
+    function unlockPurchaseAchievement(id){
+      var AKEY = "mentaris.achievements";
+      var data = null;
+      try{ data = JSON.parse(localStorage.getItem(AKEY) || "null"); }catch(e){}
+      if(!data || typeof data !== "object") data = { version:1, unlocked:{}, shipsPlayed:[] };
+      if(!data.unlocked) data.unlocked = {};
+      if(data.unlocked[id]) return null; // already earned
+      data.unlocked[id] = { unlockedAt: Date.now() };
+      try{ localStorage.setItem(AKEY, JSON.stringify(data)); }catch(e){}
+      // Find the label for toast
+      for(var i=0; i<ACHIEVEMENTS_HOME_LIST.length; i++){
+        if(ACHIEVEMENTS_HOME_LIST[i].id === id) return ACHIEVEMENTS_HOME_LIST[i];
+      }
+      return null;
+    }
+
+    function showPurchaseAchievementToast(def){
+      if(!def) return;
+      var wrap = document.createElement("div");
+      wrap.style.cssText = "position:fixed;bottom:72px;right:24px;z-index:9100;background:rgba(8,12,24,.93);border:1px solid rgba(255,215,0,.4);border-radius:14px;padding:12px 18px;max-width:280px;box-shadow:0 8px 32px rgba(0,0,0,.5);font-family:Oxanium,sans-serif;transform:translateX(120%);transition:transform .4s cubic-bezier(.22,1,.36,1);pointer-events:none;";
+      wrap.innerHTML = '<div style="font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,215,0,.88);margin-bottom:5px;">Achievement Unlocked</div>'
+        + '<div style="font-size:15px;font-weight:700;color:#e8ecff;">' + def.label + '</div>'
+        + '<div style="font-size:11px;color:rgba(232,236,255,.65);margin-top:3px;">' + def.desc + '</div>';
+      document.body.appendChild(wrap);
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+          wrap.style.transform = "translateX(0)";
+          setTimeout(function(){
+            wrap.style.transform = "translateX(120%)";
+            setTimeout(function(){ if(wrap.parentNode) wrap.parentNode.removeChild(wrap); }, 450);
+          }, 3200);
+        });
+      });
+    }
+
+    function checkAndGrantPurchaseAchievements(type, id){
+      var toasts = [];
+      // Per-item achievements
+      if(type === "ship"){
+        var ach = unlockPurchaseAchievement("ship_" + id);
+        if(ach) toasts.push(ach);
+        // Count how many locked ships are now unlocked
+        var unlockedShips = LOCKED_SHIPS.filter(function(s){ return isUnlocked("ship", s); });
+        if(unlockedShips.length >= 3){
+          var m = unlockPurchaseAchievement("unlock_3_ships");
+          if(m) toasts.push(m);
+        }
+        if(unlockedShips.length >= LOCKED_SHIPS.length){
+          var m2 = unlockPurchaseAchievement("unlock_all_ships");
+          if(m2) toasts.push(m2);
+        }
+      }
+      if(type === "belt"){
+        var ab = unlockPurchaseAchievement("belt_" + id);
+        if(ab) toasts.push(ab);
+        var unlockedBelts = LOCKED_BELTS.filter(function(b){ return isUnlocked("belt", b); });
+        if(unlockedBelts.length >= LOCKED_BELTS.length){
+          var mb = unlockPurchaseAchievement("unlock_all_belts");
+          if(mb) toasts.push(mb);
+        }
+      }
+      if(type === "shot"){
+        var as = unlockPurchaseAchievement("shot_" + id);
+        if(as) toasts.push(as);
+        var unlockedShots = LOCKED_SHOTS.filter(function(s){ return isUnlocked("shot", s); });
+        if(unlockedShots.length >= LOCKED_SHOTS.length){
+          var ms = unlockPurchaseAchievement("unlock_all_shots");
+          if(ms) toasts.push(ms);
+        }
+      }
+      // Show toasts staggered
+      toasts.forEach(function(def, i){
+        setTimeout(function(){ showPurchaseAchievementToast(def); }, i * 1400);
+      });
+    }
+    // ─────────────────────────────────────────────────────────────────────
     function getCarouselMetrics(container, options, cardVarName, gapVarName, fallbackCard, fallbackGap){
       var styles = getComputedStyle(container);
       var cardW = 0;
@@ -7662,6 +7768,8 @@
       if(stepIndex === 5){
         if(launchSetupSpinner) launchSetupSpinner.classList.add("isLoading");
         scheduleShipCarouselSync();
+        syncShipPanelMinerals();
+        refreshBuyButtons();
       }
     }
 
@@ -7942,7 +8050,38 @@
       // Campaign
       { id:"campaign_m1",          label:"First Sector",       desc:"Complete the first campaign mission." },
       { id:"campaign_complete",    label:"Sector Champion",    desc:"Complete all missions in a campaign." },
-      { id:"campaign_no_fail",     label:"Flawless Campaign",  desc:"Complete a campaign without failing any mission." }
+      { id:"campaign_no_fail",     label:"Flawless Campaign",  desc:"Complete a campaign without failing any mission." },
+      // Ships unlocked
+      { id:"ship_mk7",             label:"Crimson MK-7",       desc:"Unlock the Crimson MK-7." },
+      { id:"ship_fizard",          label:"Aurora Dart",        desc:"Unlock the Aurora Dart." },
+      { id:"ship_ember",           label:"Ruby Strike",        desc:"Unlock the Ruby Strike." },
+      { id:"ship_azure",           label:"Azure Lancer",       desc:"Unlock the Azure Lancer." },
+      { id:"ship_bu2x",            label:"BU2X",               desc:"Unlock the BU2X." },
+      { id:"ship_mantas",          label:"Mantas Arc-5",       desc:"Unlock the Mantas Arc-5." },
+      { id:"ship_cyan",            label:"Cyan Vector 7",      desc:"Unlock the Cyan Vector 7." },
+      { id:"ship_veloz",           label:"Veloz Mas",          desc:"Unlock the Veloz Mas." },
+      { id:"ship_verde9",          label:"Ver-De-9",           desc:"Unlock the Ver-De-9." },
+      { id:"ship_whiteflame8",     label:"White Flame 8",      desc:"Unlock the White Flame 8." },
+      { id:"ship_datsawze",        label:"D.A.T. Sawze",       desc:"Unlock D.A.T. Sawze." },
+      { id:"ship_apextiburoniv",   label:"Apex Tiburon IV",    desc:"Unlock the Apex Tiburon IV." },
+      { id:"unlock_3_ships",       label:"Hangar Growing",     desc:"Unlock 3 ships." },
+      { id:"unlock_all_ships",     label:"Full Fleet",         desc:"Unlock all ships." },
+      // Clusters unlocked
+      { id:"belt_aurora",          label:"Void Run",           desc:"Unlock the Void Run Cluster." },
+      { id:"belt_rift",            label:"Nebula Siege",       desc:"Unlock the Nebula Siege Cluster." },
+      { id:"belt_vega",            label:"Apex Frontier",      desc:"Unlock the Apex Frontier Cluster." },
+      { id:"belt_void",            label:"Apex Frontier Plus", desc:"Unlock the Apex Frontier Plus Cluster." },
+      { id:"belt_surface",         label:"ET Surface",         desc:"Unlock the ET Surface Cluster." },
+      { id:"unlock_all_belts",     label:"Belt Master",        desc:"Unlock all asteroid clusters." },
+      // Shot types unlocked
+      { id:"shot_fire",            label:"Fire Blaster",       desc:"Unlock the Fire shot type." },
+      { id:"shot_ice",             label:"Ice Blaster",        desc:"Unlock the Ice shot type." },
+      { id:"shot_electric",        label:"Electric Blaster",   desc:"Unlock the Electric shot type." },
+      { id:"shot_pierce",          label:"Bola Blaster",       desc:"Unlock the Bola pierce shot type." },
+      { id:"shot_plasma",          label:"Plasma Blaster",     desc:"Unlock the Plasma shot type." },
+      { id:"shot_rail",            label:"Rail Blaster",       desc:"Unlock the Rail shot type." },
+      { id:"shot_missile",         label:"Missile Commander",  desc:"Unlock the Missile shot type." },
+      { id:"unlock_all_shots",     label:"Weapons Master",     desc:"Unlock all shot types." }
     ];
 
     function renderAchievements() {

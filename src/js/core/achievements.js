@@ -44,9 +44,40 @@ export var ACHIEVEMENTS = [
   { id: "score_10k_brutal",  label: "Brutal Legend",     desc: "Score 10,000+ on Brutal difficulty." },
   { id: "hard_win",          label: "Hard-Boiled",       desc: "Complete a session on Hard difficulty." },
   // Campaign
-  { id: "campaign_m1",       label: "First Sector",      desc: "Complete the first campaign mission." },
-  { id: "campaign_complete", label: "Sector Champion",   desc: "Complete all missions in a campaign." },
-  { id: "campaign_no_fail",  label: "Flawless Campaign", desc: "Complete a campaign without failing any mission." },
+  { id: "campaign_m1",         label: "First Sector",       desc: "Complete the first campaign mission." },
+  { id: "campaign_complete",   label: "Sector Champion",    desc: "Complete all missions in a campaign." },
+  { id: "campaign_no_fail",    label: "Flawless Campaign",  desc: "Complete a campaign without failing any mission." },
+  // Unlockable ships
+  { id: "ship_mk7",            label: "Crimson MK-7",       desc: "Unlock the Crimson MK-7." },
+  { id: "ship_fizard",         label: "Aurora Dart",        desc: "Unlock the Aurora Dart." },
+  { id: "ship_ember",          label: "Ruby Strike",        desc: "Unlock the Ruby Strike." },
+  { id: "ship_azure",          label: "Azure Lancer",       desc: "Unlock the Azure Lancer." },
+  { id: "ship_bu2x",           label: "BU2X",               desc: "Unlock the BU2X." },
+  { id: "ship_mantas",         label: "Mantas Arc-5",       desc: "Unlock the Mantas Arc-5." },
+  { id: "ship_cyan",           label: "Cyan Vector 7",      desc: "Unlock the Cyan Vector 7." },
+  { id: "ship_veloz",          label: "Veloz Mas",          desc: "Unlock the Veloz Mas." },
+  { id: "ship_verde9",         label: "Ver-De-9",           desc: "Unlock the Ver-De-9." },
+  { id: "ship_whiteflame8",    label: "White Flame 8",      desc: "Unlock the White Flame 8." },
+  { id: "ship_datsawze",       label: "D.A.T. Sawze",       desc: "Unlock D.A.T. Sawze." },
+  { id: "ship_apextiburoniv",  label: "Apex Tiburon IV",    desc: "Unlock the Apex Tiburon IV." },
+  { id: "unlock_3_ships",      label: "Hangar Growing",     desc: "Unlock 3 ships." },
+  { id: "unlock_all_ships",    label: "Full Fleet",         desc: "Unlock all ships." },
+  // Unlockable asteroid clusters
+  { id: "belt_aurora",         label: "Void Run",           desc: "Unlock the Void Run Cluster." },
+  { id: "belt_rift",           label: "Nebula Siege",       desc: "Unlock the Nebula Siege Cluster." },
+  { id: "belt_vega",           label: "Apex Frontier",      desc: "Unlock the Apex Frontier Cluster." },
+  { id: "belt_void",           label: "Apex Frontier Plus", desc: "Unlock the Apex Frontier Plus Cluster." },
+  { id: "belt_surface",        label: "ET Surface",         desc: "Unlock the ET Surface Cluster." },
+  { id: "unlock_all_belts",    label: "Belt Master",        desc: "Unlock all asteroid clusters." },
+  // Unlockable shot types
+  { id: "shot_fire",           label: "Fire Blaster",       desc: "Unlock the Fire shot type." },
+  { id: "shot_ice",            label: "Ice Blaster",        desc: "Unlock the Ice shot type." },
+  { id: "shot_electric",       label: "Electric Blaster",   desc: "Unlock the Electric shot type." },
+  { id: "shot_pierce",         label: "Bola Blaster",       desc: "Unlock the Bola pierce shot type." },
+  { id: "shot_plasma",         label: "Plasma Blaster",     desc: "Unlock the Plasma shot type." },
+  { id: "shot_rail",           label: "Rail Blaster",       desc: "Unlock the Rail shot type." },
+  { id: "shot_missile",        label: "Missile Commander",  desc: "Unlock the Missile shot type." },
+  { id: "unlock_all_shots",    label: "Weapons Master",     desc: "Unlock all shot types." },
 ];
 
 export function loadAchievements() {
