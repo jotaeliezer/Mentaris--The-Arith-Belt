@@ -1905,7 +1905,7 @@
     const H = canvas.height;
     const footer = document.createElement("div");
     footer.style.cssText = "margin-top:12px; text-align:center; color: var(--muted); font-size:12px; letter-spacing:2px; text-transform:uppercase;";
-    footer.textContent = "\u2190 \u2192 rotate \u2022 \u2191 thrust \u2022 Space shoot \u2022 Hold E iron claw \u2022 Wrong rocks bump-only \u2022 Esc/P pause";
+    footer.textContent = "\u2190 \u2192 rotate \u2022 \u2191 thrust \u2022 Space shoot \u2022 Hold E Side Ops claw \u2022 Wrong rocks bump-only \u2022 Esc/P pause";
     container.appendChild(footer);
     const SHIP_R = 20;
     const AST_R = 38;
@@ -2561,7 +2561,7 @@
       ctx.textBaseline = "bottom";
       ctx.shadowColor = "rgba(0,229,255,.6)";
       ctx.shadowBlur = 8;
-      ctx.fillText("HOLD E \u2014 IRON CLAW", state.ship.x, state.ship.y - 58);
+      ctx.fillText("HOLD E \u2014 SIDE OPS CLAW", state.ship.x, state.ship.y - 58);
       ctx.restore();
     }
     function drawAliens() {
@@ -2602,7 +2602,7 @@
         ctx.fillText("PRESS START", W / 2, H / 2 - 12);
         ctx.font = "16px Oxanium, sans-serif";
         ctx.fillStyle = "rgba(226,232,255,0.7)";
-        ctx.fillText("Iron claw: hold E near the answer rock. SPACE shoots aliens. Wrong rocks bump-only.", W / 2, H / 2 + 20);
+        ctx.fillText("Side Ops claw: hold E near the answer (Stampede uses Hold Q). SPACE shoots aliens. Wrong rocks bump-only.", W / 2, H / 2 + 20);
       } else if (state.phase === "over") {
         ctx.fillStyle = "rgba(6,9,22,0.72)";
         ctx.fillRect(0, 0, W, H);
@@ -2705,8 +2705,8 @@
     id: "claim_field",
     title: "Claim Field",
     tagline: "Arcade \u2022 Drift & scan",
-    blurb: "Drift toward the answer, hold E for the iron claw (Stampede-style). Space pops aliens. Wrong rocks only bump you.",
-    brief: "Rotation + thrust, friction bleeds speed. Only the correct asteroid is collected via extended claw grab when you hold E in range. Wrong rocks knock you back. Aliens hunt the ship; Space fires one-shot kills with a burst. Esc / P pauses (Side Ops overlay).",
+    blurb: "Drift toward the answer, hold E for the Side Ops iron claw (Stampede uses Hold Q / special). Space pops aliens. Wrong rocks only bump you.",
+    brief: "Rotation + thrust, friction bleeds speed. Only the correct asteroid is collected via Side Ops iron claw when you hold E in range (Stampede iron claw is Hold Q / special \u2014 not used here). Wrong rocks knock you back. Aliens hunt the ship; Space fires one-shot kills with a burst. Esc / P pauses (Side Ops overlay).",
     configSchema: [
       {
         type: "ship",

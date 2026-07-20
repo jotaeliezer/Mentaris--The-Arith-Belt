@@ -145212,8 +145212,9 @@
     if (keyNorm === keyBindings.special) {
       if (isStampedeMode()) {
         player.clawHoldKey = true;
-        player.clawHold = 0;
-      } else {
+        if (!e.repeat)
+          player.clawHold = 0;
+      } else if (!e.repeat) {
         shockwave();
       }
     }
@@ -145872,7 +145873,12 @@
     if (action === "special") {
       touchActionHeld.special = true;
       setTouchButtonPressed("special", true);
-      shockwave();
+      if (isStampedeMode()) {
+        player.clawHoldKey = true;
+        player.clawHold = 0;
+      } else {
+        shockwave();
+      }
       return;
     }
     if (action === "secondary") {
@@ -145898,6 +145904,10 @@
     } else if (action === "special") {
       touchActionHeld.special = false;
       setTouchButtonPressed("special", false);
+      if (isStampedeMode()) {
+        player.clawHoldKey = false;
+        player.clawHold = 0;
+      }
     } else if (action === "secondary") {
       touchActionHeld.secondary = false;
       setTouchButtonPressed("secondary", false);
@@ -149209,6 +149219,7 @@
     state.timerWarningPlayed = false;
     state.timerMark15Played = false;
     stopTimerMark15Sfx();
+    setPauseAllowed(true);
   }
   function resetSession() {
     tutorialPendingCorrectNotify = false;
@@ -152131,6 +152142,7 @@
     state.over = true;
     state.running = false;
     state.paused = false;
+    setPauseAllowed(false);
     state.pullDownRemaining = 0;
     introActive = false;
     countdownActive = false;
@@ -153412,7 +153424,7 @@
         }
       }
     }
-    if (keys.has(keyBindings.special))
+    if (keys.has(keyBindings.special) && !isStampedeMode() && !player.clawHoldKey && !player.clawActive)
       shockwave();
     if (state.flaresActive) {
       state.flaresTimer = Math.max(0, state.flaresTimer - dtReal2);
@@ -157521,7 +157533,8 @@
     if (!player.clawActive) {
       if (candidate) {
         player.clawPromptAlpha = Math.min(1, (player.clawPromptAlpha || 0) + dt * 3.5);
-        if (player.clawHoldKey && keys.has("q")) {
+        var specialHeld = !!(player.clawHoldKey || touchActionHeld.special || keyBindings.special && keys.has(keyBindings.special));
+        if (specialHeld) {
           player.clawHold = (player.clawHold || 0) + dt;
           if (player.clawHold >= (player.clawHoldRequired || 0.35)) {
             startClawGrab(candidate.asteroid);
@@ -157653,7 +157666,7 @@
     ctx.textBaseline = "bottom";
     ctx.shadowColor = hudTheme.glowCyan;
     ctx.shadowBlur = 6;
-    ctx.fillText("HOLD X TO GRAB", player.x, player.y - 52);
+    ctx.fillText("HOLD " + displayKeyName(keyBindings.special) + " TO GRAB", player.x, player.y - 52);
     ctx.restore();
   }
   function updateDashGhosts(dt) {
