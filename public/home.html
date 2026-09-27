@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mentaris: The Arith Belt — Menu</title>
   <link rel="icon" type="image/png" href="images/misc/favicon.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="asteroid_blaster.css?v=2026-01-27-1" />
+  <link rel="stylesheet" href="asteroid_blaster.css?v=2026-09-27-privacy" />
   <style>
     body{ overflow:auto; }
     body::before{
@@ -2676,6 +2673,11 @@
       z-index:2;
       pointer-events:none;
     }
+    .siteFooter a{
+      pointer-events:auto;
+      color:#9adfff;
+      margin-left:12px;
+    }
 
     .shipThruster{
       fill: var(--ship-thruster, rgba(50,60,80,.8));
@@ -3101,7 +3103,7 @@
     })();
   </script>
 
-  <footer class="siteFooter">© 2025 Mentaris: The Arith Belt. All rights reserved.</footer>
+  <footer class="siteFooter">© 2025 Mentaris: The Arith Belt. All rights reserved. <a href="privacy.html">Privacy</a></footer>
 
   <div id="funnelOverlay" class="overlay funnelOverlay">
     <div class="card">
@@ -3981,6 +3983,7 @@
             <button id="btnRoadmap" class="btn settingsSideBtn" type="button" title="What is next">Roadmap</button>
             <button id="btnAbout" class="btn settingsSideBtn" type="button" title="Game and purpose">About</button>
             <button id="btnSandbox" class="btn settingsSideBtn" type="button" title="Test shots and powerups">Sandbox</button>
+            <a class="btn settingsSideBtn" href="privacy.html">Privacy</a>
           </div>
           <div class="settingsTabs">
             <button type="button" class="btn settingsTabBtn active" data-settings-tab="audio">AUDIO</button>
@@ -4224,7 +4227,7 @@
           <h3>Tier 3 — Galactic ranks &amp; social</h3>
           <ul>
             <li><b>Global leaderboards (coming soon):</b> cloud-backed Galactic Ranks—send your mission scores, filter by mode and operation, and see how you stack up worldwide.</li>
-            <li>Friendly pilot names with privacy in mind; jump in with your first ship without signing up.</li>
+            <li>Generated pilot callsigns on Galactic Ranks, with a reroll. No typed names, and no account required to fly.</li>
             <li>Optional player accounts later, once the boards feel great for everyone.</li>
           </ul>
           <h3>Tier 4 — Belt arcade (mini games)</h3>
@@ -5350,10 +5353,22 @@
           var inputRow = document.createElement("div");
           inputRow.className = "campaignProfileInput";
           inputRow.style.display = "none";
-          var input = document.createElement("input");
-          input.type = "text";
-          input.maxLength = 16;
-          input.placeholder = "Pilot name";
+          var pickedName = "";
+          var nameLabel = document.createElement("div");
+          nameLabel.className = "pilotCallsign";
+          nameLabel.setAttribute("role", "status");
+          nameLabel.textContent = "Nova Falcon 42";
+          var rerollBtn = document.createElement("button");
+          rerollBtn.type = "button";
+          rerollBtn.className = "btn";
+          rerollBtn.textContent = "Reroll";
+          function rollCallsign(){
+            var api = window.MentarisPilotNames;
+            var next = (api && api.rerollPilotName) ? api.rerollPilotName(pickedName) : "Nova Falcon 42";
+            if(api && api.isGeneratedPilotName && !api.isGeneratedPilotName(next)) return;
+            pickedName = next;
+            nameLabel.textContent = next;
+          }
           var saveBtn = document.createElement("button");
           saveBtn.type = "button";
           saveBtn.className = "btn";
@@ -5363,7 +5378,8 @@
           cancelBtn.type = "button";
           cancelBtn.className = "btn";
           cancelBtn.textContent = "Cancel";
-          inputRow.appendChild(input);
+          inputRow.appendChild(nameLabel);
+          inputRow.appendChild(rerollBtn);
           inputRow.appendChild(saveBtn);
           inputRow.appendChild(cancelBtn);
           card.appendChild(inputRow);
@@ -5376,21 +5392,26 @@
 
           newBtn.addEventListener("click", function(){
             playMenuBeep();
+            rollCallsign();
             newBtn.style.display = "none";
             inputRow.style.display = "flex";
-            input.focus();
+          });
+          rerollBtn.addEventListener("click", function(){
+            playMenuBeep();
+            rollCallsign();
           });
           cancelBtn.addEventListener("click", function(){
             playMenuBeep();
-            input.value = "";
+            pickedName = "";
             inputRow.style.display = "none";
             newBtn.style.display = "";
           });
           saveBtn.addEventListener("click", function(){
             playMenuBeep();
-            var value = String(input.value || "").trim();
-            if(!value){
-              input.focus();
+            var api = window.MentarisPilotNames;
+            var value = String(pickedName || "").trim();
+            if(!value || !api || !api.isGeneratedPilotName || !api.isGeneratedPilotName(value)){
+              rollCallsign();
               return;
             }
             profile.name = value;

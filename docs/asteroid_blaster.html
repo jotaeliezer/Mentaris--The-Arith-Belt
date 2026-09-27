@@ -5,12 +5,26 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Mentaris: The Arith Belt — Synthwave Math</title>
   <link rel="icon" type="image/png" href="images/misc/favicon.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="asteroid_blaster.css?v=2026-01-27-1" />
+  <link rel="stylesheet" href="asteroid_blaster.css?v=2026-09-27-privacy" />
 </head>
 <body>
+  <script>
+  (function(){
+    try{
+      var s = (location.search || "").replace(/^\?/, "");
+      if(s.length) return;
+      var raw = sessionStorage.getItem("mentaris.launchQuery");
+      if(!raw) return;
+      var meta = JSON.parse(raw);
+      if(!meta || !meta.q || (Date.now() - (meta.t || 0)) > 120000){
+        try{ sessionStorage.removeItem("mentaris.launchQuery"); }catch(e){}
+        return;
+      }
+      try{ sessionStorage.removeItem("mentaris.launchQuery"); }catch(e){}
+      location.replace("asteroid_blaster.html?" + String(meta.q).replace(/^\?/, ""));
+    }catch(e){}
+  })();
+  </script>
   <div id="wrap" class="noselect">
     <input type="hidden" id="shotType" name="shotType" value="single" />
     <div id="gameShell">
@@ -31,12 +45,18 @@
         </div>
 
         <div class="hudRight">
+          <button id="btnPause" class="btn">PAUSE (P)</button>
           <button id="btnSettings" class="btn">SETTINGS</button>
           <button id="btnHome" class="btn">HOME</button>
         </div>
       </div>
 
       <div id="toast"></div>
+      <div id="achievementToast" class="achievementToast" aria-live="polite" aria-atomic="true">
+        <div class="achievementToastBadge">Achievement Unlocked</div>
+        <div class="achievementToastLabel" id="achievementToastLabel"></div>
+        <div class="achievementToastDesc" id="achievementToastDesc"></div>
+      </div>
       <div id="levelUpBanner"><span class="levelUpText"></span></div>
       <div id="countdown" class="countdown"></div>
 
@@ -52,6 +72,7 @@
               <p class="subtitle">Settings console for active missions.</p>
             </div>
             <div class="settingsActions">
+              <a class="btn" href="privacy.html">Privacy</a>
               <button id="btnResume" class="btn">Resume</button>
               <button id="btnClose" class="btn">Close</button>
             </div>
@@ -444,13 +465,14 @@
 
             <div class="endStage" id="endStageName">
               <div class="panel endNameBlock" id="endNameBlock">
-                <h3>PILOT NAME</h3>
-                <div class="grid">
-                  <label>
-                    NAME
-                    <input id="endNameInput" type="text" placeholder="Enter name to pin score" maxlength="18" />
-                  </label>
-                  <button id="btnHighScoresToggle" class="btn" style="align-self:end;margin-top:14px;">CONTINUE</button>
+                <h3>PILOT CALLSIGN</h3>
+                <p class="monoSmall endNameHint">This generated callsign is what the leaderboard stores. It is not your real name.</p>
+                <div class="pilotCallsignRow">
+                  <div id="endPilotName" class="pilotCallsign" role="status" aria-live="polite" aria-label="Generated pilot callsign"></div>
+                  <button id="btnRerollPilotName" class="btn" type="button">REROLL</button>
+                </div>
+                <div class="row">
+                  <button id="btnHighScoresToggle" class="btn" type="button">CONTINUE</button>
                 </div>
               </div>
             </div>

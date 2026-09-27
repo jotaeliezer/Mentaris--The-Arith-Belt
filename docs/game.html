@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Asteroid Answer Blaster</title>
   <link rel="icon" type="image/png" href="images/misc/favicon.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="fonts/oxanium.css" />
   <style>
     :root {
       --bg: radial-gradient(circle at 12% 18%, rgba(99, 102, 241, 0.25), transparent 38%), radial-gradient(circle at 82% 12%, rgba(168, 85, 247, 0.22), transparent 42%), #050816;
@@ -24,7 +22,7 @@
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+      font-family: "Oxanium", system-ui, -apple-system, "Segoe UI", sans-serif;
       color: var(--ink);
       background: var(--bg);
       overflow: hidden;
@@ -55,7 +53,7 @@
     }
     .prompt {
       grid-column: span 3;
-      font-family: "Orbitron", "Russo One", sans-serif;
+      font-family: "Oxanium", sans-serif;
       letter-spacing: 0.16em;
       text-transform: uppercase;
       text-align: center;
@@ -109,7 +107,7 @@
     }
     .modal h2 {
       margin: 0;
-      font-family: "Orbitron", "Russo One", sans-serif;
+      font-family: "Oxanium", sans-serif;
       letter-spacing: 0.14em;
       text-transform: uppercase;
     }
@@ -489,7 +487,7 @@
     }
 
     function drawAsteroids() {
-      ctx.font = "16px 'Inter', sans-serif";
+      ctx.font = "16px Oxanium, sans-serif";
       asteroids.forEach((a) => {
         const gradient = ctx.createRadialGradient(a.x, a.y, 8, a.x, a.y, a.radius);
         gradient.addColorStop(0, a.correct ? "rgba(52, 211, 153, 0.95)" : "rgba(250, 204, 21, 0.95)");

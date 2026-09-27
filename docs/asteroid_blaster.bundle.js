@@ -140172,7 +140172,7 @@
         return;
       var style = document.createElement("style");
       style.id = "tourGuideStyles";
-      style.textContent = '#tourGuide{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:0 18px 28px;pointer-events:none;z-index:20;opacity:0;transition:opacity .4s ease;font-family:"Oxanium",sans-serif;}#tourGuide.show{opacity:1;}#tourGuide .tourGuide-wrap{display:flex;align-items:flex-end;gap:18px;}#tourGuide .tourGuide-avatarWrap{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:220px;}#tourGuide .tourGuide-avatar{width:230px;height:230px;object-fit:contain;filter:drop-shadow(0 12px 26px rgba(0,0,0,.45));}#tourGuide .tourGuide-avatarName{font-size:13px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.85);}#tourGuide .tourGuide-card{pointer-events:auto;background:rgba(8,12,24,.88);border:1px solid rgba(0,229,255,.35);border-radius:18px;padding:18px 20px;width:520px;max-width:min(520px,92vw);box-shadow:0 18px 48px rgba(0,0,0,.5);font-family:"Oxanium",sans-serif;opacity:0;transform:translateY(12px);transition:opacity .45s ease, transform .45s ease;}#tourGuide.show .tourGuide-card{opacity:1;transform:translateY(0);}#tourGuide .tourGuide-card.is-fading{opacity:0;transform:translateY(8px);}#tourGuide .tourGuide-title{font-size:16px;letter-spacing:1.4px;text-transform:uppercase;color:#e8ecff;margin:0 0 8px;min-height:18px;}#tourGuide .tourGuide-body{font-size:15px;color:rgba(232,236,255,.82);line-height:1.6;margin:0 0 10px;min-height:32px;}#tourGuide .tourGuide-progress{font-size:13px;letter-spacing:1px;text-transform:uppercase;color:rgba(232,236,255,.6);}#tourGuide .tourGuide-choices{display:none;gap:8px;flex-wrap:wrap;margin:10px 0 6px;}#tourGuide .tourGuide-choice{background:rgba(0,229,255,.14);border:1px solid rgba(0,229,255,.35);color:#d9f9ff;border-radius:12px;padding:6px 10px;font-size:12px;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;font-family:"Oxanium",sans-serif;}#tourGuide .tourGuide-choice:hover{background:rgba(0,229,255,.2);}#tourGuide .tourGuide-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;}#tourGuide .tourGuide-confirm{background:rgba(42,176,92,.34);border:1px solid rgba(90,240,150,.65);color:#e8ffef;border-radius:12px;padding:6px 12px;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:"Oxanium",sans-serif;display:none;}#tourGuide .tourGuide-skip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);color:#e8ecff;border-radius:12px;padding:6px 10px;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:"Oxanium",sans-serif;}';
+      style.textContent = '#tourGuide{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:0 18px 28px;pointer-events:none;z-index:20;opacity:0;transition:opacity .4s ease;font-family:"Oxanium",sans-serif;}#tourGuide.show{opacity:1;}#tourGuide .tourGuide-wrap{display:flex;align-items:flex-end;gap:18px;}#tourGuide .tourGuide-avatarWrap{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:220px;}#tourGuide .tourGuide-avatar{width:230px;height:230px;object-fit:contain;filter:drop-shadow(0 12px 26px rgba(0,0,0,.45));}#tourGuide .tourGuide-avatarName{font-size:13px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.85);}#tourGuide .tourGuide-card{pointer-events:auto;cursor:auto;background:rgba(8,12,24,.88);border:1px solid rgba(0,229,255,.35);border-radius:18px;padding:18px 20px;width:520px;max-width:min(520px,92vw);box-shadow:0 18px 48px rgba(0,0,0,.5);font-family:"Oxanium",sans-serif;opacity:0;transform:translateY(12px);transition:opacity .45s ease, transform .45s ease;}#tourGuide.show .tourGuide-card{opacity:1;transform:translateY(0);}#tourGuide .tourGuide-card.is-fading{opacity:0;transform:translateY(8px);}#tourGuide .tourGuide-title{font-size:16px;letter-spacing:1.4px;text-transform:uppercase;color:#e8ecff;margin:0 0 8px;min-height:18px;}#tourGuide .tourGuide-body{font-size:15px;color:rgba(232,236,255,.82);line-height:1.6;margin:0 0 10px;min-height:32px;}#tourGuide .tourGuide-progress{font-size:13px;letter-spacing:1px;text-transform:uppercase;color:rgba(232,236,255,.6);}#tourGuide .tourGuide-choices{display:none;gap:8px;flex-wrap:wrap;margin:10px 0 6px;}#tourGuide .tourGuide-choice{background:rgba(0,229,255,.14);border:1px solid rgba(0,229,255,.35);color:#d9f9ff;border-radius:12px;padding:8px 14px;font-size:13px;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;font-family:"Oxanium",sans-serif;transition:background .15s,border-color .15s,transform .1s;}#tourGuide .tourGuide-choice:hover{background:rgba(0,229,255,.28);border-color:rgba(0,229,255,.65);transform:translateY(-1px);}#tourGuide .tourGuide-choice:active{transform:translateY(0);}#tourGuide .tourGuide-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px;}#tourGuide .tourGuide-confirm{background:rgba(42,176,92,.34);border:1px solid rgba(90,240,150,.65);color:#e8ffef;border-radius:12px;padding:6px 12px;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:"Oxanium",sans-serif;display:none;}#tourGuide .tourGuide-skip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.22);color:#e8ecff;border-radius:12px;padding:6px 10px;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:"Oxanium",sans-serif;}';
       document.head.appendChild(style);
     }
     function mount() {
@@ -141715,6 +141715,15 @@
       score: 1200,
       radius: 26,
       behavior: "bomber"
+    },
+    shielder: {
+      id: "shielder",
+      name: "Shielder",
+      hp: 2,
+      speed: 55,
+      score: 1100,
+      radius: 26,
+      behavior: "shielder"
     }
   };
   var spawnTimer = alienConfig.spawnCooldown;
@@ -141944,6 +141953,8 @@
       ingressStartY: y,
       ingressTargetY,
       noEscape: behForSpawn === "sniper" || behForSpawn === "rusher" || !!options.isBoss,
+      shieldActive: behForSpawn === "shielder" && !options.isBoss,
+      _shieldBreakFlash: 0,
       sniperCharge: 0,
       bomberDropT: 0,
       bossPatternIdx: 0
@@ -141960,6 +141971,8 @@
         a.spriteIndex = 7;
       else if (typeId === "bomber")
         a.spriteIndex = 5;
+      else if (typeId === "shielder")
+        a.spriteIndex = Math.random() < 0.5 ? 2 : 6;
     }
     if (a.isBoss) {
       a.fireCooldown = 0.95;
@@ -141989,6 +142002,8 @@
           typePick = "rusher";
         else if (rPick < 0.54)
           typePick = "bomber";
+        else if (rPick < 0.68)
+          typePick = "shielder";
       }
       var spawned = spawnAlien(typePick, q.question, q.answer, view2);
       if (state2 && state2.alienSwarm && spawned) {
@@ -142164,6 +142179,59 @@
           a.x = a.r + 10;
         if (a.x > view2.w - a.r - 10)
           a.x = view2.w - a.r - 10;
+        if (a.life >= alienConfig.escapeSeconds) {
+          aliens.splice(i, 1);
+          escaped += 1;
+        }
+        continue;
+      }
+      if (behavior === "shielder") {
+        a.strafeTimer -= dt;
+        if (a.strafeTimer <= 0) {
+          a.strafeTimer = 0.9 + Math.random() * 1.4;
+          a.strafeTarget = randi(50, Math.max(90, view2.w - 50));
+        }
+        var chaseS = (a.strafeTarget - a.x) * 0.55;
+        var wobS = Math.sin(a.t * 0.8 + a.uid) * 28;
+        a.vx = (chaseS + wobS) * 0.52;
+        a.vy = a.speed * 0.28 + Math.sin(a.t * 0.6 + a.uid) * 5;
+        a.x += a.vx * dt;
+        a.y += a.vy * dt;
+        if (a.x < a.r + 10)
+          a.x = a.r + 10;
+        if (a.x > view2.w - a.r - 10)
+          a.x = view2.w - a.r - 10;
+        if (!a.escapeActive && a.y >= view2.h * 0.7) {
+          a.escapeActive = true;
+          a.escapeSequence = true;
+          a.escapePhase = "loop";
+          a.escapeTimer = 0;
+          a.escapeLoopDuration = 1.1;
+          a.escapeHoldDuration = 0.35;
+          a.escapeRadius = 22;
+          a.escapeAngle = 0;
+          a.escapeCenterX = a.x;
+          a.escapeCenterY = a.y;
+          a.escapeExitVy = 85;
+          a.escapeExitVx = Math.random() < 0.5 ? -30 : 30;
+        }
+        if (a._shieldBreakFlash > 0) {
+          a._shieldBreakFlash = Math.max(0, a._shieldBreakFlash - dt);
+        }
+        if (!a.shieldActive) {
+          if (a.fireCooldown > 0)
+            a.fireCooldown -= dt;
+          if (a.fireCooldown <= 0 && player2) {
+            if (!(a.x + a.r < 0 || a.x - a.r > view2.w)) {
+              var dxSh = player2.x - a.x;
+              var dySh = player2.y - a.y;
+              var dSh = Math.max(1, Math.hypot(dxSh, dySh));
+              playSfx(state2, "alien_shooting");
+              spawnAlienBullet(a.x, a.y, dxSh / dSh * 300, dySh / dSh * 300, 4, 2.8);
+            }
+            a.fireCooldown = 2 + Math.random() * 1.2;
+          }
+        }
         if (a.life >= alienConfig.escapeSeconds) {
           aliens.splice(i, 1);
           escaped += 1;
@@ -142408,6 +142476,31 @@
       ctx2.lineWidth = 1;
       ctx2.strokeRect(barX - 0.5, barY - 0.5, barW + 1, barH + 1);
       ctx2.restore();
+      if (a.shieldActive && !a.dying) {
+        ctx2.save();
+        ctx2.globalAlpha = (0.45 + 0.15 * Math.sin((a.t || 0) * 3.5)) * flashAlpha;
+        ctx2.strokeStyle = "rgba(120,200,255,.9)";
+        ctx2.lineWidth = 2.5;
+        ctx2.shadowColor = "rgba(100,180,255,.7)";
+        ctx2.shadowBlur = 10;
+        ctx2.beginPath();
+        ctx2.arc(a.x + shakeX, a.y + shakeY, a.r * 1.65, 0, Math.PI * 2);
+        ctx2.stroke();
+        ctx2.restore();
+      }
+      if ((a._shieldBreakFlash || 0) > 0 && !a.dying) {
+        var sfProgress = 1 - a._shieldBreakFlash / 0.35;
+        var sfAlpha = Math.max(0, 0.9 - sfProgress * 0.9);
+        var sfRadius = a.r * (1.65 + sfProgress * 0.9);
+        ctx2.save();
+        ctx2.globalAlpha = sfAlpha;
+        ctx2.strokeStyle = "rgba(180,230,255,1)";
+        ctx2.lineWidth = 3 - sfProgress * 2;
+        ctx2.beginPath();
+        ctx2.arc(a.x + shakeX, a.y + shakeY, sfRadius, 0, Math.PI * 2);
+        ctx2.stroke();
+        ctx2.restore();
+      }
       if (a.showDigitTimer > 0 && a.swarmDigit != null) {
         ctx2.save();
         ctx2.globalAlpha = 0.95;
@@ -142486,6 +142579,265 @@
     var streakBoost = Math.min(0.12, state2.ddSpeedBonus * 0.55);
     var interval = base - levelBoost - streakBoost;
     return clamp(interval, isStampede ? 0.28 : 0.42, isStampede ? 0.75 : 0.95);
+  }
+
+  // src/js/core/achievements.js
+  var STORAGE_KEY = "mentaris.achievements";
+  var ACHIEVEMENTS = [
+    // Session-based
+    { id: "first_session", label: "First Launch", desc: "Complete your first session." },
+    { id: "streak_5", label: "On a Roll", desc: "Reach a 5-hit streak in a session." },
+    { id: "streak_10", label: "Hot Streak", desc: "Reach a 10-hit streak in a session." },
+    { id: "streak_25", label: "Inferno", desc: "Reach a 25-hit streak in a session." },
+    { id: "streak_50", label: "Unstoppable", desc: "Reach a 50-hit streak in a session." },
+    { id: "no_misses", label: "Clean Run", desc: "Finish a session with zero missed answers." },
+    { id: "perfect_acc", label: "Perfect", desc: "100% accuracy with 10 or more correct answers." },
+    { id: "score_1k", label: "First Thousand", desc: "Score 1,000 points in one session." },
+    { id: "score_5k", label: "Five Thousand", desc: "Score 5,000 points in one session." },
+    { id: "score_25k", label: "High Commander", desc: "Score 25,000 points in one session." },
+    { id: "score_50k", label: "Space Admiral", desc: "Score 50,000 points in one session." },
+    { id: "score_100k", label: "Legend", desc: "Score 100,000 points in one session." },
+    { id: "level_5", label: "Squadron Leader", desc: "Reach level 5 in one session." },
+    { id: "level_10", label: "Ace Pilot", desc: "Reach level 10 in one session." },
+    { id: "level_20", label: "Elite Commander", desc: "Reach level 20 in one session." },
+    { id: "no_damage", label: "Ghost Run", desc: "Complete a session without losing a single HP." },
+    { id: "no_damage_hard", label: "Phantom", desc: "Complete a Hard or Brutal session without losing HP." },
+    { id: "speed_5", label: "Quick Draw", desc: "Answer 5 questions correctly in under 3 seconds each." },
+    // Lifetime
+    { id: "five_sessions", label: "Getting Started", desc: "Play 5 sessions total." },
+    { id: "ten_sessions", label: "Veteran", desc: "Play 10 sessions total." },
+    { id: "twenty_five_sessions", label: "Dedicated", desc: "Play 25 sessions total." },
+    { id: "fifty_sessions", label: "Elite Pilot", desc: "Play 50 sessions total." },
+    { id: "hundred_sessions", label: "Legend Pilot", desc: "Play 100 sessions total." },
+    { id: "three_ships", label: "Fleet Commander", desc: "Play with 3 different ships." },
+    { id: "five_ships", label: "Admiral", desc: "Play with 5 different ships." },
+    // Combat
+    { id: "alien_5", label: "Alien Hunter", desc: "Eliminate 5 aliens in one session." },
+    { id: "alien_20", label: "Exterminator", desc: "Eliminate 20 aliens in one session." },
+    { id: "alien_50", label: "Annihilator", desc: "Eliminate 50 aliens across all sessions." },
+    { id: "alien_boss", label: "Boss Slayer", desc: "Eliminate an alien boss." },
+    { id: "alien_boss_3", label: "Boss Hunter", desc: "Eliminate 3 alien bosses total." },
+    { id: "all_powerups", label: "Full Arsenal", desc: "Collect every power-up type in one session." },
+    { id: "powerup_10", label: "Power Hungry", desc: "Collect 10 power-ups in one session." },
+    // Difficulty
+    { id: "brutal_win", label: "Brutal Pilot", desc: "Complete a session on Brutal difficulty." },
+    { id: "score_1k_brutal", label: "Brutal Ace", desc: "Score 1,000+ on Brutal difficulty." },
+    { id: "score_10k_brutal", label: "Brutal Legend", desc: "Score 10,000+ on Brutal difficulty." },
+    { id: "hard_win", label: "Hard-Boiled", desc: "Complete a session on Hard difficulty." },
+    // Campaign
+    { id: "campaign_m1", label: "First Sector", desc: "Complete the first campaign mission." },
+    { id: "campaign_complete", label: "Sector Champion", desc: "Complete all missions in a campaign." },
+    { id: "campaign_no_fail", label: "Flawless Campaign", desc: "Complete a campaign without failing any mission." },
+    // Unlockable ships
+    { id: "ship_mk7", label: "Crimson MK-7", desc: "Unlock the Crimson MK-7." },
+    { id: "ship_fizard", label: "Aurora Dart", desc: "Unlock the Aurora Dart." },
+    { id: "ship_ember", label: "Ruby Strike", desc: "Unlock the Ruby Strike." },
+    { id: "ship_azure", label: "Azure Lancer", desc: "Unlock the Azure Lancer." },
+    { id: "ship_bu2x", label: "BU2X", desc: "Unlock the BU2X." },
+    { id: "ship_mantas", label: "Mantas Arc-5", desc: "Unlock the Mantas Arc-5." },
+    { id: "ship_cyan", label: "Cyan Vector 7", desc: "Unlock the Cyan Vector 7." },
+    { id: "ship_veloz", label: "Veloz Mas", desc: "Unlock the Veloz Mas." },
+    { id: "ship_verde9", label: "Ver-De-9", desc: "Unlock the Ver-De-9." },
+    { id: "ship_whiteflame8", label: "White Flame 8", desc: "Unlock the White Flame 8." },
+    { id: "ship_datsawze", label: "D.A.T. Sawze", desc: "Unlock D.A.T. Sawze." },
+    { id: "ship_apextiburoniv", label: "Apex Tiburon IV", desc: "Unlock the Apex Tiburon IV." },
+    { id: "unlock_3_ships", label: "Hangar Growing", desc: "Unlock 3 ships." },
+    { id: "unlock_all_ships", label: "Full Fleet", desc: "Unlock all ships." },
+    // Unlockable asteroid clusters
+    { id: "belt_aurora", label: "Void Run", desc: "Unlock the Void Run Cluster." },
+    { id: "belt_rift", label: "Nebula Siege", desc: "Unlock the Nebula Siege Cluster." },
+    { id: "belt_vega", label: "Apex Frontier", desc: "Unlock the Apex Frontier Cluster." },
+    { id: "belt_void", label: "Apex Frontier Plus", desc: "Unlock the Apex Frontier Plus Cluster." },
+    { id: "belt_surface", label: "ET Surface", desc: "Unlock the ET Surface Cluster." },
+    { id: "unlock_all_belts", label: "Belt Master", desc: "Unlock all asteroid clusters." },
+    // Unlockable shot types
+    { id: "shot_fire", label: "Fire Blaster", desc: "Unlock the Fire shot type." },
+    { id: "shot_ice", label: "Ice Blaster", desc: "Unlock the Ice shot type." },
+    { id: "shot_electric", label: "Electric Blaster", desc: "Unlock the Electric shot type." },
+    { id: "shot_pierce", label: "Bola Blaster", desc: "Unlock the Bola pierce shot type." },
+    { id: "shot_plasma", label: "Plasma Blaster", desc: "Unlock the Plasma shot type." },
+    { id: "shot_rail", label: "Rail Blaster", desc: "Unlock the Rail shot type." },
+    { id: "shot_missile", label: "Missile Commander", desc: "Unlock the Missile shot type." },
+    { id: "unlock_all_shots", label: "Weapons Master", desc: "Unlock all shot types." }
+  ];
+  function loadAchievements() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw)
+        return { version: 1, unlocked: {}, shipsPlayed: [] };
+      var p = JSON.parse(raw);
+      if (!p || typeof p !== "object")
+        return { version: 1, unlocked: {}, shipsPlayed: [] };
+      if (!p.unlocked)
+        p.unlocked = {};
+      if (!Array.isArray(p.shipsPlayed))
+        p.shipsPlayed = [];
+      return p;
+    } catch (e) {
+      return { version: 1, unlocked: {}, shipsPlayed: [] };
+    }
+  }
+  function saveAchievements(data) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+    }
+  }
+  function checkAchievements(session, state2, lifetime) {
+    var data = loadAchievements();
+    var now = Date.now();
+    var newlyUnlocked = [];
+    function unlock(id) {
+      if (data.unlocked[id])
+        return;
+      data.unlocked[id] = { unlockedAt: now };
+      var def = ACHIEVEMENTS.find(function(a) {
+        return a.id === id;
+      });
+      if (def)
+        newlyUnlocked.push(def);
+    }
+    var ship = state2 && state2.ship ? String(state2.ship) : "";
+    if (ship && data.shipsPlayed.indexOf(ship) === -1) {
+      data.shipsPlayed.push(ship);
+    }
+    unlock("first_session");
+    var bestStreak2 = session.bestStreak || 0;
+    if (bestStreak2 >= 5)
+      unlock("streak_5");
+    if (bestStreak2 >= 10)
+      unlock("streak_10");
+    if (bestStreak2 >= 25)
+      unlock("streak_25");
+    if (bestStreak2 >= 50)
+      unlock("streak_50");
+    var missed = session.missed || 0;
+    var correct = session.correct || 0;
+    var accuracy = typeof session.accuracy === "number" ? session.accuracy : 0;
+    if (missed === 0 && correct >= 5)
+      unlock("no_misses");
+    if (correct >= 10 && accuracy >= 1)
+      unlock("perfect_acc");
+    var score = session.score || 0;
+    if (score >= 1e3)
+      unlock("score_1k");
+    if (score >= 5e3)
+      unlock("score_5k");
+    if (score >= 25e3)
+      unlock("score_25k");
+    if (score >= 5e4)
+      unlock("score_50k");
+    if (score >= 1e5)
+      unlock("score_100k");
+    var level = state2 && state2.level ? state2.level : session.level || 0;
+    if (level >= 5)
+      unlock("level_5");
+    if (level >= 10)
+      unlock("level_10");
+    if (level >= 20)
+      unlock("level_20");
+    var livesStart = state2 && typeof state2.livesStart === "number" ? state2.livesStart : -1;
+    var livesEnd = state2 && typeof state2.lives === "number" ? state2.lives : -1;
+    if (livesStart >= 0 && livesEnd >= 0 && livesStart - livesEnd === 0 && correct >= 5) {
+      unlock("no_damage");
+    }
+    var diff = state2 && state2.difficulty ? state2.difficulty : session.difficulty || "";
+    if (livesStart >= 0 && livesEnd >= 0 && livesStart - livesEnd === 0 && correct >= 5 && (diff === "hard" || diff === "brutal")) {
+      unlock("no_damage_hard");
+    }
+    var fastAnswers = session.fastAnswers || 0;
+    if (fastAnswers >= 5)
+      unlock("speed_5");
+    var totalSessions = lifetime && lifetime.sessions ? lifetime.sessions : 0;
+    if (totalSessions >= 5)
+      unlock("five_sessions");
+    if (totalSessions >= 10)
+      unlock("ten_sessions");
+    if (totalSessions >= 25)
+      unlock("twenty_five_sessions");
+    if (totalSessions >= 50)
+      unlock("fifty_sessions");
+    if (totalSessions >= 100)
+      unlock("hundred_sessions");
+    if (data.shipsPlayed.length >= 3)
+      unlock("three_ships");
+    if (data.shipsPlayed.length >= 5)
+      unlock("five_ships");
+    var totalAliens = 0;
+    if (state2 && state2.aliensShotByType) {
+      Object.keys(state2.aliensShotByType).forEach(function(k) {
+        totalAliens += state2.aliensShotByType[k] || 0;
+      });
+    }
+    if (totalAliens >= 5)
+      unlock("alien_5");
+    if (totalAliens >= 20)
+      unlock("alien_20");
+    var lifetimeAliens = lifetime && lifetime.totalAliens ? lifetime.totalAliens : 0;
+    if (lifetimeAliens >= 50)
+      unlock("alien_50");
+    if (state2 && state2.alienBossBonusAwarded)
+      unlock("alien_boss");
+    var lifetimeBossKills = lifetime && lifetime.bossKills ? lifetime.bossKills : 0;
+    if (lifetimeBossKills >= 3)
+      unlock("alien_boss_3");
+    var powerupTypes = state2 && state2.powerupsUsedByType ? Object.keys(state2.powerupsUsedByType).length : 0;
+    if (powerupTypes >= 7)
+      unlock("all_powerups");
+    var powerupsTotal = 0;
+    if (state2 && state2.powerupsUsedByType) {
+      Object.keys(state2.powerupsUsedByType).forEach(function(k) {
+        powerupsTotal += state2.powerupsUsedByType[k] || 0;
+      });
+    }
+    if (powerupsTotal >= 10)
+      unlock("powerup_10");
+    if (diff === "brutal" && correct > 0)
+      unlock("brutal_win");
+    if (diff === "brutal" && score >= 1e3)
+      unlock("score_1k_brutal");
+    if (diff === "brutal" && score >= 1e4)
+      unlock("score_10k_brutal");
+    if (diff === "hard" && correct > 0)
+      unlock("hard_win");
+    saveAchievements(data);
+    return newlyUnlocked;
+  }
+  function checkCampaignAchievements(missionIndex, isComplete, noFailRun) {
+    var data = loadAchievements();
+    var now = Date.now();
+    var newlyUnlocked = [];
+    function unlock(id) {
+      if (data.unlocked[id])
+        return;
+      data.unlocked[id] = { unlockedAt: now };
+      var def = ACHIEVEMENTS.find(function(a) {
+        return a.id === id;
+      });
+      if (def)
+        newlyUnlocked.push(def);
+    }
+    if (missionIndex === 0)
+      unlock("campaign_m1");
+    if (isComplete)
+      unlock("campaign_complete");
+    if (isComplete && noFailRun)
+      unlock("campaign_no_fail");
+    saveAchievements(data);
+    return newlyUnlocked;
+  }
+  function unlockAndReturn(id) {
+    var data = loadAchievements();
+    if (data.unlocked[id])
+      return null;
+    var def = ACHIEVEMENTS.find(function(a) {
+      return a.id === id;
+    });
+    if (!def)
+      return null;
+    data.unlocked[id] = { unlockedAt: Date.now() };
+    saveAchievements(data);
+    return def;
   }
 
   // src/js/entities/powerups.js
@@ -142631,6 +142983,152 @@
     return ".sandboxPanel{position:fixed;top:90px;left:16px;z-index:45;width:min(460px,calc(100vw - 32px));max-height:calc(100vh - 112px);overflow:auto;background:" + shell + ";border:1px solid " + border + ";border-radius:16px;padding:12px 14px;box-shadow:0 24px 60px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.04);}.sandboxPanel .sandboxHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}.sandboxPanel h4{margin:0;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.82);}.sandboxPanel .sandboxToggle{border:1px solid " + line + ";background:" + btn + ";color:#e8ecff;border-radius:10px;padding:4px 8px;font-size:10px;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;}.sandboxPanel.collapsed .sandboxBody{display:none;}.sandboxPanel .sandboxSectionTools{display:flex;gap:8px;margin-bottom:8px;}.sandboxPanel .sandboxSectionTools .sandboxToggle{flex:1;}.sandboxPanel .sandboxGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}.sandboxPanel .sandboxGroup{margin:0;border:1px solid " + border + ";background:" + group + ";border-radius:12px;padding:8px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);}.sandboxPanel .sandboxGroupHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}.sandboxPanel .sandboxGroupTitle{font-size:11px;letter-spacing:1.1px;text-transform:uppercase;color:rgba(232,236,255,.78);}.sandboxPanel .sandboxGroupToggle{border:1px solid " + line + ";background:" + btn + ";color:#e8ecff;border-radius:8px;padding:2px 6px;font-size:10px;cursor:pointer;}.sandboxPanel .sandboxGroup.collapsed .sandboxGroupBody{display:none;}.sandboxPanel .sandboxButtons{display:flex;flex-wrap:wrap;gap:6px;}.sandboxPanel .sandboxBtn{border:1px solid " + line + ";background:" + btn + ";color:#e8ecff;border-radius:10px;padding:6px 8px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;}.sandboxPanel .sandboxBtn.active{border-color:" + accent + ";box-shadow:0 0 0 1px rgba(0,229,255,.22) inset;}.sandboxPanel .sandboxBtn:hover{transform:translateY(-1px);border-color:" + accent + ";box-shadow:0 8px 18px rgba(0,0,0,.28);}.sandboxPanel .sandboxNote{font-size:11px;color:rgba(232,236,255,.55);margin:6px 0 4px;}@media (max-width: 960px){.sandboxPanel{top:78px;left:10px;width:min(420px,calc(100vw - 20px));max-height:calc(100vh - 96px);}.sandboxPanel .sandboxGrid{grid-template-columns:1fr;}}";
   }
 
+  // src/js/core/pilot_names.js
+  var PILOT_ADJECTIVES = [
+    "Amber",
+    "Arctic",
+    "Aurora",
+    "Azure",
+    "Bold",
+    "Brave",
+    "Breezy",
+    "Bright",
+    "Brisk",
+    "Calm",
+    "Clever",
+    "Coral",
+    "Cosmic",
+    "Cozy",
+    "Crystal",
+    "Daring",
+    "Eager",
+    "Emerald",
+    "Fuzzy",
+    "Gentle",
+    "Glowing",
+    "Golden",
+    "Happy",
+    "Jolly",
+    "Keen",
+    "Kind",
+    "Lucky",
+    "Lunar",
+    "Merry",
+    "Mighty",
+    "Mellow",
+    "Neon",
+    "Nimble",
+    "Noble",
+    "Nova",
+    "Plucky",
+    "Polar",
+    "Prism",
+    "Quiet",
+    "Radiant",
+    "Rapid",
+    "Ruby",
+    "Silver",
+    "Solar",
+    "Spark",
+    "Spry",
+    "Steady",
+    "Stellar",
+    "Sunny",
+    "Swift",
+    "Tropic",
+    "Turbo",
+    "Velvet",
+    "Violet",
+    "Vivid",
+    "Wispy"
+  ];
+  var PILOT_NOUNS = [
+    "Badger",
+    "Beacon",
+    "Breeze",
+    "Capsule",
+    "Cedar",
+    "Cloud",
+    "Clover",
+    "Comet",
+    "Compass",
+    "Cosmos",
+    "Dolphin",
+    "Drift",
+    "Echo",
+    "Falcon",
+    "Fox",
+    "Galaxy",
+    "Glider",
+    "Harbor",
+    "Horizon",
+    "Koala",
+    "Lantern",
+    "Lynx",
+    "Maple",
+    "Marble",
+    "Meadow",
+    "Meteor",
+    "Nebula",
+    "Orbit",
+    "Otter",
+    "Panda",
+    "Pebble",
+    "Photon",
+    "Planet",
+    "Puffin",
+    "Pulsar",
+    "Quasar",
+    "Ranger",
+    "River",
+    "Robin",
+    "Rocket",
+    "Satellite",
+    "Scout",
+    "Shuttle",
+    "Sparrow",
+    "Star",
+    "Turtle",
+    "Voyager",
+    "Willow"
+  ];
+  var ADJECTIVE_SET = /* @__PURE__ */ Object.create(null);
+  var NOUN_SET = /* @__PURE__ */ Object.create(null);
+  for (ai = 0; ai < PILOT_ADJECTIVES.length; ai++)
+    ADJECTIVE_SET[PILOT_ADJECTIVES[ai]] = true;
+  var ai;
+  for (ni = 0; ni < PILOT_NOUNS.length; ni++)
+    NOUN_SET[PILOT_NOUNS[ni]] = true;
+  var ni;
+  function pad2(n) {
+    var s = String(n);
+    return s.length < 2 ? "0" + s : s;
+  }
+  function pick(list, random) {
+    return list[Math.floor(random() * list.length)];
+  }
+  function generatePilotName(rng) {
+    var random = typeof rng === "function" ? rng : Math.random;
+    return pick(PILOT_ADJECTIVES, random) + " " + pick(PILOT_NOUNS, random) + " " + pad2(Math.floor(random() * 100));
+  }
+  function rerollPilotName(current, rng) {
+    var next = generatePilotName(rng);
+    var guard = 0;
+    while (next === current && guard < 12) {
+      next = generatePilotName(rng);
+      guard++;
+    }
+    return next;
+  }
+  function isGeneratedPilotName(name) {
+    var parts = String(name == null ? "" : name).trim().split(" ");
+    if (parts.length !== 3)
+      return false;
+    if (!ADJECTIVE_SET[parts[0]] || !NOUN_SET[parts[1]])
+      return false;
+    return /^[0-9]{2}$/.test(parts[2]);
+  }
+
   // src/js/core/supabase_scores.js
   var CONFIG_GLOBAL = "__MENTARIS_SUPABASE__";
   var DEFAULT_TABLE = "scores";
@@ -142707,20 +143205,20 @@
       clearTimeout(t);
     });
   }
-  async function submitScore(playerName, score, ship, difficulty, questionMode, operation) {
+  async function submitScore(playerName, score, questionMode) {
     var cfg = readRuntimeConfig();
     if (!cfg)
       return { success: false, error: "Supabase is not configured (set window.__MENTARIS_SUPABASE__)" };
     var body = {
       player_name: sanitizeField(playerName, MAX_NAME_LEN),
       score: clampScore(score),
-      ship: sanitizeField(ship, MAX_STR_FIELD),
-      difficulty: sanitizeField(difficulty, MAX_STR_FIELD),
-      question_mode: sanitizeField(questionMode, MAX_STR_FIELD),
-      operation: sanitizeField(operation, MAX_STR_FIELD)
+      question_mode: sanitizeField(questionMode, MAX_STR_FIELD)
     };
-    if (!body.player_name)
-      return { success: false, error: "Player name is required" };
+    if (!isGeneratedPilotName(body.player_name)) {
+      return { success: false, error: "Pilot name must be a generated callsign" };
+    }
+    if (!body.question_mode)
+      body.question_mode = "classic";
     var url = cfg.url + "/rest/v1/" + encodeURIComponent(cfg.table);
     try {
       var res = await fetchWithTimeout(url, {
@@ -143442,7 +143940,9 @@
   var endScoresTableWrap = document.getElementById("endScoresTableWrap");
   var endScoresTitle = document.getElementById("endScoresTitle");
   var btnHighScoresToggle = document.getElementById("btnHighScoresToggle");
-  var endNameInput = document.getElementById("endNameInput");
+  var endPilotNameEl = document.getElementById("endPilotName");
+  var btnRerollPilotName = document.getElementById("btnRerollPilotName");
+  var currentPilotName = "";
   var endSequence = document.querySelector(".endSequence");
   var endScoreValue = document.getElementById("endScoreValue");
   var endModeSummary = document.getElementById("endModeSummary");
@@ -144860,8 +145360,9 @@
     if (keyNorm === keyBindings.special) {
       if (isStampedeMode()) {
         player.clawHoldKey = true;
-        player.clawHold = 0;
-      } else {
+        if (!e.repeat)
+          player.clawHold = 0;
+      } else if (!e.repeat) {
         shockwave();
       }
     }
@@ -145520,7 +146021,12 @@
     if (action === "special") {
       touchActionHeld.special = true;
       setTouchButtonPressed("special", true);
-      shockwave();
+      if (isStampedeMode()) {
+        player.clawHoldKey = true;
+        player.clawHold = 0;
+      } else {
+        shockwave();
+      }
       return;
     }
     if (action === "secondary") {
@@ -145546,6 +146052,10 @@
     } else if (action === "special") {
       touchActionHeld.special = false;
       setTouchButtonPressed("special", false);
+      if (isStampedeMode()) {
+        player.clawHoldKey = false;
+        player.clawHold = 0;
+      }
     } else if (action === "secondary") {
       touchActionHeld.secondary = false;
       setTouchButtonPressed("secondary", false);
@@ -146087,6 +146597,56 @@
         }, 2e3);
       }
     }, typeMs);
+  }
+  var _achToastEl = null;
+  var _achToastLabelEl = null;
+  var _achToastDescEl = null;
+  var _achToastQueue = [];
+  var _achToastActive = false;
+  function _getAchToastEls() {
+    if (!_achToastEl)
+      _achToastEl = document.getElementById("achievementToast");
+    if (!_achToastLabelEl)
+      _achToastLabelEl = document.getElementById("achievementToastLabel");
+    if (!_achToastDescEl)
+      _achToastDescEl = document.getElementById("achievementToastDesc");
+  }
+  function _drainAchievementToastQueue() {
+    if (!_achToastQueue.length) {
+      _achToastActive = false;
+      return;
+    }
+    _achToastActive = true;
+    var def = _achToastQueue.shift();
+    _getAchToastEls();
+    if (!_achToastEl) {
+      _drainAchievementToastQueue();
+      return;
+    }
+    if (_achToastLabelEl)
+      _achToastLabelEl.textContent = def.label;
+    if (_achToastDescEl)
+      _achToastDescEl.textContent = def.desc;
+    _achToastEl.classList.add("show");
+    setTimeout(function() {
+      if (_achToastEl)
+        _achToastEl.classList.remove("show");
+      setTimeout(_drainAchievementToastQueue, 450);
+    }, 3200);
+  }
+  function enqueueAchievementToast(def) {
+    _achToastQueue.push(def);
+    if (!_achToastActive)
+      _drainAchievementToastQueue();
+  }
+  function scheduleAchievementToasts(list) {
+    for (var _ai = 0; _ai < list.length; _ai++) {
+      (function(def, idx) {
+        setTimeout(function() {
+          enqueueAchievementToast(def);
+        }, idx * 1300);
+      })(list[_ai], _ai);
+    }
   }
   function showLevelUpBanner(level) {
     if (!levelUpBanner || !levelUpBannerText)
@@ -148807,6 +149367,7 @@
     state.timerWarningPlayed = false;
     state.timerMark15Played = false;
     stopTimerMark15Sfx();
+    setPauseAllowed(true);
   }
   function resetSession() {
     tutorialPendingCorrectNotify = false;
@@ -149301,9 +149862,9 @@
     }
     if (!options.length)
       return "";
-    var pick = options[Math.floor(Math.random() * options.length)];
-    pick.apply();
-    return pick.label || "";
+    var pick2 = options[Math.floor(Math.random() * options.length)];
+    pick2.apply();
+    return pick2.label || "";
   }
   function continueSession() {
     ensureLoop();
@@ -150624,11 +151185,45 @@
       endScoresBody.appendChild(tr);
     }
   }
+  var PILOT_NAME_STORAGE_KEY = "mathsteroid.playerName";
+  function readStoredPilotName() {
+    var stored = "";
+    try {
+      stored = localStorage.getItem(PILOT_NAME_STORAGE_KEY) || "";
+    } catch (e) {
+    }
+    return isGeneratedPilotName(stored) ? stored : "";
+  }
+  function ensurePilotName() {
+    var name = currentPilotName && isGeneratedPilotName(currentPilotName) ? currentPilotName : readStoredPilotName();
+    if (!name) {
+      name = generatePilotName();
+      try {
+        localStorage.setItem(PILOT_NAME_STORAGE_KEY, name);
+      } catch (e) {
+      }
+    }
+    currentPilotName = name;
+    if (endPilotNameEl)
+      endPilotNameEl.textContent = name;
+    return name;
+  }
+  function rerollDisplayedPilotName() {
+    var next = rerollPilotName(ensurePilotName());
+    currentPilotName = next;
+    if (endPilotNameEl)
+      endPilotNameEl.textContent = next;
+    try {
+      localStorage.setItem(PILOT_NAME_STORAGE_KEY, next);
+    } catch (e) {
+    }
+    return next;
+  }
   function saveScoreName(name) {
     if (!state.lastSessionId)
       return;
-    var trimmed = String(name || "").trim().slice(0, 18);
-    if (!trimmed)
+    var trimmed = String(name || "").trim();
+    if (!isGeneratedPilotName(trimmed))
       return;
     var stats = loadLifetimeStats();
     if (!stats)
@@ -150662,28 +151257,13 @@
     saveLifetimeStats(stats);
     renderHighScores(stats, entryKey);
     try {
-      localStorage.setItem("mathsteroid.playerName", trimmed);
+      localStorage.setItem(PILOT_NAME_STORAGE_KEY, trimmed);
     } catch (e) {
     }
     appendLeaderboardCsv({ name: trimmed, score: state.score });
     if (isSupabaseScoresConfigured()) {
-      var shipTag = player && player.shipType ? String(player.shipType) : "";
-      if (!shipTag && typeof collectSessionSettings === "function") {
-        try {
-          shipTag = String((collectSessionSettings() || {}).ship || "");
-        } catch (e) {
-          shipTag = "";
-        }
-      }
-      var diffTag = String(state.difficulty || "normal");
       var qMode = String(state.questionMode || "classic");
-      var opTag = "";
-      try {
-        opTag = String((describeQuestionMode(qMode) || {}).operation || "");
-      } catch (e) {
-        opTag = "";
-      }
-      submitScore(trimmed, state.score, shipTag || "unknown", diffTag, qMode, opTag || "unknown").then(function(res) {
+      submitScore(trimmed, state.score, qMode).then(function(res) {
         if (!res.success && res.error) {
           console.warn("[supabase scores]", res.error);
         }
@@ -151279,23 +151859,38 @@
       endScoresTableWrap.scrollTop = 0;
     }
   }
-  function queuePlacementLeaderboardReveal(reveal, attemptsLeft) {
+  function queuePlacementLeaderboardReveal(reveal, attemptsLeft, _skipRaf) {
     var info = reveal || {};
-    var tries = typeof attemptsLeft === "number" ? attemptsLeft : 12;
+    var tries = typeof attemptsLeft === "number" ? attemptsLeft : 40;
     if (!info.found || !info.currentRow) {
+      return;
+    }
+    if (!_skipRaf) {
+      requestAnimationFrame(function() {
+        queuePlacementLeaderboardReveal(info, tries, true);
+      });
       return;
     }
     var wrap2 = endScoresTableWrap;
     var row = info.currentRow;
     var placementVisible = !!(endStagePlacement && endStagePlacement.classList.contains("isActive"));
-    var ready = !!(wrap2 && row && placementVisible && wrap2.clientHeight > 0 && row.offsetHeight > 0);
+    var ready = !!(wrap2 && row && placementVisible && row.offsetHeight > 0);
     if (!ready) {
       if (tries <= 0) {
+        if (wrap2 && row) {
+          animateEndScoresScrollToRow(row, wrap2, 850, function() {
+            row.classList.add("endScoreRowPop");
+            var t = setTimeout(function() {
+              row.classList.remove("endScoreRowPop");
+            }, 700);
+            endSequenceTimers.push(t);
+          });
+        }
         return;
       }
       var retryTimer = setTimeout(function() {
-        queuePlacementLeaderboardReveal(info, tries - 1);
-      }, 40);
+        queuePlacementLeaderboardReveal(info, tries - 1, true);
+      }, 50);
       endSequenceTimers.push(retryTimer);
       return;
     }
@@ -151327,10 +151922,9 @@
     if (stageId === "endStageName") {
       endPhase = "name";
       transitionEndStage("endStageName", function() {
-        if (endNameInput) {
-          endNameInput.focus();
-          endNameInput.select();
-        }
+        ensurePilotName();
+        if (btnRerollPilotName)
+          btnRerollPilotName.focus();
       });
       return;
     }
@@ -151624,10 +152218,9 @@
       if (btnHighScoresToggle) {
         btnHighScoresToggle.textContent = "CONTINUE";
       }
-      if (endNameInput) {
-        endNameInput.focus();
-        endNameInput.select();
-      }
+      ensurePilotName();
+      if (btnRerollPilotName)
+        btnRerollPilotName.focus();
     });
   }
   function showEndPlacementPhase() {
@@ -151662,10 +152255,12 @@
   function handleEndNameConfirm() {
     if (!endSequenceActive || endPhase !== "name")
       return false;
-    saveScoreName(endNameInput ? endNameInput.value : "");
-    endNameConfirmed = true;
+    if (!endNameConfirmed) {
+      saveScoreName(ensurePilotName());
+      endNameConfirmed = true;
+      showToast("CALLSIGN SAVED");
+    }
     playSfx(state, "menu_beep");
-    showToast("NAME SAVED");
     showEndPlacementPhase();
     return true;
   }
@@ -151714,6 +152309,7 @@
     state.over = true;
     state.running = false;
     state.paused = false;
+    setPauseAllowed(false);
     state.pullDownRemaining = 0;
     introActive = false;
     countdownActive = false;
@@ -151732,11 +152328,7 @@
     var attempts = state.hits;
     var acc = attempts > 0 ? state.correct / attempts : 0;
     var rpm = elapsed > 0 ? state.correct / elapsed * 60 : 0;
-    var storedName = "";
-    try {
-      storedName = localStorage.getItem("mathsteroid.playerName") || "";
-    } catch (e) {
-    }
+    var storedName = ensurePilotName();
     var sessionId = String(Date.now()) + "_" + String(Math.floor(Math.random() * 1e6));
     var modeInfo = describeQuestionMode(state.questionMode || "classic");
     var session = {
@@ -151762,6 +152354,12 @@
     };
     var lifetime = updateLifetimeStats(session);
     state.lastSessionId = sessionId;
+    try {
+      var _newAch = checkAchievements(session, state, lifetime);
+      if (_newAch && _newAch.length)
+        scheduleAchievementToasts(_newAch);
+    } catch (_ae) {
+    }
     var campaignResult = { active: false, success: false, failures: 0, failed: false, hasNext: false, last: false, name: "", pilot: "", minerals: 0 };
     if (campaignActive) {
       var cState = loadCampaignState() || { index: 0, failures: 0, completed: [], bestScores: [], active: true, failed: false };
@@ -151822,6 +152420,17 @@
       campaignResult.minerals = cState.mineralsEarned || 0;
       campaignResult.replay = campaignReplay;
       campaignResult.bestScore = cState.bestScores && Number(cState.bestScores[campaignIndex]) || 0;
+      if (campaignResult.success && !campaignReplay) {
+        try {
+          var _campAch = checkCampaignAchievements(
+            campaignIndex,
+            campaignResult.last && !campaignResult.failed
+          );
+          if (_campAch && _campAch.length)
+            scheduleAchievementToasts(_campAch);
+        } catch (_ce) {
+        }
+      }
     }
     var endReasonText = "";
     if (reason === "destroyed") {
@@ -152200,9 +152809,7 @@
     if (btnEndSettings) {
       btnEndSettings.style.display = "none";
     }
-    if (endNameInput) {
-      endNameInput.value = storedName;
-    }
+    ensurePilotName();
     if (endScoreValue) {
       endScoreValue.textContent = "0";
     }
@@ -152978,7 +153585,7 @@
         }
       }
     }
-    if (keys.has(keyBindings.special))
+    if (keys.has(keyBindings.special) && !isStampedeMode() && !player.clawHoldKey && !player.clawActive)
       shockwave();
     if (state.flaresActive) {
       state.flaresTimer = Math.max(0, state.flaresTimer - dtReal2);
@@ -153926,6 +154533,14 @@
             if (divisorCorrect) {
               if (divisorNew) {
                 bestStreak = Math.max(bestStreak, state.streak + 1);
+                (function(_bs) {
+                  var _sid = _bs === 5 ? "streak_5" : _bs === 10 ? "streak_10" : _bs === 25 ? "streak_25" : null;
+                  if (_sid) {
+                    var _sa = unlockAndReturn(_sid);
+                    if (_sa)
+                      enqueueAchievementToast(_sa);
+                  }
+                })(bestStreak);
                 handleDivisorCorrectHit(hitAst);
                 stopHits = true;
               } else {
@@ -153967,6 +154582,14 @@
               state.correctAsteroidId = 0;
               retireWave(wid);
               bestStreak = Math.max(bestStreak, state.streak + 1);
+              (function(_bs) {
+                var _sid = _bs === 5 ? "streak_5" : _bs === 10 ? "streak_10" : _bs === 25 ? "streak_25" : null;
+                if (_sid) {
+                  var _sa = unlockAndReturn(_sid);
+                  if (_sa)
+                    enqueueAchievementToast(_sa);
+                }
+              })(bestStreak);
               onCorrectHit(hitAst);
               stopHits = true;
               clearedWaveId = wid;
@@ -154044,6 +154667,11 @@
           playSfx(state, "alien_hit");
           al.hitShake = 0.75;
           al.stunTimer = Math.max(al.stunTimer || 0, 0.4);
+          if (al.shieldActive) {
+            al.shieldActive = false;
+            al._shieldBreakFlash = 0.35;
+            continue;
+          }
           al.hitsTaken += 1;
           if (tryResolveAlienKillAfterAccumulatedHits(al, ai3)) {
             break;
@@ -157066,7 +157694,8 @@
     if (!player.clawActive) {
       if (candidate) {
         player.clawPromptAlpha = Math.min(1, (player.clawPromptAlpha || 0) + dt * 3.5);
-        if (player.clawHoldKey && keys.has("q")) {
+        var specialHeld = !!(player.clawHoldKey || touchActionHeld.special || keyBindings.special && keys.has(keyBindings.special));
+        if (specialHeld) {
           player.clawHold = (player.clawHold || 0) + dt;
           if (player.clawHold >= (player.clawHoldRequired || 0.35)) {
             startClawGrab(candidate.asteroid);
@@ -157198,7 +157827,7 @@
     ctx.textBaseline = "bottom";
     ctx.shadowColor = hudTheme.glowCyan;
     ctx.shadowBlur = 6;
-    ctx.fillText("HOLD X TO GRAB", player.x, player.y - 52);
+    ctx.fillText("HOLD " + displayKeyName(keyBindings.special) + " TO GRAB", player.x, player.y - 52);
     ctx.restore();
   }
   function updateDashGhosts(dt) {
@@ -158784,21 +159413,13 @@
       stopAllPreviewAudio();
     });
   }
-  if (endNameInput) {
-    endNameInput.addEventListener("keydown", function(e) {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        if (!handleEndNameConfirm()) {
-          saveScoreName(endNameInput.value);
-          showToast("NAME SAVED");
-          playSfx(state, "menu_beep");
-        }
-      }
-    });
-    endNameInput.addEventListener("blur", function() {
-      saveScoreName(endNameInput.value);
+  if (btnRerollPilotName) {
+    btnRerollPilotName.addEventListener("click", function() {
+      rerollDisplayedPilotName();
+      playSfx(state, "menu_beep");
     });
   }
+  ensurePilotName();
   function assert(cond, msg) {
     if (!cond)
       throw new Error("TEST FAIL: " + msg);
@@ -159639,7 +160260,7 @@
               tutorialMovementPreference = null;
               tutorialMovementChoiceResolved = false;
               tutorialPlatformChoiceResolved = false;
-              tutorialChoiceCursorReady = false;
+              tutorialChoiceCursorReady = true;
               setTouchDockHidden(false);
               updateCursorVisibility();
             } else if (stepId === "move_arrows") {
@@ -159672,11 +160293,12 @@
               startTutorialDots("touch", "move_touch");
             } else if (stepId === "movement_preference") {
               tutorialMovementChoiceResolved = false;
-              tutorialChoiceCursorReady = false;
               if (tutorialPlatform === "tablet") {
                 tourGuide.jumpTo("fire_once");
                 return false;
               }
+              tutorialChoiceCursorReady = true;
+              updateCursorVisibility();
             } else if (tutorialDotsActive) {
               stopTutorialDots();
             }
@@ -159915,6 +160537,9 @@
     }
     var autoStart = params.get("autoStart") === "1" || params.get("autoStart") === "true";
     if (!autoStart && (params.has("aMin") || params.has("bMin") || params.has("questionMode") || params.has("ship"))) {
+      autoStart = true;
+    }
+    if (!autoStart && (params.get("competitiveEmbed") === "1" || params.get("competitiveEmbed") === "true")) {
       autoStart = true;
     }
     if (overlayMenu) {

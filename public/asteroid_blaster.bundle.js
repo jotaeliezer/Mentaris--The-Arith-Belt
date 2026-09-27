@@ -142983,6 +142983,152 @@
     return ".sandboxPanel{position:fixed;top:90px;left:16px;z-index:45;width:min(460px,calc(100vw - 32px));max-height:calc(100vh - 112px);overflow:auto;background:" + shell + ";border:1px solid " + border + ";border-radius:16px;padding:12px 14px;box-shadow:0 24px 60px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.04);}.sandboxPanel .sandboxHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}.sandboxPanel h4{margin:0;font-size:12px;letter-spacing:1.6px;text-transform:uppercase;color:rgba(232,236,255,.82);}.sandboxPanel .sandboxToggle{border:1px solid " + line + ";background:" + btn + ";color:#e8ecff;border-radius:10px;padding:4px 8px;font-size:10px;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;}.sandboxPanel.collapsed .sandboxBody{display:none;}.sandboxPanel .sandboxSectionTools{display:flex;gap:8px;margin-bottom:8px;}.sandboxPanel .sandboxSectionTools .sandboxToggle{flex:1;}.sandboxPanel .sandboxGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}.sandboxPanel .sandboxGroup{margin:0;border:1px solid " + border + ";background:" + group + ";border-radius:12px;padding:8px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05);}.sandboxPanel .sandboxGroupHeader{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}.sandboxPanel .sandboxGroupTitle{font-size:11px;letter-spacing:1.1px;text-transform:uppercase;color:rgba(232,236,255,.78);}.sandboxPanel .sandboxGroupToggle{border:1px solid " + line + ";background:" + btn + ";color:#e8ecff;border-radius:8px;padding:2px 6px;font-size:10px;cursor:pointer;}.sandboxPanel .sandboxGroup.collapsed .sandboxGroupBody{display:none;}.sandboxPanel .sandboxButtons{display:flex;flex-wrap:wrap;gap:6px;}.sandboxPanel .sandboxBtn{border:1px solid " + line + ";background:" + btn + ";color:#e8ecff;border-radius:10px;padding:6px 8px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;cursor:pointer;}.sandboxPanel .sandboxBtn.active{border-color:" + accent + ";box-shadow:0 0 0 1px rgba(0,229,255,.22) inset;}.sandboxPanel .sandboxBtn:hover{transform:translateY(-1px);border-color:" + accent + ";box-shadow:0 8px 18px rgba(0,0,0,.28);}.sandboxPanel .sandboxNote{font-size:11px;color:rgba(232,236,255,.55);margin:6px 0 4px;}@media (max-width: 960px){.sandboxPanel{top:78px;left:10px;width:min(420px,calc(100vw - 20px));max-height:calc(100vh - 96px);}.sandboxPanel .sandboxGrid{grid-template-columns:1fr;}}";
   }
 
+  // src/js/core/pilot_names.js
+  var PILOT_ADJECTIVES = [
+    "Amber",
+    "Arctic",
+    "Aurora",
+    "Azure",
+    "Bold",
+    "Brave",
+    "Breezy",
+    "Bright",
+    "Brisk",
+    "Calm",
+    "Clever",
+    "Coral",
+    "Cosmic",
+    "Cozy",
+    "Crystal",
+    "Daring",
+    "Eager",
+    "Emerald",
+    "Fuzzy",
+    "Gentle",
+    "Glowing",
+    "Golden",
+    "Happy",
+    "Jolly",
+    "Keen",
+    "Kind",
+    "Lucky",
+    "Lunar",
+    "Merry",
+    "Mighty",
+    "Mellow",
+    "Neon",
+    "Nimble",
+    "Noble",
+    "Nova",
+    "Plucky",
+    "Polar",
+    "Prism",
+    "Quiet",
+    "Radiant",
+    "Rapid",
+    "Ruby",
+    "Silver",
+    "Solar",
+    "Spark",
+    "Spry",
+    "Steady",
+    "Stellar",
+    "Sunny",
+    "Swift",
+    "Tropic",
+    "Turbo",
+    "Velvet",
+    "Violet",
+    "Vivid",
+    "Wispy"
+  ];
+  var PILOT_NOUNS = [
+    "Badger",
+    "Beacon",
+    "Breeze",
+    "Capsule",
+    "Cedar",
+    "Cloud",
+    "Clover",
+    "Comet",
+    "Compass",
+    "Cosmos",
+    "Dolphin",
+    "Drift",
+    "Echo",
+    "Falcon",
+    "Fox",
+    "Galaxy",
+    "Glider",
+    "Harbor",
+    "Horizon",
+    "Koala",
+    "Lantern",
+    "Lynx",
+    "Maple",
+    "Marble",
+    "Meadow",
+    "Meteor",
+    "Nebula",
+    "Orbit",
+    "Otter",
+    "Panda",
+    "Pebble",
+    "Photon",
+    "Planet",
+    "Puffin",
+    "Pulsar",
+    "Quasar",
+    "Ranger",
+    "River",
+    "Robin",
+    "Rocket",
+    "Satellite",
+    "Scout",
+    "Shuttle",
+    "Sparrow",
+    "Star",
+    "Turtle",
+    "Voyager",
+    "Willow"
+  ];
+  var ADJECTIVE_SET = /* @__PURE__ */ Object.create(null);
+  var NOUN_SET = /* @__PURE__ */ Object.create(null);
+  for (ai = 0; ai < PILOT_ADJECTIVES.length; ai++)
+    ADJECTIVE_SET[PILOT_ADJECTIVES[ai]] = true;
+  var ai;
+  for (ni = 0; ni < PILOT_NOUNS.length; ni++)
+    NOUN_SET[PILOT_NOUNS[ni]] = true;
+  var ni;
+  function pad2(n) {
+    var s = String(n);
+    return s.length < 2 ? "0" + s : s;
+  }
+  function pick(list, random) {
+    return list[Math.floor(random() * list.length)];
+  }
+  function generatePilotName(rng) {
+    var random = typeof rng === "function" ? rng : Math.random;
+    return pick(PILOT_ADJECTIVES, random) + " " + pick(PILOT_NOUNS, random) + " " + pad2(Math.floor(random() * 100));
+  }
+  function rerollPilotName(current, rng) {
+    var next = generatePilotName(rng);
+    var guard = 0;
+    while (next === current && guard < 12) {
+      next = generatePilotName(rng);
+      guard++;
+    }
+    return next;
+  }
+  function isGeneratedPilotName(name) {
+    var parts = String(name == null ? "" : name).trim().split(" ");
+    if (parts.length !== 3)
+      return false;
+    if (!ADJECTIVE_SET[parts[0]] || !NOUN_SET[parts[1]])
+      return false;
+    return /^[0-9]{2}$/.test(parts[2]);
+  }
+
   // src/js/core/supabase_scores.js
   var CONFIG_GLOBAL = "__MENTARIS_SUPABASE__";
   var DEFAULT_TABLE = "scores";
@@ -143059,20 +143205,20 @@
       clearTimeout(t);
     });
   }
-  async function submitScore(playerName, score, ship, difficulty, questionMode, operation) {
+  async function submitScore(playerName, score, questionMode) {
     var cfg = readRuntimeConfig();
     if (!cfg)
       return { success: false, error: "Supabase is not configured (set window.__MENTARIS_SUPABASE__)" };
     var body = {
       player_name: sanitizeField(playerName, MAX_NAME_LEN),
       score: clampScore(score),
-      ship: sanitizeField(ship, MAX_STR_FIELD),
-      difficulty: sanitizeField(difficulty, MAX_STR_FIELD),
-      question_mode: sanitizeField(questionMode, MAX_STR_FIELD),
-      operation: sanitizeField(operation, MAX_STR_FIELD)
+      question_mode: sanitizeField(questionMode, MAX_STR_FIELD)
     };
-    if (!body.player_name)
-      return { success: false, error: "Player name is required" };
+    if (!isGeneratedPilotName(body.player_name)) {
+      return { success: false, error: "Pilot name must be a generated callsign" };
+    }
+    if (!body.question_mode)
+      body.question_mode = "classic";
     var url = cfg.url + "/rest/v1/" + encodeURIComponent(cfg.table);
     try {
       var res = await fetchWithTimeout(url, {
@@ -143794,7 +143940,9 @@
   var endScoresTableWrap = document.getElementById("endScoresTableWrap");
   var endScoresTitle = document.getElementById("endScoresTitle");
   var btnHighScoresToggle = document.getElementById("btnHighScoresToggle");
-  var endNameInput = document.getElementById("endNameInput");
+  var endPilotNameEl = document.getElementById("endPilotName");
+  var btnRerollPilotName = document.getElementById("btnRerollPilotName");
+  var currentPilotName = "";
   var endSequence = document.querySelector(".endSequence");
   var endScoreValue = document.getElementById("endScoreValue");
   var endModeSummary = document.getElementById("endModeSummary");
@@ -149714,9 +149862,9 @@
     }
     if (!options.length)
       return "";
-    var pick = options[Math.floor(Math.random() * options.length)];
-    pick.apply();
-    return pick.label || "";
+    var pick2 = options[Math.floor(Math.random() * options.length)];
+    pick2.apply();
+    return pick2.label || "";
   }
   function continueSession() {
     ensureLoop();
@@ -151037,11 +151185,45 @@
       endScoresBody.appendChild(tr);
     }
   }
+  var PILOT_NAME_STORAGE_KEY = "mathsteroid.playerName";
+  function readStoredPilotName() {
+    var stored = "";
+    try {
+      stored = localStorage.getItem(PILOT_NAME_STORAGE_KEY) || "";
+    } catch (e) {
+    }
+    return isGeneratedPilotName(stored) ? stored : "";
+  }
+  function ensurePilotName() {
+    var name = currentPilotName && isGeneratedPilotName(currentPilotName) ? currentPilotName : readStoredPilotName();
+    if (!name) {
+      name = generatePilotName();
+      try {
+        localStorage.setItem(PILOT_NAME_STORAGE_KEY, name);
+      } catch (e) {
+      }
+    }
+    currentPilotName = name;
+    if (endPilotNameEl)
+      endPilotNameEl.textContent = name;
+    return name;
+  }
+  function rerollDisplayedPilotName() {
+    var next = rerollPilotName(ensurePilotName());
+    currentPilotName = next;
+    if (endPilotNameEl)
+      endPilotNameEl.textContent = next;
+    try {
+      localStorage.setItem(PILOT_NAME_STORAGE_KEY, next);
+    } catch (e) {
+    }
+    return next;
+  }
   function saveScoreName(name) {
     if (!state.lastSessionId)
       return;
-    var trimmed = String(name || "").trim().slice(0, 18);
-    if (!trimmed)
+    var trimmed = String(name || "").trim();
+    if (!isGeneratedPilotName(trimmed))
       return;
     var stats = loadLifetimeStats();
     if (!stats)
@@ -151075,28 +151257,13 @@
     saveLifetimeStats(stats);
     renderHighScores(stats, entryKey);
     try {
-      localStorage.setItem("mathsteroid.playerName", trimmed);
+      localStorage.setItem(PILOT_NAME_STORAGE_KEY, trimmed);
     } catch (e) {
     }
     appendLeaderboardCsv({ name: trimmed, score: state.score });
     if (isSupabaseScoresConfigured()) {
-      var shipTag = player && player.shipType ? String(player.shipType) : "";
-      if (!shipTag && typeof collectSessionSettings === "function") {
-        try {
-          shipTag = String((collectSessionSettings() || {}).ship || "");
-        } catch (e) {
-          shipTag = "";
-        }
-      }
-      var diffTag = String(state.difficulty || "normal");
       var qMode = String(state.questionMode || "classic");
-      var opTag = "";
-      try {
-        opTag = String((describeQuestionMode(qMode) || {}).operation || "");
-      } catch (e) {
-        opTag = "";
-      }
-      submitScore(trimmed, state.score, shipTag || "unknown", diffTag, qMode, opTag || "unknown").then(function(res) {
+      submitScore(trimmed, state.score, qMode).then(function(res) {
         if (!res.success && res.error) {
           console.warn("[supabase scores]", res.error);
         }
@@ -151755,10 +151922,9 @@
     if (stageId === "endStageName") {
       endPhase = "name";
       transitionEndStage("endStageName", function() {
-        if (endNameInput) {
-          endNameInput.focus();
-          endNameInput.select();
-        }
+        ensurePilotName();
+        if (btnRerollPilotName)
+          btnRerollPilotName.focus();
       });
       return;
     }
@@ -152052,10 +152218,9 @@
       if (btnHighScoresToggle) {
         btnHighScoresToggle.textContent = "CONTINUE";
       }
-      if (endNameInput) {
-        endNameInput.focus();
-        endNameInput.select();
-      }
+      ensurePilotName();
+      if (btnRerollPilotName)
+        btnRerollPilotName.focus();
     });
   }
   function showEndPlacementPhase() {
@@ -152090,10 +152255,12 @@
   function handleEndNameConfirm() {
     if (!endSequenceActive || endPhase !== "name")
       return false;
-    saveScoreName(endNameInput ? endNameInput.value : "");
-    endNameConfirmed = true;
+    if (!endNameConfirmed) {
+      saveScoreName(ensurePilotName());
+      endNameConfirmed = true;
+      showToast("CALLSIGN SAVED");
+    }
     playSfx(state, "menu_beep");
-    showToast("NAME SAVED");
     showEndPlacementPhase();
     return true;
   }
@@ -152161,11 +152328,7 @@
     var attempts = state.hits;
     var acc = attempts > 0 ? state.correct / attempts : 0;
     var rpm = elapsed > 0 ? state.correct / elapsed * 60 : 0;
-    var storedName = "";
-    try {
-      storedName = localStorage.getItem("mathsteroid.playerName") || "";
-    } catch (e) {
-    }
+    var storedName = ensurePilotName();
     var sessionId = String(Date.now()) + "_" + String(Math.floor(Math.random() * 1e6));
     var modeInfo = describeQuestionMode(state.questionMode || "classic");
     var session = {
@@ -152646,9 +152809,7 @@
     if (btnEndSettings) {
       btnEndSettings.style.display = "none";
     }
-    if (endNameInput) {
-      endNameInput.value = storedName;
-    }
+    ensurePilotName();
     if (endScoreValue) {
       endScoreValue.textContent = "0";
     }
@@ -159252,21 +159413,13 @@
       stopAllPreviewAudio();
     });
   }
-  if (endNameInput) {
-    endNameInput.addEventListener("keydown", function(e) {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        if (!handleEndNameConfirm()) {
-          saveScoreName(endNameInput.value);
-          showToast("NAME SAVED");
-          playSfx(state, "menu_beep");
-        }
-      }
-    });
-    endNameInput.addEventListener("blur", function() {
-      saveScoreName(endNameInput.value);
+  if (btnRerollPilotName) {
+    btnRerollPilotName.addEventListener("click", function() {
+      rerollDisplayedPilotName();
+      playSfx(state, "menu_beep");
     });
   }
+  ensurePilotName();
   function assert(cond, msg) {
     if (!cond)
       throw new Error("TEST FAIL: " + msg);

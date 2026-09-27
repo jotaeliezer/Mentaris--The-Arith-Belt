@@ -5,10 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mentaris: The Arith Belt — Menu</title>
   <link rel="icon" type="image/png" href="images/misc/favicon.png" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="asteroid_blaster.css?v=2026-01-27-1" />
+  <link rel="stylesheet" href="asteroid_blaster.css?v=2026-09-27-privacy" />
   <style>
     body{ overflow:auto; }
     body::before{
@@ -783,10 +780,10 @@
     }
     .briefingLaunchBtn{
       white-space:nowrap;
-      min-width:140px;
-      padding:10px 16px;
-      font-size:12px;
-      letter-spacing:1.2px;
+      min-width:180px;
+      padding:14px 24px;
+      font-size:14px;
+      letter-spacing:1.6px;
     }
     .briefingFooter{
       display:flex;
@@ -2053,6 +2050,9 @@
     #sandboxRevealOverlay.overlay{
       z-index: 52;
     }
+    #gradePromptOverlay.overlay{
+      z-index: 60;
+    }
 
     #roadmapOverlay .card,
     #aboutOverlay .card,
@@ -2673,6 +2673,11 @@
       z-index:2;
       pointer-events:none;
     }
+    .siteFooter a{
+      pointer-events:auto;
+      color:#9adfff;
+      margin-left:12px;
+    }
 
     .shipThruster{
       fill: var(--ship-thruster, rgba(50,60,80,.8));
@@ -2962,6 +2967,72 @@
       .menuShell{ grid-template-columns: 1fr; }
       .menuRight{ display:none; }
     }
+
+    /* ── Grade level ── */
+    .gradeGrid{
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(88px,1fr));
+      gap:8px; margin:14px 0;
+    }
+    .gradeCard{
+      background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+      border-radius:10px; padding:14px 8px; text-align:center; cursor:pointer;
+      transition:border-color .15s,background .15s; user-select:none;
+    }
+    .gradeCard.selected{ border-color:rgba(0,229,255,.55); background:rgba(0,229,255,.09); }
+    .gradeCard:hover:not(.selected){ border-color:rgba(0,229,255,.28); }
+    .gradeCardLabel{ font-weight:700; font-size:15px; color:var(--text); }
+    .gradeCardSub{ font-size:10px; color:var(--muted); margin-top:3px; }
+    .gradeNote{
+      border:1px solid rgba(255,255,255,.07); border-radius:10px;
+      padding:12px 14px; font-size:12px; color:var(--muted);
+      min-height:46px; background:rgba(255,255,255,.025);
+    }
+    .shipMineralChip{
+      display:inline-flex; align-items:center; gap:6px;
+      background:rgba(28,220,120,.1); border:1px solid rgba(28,220,120,.35);
+      border-radius:20px; padding:4px 10px 4px 6px;
+      font-size:12px; letter-spacing:1px; font-weight:600;
+      color:rgba(28,220,120,.95); user-select:none;
+    }
+    .shipMineralChip img{ width:16px; height:16px; object-fit:contain; }
+    #activeGradeChip{
+      font-size:10px; letter-spacing:1.5px; text-transform:uppercase;
+      color:rgba(0,229,255,.7); margin-top:4px; min-height:14px;
+    }
+    .campaignGradeMatch{
+      position:absolute; top:-6px; right:-6px;
+      background:rgba(0,229,255,.18); border:1px solid rgba(0,229,255,.45);
+      border-radius:5px; font-size:9px; letter-spacing:1px;
+      color:rgba(0,229,255,.9); padding:1px 5px; pointer-events:none;
+      text-transform:uppercase; white-space:nowrap;
+    }
+    .sliderRow{ display:flex; align-items:center; gap:10px; margin-top:4px; }
+    .sliderRow input[type=range]{ flex:1; accent-color:rgba(0,229,255,.85); cursor:pointer; }
+    .sliderLabel{ font-size:12px; color:var(--muted); min-width:90px; text-align:right; font-variant-numeric:tabular-nums; }
+
+    /* ── Achievements gallery ── */
+    .achievementsGrid{
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 10px;
+      max-height: 60vh;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .achievementCard{
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .achievementCard.unlocked{
+      border-color: rgba(255,215,0,.35);
+      background: rgba(255,215,0,.05);
+    }
+    .achievementCard.locked{ opacity: 0.38; }
+    .achievementCardLabel{ font-weight: 700; font-size: 13px; color: var(--text); }
+    .achievementCardDesc{ font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+    .achievementCardDate{ font-size: 10px; color: rgba(255,215,0,.7); margin-top: 6px; letter-spacing: .8px; }
   </style>
 </head>
 <body class="homeMenuPage showLaunch">
@@ -2977,11 +3048,13 @@
           <button id="btnLaunchHome" class="btn primary btnLaunch" type="button">Launch</button>
           <button id="btnCampaign" class="btn secondaryLabel menuExtra" type="button">Campaign <small>6 mission run</small></button>
           <button id="btnStartGame" class="btn secondaryLabel menuExtra" type="button">Single Mission <small>Custom setup</small></button>
+          <div id="activeGradeChip"></div>
           <button id="btnSideOps" class="btn secondaryLabel menuExtra" type="button">Side Ops <small>Mini games</small></button>
           <button id="btnTutorial" class="btn secondaryLabel menuExtra" type="button">Tutorial <small>Guided tour</small></button>
+          <button id="btnAchievements" class="btn secondaryLabel menuExtra" type="button">Achievements <small>Badges earned</small></button>
           <button id="btnLeaderboards" class="btn secondaryLabel menuExtra" type="button">Leaderboards <small>Top runs</small></button>
           <button id="btnSettingsHome" class="btn secondaryLabel menuExtra" type="button">Settings <small>Audio levels</small></button>
-          <a id="btnExitHome" class="btn secondaryLabel menuExtra" href="../../atmc.html">Exit <small>Return to hub</small></a>
+          <a id="btnExitHome" class="btn secondaryLabel menuExtra" href="../../../atmc.html">Exit <small>Return to hub</small></a>
         </div>
       </div>
 
@@ -3030,7 +3103,7 @@
     })();
   </script>
 
-  <footer class="siteFooter">© 2025 Mentaris: The Arith Belt. All rights reserved.</footer>
+  <footer class="siteFooter">© 2025 Mentaris: The Arith Belt. All rights reserved. <a href="privacy.html">Privacy</a></footer>
 
   <div id="funnelOverlay" class="overlay funnelOverlay">
     <div class="card">
@@ -3204,14 +3277,12 @@
 
                 <label>
                   ASTEROID SPEED
-                  <select id="speed" name="speed">
-                  <option value="0.5">SLOW</option>
-                  <option value="0.7" selected>NORMAL</option>
-                  <option value="0.85">FAST</option>
-                  <option value="1.0">INSANE</option>
-                </select>
+                  <div class="sliderRow">
+                    <input type="range" id="speedSlider" name="speed" min="0.5" max="1.2" step="0.05" value="0.9">
+                    <span id="speedSliderLabel" class="sliderLabel">0.90×</span>
+                  </div>
                   <span class="helpText">How fast asteroids drift toward you.</span>
-              </label>
+                </label>
 
                 <label>
                   LIVES
@@ -3247,15 +3318,13 @@
                 </label>
 
                 <label>
-                  TARGETED ASTEROIDS
-                  <select id="targetMode" name="targetMode">
-                    <option value="off">OFF (ENDLESS)</option>
-                    <option value="q7">7 TARGETS</option>
-                    <option value="q10">10 TARGETS</option>
-                    <option value="q15" selected>15 TARGETS</option>
-                    <option value="q20">20 TARGETS</option>
-                  </select>
-                  <span class="helpText">End the run after a fixed number of correct hits.</span>
+                  NUMBER OF QUESTIONS
+                  <div class="sliderRow">
+                    <input type="range" id="questionsSlider" min="0" max="20" step="1" value="10">
+                    <span id="questionsSliderLabel" class="sliderLabel">10 questions</span>
+                  </div>
+                  <input type="hidden" name="targetMode" id="targetModeHidden" value="q10">
+                  <span class="helpText">How many correct answers end the session. Set to 0 for endless.</span>
                 </label>
 
                 <label>
@@ -3324,7 +3393,13 @@
         </div>
           <div class="step" data-step="5">
             <div class="panel" id="shipPanel">
-              <h3>Ship Frame</h3>
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+                <h3 style="margin:0;">Ship Frame</h3>
+                <span class="shipMineralChip" id="shipPanelMineralChip">
+                  <img src="images/asteroids/mineral.png" alt="Minerals" />
+                  <span id="shipPanelMineralCount">0</span>
+                </span>
+              </div>
               <input type="hidden" id="shotType" name="shotType" value="single" />
               <div class="shipChooser">
               <div class="shipColumn">
@@ -3908,12 +3983,14 @@
             <button id="btnRoadmap" class="btn settingsSideBtn" type="button" title="What is next">Roadmap</button>
             <button id="btnAbout" class="btn settingsSideBtn" type="button" title="Game and purpose">About</button>
             <button id="btnSandbox" class="btn settingsSideBtn" type="button" title="Test shots and powerups">Sandbox</button>
+            <a class="btn settingsSideBtn" href="privacy.html">Privacy</a>
           </div>
           <div class="settingsTabs">
             <button type="button" class="btn settingsTabBtn active" data-settings-tab="audio">AUDIO</button>
             <button type="button" class="btn settingsTabBtn" data-settings-tab="display">DISPLAY</button>
             <button type="button" class="btn settingsTabBtn" data-settings-tab="controls">CONTROLS</button>
             <button type="button" class="btn settingsTabBtn" data-settings-tab="catalogs">CATALOGS</button>
+            <button type="button" class="btn settingsTabBtn" data-settings-tab="grade">GRADE</button>
           </div>
         </div>
         <div class="settingsPanels">
@@ -4091,6 +4168,15 @@
             </div>
             </div>
           </div>
+          <div class="panel settingsPanel" data-settings-panel="grade">
+            <h3 class="panelTitle" style="margin:0 0 6px;">Grade Level</h3>
+            <p class="monoSmall" style="margin:0 0 4px;">Select your grade to pre-fill Single Mission with the right number ranges, difficulty, and pace. You can still adjust everything manually after.</p>
+            <div class="gradeGrid" id="gradeGrid"></div>
+            <div class="gradeNote" id="gradeNote">Select a grade above to see what changes.</div>
+            <div class="row" style="margin-top:14px;">
+              <button id="btnClearGrade" class="btn" style="font-size:11px;">Clear Grade Setting</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -4141,7 +4227,7 @@
           <h3>Tier 3 — Galactic ranks &amp; social</h3>
           <ul>
             <li><b>Global leaderboards (coming soon):</b> cloud-backed Galactic Ranks—send your mission scores, filter by mode and operation, and see how you stack up worldwide.</li>
-            <li>Friendly pilot names with privacy in mind; jump in with your first ship without signing up.</li>
+            <li>Generated pilot callsigns on Galactic Ranks, with a reroll. No typed names, and no account required to fly.</li>
             <li>Optional player accounts later, once the boards feel great for everyone.</li>
           </ul>
           <h3>Tier 4 — Belt arcade (mini games)</h3>
@@ -4428,6 +4514,42 @@
     </div>
   </div>
 
+  <div id="achievementsOverlay" class="overlay">
+    <div class="card" style="max-width:720px;">
+      <div class="cardHead">
+        <div>
+          <h2 class="title">Achievements</h2>
+          <p class="subtitle" id="achievementsProgress">0 / 67 unlocked</p>
+        </div>
+        <button id="btnCloseAchievements" class="btn">Close</button>
+      </div>
+      <div class="cardBody" style="grid-template-columns:1fr;">
+        <div class="panel">
+          <div class="achievementsGrid" id="achievementsGrid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grade Prompt Overlay — shown when user clicks Campaign/Single Mission with no grade set -->
+  <div id="gradePromptOverlay" class="overlay">
+    <div class="card" style="max-width:640px;">
+      <div class="cardHead">
+        <div>
+          <h2 class="title">Select Your Grade</h2>
+          <p class="subtitle">Pick your grade so the game matches your level — you can change this anytime in Settings.</p>
+        </div>
+        <button id="btnSkipGradePrompt" class="btn">Skip</button>
+      </div>
+      <div class="cardBody" style="grid-template-columns:1fr;">
+        <div class="panel">
+          <div class="gradeGrid" id="gradePromptGrid"></div>
+          <div class="gradeNote" id="gradePromptNote">Select a grade above to continue.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="campaignConfirmOverlay" class="overlay">
     <div class="card" style="max-width:520px;">
       <div class="cardHead">
@@ -4520,6 +4642,18 @@
       alienSwarm: false,
     };
 
+    var STUDENT_GRADE_KEY = "mentaris.studentGrade";
+    var GRADE_PRESETS = {
+      "4":   { label:"Grade 4",   ages:"Ages 9–10",  desc:"Multiplication facts up to 10×10 and basic addition. Easy pace with generous lives.",              aMin:1,  aMax:10, bMin:1,  bMax:10, difficulty:"easy",   decoys:2, speed:0.65, lives:12, targetMode:"q10" },
+      "5":   { label:"Grade 5",   ages:"Ages 10–11", desc:"Times tables up to 12×12 with all four operations introduced. Same easy pace.",                    aMin:1,  aMax:12, bMin:1,  bMax:12, difficulty:"easy",   decoys:2, speed:0.65, lives:10, targetMode:"q10" },
+      "6":   { label:"Grade 6",   ages:"Ages 11–12", desc:"Full operation fluency with standard ranges. Normal difficulty, same comfortable speed.",           aMin:2,  aMax:12, bMin:2,  bMax:12, difficulty:"normal", decoys:3, speed:0.65, lives:10, targetMode:"q10" },
+      "7":   { label:"Grade 7",   ages:"Ages 12–13", desc:"Extended number ranges, all operations. Speed steps up slightly.",                                  aMin:2,  aMax:15, bMin:2,  bMax:15, difficulty:"normal", decoys:3, speed:0.70, lives:8,  targetMode:"q10" },
+      "8":   { label:"Grade 8",   ages:"Ages 13–14", desc:"Wider ranges, squares and roots eligible. Steady normal challenge.",                                aMin:3,  aMax:15, bMin:3,  bMax:15, difficulty:"normal", decoys:3, speed:0.70, lives:8,  targetMode:"q10" },
+      "9":   { label:"Grade 9",   ages:"Ages 14–15", desc:"Larger operands up to 18. Normal difficulty — push to Hard manually if you want more pressure.",    aMin:4,  aMax:18, bMin:4,  bMax:15, difficulty:"normal", decoys:3, speed:0.70, lives:6,  targetMode:"q10" },
+      "10+": { label:"Grade 10+", ages:"Ages 15+",   desc:"Widest number ranges with a slight speed increase. Normal difficulty — push to Hard if you want.",  aMin:6,  aMax:20, bMin:6,  bMax:20, difficulty:"normal", decoys:4, speed:0.75, lives:5,  targetMode:"q10" }
+    };
+    var GRADE_ORDER = ["4","5","6","7","8","9","10+"];
+
     var campaignProfileKey = "mentaris.campaign.profile.active";
     var campaignProfilesKey = "mentaris.campaign.profiles";
     var campaignActiveKeyBase = "mathsteroid.campaign.active.";
@@ -4544,48 +4678,56 @@
             id: "m1",
             title: "Sector 1: Calibration",
             desc: "Digit hunt warm-up.",
+            hint: "SCAN EACH ASTEROID FOR THE CORRECT DIGIT — LET THE DECOYS DRIFT PAST.",
             config: { ship: "spire", questionMode: "digits2", difficulty: "easy", targetMode: "q7", timerMode: "off", decoys: 2, speed: 0.6, lives: 15, strikes: 10, aMin: 2, aMax: 9, bMin: 2, bMax: 9 }
           },
           {
             id: "m2",
             title: "Sector 2: Drift Line",
             desc: "Faster digit hunt.",
+            hint: "ADDITION DIGITS: WORK OUT THE SUM, THEN HUNT DOWN ITS MATCHING DIGIT AMONG THE DEBRIS.",
             config: { ship: "classic", questionMode: "add_digits2", difficulty: "easy", targetMode: "q10", timerMode: "off", decoys: 3, speed: 0.7, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 9 }
           },
           {
             id: "m3",
             title: "Sector 3: Classic Sweep",
             desc: "Classic answers under time.",
+            hint: "SPEED MATTERS. CALCULATE AND FIRE ON THE CORRECT FULL ANSWER BEFORE TIME RUNS OUT.",
             config: { ship: "am2", questionMode: "classic2", difficulty: "easy", targetMode: "off", timerMode: "75", decoys: 3, decoyFunction: "units_bias", speed: 0.7, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
           },
           {
             id: "m3s",
             title: "Sector 3B: Stampede",
             desc: "Shoot wrong asteroids, absorb the correct.",
+            hint: "SHOOT EVERY WRONG ANSWER. THE CORRECT ASTEROID ABSORBS INTO YOUR HULL — DO NOT FIRE ON IT.",
             config: { ship: "spire", questionMode: "stampede2", difficulty: "easy", targetMode: "off", timerMode: "60", decoys: 3, decoyFunction: "units_bias", speed: 0.85, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
           },
           {
             id: "m3x",
             title: "Sector X: Alien Swarm",
             desc: "Survive the swarm and solve alien math.",
+            hint: "ALIEN WAVE INBOUND. DESTROY THE SWARM, THEN ANSWER THE BOSS QUESTION TO CLEAR THE SECTOR.",
             config: { ship: "spire", questionMode: "classic2", difficulty: "easy", targetMode: "off", timerMode: "60", decoys: 0, speed: 0.75, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 12, alienSwarm: true }
           },
           {
             id: "m4",
             title: "Sector 4: Signal Storm",
             desc: "Addition digit hunt.",
+            hint: "LARGE NUMBER ADDITION. COMPUTE THE SUM, THEN SHOOT ONLY THE ASTEROID SHOWING ITS CORRECT DIGIT.",
             config: { questionMode: "add_digits2", difficulty: "normal", targetMode: "q10", timerMode: "off", decoys: 3, speed: 0.75, lives: 15, strikes: 10, aMin: 10, aMax: 99, bMin: 10, bMax: 99 }
           },
           {
             id: "m5",
             title: "Sector 5: Deep Cluster",
             desc: "Square memorization.",
+            hint: "PERFECT SQUARES. THE PROMPT IS A FACTOR — SHOOT THE ASTEROID SHOWING ITS SQUARE.",
             config: { questionMode: "square_shoot", difficulty: "normal", targetMode: "off", timerMode: "90", decoys: 3, decoyFunction: "structured", speed: 0.8, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
           },
           {
             id: "m6",
             title: "Sector 6: Root Relay",
             desc: "Square root precision.",
+            hint: "SQUARE ROOTS. THE PROMPT IS THE SQUARE — FIND AND SHOOT ITS ROOT BEFORE IT DRIFTS PAST.",
             config: { questionMode: "square_root", difficulty: "normal", targetMode: "off", timerMode: "90", decoys: 3, decoyFunction: "structured", speed: 0.8, lives: 15, strikes: 10, aMin: 2, aMax: 12, bMin: 2, bMax: 12 }
           }
         ]
@@ -4600,48 +4742,56 @@
             id: "r1",
             title: "Rift 1: Vector Burn",
             desc: "Rapid digit hunt.",
+            hint: "DIGIT HUNT AT RIFT PACE. STAY PRECISE — DECOYS ARE TIGHTER NOW.",
             config: { ship: "spire", questionMode: "digits2", difficulty: "normal", targetMode: "q10", timerMode: "off", decoys: 3, speed: 0.8, lives: 15, strikes: 10, aMin: 2, aMax: 9, bMin: 2, bMax: 9 }
           },
           {
             id: "r2",
             title: "Rift 2: Split Signal",
             desc: "Dense addition fields.",
+            hint: "DENSE ADDITION FIELDS. LOCK ONTO THE CORRECT SUM DIGIT AND FIRE FAST.",
             config: { ship: "classic", questionMode: "add_digits2", difficulty: "normal", targetMode: "q12", timerMode: "off", decoys: 3, speed: 0.85, lives: 15, strikes: 10, aMin: 5, aMax: 15, bMin: 5, bMax: 15 }
           },
           {
             id: "r3",
             title: "Rift 3: Phase Lock",
             desc: "Classic answers under pressure.",
+            hint: "CLASSIC ANSWERS UNDER PRESSURE. CALCULATE QUICKLY AND SHOOT THE FULL PRODUCT.",
             config: { ship: "am2", questionMode: "classic2", difficulty: "normal", targetMode: "off", timerMode: "90", decoys: 3, decoyFunction: "units_bias", speed: 0.9, lives: 15, strikes: 10, aMin: 3, aMax: 12, bMin: 3, bMax: 12 }
           },
           {
             id: "r3s",
             title: "Rift 3B: Stampede Run",
             desc: "Stampede flow at rift speed.",
+            hint: "STAMPEDE FLOW. SHOOT EVERY WRONG ASTEROID — LET THE CORRECT ONE REACH YOU.",
             config: { ship: "classic", questionMode: "stampede2", difficulty: "normal", targetMode: "off", timerMode: "75", decoys: 3, decoyFunction: "units_bias", speed: 0.95, lives: 15, strikes: 10, aMin: 3, aMax: 12, bMin: 3, bMax: 12 }
           },
           {
             id: "r3x",
             title: "Rift X: Alien Swarm",
             desc: "Alien strike wave at rift pace.",
+            hint: "ALIEN STRIKE WAVE. CLEAR THE SWARM FIRST, THEN SOLVE THE BOSS EQUATION.",
             config: { ship: "classic", questionMode: "classic2", difficulty: "normal", targetMode: "off", timerMode: "70", decoys: 0, speed: 0.9, lives: 15, strikes: 10, aMin: 3, aMax: 15, bMin: 3, bMax: 15, alienSwarm: true }
           },
           {
             id: "r4",
             title: "Rift 4: Echo Surge",
             desc: "Addition classics at speed.",
+            hint: "ADDITION CLASSICS. FIND THE FULL SUM AND FIRE — NO DIGIT SHORTCUTS HERE.",
             config: { questionMode: "add_classic2", difficulty: "normal", targetMode: "off", timerMode: "90", decoys: 3, decoyFunction: "units_bias", speed: 0.95, lives: 15, strikes: 10, aMin: 10, aMax: 99, bMin: 10, bMax: 99 }
           },
           {
             id: "r5",
             title: "Rift 5: Prism Array",
             desc: "Squares at high tempo.",
+            hint: "HIGH-TEMPO SQUARES. RECALL YOUR PERFECT SQUARES INSTANTLY — HESITATION COSTS HEALTH.",
             config: { questionMode: "square_shoot", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "structured", speed: 0.95, lives: 15, strikes: 10, aMin: 4, aMax: 15, bMin: 4, bMax: 15 }
           },
           {
             id: "r6",
             title: "Rift 6: Root Spiral",
             desc: "Roots with tight margins.",
+            hint: "ROOT PRECISION AT SPEED. THE SQUARE IS ON SCREEN — SHOOT ITS EXACT ROOT.",
             config: { questionMode: "square_root", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "structured", speed: 0.95, lives: 15, strikes: 10, aMin: 4, aMax: 15, bMin: 4, bMax: 15 }
           }
         ]
@@ -4656,42 +4806,49 @@
             id: "v1",
             title: "Void 1: Singularity Drift",
             desc: "High-speed digit hunt.",
+            hint: "THREE-DIGIT HUNT AT HIGH SPEED. TRACK THE CORRECT DIGIT CAREFULLY — DECOYS ARE DENSE.",
             config: { ship: "spire", questionMode: "digits3", difficulty: "hard", targetMode: "q12", timerMode: "off", decoys: 4, speed: 0.95, lives: 15, strikes: 10, aMin: 3, aMax: 12, bMin: 3, bMax: 12 }
           },
           {
             id: "v2",
             title: "Void 2: Ion Wake",
             desc: "Addition under pressure.",
+            hint: "LARGE SUMS. CALCULATE THE THREE-DIGIT SUM AND SHOOT ITS MATCHING DIGIT UNDER PRESSURE.",
             config: { ship: "classic", questionMode: "add_digits3", difficulty: "hard", targetMode: "q12", timerMode: "off", decoys: 4, speed: 1.0, lives: 15, strikes: 10, aMin: 8, aMax: 18, bMin: 8, bMax: 18 }
           },
           {
             id: "v3",
             title: "Void 3: Razor Current",
             desc: "Classic answers at max pace.",
+            hint: "CLASSIC THREE-DIGIT ANSWERS AT VOID PACE. EVERY SECOND COUNTS — CALCULATE AND FIRE.",
             config: { ship: "am2", questionMode: "classic3", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "units_bias", speed: 1.05, lives: 15, strikes: 10, aMin: 4, aMax: 15, bMin: 4, bMax: 15 }
           },
           {
             id: "v3x",
             title: "Void X: Alien Swarm",
             desc: "Endure the swarm under void pressure.",
+            hint: "VOID ALIEN SWARM. SURVIVE THE ASSAULT AND DESTROY THE BOSS UNDER MAXIMUM PRESSURE.",
             config: { ship: "am2", questionMode: "classic2", difficulty: "hard", targetMode: "off", timerMode: "75", decoys: 0, speed: 1.0, lives: 15, strikes: 10, aMin: 4, aMax: 18, bMin: 4, bMax: 18, alienSwarm: true }
           },
           {
             id: "v4",
             title: "Void 4: Nova Cipher",
             desc: "Addition classics at speed.",
+            hint: "THREE-DIGIT ADDITION CLASSICS. LOCK THE FULL SUM AND FIRE — NO ROOM FOR ERROR.",
             config: { questionMode: "add_classic3", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "units_bias", speed: 1.05, lives: 15, strikes: 10, aMin: 20, aMax: 99, bMin: 20, bMax: 99 }
           },
           {
             id: "v5",
             title: "Void 5: Prism Collapse",
             desc: "Squares at extreme tempo.",
+            hint: "EXTREME SQUARE TEMPO. KNOW YOUR SQUARES UP TO 20 — REACT FASTER THAN THE DRIFT.",
             config: { questionMode: "square_shoot", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 5, decoyFunction: "structured", speed: 1.1, lives: 15, strikes: 10, aMin: 6, aMax: 20, bMin: 6, bMax: 20 }
           },
           {
             id: "v6",
             title: "Void 6: Root Singe",
             desc: "Roots with no slack.",
+            hint: "ROOT PRECISION WITH NO SLACK. IDENTIFY THE ROOT THE MOMENT IT APPEARS.",
             config: { questionMode: "square_root", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 5, decoyFunction: "structured", speed: 1.1, lives: 15, strikes: 10, aMin: 6, aMax: 20, bMin: 6, bMax: 20 }
           }
         ]
@@ -4706,54 +4863,63 @@
             id: "n1",
             title: "Nebula 1: Rift Calibration",
             desc: "Three-digit target hunt in heavy lanes.",
+            hint: "THREE-DIGIT TARGET HUNT IN HEAVY LANES. PICK THE CORRECT DIGIT FAST AND STAY ACCURATE.",
             config: { questionMode: "digits3", difficulty: "hard", targetMode: "q12", timerMode: "off", decoys: 4, speed: 0.98, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "n2",
             title: "Nebula 2: Ion Sumline",
             desc: "Addition digit targeting under pressure.",
+            hint: "LARGE ADDITION FIELDS. COMPUTE THE SUM MENTALLY AND ISOLATE ITS DIGIT UNDER PRESSURE.",
             config: { questionMode: "add_digits3", difficulty: "hard", targetMode: "q12", timerMode: "off", decoys: 4, speed: 1.00, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "n3",
             title: "Nebula 3: Pulse Corridor",
             desc: "Classic answers in a short hard timer.",
+            hint: "CLASSIC ANSWERS IN A SHORT WINDOW. AIM FOR THE FULL PRODUCT EVERY TIME — NO SECOND CHANCES.",
             config: { questionMode: "classic3", difficulty: "hard", targetMode: "off", timerMode: "75", decoys: 4, decoyFunction: "units_bias", speed: 1.02, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "n4",
             title: "Nebula 4: Stampede Relay",
             desc: "Stampede lane control at hard pace.",
+            hint: "HARD STAMPEDE. SHOOT EVERY WRONG ANSWER AND LET THE CORRECT ONE PASS THROUGH.",
             config: { questionMode: "stampede3", difficulty: "hard", targetMode: "off", timerMode: "75", decoys: 4, decoyFunction: "units_bias", speed: 1.04, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "n5",
             title: "Nebula 5: Echo Cascade",
             desc: "Addition classic routing through dense fields.",
+            hint: "DENSE ADDITION ROUTING. CALCULATE FAST AND TARGET THE EXACT SUM — DECOYS WILL CLUSTER.",
             config: { questionMode: "add_classic3", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "units_bias", speed: 1.05, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "n6",
             title: "Nebula 6: Prism Forge",
             desc: "Square shots with structured decoys.",
+            hint: "STRUCTURED SQUARE LANES. RECALL PERFECT SQUARES UP TO 20 — FIRE ON THE MATCHING RESULT.",
             config: { questionMode: "square_shoot", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "structured", speed: 1.06, lives: 15, strikes: 10, aMin: 6, aMax: 20, bMin: 6, bMax: 20 }
           },
           {
             id: "n7",
             title: "Nebula 7: Root Tension",
             desc: "Square-root precision in hard lanes.",
+            hint: "SQUARE-ROOT PRECISION. THE SQUARE IS SHOWN — SHOOT ITS EXACT ROOT WITHOUT HESITATION.",
             config: { questionMode: "square_root", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, decoyFunction: "structured", speed: 1.08, lives: 15, strikes: 10, aMin: 6, aMax: 20, bMin: 6, bMax: 20 }
           },
           {
             id: "n8",
             title: "Nebula 8: Decimal Rift",
             desc: "Rational decimal targeting at high speed.",
+            hint: "DECIMAL TARGETING. A FRACTION IS SHOWN — IDENTIFY AND SHOOT ITS DECIMAL EQUIVALENT.",
             config: { questionMode: "rational_dec", difficulty: "hard", targetMode: "off", timerMode: "90", decoys: 4, speed: 1.08, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "n9",
             title: "Nebula 9: Command Break",
             desc: "Final target lock before boss command.",
+            hint: "FINAL TARGET LOCK. HIT ALL 14 QUESTIONS WITHOUT LOSING STRIKES — THIS IS A COMMAND GAUNTLET.",
             config: { questionMode: "classic3", difficulty: "hard", targetMode: "q14", timerMode: "off", decoys: 5, decoyFunction: "units_bias", speed: 1.10, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           }
         ]
@@ -4768,54 +4934,63 @@
             id: "a1",
             title: "Apex 1: Vector Gate",
             desc: "Expert three-digit target sweep.",
+            hint: "EXPERT DIGIT SWEEP. MAXIMUM DENSITY — IDENTIFY THE CORRECT DIGIT UNDER FULL PRESSURE.",
             config: { questionMode: "digits3", difficulty: "hard", targetMode: "q14", timerMode: "off", decoys: 5, speed: 1.08, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "a2",
             title: "Apex 2: Sum Breach",
             desc: "Fast addition target pressure.",
+            hint: "FAST ADDITION TARGETS. SOLVE LARGE SUMS AND CHASE DOWN EACH CORRECT DIGIT.",
             config: { questionMode: "add_digits3", difficulty: "hard", targetMode: "q14", timerMode: "off", decoys: 5, speed: 1.10, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "a3",
             title: "Apex 3: Burnline",
             desc: "Classic answers with little clock slack.",
+            hint: "BURNLINE GAUNTLET. ANSWER CLASSIC PRODUCTS BEFORE THE CLOCK RUNS OUT — NO SLACK.",
             config: { questionMode: "classic3", difficulty: "hard", targetMode: "off", timerMode: "70", decoys: 5, decoyFunction: "units_bias", speed: 1.12, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "a4",
             title: "Apex 4: Stampede Lock",
             desc: "Stampede routing at expert tempo.",
+            hint: "EXPERT STAMPEDE. DESTROY EVERY WRONG ASTEROID — ONLY THE CORRECT ONE PASSES THROUGH.",
             config: { questionMode: "stampede3", difficulty: "hard", targetMode: "off", timerMode: "70", decoys: 5, decoyFunction: "units_bias", speed: 1.14, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "a5",
             title: "Apex 5: Arc Overflow",
             desc: "Addition classic under dense decoys.",
+            hint: "DENSE ADDITION CLASSICS. FULL SUMS UNDER HEAVY DECOY PRESSURE — CALCULATE AND FIRE.",
             config: { questionMode: "add_classic3", difficulty: "hard", targetMode: "off", timerMode: "85", decoys: 5, decoyFunction: "units_bias", speed: 1.15, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "a6",
             title: "Apex 6: Square Barrage",
             desc: "Structured square lanes at expert pace.",
+            hint: "EXPERT SQUARE BARRAGE. KNOW YOUR SQUARES AND LOCK ON WITHOUT HESITATION.",
             config: { questionMode: "square_shoot", difficulty: "hard", targetMode: "off", timerMode: "85", decoys: 5, decoyFunction: "structured", speed: 1.16, lives: 15, strikes: 10, aMin: 6, aMax: 20, bMin: 6, bMax: 20 }
           },
           {
             id: "a7",
             title: "Apex 7: Root Pressure",
             desc: "Root targeting with minimal margin.",
+            hint: "ROOT TARGETING WITH MINIMAL MARGIN. ONE MISTAKE COSTS DEARLY — STAY PRECISE.",
             config: { questionMode: "square_root", difficulty: "hard", targetMode: "off", timerMode: "85", decoys: 5, decoyFunction: "structured", speed: 1.18, lives: 15, strikes: 10, aMin: 6, aMax: 20, bMin: 6, bMax: 20 }
           },
           {
             id: "a8",
             title: "Apex 8: Fraction Rift",
             desc: "Rational fraction precision at endgame speed.",
+            hint: "FRACTION PRECISION. A DECIMAL IS SHOWN — FIND AND SHOOT THE CORRECT FRACTION FORM.",
             config: { questionMode: "rational_frac", difficulty: "hard", targetMode: "off", timerMode: "85", decoys: 5, speed: 1.18, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           },
           {
             id: "a9",
             title: "Apex 9: Final Vector",
             desc: "Final target gauntlet into boss command.",
+            hint: "FINAL VECTOR GAUNTLET. 16 QUESTIONS STAND BETWEEN YOU AND THE BOSS. CLEAR THEM ALL.",
             config: { questionMode: "classic3", difficulty: "hard", targetMode: "q16", timerMode: "off", decoys: 6, decoyFunction: "units_bias", speed: 1.20, lives: 15, strikes: 10, aMin: 4, aMax: 20, bMin: 4, bMax: 20 }
           }
         ]
@@ -5178,10 +5353,22 @@
           var inputRow = document.createElement("div");
           inputRow.className = "campaignProfileInput";
           inputRow.style.display = "none";
-          var input = document.createElement("input");
-          input.type = "text";
-          input.maxLength = 16;
-          input.placeholder = "Pilot name";
+          var pickedName = "";
+          var nameLabel = document.createElement("div");
+          nameLabel.className = "pilotCallsign";
+          nameLabel.setAttribute("role", "status");
+          nameLabel.textContent = "Nova Falcon 42";
+          var rerollBtn = document.createElement("button");
+          rerollBtn.type = "button";
+          rerollBtn.className = "btn";
+          rerollBtn.textContent = "Reroll";
+          function rollCallsign(){
+            var api = window.MentarisPilotNames;
+            var next = (api && api.rerollPilotName) ? api.rerollPilotName(pickedName) : "Nova Falcon 42";
+            if(api && api.isGeneratedPilotName && !api.isGeneratedPilotName(next)) return;
+            pickedName = next;
+            nameLabel.textContent = next;
+          }
           var saveBtn = document.createElement("button");
           saveBtn.type = "button";
           saveBtn.className = "btn";
@@ -5191,7 +5378,8 @@
           cancelBtn.type = "button";
           cancelBtn.className = "btn";
           cancelBtn.textContent = "Cancel";
-          inputRow.appendChild(input);
+          inputRow.appendChild(nameLabel);
+          inputRow.appendChild(rerollBtn);
           inputRow.appendChild(saveBtn);
           inputRow.appendChild(cancelBtn);
           card.appendChild(inputRow);
@@ -5204,21 +5392,26 @@
 
           newBtn.addEventListener("click", function(){
             playMenuBeep();
+            rollCallsign();
             newBtn.style.display = "none";
             inputRow.style.display = "flex";
-            input.focus();
+          });
+          rerollBtn.addEventListener("click", function(){
+            playMenuBeep();
+            rollCallsign();
           });
           cancelBtn.addEventListener("click", function(){
             playMenuBeep();
-            input.value = "";
+            pickedName = "";
             inputRow.style.display = "none";
             newBtn.style.display = "";
           });
           saveBtn.addEventListener("click", function(){
             playMenuBeep();
-            var value = String(input.value || "").trim();
-            if(!value){
-              input.focus();
+            var api = window.MentarisPilotNames;
+            var value = String(pickedName || "").trim();
+            if(!value || !api || !api.isGeneratedPilotName || !api.isGeneratedPilotName(value)){
+              rollCallsign();
               return;
             }
             profile.name = value;
@@ -6323,7 +6516,14 @@
       }
       return String(id || "").toUpperCase();
     }
+    var shipPanelMineralCountEl = document.getElementById("shipPanelMineralCount");
+    function syncShipPanelMinerals(){
+      var m = getMineralsTotal();
+      if(shipPanelMineralCountEl) shipPanelMineralCountEl.textContent = m.toLocaleString();
+    }
+
     function refreshBuyButtons(){
+      syncShipPanelMinerals();
       var minerals = getMineralsTotal();
       shipOptions.forEach(function(option){
         if(option.getAttribute("data-locked") !== "true") return;
@@ -6412,14 +6612,99 @@
       }
       minerals = setMineralsTotal(minerals - cost);
       if(purchaseMinerals) purchaseMinerals.textContent = String(minerals);
-      markUnlocked(pendingPurchase.type, pendingPurchase.id);
-      if(pendingPurchase.type === "ship") unlockShipOption(pendingPurchase.el);
-      if(pendingPurchase.type === "shot") unlockShotOption(pendingPurchase.el);
-      if(pendingPurchase.type === "belt") unlockBeltOption(pendingPurchase.el);
+      var pType = pendingPurchase.type;
+      var pId   = pendingPurchase.id;
+      markUnlocked(pType, pId);
+      if(pType === "ship") unlockShipOption(pendingPurchase.el);
+      if(pType === "shot") unlockShotOption(pendingPurchase.el);
+      if(pType === "belt") unlockBeltOption(pendingPurchase.el);
       showToast("UNLOCKED");
       closePurchaseOverlay();
       refreshBuyButtons();
+      checkAndGrantPurchaseAchievements(pType, pId);
     }
+
+    // ── Purchase Achievements ─────────────────────────────────────────────
+    var LOCKED_SHIPS  = ["mk7","fizard","ember","azure","bu2x","mantas","cyan","veloz","verde9","whiteflame8","datsawze","apextiburoniv"];
+    var LOCKED_BELTS  = ["aurora","rift","vega","void","surface"];
+    var LOCKED_SHOTS  = ["fire","ice","electric","pierce","plasma","rail","missile"];
+
+    function unlockPurchaseAchievement(id){
+      var AKEY = "mentaris.achievements";
+      var data = null;
+      try{ data = JSON.parse(localStorage.getItem(AKEY) || "null"); }catch(e){}
+      if(!data || typeof data !== "object") data = { version:1, unlocked:{}, shipsPlayed:[] };
+      if(!data.unlocked) data.unlocked = {};
+      if(data.unlocked[id]) return null; // already earned
+      data.unlocked[id] = { unlockedAt: Date.now() };
+      try{ localStorage.setItem(AKEY, JSON.stringify(data)); }catch(e){}
+      // Find the label for toast
+      for(var i=0; i<ACHIEVEMENTS_HOME_LIST.length; i++){
+        if(ACHIEVEMENTS_HOME_LIST[i].id === id) return ACHIEVEMENTS_HOME_LIST[i];
+      }
+      return null;
+    }
+
+    function showPurchaseAchievementToast(def){
+      if(!def) return;
+      var wrap = document.createElement("div");
+      wrap.style.cssText = "position:fixed;bottom:72px;right:24px;z-index:9100;background:rgba(8,12,24,.93);border:1px solid rgba(255,215,0,.4);border-radius:14px;padding:12px 18px;max-width:280px;box-shadow:0 8px 32px rgba(0,0,0,.5);font-family:Oxanium,sans-serif;transform:translateX(120%);transition:transform .4s cubic-bezier(.22,1,.36,1);pointer-events:none;";
+      wrap.innerHTML = '<div style="font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,215,0,.88);margin-bottom:5px;">Achievement Unlocked</div>'
+        + '<div style="font-size:15px;font-weight:700;color:#e8ecff;">' + def.label + '</div>'
+        + '<div style="font-size:11px;color:rgba(232,236,255,.65);margin-top:3px;">' + def.desc + '</div>';
+      document.body.appendChild(wrap);
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+          wrap.style.transform = "translateX(0)";
+          setTimeout(function(){
+            wrap.style.transform = "translateX(120%)";
+            setTimeout(function(){ if(wrap.parentNode) wrap.parentNode.removeChild(wrap); }, 450);
+          }, 3200);
+        });
+      });
+    }
+
+    function checkAndGrantPurchaseAchievements(type, id){
+      var toasts = [];
+      // Per-item achievements
+      if(type === "ship"){
+        var ach = unlockPurchaseAchievement("ship_" + id);
+        if(ach) toasts.push(ach);
+        // Count how many locked ships are now unlocked
+        var unlockedShips = LOCKED_SHIPS.filter(function(s){ return isUnlocked("ship", s); });
+        if(unlockedShips.length >= 3){
+          var m = unlockPurchaseAchievement("unlock_3_ships");
+          if(m) toasts.push(m);
+        }
+        if(unlockedShips.length >= LOCKED_SHIPS.length){
+          var m2 = unlockPurchaseAchievement("unlock_all_ships");
+          if(m2) toasts.push(m2);
+        }
+      }
+      if(type === "belt"){
+        var ab = unlockPurchaseAchievement("belt_" + id);
+        if(ab) toasts.push(ab);
+        var unlockedBelts = LOCKED_BELTS.filter(function(b){ return isUnlocked("belt", b); });
+        if(unlockedBelts.length >= LOCKED_BELTS.length){
+          var mb = unlockPurchaseAchievement("unlock_all_belts");
+          if(mb) toasts.push(mb);
+        }
+      }
+      if(type === "shot"){
+        var as = unlockPurchaseAchievement("shot_" + id);
+        if(as) toasts.push(as);
+        var unlockedShots = LOCKED_SHOTS.filter(function(s){ return isUnlocked("shot", s); });
+        if(unlockedShots.length >= LOCKED_SHOTS.length){
+          var ms = unlockPurchaseAchievement("unlock_all_shots");
+          if(ms) toasts.push(ms);
+        }
+      }
+      // Show toasts staggered
+      toasts.forEach(function(def, i){
+        setTimeout(function(){ showPurchaseAchievementToast(def); }, i * 1400);
+      });
+    }
+    // ─────────────────────────────────────────────────────────────────────
     function getCarouselMetrics(container, options, cardVarName, gapVarName, fallbackCard, fallbackGap){
       var styles = getComputedStyle(container);
       var cardW = 0;
@@ -6998,6 +7283,11 @@
     var btnControls = document.getElementById("btnControls");
     var btnHowToPlay = document.getElementById("btnHowToPlay");
     var btnLeaderboards = document.getElementById("btnLeaderboards");
+    var btnAchievements = document.getElementById("btnAchievements");
+    var achievementsOverlay = document.getElementById("achievementsOverlay");
+    var btnCloseAchievements = document.getElementById("btnCloseAchievements");
+    var achievementsGrid = document.getElementById("achievementsGrid");
+    var achievementsProgress = document.getElementById("achievementsProgress");
     var btnCloseFunnel = document.getElementById("btnCloseFunnel");
     var btnCloseControls = document.getElementById("btnCloseControls");
     var btnCloseLeaderboards = document.getElementById("btnCloseLeaderboards");
@@ -7499,6 +7789,8 @@
       if(stepIndex === 5){
         if(launchSetupSpinner) launchSetupSpinner.classList.add("isLoading");
         scheduleShipCarouselSync();
+        syncShipPanelMinerals();
+        refreshBuyButtons();
       }
     }
 
@@ -7563,6 +7855,13 @@
     function hasCompletedTutorial(){
       try{ return localStorage.getItem(tutorialKey) === "1"; }catch(e){}
       return false;
+    }
+    function stashMentarisLaunchQuery(qs){
+      try{
+        var q = String(qs || "").replace(/^\?/, "");
+        if(!q) return;
+        sessionStorage.setItem("mentaris.launchQuery", JSON.stringify({t: Date.now(), q: q}));
+      }catch(e){}
     }
 
     function applyMenuState(){
@@ -7727,6 +8026,131 @@
         }
       });
     }
+    // ── Achievements gallery ──────────────────────────────────────────────────
+    var ACHIEVEMENTS_HOME_LIST = [
+      // Session
+      { id:"first_session",        label:"First Launch",       desc:"Complete your first session." },
+      { id:"streak_5",             label:"On a Roll",          desc:"Reach a 5-hit streak in a session." },
+      { id:"streak_10",            label:"Hot Streak",         desc:"Reach a 10-hit streak in a session." },
+      { id:"streak_25",            label:"Inferno",            desc:"Reach a 25-hit streak in a session." },
+      { id:"streak_50",            label:"Unstoppable",        desc:"Reach a 50-hit streak in a session." },
+      { id:"no_misses",            label:"Clean Run",          desc:"Finish a session with zero missed answers." },
+      { id:"perfect_acc",          label:"Perfect",            desc:"100% accuracy with 10 or more correct answers." },
+      { id:"score_1k",             label:"First Thousand",     desc:"Score 1,000 points in one session." },
+      { id:"score_5k",             label:"Five Thousand",      desc:"Score 5,000 points in one session." },
+      { id:"score_25k",            label:"High Commander",     desc:"Score 25,000 points in one session." },
+      { id:"score_50k",            label:"Space Admiral",      desc:"Score 50,000 points in one session." },
+      { id:"score_100k",           label:"Legend",             desc:"Score 100,000 points in one session." },
+      { id:"level_5",              label:"Squadron Leader",    desc:"Reach level 5 in one session." },
+      { id:"level_10",             label:"Ace Pilot",          desc:"Reach level 10 in one session." },
+      { id:"level_20",             label:"Elite Commander",    desc:"Reach level 20 in one session." },
+      { id:"no_damage",            label:"Ghost Run",          desc:"Complete a session without losing a single HP." },
+      { id:"no_damage_hard",       label:"Phantom",            desc:"Complete a Hard or Brutal session without losing HP." },
+      { id:"speed_5",              label:"Quick Draw",         desc:"Answer 5 questions correctly in under 3 seconds each." },
+      // Lifetime
+      { id:"five_sessions",        label:"Getting Started",    desc:"Play 5 sessions total." },
+      { id:"ten_sessions",         label:"Veteran",            desc:"Play 10 sessions total." },
+      { id:"twenty_five_sessions", label:"Dedicated",          desc:"Play 25 sessions total." },
+      { id:"fifty_sessions",       label:"Elite Pilot",        desc:"Play 50 sessions total." },
+      { id:"hundred_sessions",     label:"Legend Pilot",       desc:"Play 100 sessions total." },
+      { id:"three_ships",          label:"Fleet Commander",    desc:"Play with 3 different ships." },
+      { id:"five_ships",           label:"Admiral",            desc:"Play with 5 different ships." },
+      // Combat
+      { id:"alien_5",              label:"Alien Hunter",       desc:"Eliminate 5 aliens in one session." },
+      { id:"alien_20",             label:"Exterminator",       desc:"Eliminate 20 aliens in one session." },
+      { id:"alien_50",             label:"Annihilator",        desc:"Eliminate 50 aliens across all sessions." },
+      { id:"alien_boss",           label:"Boss Slayer",        desc:"Eliminate an alien boss." },
+      { id:"alien_boss_3",         label:"Boss Hunter",        desc:"Eliminate 3 alien bosses total." },
+      { id:"all_powerups",         label:"Full Arsenal",       desc:"Collect every power-up type in one session." },
+      { id:"powerup_10",           label:"Power Hungry",       desc:"Collect 10 power-ups in one session." },
+      // Difficulty
+      { id:"hard_win",             label:"Hard-Boiled",        desc:"Complete a session on Hard difficulty." },
+      { id:"brutal_win",           label:"Brutal Pilot",       desc:"Complete a session on Brutal difficulty." },
+      { id:"score_1k_brutal",      label:"Brutal Ace",         desc:"Score 1,000+ on Brutal difficulty." },
+      { id:"score_10k_brutal",     label:"Brutal Legend",      desc:"Score 10,000+ on Brutal difficulty." },
+      // Campaign
+      { id:"campaign_m1",          label:"First Sector",       desc:"Complete the first campaign mission." },
+      { id:"campaign_complete",    label:"Sector Champion",    desc:"Complete all missions in a campaign." },
+      { id:"campaign_no_fail",     label:"Flawless Campaign",  desc:"Complete a campaign without failing any mission." },
+      // Ships unlocked
+      { id:"ship_mk7",             label:"Crimson MK-7",       desc:"Unlock the Crimson MK-7." },
+      { id:"ship_fizard",          label:"Aurora Dart",        desc:"Unlock the Aurora Dart." },
+      { id:"ship_ember",           label:"Ruby Strike",        desc:"Unlock the Ruby Strike." },
+      { id:"ship_azure",           label:"Azure Lancer",       desc:"Unlock the Azure Lancer." },
+      { id:"ship_bu2x",            label:"BU2X",               desc:"Unlock the BU2X." },
+      { id:"ship_mantas",          label:"Mantas Arc-5",       desc:"Unlock the Mantas Arc-5." },
+      { id:"ship_cyan",            label:"Cyan Vector 7",      desc:"Unlock the Cyan Vector 7." },
+      { id:"ship_veloz",           label:"Veloz Mas",          desc:"Unlock the Veloz Mas." },
+      { id:"ship_verde9",          label:"Ver-De-9",           desc:"Unlock the Ver-De-9." },
+      { id:"ship_whiteflame8",     label:"White Flame 8",      desc:"Unlock the White Flame 8." },
+      { id:"ship_datsawze",        label:"D.A.T. Sawze",       desc:"Unlock D.A.T. Sawze." },
+      { id:"ship_apextiburoniv",   label:"Apex Tiburon IV",    desc:"Unlock the Apex Tiburon IV." },
+      { id:"unlock_3_ships",       label:"Hangar Growing",     desc:"Unlock 3 ships." },
+      { id:"unlock_all_ships",     label:"Full Fleet",         desc:"Unlock all ships." },
+      // Clusters unlocked
+      { id:"belt_aurora",          label:"Void Run",           desc:"Unlock the Void Run Cluster." },
+      { id:"belt_rift",            label:"Nebula Siege",       desc:"Unlock the Nebula Siege Cluster." },
+      { id:"belt_vega",            label:"Apex Frontier",      desc:"Unlock the Apex Frontier Cluster." },
+      { id:"belt_void",            label:"Apex Frontier Plus", desc:"Unlock the Apex Frontier Plus Cluster." },
+      { id:"belt_surface",         label:"ET Surface",         desc:"Unlock the ET Surface Cluster." },
+      { id:"unlock_all_belts",     label:"Belt Master",        desc:"Unlock all asteroid clusters." },
+      // Shot types unlocked
+      { id:"shot_fire",            label:"Fire Blaster",       desc:"Unlock the Fire shot type." },
+      { id:"shot_ice",             label:"Ice Blaster",        desc:"Unlock the Ice shot type." },
+      { id:"shot_electric",        label:"Electric Blaster",   desc:"Unlock the Electric shot type." },
+      { id:"shot_pierce",          label:"Bola Blaster",       desc:"Unlock the Bola pierce shot type." },
+      { id:"shot_plasma",          label:"Plasma Blaster",     desc:"Unlock the Plasma shot type." },
+      { id:"shot_rail",            label:"Rail Blaster",       desc:"Unlock the Rail shot type." },
+      { id:"shot_missile",         label:"Missile Commander",  desc:"Unlock the Missile shot type." },
+      { id:"unlock_all_shots",     label:"Weapons Master",     desc:"Unlock all shot types." }
+    ];
+
+    function renderAchievements() {
+      if (!achievementsGrid) return;
+      var raw = null;
+      try { raw = JSON.parse(localStorage.getItem("mentaris.achievements") || "null"); } catch(e) {}
+      var unlocked = (raw && raw.unlocked) ? raw.unlocked : {};
+      var total = ACHIEVEMENTS_HOME_LIST.length;
+      var count = 0;
+      ACHIEVEMENTS_HOME_LIST.forEach(function(a) { if (unlocked[a.id]) count++; });
+      if (achievementsProgress) achievementsProgress.textContent = count + " / " + total + " unlocked";
+      achievementsGrid.innerHTML = "";
+      ACHIEVEMENTS_HOME_LIST.forEach(function(a) {
+        var data = unlocked[a.id];
+        var card = document.createElement("div");
+        card.className = "achievementCard " + (data ? "unlocked" : "locked");
+        var dateStr = "";
+        if (data && data.unlockedAt) {
+          try { dateStr = new Date(data.unlockedAt).toLocaleDateString(undefined, { year:"numeric", month:"short", day:"numeric" }); } catch(e) {}
+        }
+        card.innerHTML =
+          '<div class="achievementCardLabel">' + (data ? "★ " : "") + a.label + '</div>' +
+          '<div class="achievementCardDesc">' + a.desc + '</div>' +
+          (dateStr ? '<div class="achievementCardDate">' + dateStr + '</div>' : "");
+        achievementsGrid.appendChild(card);
+      });
+    }
+
+    if (btnAchievements && achievementsOverlay) {
+      btnAchievements.addEventListener("click", function() {
+        playMenuBeep();
+        renderAchievements();
+        achievementsOverlay.classList.add("show");
+      });
+    }
+    if (btnCloseAchievements && achievementsOverlay) {
+      btnCloseAchievements.addEventListener("click", function() {
+        playMenuBeep();
+        achievementsOverlay.classList.remove("show");
+      });
+    }
+    if (achievementsOverlay) {
+      achievementsOverlay.addEventListener("click", function(e) {
+        if (e.target === achievementsOverlay) achievementsOverlay.classList.remove("show");
+      });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     if (btnSettingsHome && settingsOverlay) {
       btnSettingsHome.addEventListener("click", function(){
         playMenuBeep();
@@ -7738,6 +8162,211 @@
         if(sfxCatalogPanelHome) sfxCatalogPanelHome.classList.remove("open");
       });
     }
+    // ── Grade Level ───────────────────────────────────────────────────────────
+    var gradeGridEl = document.getElementById("gradeGrid");
+    var gradeNoteEl = document.getElementById("gradeNote");
+    var activeGradeChipEl = document.getElementById("activeGradeChip");
+    var btnClearGrade = document.getElementById("btnClearGrade");
+    var speedSliderEl = document.getElementById("speedSlider");
+    var speedSliderLabelEl = document.getElementById("speedSliderLabel");
+    var questionsSliderEl = document.getElementById("questionsSlider");
+    var questionsSliderLabelEl = document.getElementById("questionsSliderLabel");
+    var targetModeHiddenEl = document.getElementById("targetModeHidden");
+
+    function getActiveGrade(){ try{ return localStorage.getItem(STUDENT_GRADE_KEY)||""; }catch(e){ return ""; } }
+
+    function syncSpeedSlider(val){
+      if(speedSliderEl) speedSliderEl.value = val;
+      if(speedSliderLabelEl) speedSliderLabelEl.textContent = parseFloat(val).toFixed(2)+"×";
+    }
+    function syncQuestionsSlider(targetMode){
+      var n = (!targetMode || targetMode === "off") ? 0 : parseInt(targetMode.replace("q",""), 10) || 0;
+      if(questionsSliderEl) questionsSliderEl.value = n;
+      if(questionsSliderLabelEl) questionsSliderLabelEl.textContent = n === 0 ? "Endless" : n+" questions";
+      if(targetModeHiddenEl) targetModeHiddenEl.value = n === 0 ? "off" : "q"+n;
+    }
+
+    if(speedSliderEl){
+      speedSliderEl.addEventListener("input", function(){
+        if(speedSliderLabelEl) speedSliderLabelEl.textContent = parseFloat(this.value).toFixed(2)+"×";
+      });
+    }
+    if(questionsSliderEl){
+      questionsSliderEl.addEventListener("input", function(){
+        var n = parseInt(this.value, 10);
+        if(questionsSliderLabelEl) questionsSliderLabelEl.textContent = n === 0 ? "Endless" : n+" questions";
+        if(targetModeHiddenEl) targetModeHiddenEl.value = n === 0 ? "off" : "q"+n;
+      });
+    }
+
+    function applyGradePreset(grade){
+      var gp = GRADE_PRESETS[grade]; if(!gp) return;
+      try{ localStorage.setItem(STUDENT_GRADE_KEY, grade); }catch(e){}
+      var keys = ["aMin","aMax","bMin","bMax","decoys","speed","lives","difficulty","targetMode"];
+      keys.forEach(function(k){ defaults[k] = gp[k]; });
+      var form = document.getElementById("homeMenu");
+      if(form){
+        ["aMin","aMax","bMin","bMax","decoys","lives"].forEach(function(k){
+          var el = form.elements[k]; if(el) el.value = gp[k];
+        });
+      }
+      syncSpeedSlider(gp.speed);
+      syncQuestionsSlider(gp.targetMode);
+      selectedDifficulty = gp.difficulty;
+      document.querySelectorAll("#difficultyChoices .choiceCard").forEach(function(c){
+        c.classList.toggle("selected", c.getAttribute("data-diff") === gp.difficulty);
+      });
+      updateActiveGradeChipEl();
+    }
+
+    function updateActiveGradeChipEl(){
+      var g = getActiveGrade();
+      if(activeGradeChipEl) activeGradeChipEl.textContent = g ? ("GRADE "+g+" ACTIVE") : "";
+    }
+
+    function renderGradeGrid(){
+      if(!gradeGridEl) return;
+      var current = getActiveGrade();
+      gradeGridEl.innerHTML = "";
+      GRADE_ORDER.forEach(function(g){
+        var gp = GRADE_PRESETS[g];
+        var card = document.createElement("div");
+        card.className = "gradeCard"+(g===current?" selected":"");
+        card.innerHTML = '<div class="gradeCardLabel">'+gp.label+'</div>'
+          +'<div class="gradeCardSub">'+gp.ages+'</div>';
+        card.addEventListener("click", function(){
+          playMenuBeep();
+          applyGradePreset(g);
+          renderGradeGrid();
+          if(gradeNoteEl) gradeNoteEl.textContent = gp.desc;
+        });
+        gradeGridEl.appendChild(card);
+      });
+      var g = getActiveGrade();
+      if(gradeNoteEl && g && GRADE_PRESETS[g]) gradeNoteEl.textContent = GRADE_PRESETS[g].desc;
+    }
+
+    if(btnClearGrade){
+      btnClearGrade.addEventListener("click", function(){
+        playMenuBeep();
+        try{ localStorage.removeItem(STUDENT_GRADE_KEY); }catch(e){}
+        defaults.aMin=2; defaults.aMax=12; defaults.bMin=2; defaults.bMax=12;
+        defaults.decoys=3; defaults.lives=10; defaults.difficulty="normal"; defaults.targetMode="q15";
+        defaults.speed=0.9;
+        syncSpeedSlider(0.9);
+        syncQuestionsSlider("q15");
+        selectedDifficulty = "normal";
+        document.querySelectorAll("#difficultyChoices .choiceCard").forEach(function(c){
+          c.classList.toggle("selected", c.getAttribute("data-diff") === "normal");
+        });
+        updateActiveGradeChipEl();
+        renderGradeGrid();
+        if(gradeNoteEl) gradeNoteEl.textContent = "Grade setting cleared. Manual settings will be used.";
+      });
+    }
+
+    // On startup: init sliders and apply saved grade if any
+    (function(){
+      syncSpeedSlider(defaults.speed);
+      syncQuestionsSlider(defaults.targetMode);
+      var savedGrade = getActiveGrade();
+      if(savedGrade && GRADE_PRESETS[savedGrade]) applyGradePreset(savedGrade);
+      updateActiveGradeChipEl();
+    })();
+    // ── Grade Prompt Overlay ───────────────────────────────────────────────
+    var gradePromptOverlay = document.getElementById("gradePromptOverlay");
+    var gradePromptGridEl  = document.getElementById("gradePromptGrid");
+    var gradePromptNoteEl  = document.getElementById("gradePromptNote");
+    var btnSkipGradePrompt = document.getElementById("btnSkipGradePrompt");
+    var _gradePendingAction = null; // "campaign" | "singleMission"
+
+    function renderGradePromptGrid(){
+      if(!gradePromptGridEl) return;
+      gradePromptGridEl.innerHTML = "";
+      GRADE_ORDER.forEach(function(g){
+        var gp = GRADE_PRESETS[g];
+        var card = document.createElement("div");
+        card.className = "gradeCard";
+        card.innerHTML = '<div class="gradeCardLabel">'+gp.label+'</div>'
+          +'<div class="gradeCardSub">'+gp.ages+'</div>';
+        card.addEventListener("click", function(){
+          playMenuBeep();
+          applyGradePreset(g);
+          renderGradeGrid(); // also sync the settings grid
+          if(gradePromptNoteEl) gradePromptNoteEl.textContent = gp.desc;
+          // Brief visual confirmation then dispatch the pending action
+          setTimeout(function(){
+            if(gradePromptOverlay) gradePromptOverlay.classList.remove("show");
+            if(_gradePendingAction === "campaign"){
+              if(btnCampaign && campaignOverlay){
+                ensureCampaignData();
+                renderCampaignProfiles();
+                showCampaignProfilesView();
+                campaignOverlay.classList.add("show");
+                setCampaignOverlayBodyOpen(true);
+                if(menuWrap) menuWrap.classList.add("hidden");
+              }
+            } else if(_gradePendingAction === "singleMission"){
+              if(funnelOverlay){
+                campaignShipSelect = false;
+                funnelOverlay.classList.add("show");
+                setStep(0);
+                if(menuWrap) menuWrap.classList.add("hidden");
+                scheduleShipCarouselSync();
+              }
+            }
+            _gradePendingAction = null;
+          }, 320);
+        });
+        gradePromptGridEl.appendChild(card);
+      });
+      if(gradePromptNoteEl) gradePromptNoteEl.textContent = "Select a grade above to continue.";
+    }
+
+    function maybeShowGradePrompt(action){
+      if(getActiveGrade()) return false; // grade already set, no prompt needed
+      _gradePendingAction = action;
+      renderGradePromptGrid();
+      if(gradePromptOverlay) gradePromptOverlay.classList.add("show");
+      return true; // prompt was shown, caller should not proceed
+    }
+
+    if(btnSkipGradePrompt && gradePromptOverlay){
+      btnSkipGradePrompt.addEventListener("click", function(){
+        playMenuBeep();
+        gradePromptOverlay.classList.remove("show");
+        var act = _gradePendingAction;
+        _gradePendingAction = null;
+        if(act === "campaign"){
+          if(btnCampaign && campaignOverlay){
+            ensureCampaignData();
+            renderCampaignProfiles();
+            showCampaignProfilesView();
+            campaignOverlay.classList.add("show");
+            setCampaignOverlayBodyOpen(true);
+            if(menuWrap) menuWrap.classList.add("hidden");
+          }
+        } else if(act === "singleMission"){
+          if(funnelOverlay){
+            campaignShipSelect = false;
+            funnelOverlay.classList.add("show");
+            setStep(0);
+            if(menuWrap) menuWrap.classList.add("hidden");
+            scheduleShipCarouselSync();
+          }
+        }
+      });
+    }
+    if(gradePromptOverlay){
+      gradePromptOverlay.addEventListener("click", function(e){
+        if(e.target === gradePromptOverlay){
+          gradePromptOverlay.classList.remove("show");
+          _gradePendingAction = null;
+        }
+      });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     if(settingsTabButtonsHome && settingsTabButtonsHome.length){
       settingsTabButtonsHome.forEach(function(btn){
         btn.addEventListener("click", function(){
@@ -7745,6 +8374,7 @@
           var tabId = btn.getAttribute("data-settings-tab") || "audio";
           setSettingsTabHome(tabId);
           if(tabId === "catalogs"){ renderHomeCatalogs(); }
+          if(tabId === "grade"){ renderGradeGrid(); }
         });
       });
     }
@@ -7785,6 +8415,7 @@
     if (btnCampaign && campaignOverlay) {
       btnCampaign.addEventListener("click", function(){
         playMenuBeep();
+        if(maybeShowGradePrompt("campaign")) return;
         ensureCampaignData();
         renderCampaignProfiles();
         showCampaignProfilesView();
@@ -7857,6 +8488,7 @@
     if (startBtn && funnelOverlay) {
       startBtn.addEventListener("click", function(){
         playMenuBeep();
+        if(maybeShowGradePrompt("singleMission")) return;
         campaignShipSelect = false;
         funnelOverlay.classList.add("show");
         setStep(0);
@@ -8964,6 +9596,18 @@
           + "<span class=\"campaignMapNodeBest\">" + bestLine + "</span>"
           + "</div>"
           + "<span class=\"campaignStatus\">" + statusSymbol + "</span>";
+        // Grade-match badge
+        (function(){
+          var _g = getActiveGrade && getActiveGrade();
+          var _gp = _g && GRADE_PRESETS && GRADE_PRESETS[_g];
+          if(_gp && m.config && m.config.difficulty === _gp.difficulty){
+            var badge = document.createElement("div");
+            badge.className = "campaignGradeMatch";
+            badge.textContent = "★ Grade match";
+            li.style.position = "relative";
+            li.appendChild(badge);
+          }
+        })();
         li.addEventListener("click", function(){
           var wrapEl = document.getElementById("campaignMapWrap");
           if(wrapEl && Date.now() < (wrapEl._suppressClickUntil || 0)) return;
@@ -9119,7 +9763,9 @@
           belt: "dusk"
         });
         setTimeout(function(){
-          window.location.href = "asteroid_blaster.html?" + params.toString();
+          var qs = params.toString();
+          stashMentarisLaunchQuery(qs);
+          window.location.href = "asteroid_blaster.html?" + qs;
         }, 700);
       }catch(err){
         console.error(err);
@@ -9155,7 +9801,9 @@
         difficulty: "normal",
         sound: "1"
       });
-      window.location.href = "asteroid_blaster.html?" + params.toString();
+      var sandQs = params.toString();
+      stashMentarisLaunchQuery(sandQs);
+      window.location.href = "asteroid_blaster.html?" + sandQs;
     }
 
     function showBriefing(config){
@@ -9308,6 +9956,17 @@
       }
       startHintCycle();
 
+      // Campaign mission-specific hint override
+      if (pendingCampaign) {
+        var _mcs = getCampaignSet(pendingCampaign.id);
+        var _mm = _mcs && _mcs.missions && _mcs.missions[pendingCampaign.index];
+        if (_mm && _mm.hint) {
+          if (briefingHintTimer) clearInterval(briefingHintTimer);
+          if (briefingHintTypeTimer) clearInterval(briefingHintTypeTimer);
+          typeHint(_mm.hint);
+        }
+      }
+
       briefingTimerId = setTimeout(function(){
         briefingReady = true;
         if(btnBriefingSkip){
@@ -9391,7 +10050,9 @@
         }
       }
       setTimeout(function(){
-        window.location.href = "asteroid_blaster.html?" + params.toString();
+        var launchQs = params.toString();
+        stashMentarisLaunchQuery(launchQs);
+        window.location.href = "asteroid_blaster.html?" + launchQs;
       }, 1000);
     }
 

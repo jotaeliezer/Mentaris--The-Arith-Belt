@@ -1,3 +1,25 @@
+@font-face{
+  font-family:"Oxanium";
+  font-style:normal;
+  font-weight:400;
+  font-display:swap;
+  src:url("fonts/oxanium-latin-400-normal.woff2") format("woff2");
+}
+@font-face{
+  font-family:"Oxanium";
+  font-style:normal;
+  font-weight:600;
+  font-display:swap;
+  src:url("fonts/oxanium-latin-600-normal.woff2") format("woff2");
+}
+@font-face{
+  font-family:"Oxanium";
+  font-style:normal;
+  font-weight:700;
+  font-display:swap;
+  src:url("fonts/oxanium-latin-700-normal.woff2") format("woff2");
+}
+
 :root{
   --bg:#060816;
   /* Briefing-aligned surfaces (chips, buttons, small panels) */
@@ -12,7 +34,7 @@
   --mag:#af006f;
   --radius:18px;
   --shadow:0 18px 60px rgba(0,0,0,.55);
-  --solo-shell-width:1120px;
+  --solo-shell-width:960px;
   --split-shell-gap:56px;
 
   /* Shared UI theme (mission briefing reference) */
@@ -150,8 +172,8 @@ body::before{
 
 #gameShell{
   position:relative;
-  width:min(1120px, 100%);
-  max-width:1120px;
+  width:min(960px, 100%);
+  max-width:960px;
   height:100%;
   border:1px solid var(--line);
   border-radius:var(--radius);
@@ -394,7 +416,7 @@ body.touchControlsOn #controlDock{
   letter-spacing:.4px;
 }
 
-@media (max-width: 1200px){
+@media (max-width: 1040px){
   #controlDock{ display:none; }
   #gameShell{ max-width:100%; }
 }
@@ -1433,6 +1455,44 @@ body.splitGameplayMode #gameShell::after{
 
 .endNameBlock{
   pointer-events:auto;
+}
+
+.endNameHint{
+  margin:0 0 10px;
+}
+
+.pilotCallsignRow{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin:0 0 14px;
+}
+
+.pilotCallsign{
+  flex:1 1 220px;
+  min-height:52px;
+  display:flex;
+  align-items:center;
+  padding:10px 14px;
+  border-radius:12px;
+  border:1px solid rgba(0,229,255,.45);
+  background:rgba(0,0,0,.35);
+  color:#bff2ff;
+  font-size:22px;
+  font-weight:700;
+  letter-spacing:.4px;
+}
+
+#settingsOverlay a.settingsSideBtn,
+.settingsActions a.btn{
+  display:inline-block;
+  box-sizing:border-box;
+  text-decoration:none;
+}
+
+.monoSmall a{
+  color:#9adfff;
 }
 
 .endSequence.reveal-sequence{
@@ -2631,6 +2691,47 @@ input[type="checkbox"]{ transform: translateY(1px); }
 }
 #toast.show{ display:block; }
 
+/* Achievement toast */
+.achievementToast{
+  position:fixed;
+  bottom:72px;
+  right:24px;
+  z-index:9100;
+  background:rgba(8,12,24,.94);
+  border:1px solid rgba(255,215,0,.38);
+  border-radius:14px;
+  padding:12px 18px;
+  max-width:280px;
+  box-shadow:0 8px 32px rgba(0,0,0,.55), 0 0 18px rgba(255,215,0,.1);
+  transform:translateX(130%);
+  transition:transform .4s cubic-bezier(.22,1,.36,1);
+  font-family:Oxanium,sans-serif;
+  pointer-events:none;
+}
+.achievementToast.show{
+  transform:translateX(0);
+}
+.achievementToastBadge{
+  font-size:9px;
+  letter-spacing:2.5px;
+  text-transform:uppercase;
+  color:rgba(255,215,0,.88);
+  margin-bottom:5px;
+  font-weight:700;
+}
+.achievementToastLabel{
+  font-size:15px;
+  font-weight:700;
+  color:#e8ecff;
+  letter-spacing:.3px;
+}
+.achievementToastDesc{
+  font-size:11px;
+  color:rgba(232,236,255,.6);
+  margin-top:3px;
+  line-height:1.4;
+}
+
 .countdown{
   position:absolute;
   inset:0;
@@ -2799,8 +2900,8 @@ input[type="checkbox"]{ transform: translateY(1px); }
 }
 
 .wideGameplay #gameShell{
-  width:min(1280px, 100%);
-  max-width:1280px;
+  width:min(1120px, 100%);
+  max-width:1120px;
 }
 
 .wideGameplay #hud{
@@ -3012,6 +3113,13 @@ input[type="checkbox"]{ transform: translateY(1px); }
   display:flex;
   flex-wrap:wrap;
   gap:8px;
+  align-items:center;
+}
+
+.campaignProfileInput .pilotCallsign{
+  flex:1 1 100%;
+  min-height:44px;
+  font-size:16px;
 }
 
 .campaignProfileInput input{

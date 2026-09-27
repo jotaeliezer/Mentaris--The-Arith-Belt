@@ -1,5 +1,7 @@
 "use strict";
 
+import { isGeneratedPilotName } from "./pilot_names.js";
+
 /**
  * Supabase PostgREST client for the `scores` table.
  * Configure at runtime (never commit keys):
@@ -82,22 +84,25 @@ function fetchWithTimeout(url, options, timeoutMs){
 
 /**
  * Insert one score row (anon key must be allowed by RLS).
+ * Stores only a generated callsign, the score, and the question mode.
+ * created_at is left to the database default (timestamp).
+ * ship, difficulty, and operation are not sent.
  * @returns {Promise<{success: boolean, error: string|null}>}
  */
-export async function submitScore(playerName, score, ship, difficulty, questionMode, operation){
+export async function submitScore(playerName, score, questionMode){
   var cfg = readRuntimeConfig();
   if(!cfg) return { success: false, error: "Supabase is not configured (set window.__MENTARIS_SUPABASE__)" };
 
   var body = {
     player_name: sanitizeField(playerName, MAX_NAME_LEN),
     score: clampScore(score),
-    ship: sanitizeField(ship, MAX_STR_FIELD),
-    difficulty: sanitizeField(difficulty, MAX_STR_FIELD),
-    question_mode: sanitizeField(questionMode, MAX_STR_FIELD),
-    operation: sanitizeField(operation, MAX_STR_FIELD)
+    question_mode: sanitizeField(questionMode, MAX_STR_FIELD)
   };
 
-  if(!body.player_name) return { success: false, error: "Player name is required" };
+  if(!isGeneratedPilotName(body.player_name)){
+    return { success: false, error: "Pilot name must be a generated callsign" };
+  }
+  if(!body.question_mode) body.question_mode = "classic";
 
   var url = cfg.url + "/rest/v1/" + encodeURIComponent(cfg.table);
   try{
