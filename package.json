@@ -1,5 +1,5 @@
 {
-  "name": "asteroid-blaster",
+  "name": "mentaris-the-arith-belt",
   "private": true,
   "version": "0.1.0",
   "description": "Math arcade space shooter.",
@@ -20,7 +20,7 @@
   },
   "build": {
     "appId": "com.atmc.asteroidblaster",
-    "productName": "Asteroid Blaster",
+    "productName": "Mentaris - The Arith Belt",
     "directories": {
       "output": "dist"
     },

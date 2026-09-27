@@ -1,4 +1,4 @@
-# Mentaris: The Arith Belt
+# Mentaris - The Arith Belt
 
 A synthwave math arcade space shooter. Solve arithmetic problems by blasting the asteroid labeled with the correct answer before the decoys close in.
 
