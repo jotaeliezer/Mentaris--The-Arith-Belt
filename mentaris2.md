@@ -32,6 +32,11 @@ Keep the ship with native mouse-and-keyboard controls; the mouse is the shoot bu
 - Clicking it plays a quick animation and transports the player.
 - The return wormhole is always present at the destination, so the player can always go back.
 
+### Cost
+- Wormhole travel costs material harvested from asteroids.
+- Players dropped into the first cluster cannot use wormholes until they have gathered some material.
+- The cost scales with distance traveled, so farther jumps cost more.
+
 ## 7. Risk and recovery
 - **(a)** The ship has HP. When an alien hits the ship it loses HP.
 - **(b)** If HP reaches zero, the ship loses all its collected material, dropped on the spot.
