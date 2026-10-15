@@ -20,10 +20,11 @@ Keep the ship with native mouse-and-keyboard controls; the mouse is the shoot bu
 - Students choose easy or hard; harder gives more rewards, easier gives fewer.
 - Multiple players join and play simultaneously.
 
-## 5. Open questions
-- Aiming mechanic: click-to-target vs laser.
-- How difficulty is displayed: color vs stars.
-- Multiplayer infrastructure: not yet decided.
+## 5. Seeded worlds
+- Worlds are generated from a seed, similar to seeded survival-world generation, so every player who uses the same seed shares the same asteroid layout.
+- Players roam to asteroids, see each asteroid's question difficulty, and solve to get items and rewards.
+- Rewards are spent to level up the ship, weapons, and abilities, and to buy other ships within the game.
+- Aliens show up periodically as stakes and pressure.
 
 ## 6. Risk and recovery
 - **(a)** The ship has HP. When an alien hits the ship it loses HP.
@@ -39,3 +40,9 @@ Collected asteroid materials are used to:
 - **(d)** Buy math hints.
 
 Gather resources, then fabricate upgrades, in tiers where better gear needs rarer materials. Materials carried are at stake until used or banked in fabrication, which ties into the risk rules.
+
+## 8. Open questions
+- Aiming mechanic: click-to-target vs laser.
+- How difficulty is displayed: color vs stars.
+- Multiplayer infrastructure: not yet decided.
+- The seed must be shared between players.
