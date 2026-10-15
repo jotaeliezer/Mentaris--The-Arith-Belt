@@ -47,7 +47,11 @@ Collected asteroid materials are used to:
 
 Gather resources, then fabricate upgrades, in tiers where better gear needs rarer materials. Materials carried are at stake until used or banked in fabrication, which ties into the risk rules.
 
-## 9. Open questions
+## 9. Base-building
+- Bases are defensible but not untouchable.
+- Players can defend their base from aliens, but it is not a completely safe zone; aliens can still threaten it.
+
+## 10. Open questions
 - Aiming mechanic: click-to-target vs laser.
 - How difficulty is displayed: color vs stars.
 - Multiplayer infrastructure: not yet decided.
