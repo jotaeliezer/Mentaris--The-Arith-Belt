@@ -55,6 +55,9 @@ Gather resources, then fabricate upgrades, in tiers where better gear needs rare
 ## 9. Base-building
 - Bases are defensible but not untouchable.
 - Players can defend their base from aliens, but it is not a completely safe zone; aliens can still threaten it.
+- Players can choose where to build their base, among asteroids or on other planets.
+- The base serves as a hub for refueling and fabrication.
+- Players gather material by solving math questions from asteroids, and that material funds the base's functions.
 
 ## 10. Open questions
 - Aiming mechanic: click-to-target vs laser.
