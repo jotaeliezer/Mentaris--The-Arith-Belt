@@ -28,5 +28,5 @@ Keep the ship with native mouse-and-keyboard controls; the mouse is the shoot bu
 ## 6. Risk and recovery
 - **(a)** The ship has HP. When an alien hits the ship it loses HP.
 - **(b)** If HP reaches zero, the ship loses all its collected material, Minecraft-style.
-- **(c)** Recovery is explicit: when the player respawns into the same session or same world, all of their minerals are recuperable.
+- **(c)** When the ship is destroyed, the collected minerals are recuperable but follow Minecraft's mechanic: the items sit at the death location for a limited time and start disappearing if not recovered in time.
 - **(d)** Aliens are rival solvers: they try to take whatever the player solved from asteroids the player destroys.
