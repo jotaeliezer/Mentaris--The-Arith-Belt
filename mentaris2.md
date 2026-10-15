@@ -27,6 +27,15 @@ Keep the ship with native mouse-and-keyboard controls; the mouse is the shoot bu
 
 ## 6. Risk and recovery
 - **(a)** The ship has HP. When an alien hits the ship it loses HP.
-- **(b)** If HP reaches zero, the ship loses all its collected material, Minecraft-style.
-- **(c)** When the ship is destroyed, the collected minerals are recuperable but follow Minecraft's mechanic: the items sit at the death location for a limited time and start disappearing if not recovered in time.
+- **(b)** If HP reaches zero, the ship loses all its collected material, dropped on the spot.
+- **(c)** When the ship is destroyed, the collected minerals are recuperable but follow a timed drop: the items sit at the death location for a limited time and start disappearing if not recovered in time.
 - **(d)** Aliens are rival solvers: they try to take whatever the player solved from asteroids the player destroys.
+
+## 7. Fabrication
+Collected asteroid materials are used to:
+- **(a)** Manufacture better weapons.
+- **(b)** Build a faster ship.
+- **(c)** Fabricate items.
+- **(d)** Buy math hints.
+
+Gather resources, then fabricate upgrades, in tiers where better gear needs rarer materials. Materials carried are at stake until used or banked in fabrication, which ties into the risk rules.
