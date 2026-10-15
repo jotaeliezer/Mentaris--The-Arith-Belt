@@ -26,13 +26,19 @@ Keep the ship with native mouse-and-keyboard controls; the mouse is the shoot bu
 - Rewards are spent to level up the ship, weapons, and abilities, and to buy other ships within the game.
 - Aliens show up periodically as stakes and pressure.
 
-## 6. Risk and recovery
+## 6. Wormholes
+- Wormholes are the travel mechanic between seeded regions and clusters.
+- Approaching a wormhole offers travel to a named destination cluster (for example, "mega cluster").
+- Clicking it plays a quick animation and transports the player.
+- The return wormhole is always present at the destination, so the player can always go back.
+
+## 7. Risk and recovery
 - **(a)** The ship has HP. When an alien hits the ship it loses HP.
 - **(b)** If HP reaches zero, the ship loses all its collected material, dropped on the spot.
 - **(c)** When the ship is destroyed, the collected minerals are recuperable but follow a timed drop: the items sit at the death location for a limited time and start disappearing if not recovered in time.
 - **(d)** Aliens are rival solvers: they try to take whatever the player solved from asteroids the player destroys.
 
-## 7. Fabrication
+## 8. Fabrication
 Collected asteroid materials are used to:
 - **(a)** Manufacture better weapons.
 - **(b)** Build a faster ship.
@@ -41,7 +47,7 @@ Collected asteroid materials are used to:
 
 Gather resources, then fabricate upgrades, in tiers where better gear needs rarer materials. Materials carried are at stake until used or banked in fabrication, which ties into the risk rules.
 
-## 8. Open questions
+## 9. Open questions
 - Aiming mechanic: click-to-target vs laser.
 - How difficulty is displayed: color vs stars.
 - Multiplayer infrastructure: not yet decided.
