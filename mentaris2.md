@@ -67,7 +67,13 @@ Gather resources, then fabricate upgrades, in tiers where better gear needs rare
 - The wormhole is unlockable. It stays locked until the player has hit the required number of asteroid questions answered or collected.
 - Open question: what happens when the player reaches the unlocked wormhole is undecided (teleport to a new cluster vs. clearing the mission).
 
-## 11. Open questions
+## 11. Cluster layers
+- Layers are huge 2D planes stacked vertically within a cluster.
+- The player can travel freely across a layer: asteroids, aliens, nebulas that blind trajectory, other planets, bright stars.
+- Moving between layers must be easy for the player, but it is still a 2D game: no true 3D.
+- There must be a cool animation for layer transitions that clearly communicates whether the ship is going up or down a layer (for example a smooth camera tilt or a parallax depth shift, not just a screen cut).
+
+## 12. Open questions
 - Aiming mechanic: click-to-target vs laser.
 - How difficulty is displayed: color vs stars.
 - Multiplayer infrastructure: not yet decided.
