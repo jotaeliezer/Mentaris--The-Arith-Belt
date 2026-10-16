@@ -11,6 +11,7 @@ let mainWindow = null;
 
 function createWindow(){
   mainWindow = new BrowserWindow({
+    title: "Mentaris - The Arith Belt",
     width: 1280,
     height: 720,
     minWidth: 960,

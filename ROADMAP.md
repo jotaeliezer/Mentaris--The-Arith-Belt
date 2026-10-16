@@ -1,4 +1,4 @@
-# Roadmap: Mentaris — The Arith Belt
+# Roadmap: Mentaris - The Arith Belt
 
 ## Current state (April 2026)
 

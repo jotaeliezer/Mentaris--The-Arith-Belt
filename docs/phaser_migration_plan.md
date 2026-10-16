@@ -1,4 +1,4 @@
-﻿# Phaser Migration Plan (Asteroid Blaster)
+﻿# Phaser Migration Plan (Mentaris - The Arith Belt)
 
 Last updated: 2026-01-19
 Status: Planning
