@@ -62,6 +62,7 @@ Gather resources, then fabricate upgrades, in tiers where better gear needs rare
 ## 10. Free-roaming missions
 - Incorporate these design ideas into the actual Mentaris game that exists now.
 - Missions are not about solving the question at the top of the screen. They are free-roaming: the player has to collect or answer a certain number of asteroid questions.
+- Missions are operation-locked. One mission uses only addition asteroids, another uses only multiplication asteroids, and so on. The mission's question generation reuses the existing question generation logic from the current Mentaris game; do not create a separate generator. The operation is fixed per mission regardless of which layer the ship is on; layers are only vertical space within a cluster.
 - To move on, the player has to get to the wormhole.
 - The wormhole is unlockable. It stays locked until the player has hit the required number of asteroid questions answered or collected.
 - Open question: what happens when the player reaches the unlocked wormhole is undecided (teleport to a new cluster vs. clearing the mission).
