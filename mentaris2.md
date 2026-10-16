@@ -1,4 +1,4 @@
-# Mentaris 2 Plan (multiplayer-focused)
+# Mentaris: Prisms of Assembly, plan (multiplayer-focused)
 
 Planning document only. The current game stays as-is; nothing here changes existing code.
 
