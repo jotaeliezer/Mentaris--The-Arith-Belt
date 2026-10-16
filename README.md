@@ -145,7 +145,7 @@ The game is also configured for [Vercel](https://vercel.com) deployment via `ver
 - **Renderer:** HTML5 Canvas 2D API
 - **Build:** esbuild
 - **Audio:** Web Audio API + HTML5 `<audio>`
-- **Font:** [Oxanium](https://fonts.google.com/specimen/Oxanium) (Google Fonts)
+- **Font:** Oxanium, self-hosted under `public/fonts/` (SIL Open Font License)
 - **Desktop:** Electron
 - **Optional renderer:** Phaser 3 (planned migration)
 

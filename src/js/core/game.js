@@ -13,6 +13,7 @@ import { checkAchievements, checkCampaignAchievements, unlockAndReturn } from ".
 import { PowerupManager } from "../entities/powerups.js";
 import { hudTheme, hudQuestionFontSize, getMissionBriefInjectedCss, getSandboxPanelInjectedCss } from "./hud_theme.js";
 import { submitScore as submitSupabaseScore, isSupabaseScoresConfigured } from "./supabase_scores.js";
+import { generatePilotName, rerollPilotName, isGeneratedPilotName } from "./pilot_names.js";
 
 // ======= DOM
 var canvas = document.getElementById("canvas");
@@ -741,7 +742,9 @@ var endScoresBody = document.getElementById("endScoresBody");
 var endScoresTableWrap = document.getElementById("endScoresTableWrap");
 var endScoresTitle = document.getElementById("endScoresTitle");
 var btnHighScoresToggle = document.getElementById("btnHighScoresToggle");
-var endNameInput = document.getElementById("endNameInput");
+var endPilotNameEl = document.getElementById("endPilotName");
+var btnRerollPilotName = document.getElementById("btnRerollPilotName");
+var currentPilotName = "";
 var endSequence = document.querySelector(".endSequence");
 var endScoreValue = document.getElementById("endScoreValue");
 var endModeSummary = document.getElementById("endModeSummary");
@@ -7978,10 +7981,37 @@ function renderHighScores(lifetime, modeKey, modeInfo){
   }
 }
 
+var PILOT_NAME_STORAGE_KEY = "mathsteroid.playerName";
+
+function readStoredPilotName(){
+  var stored = "";
+  try{ stored = localStorage.getItem(PILOT_NAME_STORAGE_KEY) || ""; }catch(e){}
+  return isGeneratedPilotName(stored) ? stored : "";
+}
+
+function ensurePilotName(){
+  var name = (currentPilotName && isGeneratedPilotName(currentPilotName)) ? currentPilotName : readStoredPilotName();
+  if(!name){
+    name = generatePilotName();
+    try{ localStorage.setItem(PILOT_NAME_STORAGE_KEY, name); }catch(e){}
+  }
+  currentPilotName = name;
+  if(endPilotNameEl) endPilotNameEl.textContent = name;
+  return name;
+}
+
+function rerollDisplayedPilotName(){
+  var next = rerollPilotName(ensurePilotName());
+  currentPilotName = next;
+  if(endPilotNameEl) endPilotNameEl.textContent = next;
+  try{ localStorage.setItem(PILOT_NAME_STORAGE_KEY, next); }catch(e){}
+  return next;
+}
+
 function saveScoreName(name){
   if(!state.lastSessionId) return;
-  var trimmed = String(name || "").trim().slice(0, 18);
-  if(!trimmed) return;
+  var trimmed = String(name || "").trim();
+  if(!isGeneratedPilotName(trimmed)) return;
   var stats = loadLifetimeStats();
   if(!stats) return;
   stats.highScores = stats.highScores || [];
@@ -8012,26 +8042,11 @@ function saveScoreName(name){
   }
   saveLifetimeStats(stats);
   renderHighScores(stats, entryKey);
-  try{ localStorage.setItem("mathsteroid.playerName", trimmed); }catch(e){}
+  try{ localStorage.setItem(PILOT_NAME_STORAGE_KEY, trimmed); }catch(e){}
   appendLeaderboardCsv({ name: trimmed, score: state.score });
   if(isSupabaseScoresConfigured()){
-    var shipTag = (player && player.shipType) ? String(player.shipType) : "";
-    if(!shipTag && typeof collectSessionSettings === "function"){
-      try{
-        shipTag = String((collectSessionSettings() || {}).ship || "");
-      }catch(e){
-        shipTag = "";
-      }
-    }
-    var diffTag = String(state.difficulty || "normal");
     var qMode = String(state.questionMode || "classic");
-    var opTag = "";
-    try{
-      opTag = String((describeQuestionMode(qMode) || {}).operation || "");
-    }catch(e){
-      opTag = "";
-    }
-    submitSupabaseScore(trimmed, state.score, shipTag || "unknown", diffTag, qMode, opTag || "unknown").then(function(res){
+    submitSupabaseScore(trimmed, state.score, qMode).then(function(res){
       if(!res.success && res.error){
         console.warn("[supabase scores]", res.error);
       }
@@ -8712,10 +8727,8 @@ function jumpEndStage(stageId){
   if(stageId === "endStageName"){
     endPhase = "name";
     transitionEndStage("endStageName", function(){
-      if(endNameInput){
-        endNameInput.focus();
-        endNameInput.select();
-      }
+      ensurePilotName();
+      if(btnRerollPilotName) btnRerollPilotName.focus();
     });
     return;
   }
@@ -9002,10 +9015,8 @@ function showEndNamePhase(){
     if(btnHighScoresToggle){
       btnHighScoresToggle.textContent = "CONTINUE";
     }
-    if(endNameInput){
-      endNameInput.focus();
-      endNameInput.select();
-    }
+    ensurePilotName();
+    if(btnRerollPilotName) btnRerollPilotName.focus();
   });
 }
 
@@ -9042,10 +9053,12 @@ function advanceEndSequencePhase(){
 
 function handleEndNameConfirm(){
   if(!endSequenceActive || endPhase !== "name") return false;
-  saveScoreName(endNameInput ? endNameInput.value : "");
-  endNameConfirmed = true;
+  if(!endNameConfirmed){
+    saveScoreName(ensurePilotName());
+    endNameConfirmed = true;
+    showToast("CALLSIGN SAVED");
+  }
   playSfx(state, "menu_beep");
-  showToast("NAME SAVED");
   showEndPlacementPhase();
   return true;
 }
@@ -9114,8 +9127,7 @@ function endGame(reason){
   var attempts = state.hits;
   var acc = attempts > 0 ? (state.correct / attempts) : 0;
   var rpm = elapsed > 0 ? (state.correct / elapsed) * 60 : 0;
-  var storedName = "";
-  try{ storedName = localStorage.getItem("mathsteroid.playerName") || ""; }catch(e){}
+  var storedName = ensurePilotName();
   var sessionId = String(Date.now()) + "_" + String(Math.floor(Math.random() * 1000000));
   var modeInfo = describeQuestionMode(state.questionMode || "classic");
   var session = {
@@ -9591,9 +9603,7 @@ function endGame(reason){
     btnEndSettings.style.display = "none";
   }
 
-  if(endNameInput){
-    endNameInput.value = storedName;
-  }
+  ensurePilotName();
   if(endScoreValue){
     endScoreValue.textContent = "0";
   }
@@ -16346,21 +16356,13 @@ if(btnBackSfx && overlaySfx){
   });
 }
 
-if(endNameInput){
-  endNameInput.addEventListener("keydown", function(e){
-    if(e.key === "Enter"){
-      e.preventDefault();
-      if(!handleEndNameConfirm()){
-        saveScoreName(endNameInput.value);
-        showToast("NAME SAVED");
-        playSfx(state, "menu_beep");
-      }
-    }
-  });
-  endNameInput.addEventListener("blur", function(){
-    saveScoreName(endNameInput.value);
+if(btnRerollPilotName){
+  btnRerollPilotName.addEventListener("click", function(){
+    rerollDisplayedPilotName();
+    playSfx(state, "menu_beep");
   });
 }
+ensurePilotName();
 
 // ======= Self-tests (run with ?test=1)
 function assert(cond, msg){
